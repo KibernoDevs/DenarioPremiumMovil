@@ -39,6 +39,7 @@ export class ProductService {
   public multiempresa: Boolean = false;
   public unitsByProduct: Unit[] = [];
   public vatExemptProducts: boolean = false;
+  public userCanSelectIVA:boolean = false;
 
   productoSearch = new Subject<string>;
   onSearchClicked = new Subject<Boolean>;
@@ -1044,7 +1045,7 @@ export class ProductService {
     }
     var whereClause = tokenClauses.length ? tokenClauses.join(" AND ") : "1";
     var select = 'SELECT id_product, co_product, na_product, id_enterprise, co_enterprise, p.id_product_structure, p.nu_tax ' +
-      'FROM products p WHERE id_product IN ' +  
+      'FROM products p WHERE id_product IN ' +
       '(SELECT id_product FROM invoice_details WHERE id_invoice = ? ORDER BY id_product ASC) AND ' + whereClause;
     return database.executeSql(select, params).then(result => {
       for (let i = 0; i < result.rows.length; i++) {

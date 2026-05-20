@@ -7,7 +7,7 @@ import { Enterprise } from '../modelos/tables/enterprise';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { ProductStructureUtil } from '../modelos/ProductStructureUtil';
 import { TypeProductStructure } from '../modelos/tables/typeProductStructure';
-import { ProductStructure} from '../modelos/tables/productStructure';
+import { ProductStructure } from '../modelos/tables/productStructure';
 import { ProductStructureService } from '../services/productStructures/product-structure.service';
 import { ProductListComponent } from './product-list/product-list.component';
 import { Product } from '../modelos/tables/product';
@@ -19,10 +19,10 @@ import { GlobalConfigService } from '../services/globalConfig/global-config.serv
 import { PedidosService } from '../pedidos/pedidos.service';
 
 @Component({
-    selector: 'app-productos',
-    templateUrl: './productos.component.html',
-    styleUrls: ['./productos.component.scss'],
-    standalone: false
+  selector: 'app-productos',
+  templateUrl: './productos.component.html',
+  styleUrls: ['./productos.component.scss'],
+  standalone: false
 })
 export class ProductosComponent {
 
@@ -75,6 +75,7 @@ export class ProductosComponent {
       });
     });
     this.productService.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
+    this.productService.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === "true";
   }
 
   getTags(): Promise<void> {
@@ -113,12 +114,12 @@ export class ProductosComponent {
   }
 
   onBackClicked(verListaProductos: Boolean) {
-    if(this.showProductDetail){
+    if (this.showProductDetail) {
       this.showProductDetail = false;
       this.showProducts = true;
       return;
     }
-    if(this.showProducts){
+    if (this.showProducts) {
       this.showProducts = false;
       this.showProductStructures = true;
       return;
