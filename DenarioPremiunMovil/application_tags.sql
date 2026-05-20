@@ -508,7 +508,13 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
   ('INV_CAMBIO_POR_CAMBIO','INV','INVENTARIO','ESP','Cambio por cambio'),
   ('INV_VENTA','INV','INVENTARIO','ESP','Venta'),
   ('INV_DEV_DISTRIBUCION','INV','INVENTARIO','ESP','Distribución'),
-  ('INV_VENTAS_DIARIAS','INV','INVENTARIO','ESP','Ventas Diarias Estimadas');
+  ('INV_VENTAS_DIARIAS','INV','INVENTARIO','ESP','Ventas Diarias Estimadas'),
+  ('INV_ACTIVIDADES_ELIMINAR_SELECCIONADOS','INV','INVENTARIO','ESP','Eliminar seleccionados'),
+  ('INV_ACTIVIDADES_SEL','INV','INVENTARIO','ESP','Sel'),
+  ('INV_ACTIVIDADES_PRODUCTO','INV','INVENTARIO','ESP','Producto'),
+  ('INV_ACTIVIDADES_EXHIBICION','INV','INVENTARIO','ESP','Exhibición'),
+  ('INV_ACTIVIDADES_DEPOSITO','INV','INVENTARIO','ESP','Depósito'),
+  ('INV_ACTIVIDADES_ACCION','INV','INVENTARIO','ESP','Acción');
   
 
 
@@ -555,7 +561,19 @@ INSERT INTO public.application_tags(
 	('PROD_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'IVA'),
 	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'Precio + IVA'),
 	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ENG', 'Price + VAT'),
-	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back');
+	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back'),
+	('PROD_INV_LIST_UBICACION', 'PROD', 'PRODUCTOS', 'ESP', 'Ubicación del inventario'),
+	('PROD_INV_LIST_FILTRO', 'PROD', 'PRODUCTOS', 'ESP', 'Filtro de productos'),
+	('PROD_INV_LIST_FILTRO_TODOS', 'PROD', 'PRODUCTOS', 'ESP', 'Todos'),
+	('PROD_INV_LIST_FILTRO_INVENTARIADOS', 'PROD', 'PRODUCTOS', 'ESP', 'Inventariados'),
+	('PROD_INV_SEGMENT_EXH', 'PROD', 'PRODUCTOS', 'ESP', 'Exhibición'),
+	('PROD_INV_SEGMENT_DEP', 'PROD', 'PRODUCTOS', 'ESP', 'Depósito'),
+	('PROD_INV_LIST_CHIP_INVENTARIADO', 'PROD', 'PRODUCTOS', 'ESP', 'Inventariado:'),
+	('PROD_INV_CAPTURE_CANTIDAD', 'PROD', 'PRODUCTOS', 'ESP', 'Cantidad'),
+	('PROD_INV_CAPTURE_PLACEHOLDER_CANTIDAD', 'PROD', 'PRODUCTOS', 'ESP', 'Ingrese cantidad'),
+	('PROD_INV_CAPTURE_LOTE', 'PROD', 'PRODUCTOS', 'ESP', 'Lote'),
+	('PROD_INV_CAPTURE_PLACEHOLDER_LOTE', 'PROD', 'PRODUCTOS', 'ESP', 'Ingrese lote'),
+	('PROD_INV_CAPTURE_FECHA_VENCIMIENTO', 'PROD', 'PRODUCTOS', 'ESP', 'Fecha de vencimiento');
 
 -- DEVOLUCIONES
 DELETE FROM public.application_tags where co_module = 'DEV';
@@ -648,7 +666,7 @@ INSERT INTO public.application_tags(
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ESP','Factura'),
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice'),
 	('DEV_HEADER_ALERTA', 'DEV', 'DEVOLUCIONES', 'ESP','¡Alerta!'),
-	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que debera iniciar nuevamente la devolución.');
+	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que deberá iniciar nuevamente la devolución.');
 
 
 -- HOME
@@ -709,7 +727,7 @@ INSERT INTO public.application_tags(
 	('VIS_FECHA_VISITA_DESPACHO', 'VIS', 'VISITAS', 'ESP','Fecha del Despacho'),
 	('VIS_BORRAR_EXITO', 'VIS', 'VISITAS', 'ESP','Se eliminó la visita de manera exitosa'),
 	('VIS_BORRAR_CONFIRMA', 'VIS', 'VISITAS', 'ESP','¿Desea borrar la visita? Esta acción no se puede deshacer.'),
-	('VIS_RESET_CONFIRMA', 'VIS', 'VISITAS', 'ESP','Se ha detectado cambio del cliente por lo que debera iniciar nuevamente el pedido.'),
+	('VIS_RESET_CONFIRMA', 'VIS', 'VISITAS', 'ESP','Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente el pedido.'),
 	('VIS_MENSAJE_COORDENADAS', 'VIS', 'VISITAS', 'ESP','Esta sucursal no tiene coordenadas asignadas. ¿Desea agregarlas?'),
 	('VIS_MENSAJE_CLIENT_SUCURSAL', 'VIS', 'VISITAS', 'ESP','Ya existe un despacho para este cliente en esta sucursal.'),
 	('VIS_SEE_ROUTE', 'VIS', 'VISITAS', 'ESP','Ver ruta'),
@@ -792,10 +810,10 @@ INSERT INTO public.application_tags(
 	('ADJ_TOMAR_FOTO', 'ADJ', 'ADJUNTOS', 'ESP','TOMAR FOTO'),
 	('ADJ_BUSCAR_FOTO', 'ADJ', 'ADJUNTOS', 'ENG','SEARCH PHOTO'),
 	('ADJ_TOMAR_FOTO', 'ADJ', 'ADJUNTOS', 'ENG','TAKE PHOTO'),
-	('ADJ_MSJ_LIMITE', 'ADJ', 'ADJUNTOS', 'ESP','Numero de imágenes  permitidas: '),
+	('ADJ_MSJ_LIMITE', 'ADJ', 'ADJUNTOS', 'ESP','Número de imágenes permitidas: '),
 	('ADJ_TITULO_PICKER', 'ADJ', 'ADJUNTOS', 'ESP','Seleccione una o más imágenes '),
 	('ADJ_TITULO_ALBUM', 'ADJ', 'ADJUNTOS', 'ESP','Elija un álbum'),
-	('ADJ_TITULO_LIBRERIA', 'ADJ', 'ADJUNTOS', 'ESP','Click aqui para cambiar librería'),
+	('ADJ_TITULO_LIBRERIA', 'ADJ', 'ADJUNTOS', 'ESP','Click aquí para cambiar librería'),
 	('ADJ_ACORDEON_IMAGENES', 'ADJ', 'ADJUNTOS', 'ESP','Imágenes '),
 	('ADJ_ACORDEON_FIRMA', 'ADJ', 'ADJUNTOS', 'ESP','Firma'),
 	('ADJ_ACORDEON_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Archivo'),
@@ -842,6 +860,6 @@ INSERT INTO public.application_tags(
   ('DENARIO_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Vigente'),
   ('DENARIO_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Vencido'),
   ('DENARIO_FAVOR', 'DEN', 'DENARIO', 'ESP', 'A favor'),
-  ('DENARIO_HINT_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Documentos vigentes: El documento aun tiene días de vigencia.'),
+  ('DENARIO_HINT_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Documentos vigentes: El documento aún tiene días de vigencia.'),
   ('DENARIO_HINT_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Documentos vencidos: El documento ha superado los días de vigencia.'),
-  ('DENARIO_HINT_FAVOR', 'DEN', 'DENARIO', 'ESP', 'Saldo a favor: El cliente tiene credito disponible.');
+  ('DENARIO_HINT_FAVOR', 'DEN', 'DENARIO', 'ESP', 'Saldo a favor: El cliente tiene crédito disponible.');

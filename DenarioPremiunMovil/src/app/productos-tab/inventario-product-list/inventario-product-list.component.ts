@@ -346,7 +346,7 @@ export class InventarioProductListComponent implements OnInit {
 
   private showValidationMessage(message: string) {
     this.messageAlert = new MessageAlert(
-      this.productsTabTags.get('INV_HEADER_MESSAGE') || 'Inventario',
+      this.productsTabTags.get('PROD_STOCK_PROD') || 'Inventario',
       message,
     );
     this.message.alertModal(this.messageAlert);
@@ -522,10 +522,10 @@ export class InventarioProductListComponent implements OnInit {
 
     const labels: string[] = [];
     if (locations.has('exh')) {
-      labels.push(this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion');
+      labels.push(this.productsTabTags.get('PROD_INV_SEGMENT_EXH') || 'Exhibición');
     }
     if (locations.has('dep')) {
-      labels.push(this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito');
+      labels.push(this.productsTabTags.get('PROD_INV_SEGMENT_DEP') || 'Depósito');
     }
 
     return labels.join(' / ');
