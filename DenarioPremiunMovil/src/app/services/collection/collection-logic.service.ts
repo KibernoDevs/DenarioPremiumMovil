@@ -7,7 +7,7 @@ import { ChangeDetectorRef } from '@angular/core';
 
 
 import { Client } from 'src/app/modelos/tables/client';
-import { Collection, CollectionDetail, CollectionDetailDiscounts, CollectionPayment } from 'src/app/modelos/tables/collection';
+import { Collection, CollectionDetail, CollectionDetailDiscounts, CollectionPayment, CollectionDetailRetentions } from 'src/app/modelos/tables/collection';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Currencies } from 'src/app/modelos/tables/currencies';
 import { ConversionType } from 'src/app/modelos/tables/conversionType';
@@ -41,6 +41,7 @@ import { ClientLogicService } from '../clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
+import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 
 
 @Injectable({
@@ -119,6 +120,7 @@ export class CollectionService {
   public prevSelectedCollectDiscounts: CollectDiscounts[] = [];
   public selectedCollectDiscounts: number[] = [];
   public displayedItems: any[] = [];
+  public collectRetentions: CollectRetentions[] = [];
 
   public messageAlert!: MessageAlert;
   public anticipoAutomatico!: any;
@@ -3414,11 +3416,12 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     })
   }
 
-  deleteCollectionBatch(dbServ: SQLiteObject, deleteCollectionSQL: string, deleteCollectionDetailsSQL: string, deleteCollectionDetailDiscountsSQL: string, deleteCollectionPaymentsSQL: string, coCollection: string) {
+  deleteCollectionBatch(dbServ: SQLiteObject, deleteCollectionSQL: string, deleteCollectionDetailsSQL: string, deleteCollectionDetailDiscountsSQL: string, deleteCollectionDetailRetentionsSQL: string, deleteCollectionPaymentsSQL: string, coCollection: string) {
     var statements = [];
     statements.push([deleteCollectionSQL, [coCollection]]);
     statements.push([deleteCollectionDetailsSQL, [coCollection]]);
     statements.push([deleteCollectionDetailDiscountsSQL, [coCollection]]);
+    statements.push([deleteCollectionDetailRetentionsSQL, [coCollection]]);
     statements.push([deleteCollectionPaymentsSQL, [coCollection]]);
 
     return dbServ.sqlBatch(statements).then(res => {
@@ -3454,9 +3457,10 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
       const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
       const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
+      const deleteCollectionDetailsRetentionsSQL = 'DELETE FROM collection_detail_retentions WHERE co_collection = ?';
       const deleteCollectionPaymentsSQL = 'DELETE FROM collection_payments WHERE co_collection = ?';
 
-      return this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
+      return this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionDetailsRetentionsSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
         const insertCollection = "INSERT OR REPLACE INTO collections (" +
           "id_collection," +
           "co_collection," +
@@ -3541,13 +3545,15 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
               console.log("TERMINE DOCUMENT ST")
               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
                 return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                  return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
-                    if (action) {
-                      this.documentSales = [] as DocumentSale[];
-                      this.documentSalesBackup = [] as DocumentSale[];
-                    }
+                  return this.saveCollectionDetailRetentions(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                    return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+                      if (action) {
+                        this.documentSales = [] as DocumentSale[];
+                        this.documentSalesBackup = [] as DocumentSale[];
+                      }
 
-                    return resp
+                      return resp
+                    })
                   })
                 })
               });
@@ -3699,6 +3705,18 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     posicion
   ) VALUES (?,?,?,?,?,?,?,?,?)
     `
+    const insertCollectionDetailRetentionSQL = `
+  INSERT OR REPLACE INTO collection_detail_retentions (
+    id_collection_detail,
+    id_collect_retention,
+    co_collect_retention,
+    nu_amount_retention,
+    nu_amount_retention_conversion,
+    co_collection,
+    co_document,
+    posicion
+  ) VALUES (?,?,?,?,?,?,?,?)
+    `
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -3810,6 +3828,24 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
             ]);
           }
         }
+
+        if (collectionDetail.collectionDetailRetentions?.length! > 0) {
+          for (var coDetailRetention = 0; coDetailRetention < collectionDetail.collectionDetailRetentions!.length; coDetailRetention++) {
+            const collectionDetailRetention = collectionDetail.collectionDetailRetentions![coDetailRetention];
+            queries.push([insertCollectionDetailRetentionSQL,
+              [
+                collectionDetailRetention.idCollectionDetail,
+                collectionDetailRetention.idCollectRetention,
+                collectionDetailRetention.coCollectRetention,
+                collectionDetailRetention.nuAmountRetention,
+                collectionDetailRetention.nuAmountRetentionConversion,
+                collectionDetail.coCollection,
+                collectionDetail.coDocument,
+                collectionDetailRetention.posicion
+              ]
+            ]);
+          }
+        }
       }
 
       for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
@@ -3854,6 +3890,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     const deleteCollectionsSQL = `DELETE FROM collections WHERE co_collection = ?`;
     const deleteCollectionDetailsSQL = `DELETE FROM collection_details WHERE co_collection = ?`;
     const deleteCollectionDetailDiscountsSQL = `DELETE FROM collection_detail_discounts WHERE co_collection = ?`;
+    const deleteCollectionDetailRetentionsSQL = `DELETE FROM collection_detail_retentions WHERE co_collection = ?`;
     const deleteCollectionPaymentsSQL = `DELETE FROM collection_payments WHERE co_collection = ?`;
 
     let queries: any[] = []
@@ -3867,6 +3904,12 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           for (var coDetailDiscount = 0; coDetailDiscount < collect.collectionDetails[coDetail].collectionDetailDiscounts!.length; coDetailDiscount++) {
             const collectionDetailDisctount = collect.collectionDetails[coDetail].collectionDetailDiscounts![coDetailDiscount];
             queries.push([deleteCollectionDetailDiscountsSQL, [collect.coCollection]]);
+          }
+
+        if (collectionDetail.collectionDetailRetentions?.length! > 0)
+          for (var coDetailRetention = 0; coDetailRetention < collect.collectionDetails[coDetail].collectionDetailRetentions!.length; coDetailRetention++) {
+            const collectionDetailRetention = collect.collectionDetails[coDetail].collectionDetailRetentions![coDetailRetention];
+            queries.push([deleteCollectionDetailRetentionsSQL, [collect.coCollection]]);
           }
       }
       for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
@@ -4010,6 +4053,44 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       console.log("collection_detail_discounts INSERT", res);
       return Promise.resolve("TERMINE");
       //this.saveCollectionPayment(this.collection.collectPayment)
+    }).catch(e => {
+      console.log(e);
+    })
+
+  }
+
+  saveCollectionDetailRetentions(dbServ: SQLiteObject, collectionDetail: CollectionDetail[], coCollection: string) {
+    const statementsCollectionRetentions = [];
+    const insertStatement = "INSERT OR REPLACE INTO collection_detail_retentions(" +
+      "id_collection_detail," +
+      "id_collect_retention," +
+      "co_collect_retention," +
+      "nu_amount_retention," +
+      "nu_amount_retention_conversion," +
+      "co_collection," +
+      "co_document," +
+      "posicion" +
+      ") VALUES (?,?,?,?,?,?,?,?)";
+
+    for (var i = 0; i < collectionDetail.length; i++) {
+      for (var j = 0; j < collectionDetail[i].collectionDetailRetentions!?.length; j++) {
+        statementsCollectionRetentions.push([insertStatement, [
+          collectionDetail[i].collectionDetailRetentions![j].idCollectionDetail,
+          collectionDetail[i].collectionDetailRetentions![j].idCollectRetention,
+          collectionDetail[i].collectionDetailRetentions![j].coCollectRetention,
+          collectionDetail[i].collectionDetailRetentions![j].nuAmountRetention,
+          collectionDetail[i].collectionDetailRetentions![j].nuAmountRetentionConversion,
+          coCollection,
+          collectionDetail[i].coDocument,
+          collectionDetail[i].collectionDetailRetentions![j].posicion
+        ]]);
+      }
+
+    }
+
+    return dbServ.sqlBatch(statementsCollectionRetentions).then(res => {
+      console.log("collection_detail_retentions INSERT", res);
+      return Promise.resolve("TERMINE");
     }).catch(e => {
       console.log(e);
     })
@@ -4569,6 +4650,33 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     })
   }
 
+  getCollectionDetailsRetentions(dbServ: SQLiteObject, coCollection: string) {
+    return dbServ.executeSql(
+      'SELECT * FROM collection_detail_retentions WHERE co_collection = ?', [coCollection]
+    ).then(res => {
+      let collectionDetailsRetentions: CollectionDetailRetentions[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        collectionDetailsRetentions.push({
+          idCollectionDetailRetention: res.rows.item(i).id_collection_detail_retention,
+          idCollectionDetail: res.rows.item(i).id_collection_detail,
+          idCollectRetention: res.rows.item(i).id_collect_retention,
+          coCollectRetention: res.rows.item(i).co_collect_retention,
+          nuAmountRetention: res.rows.item(i).nu_amount_retention,
+          nuAmountRetentionConversion: res.rows.item(i).nu_amount_retention_conversion,
+          coCollection: res.rows.item(i).co_collection,
+          coDocument: res.rows.item(i).co_document,
+          posicion: res.rows.item(i).posicion,
+
+        });
+      }
+      return collectionDetailsRetentions;
+    }).catch(e => {
+      let collectionDetailsRetentions: CollectionDetailRetentions[] = [];
+      console.log(e);
+      return collectionDetailsRetentions;
+    });
+  }
+
   async findCollect(dbServ: SQLiteObject) {
     try {
       console.time('[findCollect] total');
@@ -4863,6 +4971,29 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
 
+
+  getCollectRetentions(dbServ: SQLiteObject, idEnterprise: number) {
+    const selectStatement =
+      'SELECT * FROM collect_retentions WHERE id_enterprise = ? ORDER BY co_collect_retention ASC';
+    return dbServ.executeSql(selectStatement, [idEnterprise]).then(res => {
+      this.collectRetentions = [] as CollectRetentions[];
+      for (var i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        const idEntRaw = row.id_enterprise;
+        const idEntParsed =
+          idEntRaw === undefined || idEntRaw === null ? 0 : Number(idEntRaw);
+        this.collectRetentions.push({
+          idCollectRetention: row.id_collect_retention,
+          coCollectRetention: row.co_collect_retention,
+          naCollectRetention: row.na_collect_retention,
+          idEnterprise: idEntParsed,
+        })
+      }
+      return Promise.resolve(true);
+    }).catch(e => {
+      return Promise.resolve(true);
+    })
+  }
 
 
   ///////////////////QUERYS////////////////

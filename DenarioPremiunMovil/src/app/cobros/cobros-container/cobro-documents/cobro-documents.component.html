@@ -750,35 +750,67 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 </ion-col>
                 }
                 <!-- FECHA COMP RET  -->
-                <!-- MONTO RET IVA-->
-                @if(this.collectService.retencion && this.collectService.documentSaleOpen.nuVaucherRetention != null &&
-                this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
-                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                  <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
-                    label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                    [value]="displayRetention || formatFromCents(centsRetention)" (keydown)="onRetentionKeyDown($event)"
-                    (focus)="onRetentionFocus()" (blur)="onRetentionBlur()"
-                    [disabled]="!this.collectService.validNuRetention" (paste)="onRetentionPaste($event)"
-                    (input)="onRetentionInput($event)">
-                  </ion-input>
-                </ion-col>
-                }
-                <!-- MONTO RET IVA--->
 
-                <!-- MONTO RET ISLR-->
+                <!-- RETENCIONES DINAMICAS -->
                 @if(this.collectService.retencion && this.collectService.documentSaleOpen.nuVaucherRetention != null &&
                 this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
+                @if(hasCollectRetentions()){
+                @if(hasAvailableCollectRetentions()){
                 <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                  <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
-                    label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                    [value]="displayRetention2 || formatFromCents(centsRetention2)"
-                    (keydown)="onRetention2KeyDown($event)" (focus)="onRetention2Focus()" (blur)="onRetention2Blur()"
-                    [disabled]="!this.collectService.validNuRetention" (paste)="onRetention2Paste($event)"
-                    (input)="onRetention2Input($event)">
-                  </ion-input>
+                  <ion-label class="retention-selector-label">
+                    {{this.collectService.collectionTags.get('COB_SELECCIONE')}}
+                    {{this.collectService.collectionTags.get('COB_RETENCIONES') || 'Retención'}}
+                  </ion-label>
+                  <ion-item lines="none" class="retention-selector-item">
+                    <div class="listado-enterprise-selector ion-text-center retention-selector-box">
+                      <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
+                        placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR') || 'Seleccione'}}"
+                        [(ngModel)]="selectedCollectRetentionId" [disabled]="!this.collectService.validNuRetention"
+                        (ionChange)="onCollectRetentionSelectionChange($event)">
+                        @for(retention of getAvailableCollectRetentions(); track retention.idCollectRetention){
+                        <ion-select-option [value]="retention.idCollectRetention">
+                          {{retention.coCollectRetention}} - {{retention.naCollectRetention}}
+                        </ion-select-option>
+                        }
+                      </ion-select>
+                    </div>
+                  </ion-item>
+                </ion-col>
+                } @else {
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-label color="danger" class="campoObligatorio">
+                    No hay más retenciones disponibles.
+                  </ion-label>
                 </ion-col>
                 }
-                <!-- MONTO RET ISLR--->
+                }
+
+                @for(retentionDetail of getSelectedCollectRetentions(); track retentionDetail.idCollectRetention){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-label class="retention-detail-title">
+                    {{retentionDetail.coCollectRetention}} - {{getCollectRetentionName(retentionDetail.coCollectRetention)}}
+                  </ion-label>
+                  <ion-item lines="none" class="retention-amount-item">
+                    <ion-input [id]="getRetentionInputId(retentionDetail.idCollectRetention)"
+                      label="{{this.collectService.collectionTags.get('COB_MONTO')}}"
+                      label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
+                      [value]="formatFromCents(getCollectRetentionCents(retentionDetail.idCollectRetention))"
+                      [disabled]="!this.collectService.validNuRetention"
+                      (keydown)="onCollectRetentionKeyDown(retentionDetail.idCollectRetention, $event)"
+                      (focus)="onCollectRetentionFocus(retentionDetail.idCollectRetention)"
+                      (blur)="onCollectRetentionBlur(retentionDetail.idCollectRetention)"
+                      (input)="onCollectRetentionInput(retentionDetail.idCollectRetention, $event)">
+                    </ion-input>
+                    <ion-button slot="end" fill="clear" color="danger"
+                      (click)="removeCollectRetention(retentionDetail.idCollectRetention)"
+                      [disabled]="!this.collectService.validNuRetention">
+                      <ion-icon name="trash-outline"></ion-icon>
+                    </ion-button>
+                  </ion-item>
+                </ion-col>
+                }
+                }
+                <!-- RETENCIONES DINAMICAS -->
                 }
               </ion-list>
             </ion-col>
@@ -1103,28 +1135,63 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
             </ion-col>
             <!-- FECHA COMP RET  -->
 
-            <!-- MONTO RET IVA-->
+            <!-- RETENCIONES DINAMICAS -->
+            @if(hasCollectRetentions()){
+            @if(hasAvailableCollectRetentions()){
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-              <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
-                label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                [value]="displayRetention || formatFromCents(centsRetention)" (keydown)="onRetentionKeyDown($event)"
-                (focus)="onRetentionFocus()" (blur)="onRetentionBlur()"
-                [disabled]="!this.collectService.validNuRetention">
-              </ion-input>
+              <ion-label class="retention-selector-label">
+                {{this.collectService.collectionTags.get('COB_SELECCIONE')}}
+                {{this.collectService.collectionTags.get('COB_RETENCIONES') || 'Retención'}}
+              </ion-label>
+              <ion-item lines="none" class="retention-selector-item">
+                <div class="listado-enterprise-selector ion-text-center retention-selector-box">
+                  <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
+                    placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR') || 'Seleccione'}}"
+                    [(ngModel)]="selectedCollectRetentionId" [disabled]="!this.collectService.validNuRetention"
+                    (ionChange)="onCollectRetentionSelectionChange($event)">
+                    @for(retention of getAvailableCollectRetentions(); track retention.idCollectRetention){
+                    <ion-select-option [value]="retention.idCollectRetention">
+                      {{retention.coCollectRetention}} - {{retention.naCollectRetention}}
+                    </ion-select-option>
+                    }
+                  </ion-select>
+                </div>
+              </ion-item>
             </ion-col>
-            <!-- MONTO RET IVA--->
-
-            <!-- MONTO RET ISLR-->
+            } @else {
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-              <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
-                label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                [value]="displayRetention2 || formatFromCents(centsRetention2)" (keydown)="onRetention2KeyDown($event)"
-                (focus)="onRetention2Focus()" (blur)="onRetention2Blur()"
-                [disabled]="!this.collectService.validNuRetention">
-              </ion-input>
-
+              <ion-label color="danger" class="campoObligatorio">
+                No hay más retenciones disponibles.
+              </ion-label>
             </ion-col>
-            <!-- MONTO RET ISLR--->
+            }
+            }
+
+            @for(retentionDetail of getSelectedCollectRetentions(); track retentionDetail.idCollectRetention){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-label class="retention-detail-title">
+                {{retentionDetail.coCollectRetention}} - {{getCollectRetentionName(retentionDetail.coCollectRetention)}}
+              </ion-label>
+              <ion-item lines="none" class="retention-amount-item">
+                <ion-input [id]="getRetentionInputId(retentionDetail.idCollectRetention)"
+                  label="{{this.collectService.collectionTags.get('COB_MONTO')}}"
+                  label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
+                  [value]="formatFromCents(getCollectRetentionCents(retentionDetail.idCollectRetention))"
+                  [disabled]="!this.collectService.validNuRetention"
+                  (keydown)="onCollectRetentionKeyDown(retentionDetail.idCollectRetention, $event)"
+                  (focus)="onCollectRetentionFocus(retentionDetail.idCollectRetention)"
+                  (blur)="onCollectRetentionBlur(retentionDetail.idCollectRetention)"
+                  (input)="onCollectRetentionInput(retentionDetail.idCollectRetention, $event)">
+                </ion-input>
+                <ion-button slot="end" fill="clear" color="danger"
+                  (click)="removeCollectRetention(retentionDetail.idCollectRetention)"
+                  [disabled]="!this.collectService.validNuRetention">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-col>
+            }
+            <!-- RETENCIONES DINAMICAS -->
 
             <!-- MONTOT TOTAL RETENIDO-->
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">

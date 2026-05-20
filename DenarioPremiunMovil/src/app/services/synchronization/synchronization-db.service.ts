@@ -83,6 +83,7 @@ import { ReturnCategory } from 'src/app/modelos/tables/returnCategory';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
+import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
@@ -114,7 +115,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 9;
+  private CURRENT_DB_VERSION: number = 11;
 
   constructor(
     private navController: NavController,
@@ -193,7 +194,8 @@ export class SynchronizationDBService {
       { "id": 78, "nameTable": "returnCategory"},
       { "id": 79, "nameTable": "typeDocument" },
       { "id": 80, "nameTable": "codePhoneNumber" },
-      { "id": 81, "nameTable": "unitPriceListTable" }
+      { "id": 81, "nameTable": "unitPriceListTable" },
+      { "id": 83, "nameTable": "collectRetention" }
     ]
   }
 
@@ -348,10 +350,10 @@ export class SynchronizationDBService {
       if (!migrations || migrations.length === 0) return;
       for (const m of migrations) {
         if (typeof m === 'string') {
-          await this.database.executeSql(m, []);
+          await this.executeMigrationSql(m, []);
         } else if (m && m.sql) {
           const params = m.params || [];
-          await this.database.executeSql(m.sql, params);
+          await this.executeMigrationSql(m.sql, params);
         }
       }
     } catch (e) {
@@ -369,6 +371,62 @@ export class SynchronizationDBService {
       console.log('loadMigrationFile error', e);
       return [];
     }
+  }
+
+  private async executeMigrationSql(sql: string, params: any[] = []): Promise<void> {
+    const alterTableAddColumn = this.getAlterTableAddColumnTarget(sql);
+    if (alterTableAddColumn) {
+      const { tableName, columnName } = alterTableAddColumn;
+      const columnExists = await this.checkIfColumnExists(tableName, columnName);
+      if (columnExists) {
+        return;
+      }
+    }
+
+    await this.database.executeSql(sql, params);
+  }
+
+  private getAlterTableAddColumnTarget(sql: string): { tableName: string; columnName: string } | null {
+    const match = /^\s*alter\s+table\s+([^\s]+)\s+add\s+column(?:\s+if\s+not\s+exists)?\s+([^\s]+)/i.exec(sql);
+    if (!match) {
+      return null;
+    }
+
+    const tableName = this.normalizeSqlIdentifier(match[1]);
+    const columnName = this.normalizeSqlIdentifier(match[2]);
+    if (!tableName || !columnName) {
+      return null;
+    }
+
+    return { tableName, columnName };
+  }
+
+  private normalizeSqlIdentifier(identifier: string): string {
+    const trimmed = String(identifier || '').trim().replace(/[;,]+$/, '');
+    const bracketMatch = /^\[(.*)\]$/.exec(trimmed);
+    if (bracketMatch) {
+      return bracketMatch[1];
+    }
+    const quoteMatch = /^"(.*)"$|^'(.*)'$|^`(.*)`$/.exec(trimmed);
+    if (quoteMatch) {
+      return quoteMatch[1] || quoteMatch[2] || quoteMatch[3] || '';
+    }
+    return trimmed;
+  }
+
+  private async checkIfColumnExists(tableName: string, columnName: string): Promise<boolean> {
+    const table = String(tableName).replace(/'/g, "''");
+    const pragmaQuery = `PRAGMA table_info('${table}')`;
+    const result = await this.database.executeSql(pragmaQuery, []);
+
+    for (let i = 0; i < result.rows.length; i++) {
+      const column = result.rows.item(i);
+      if (column?.name === columnName) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   getDataBaseState() {
@@ -1731,6 +1789,26 @@ export class SynchronizationDBService {
     }
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert unit_pricelist ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertCollectRetentionsBatch(arr: CollectRetentions[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO collect_retentions(" +
+      "id_collect_retention, co_collect_retention, na_collect_retention, id_enterprise" +
+      ") " +
+      "VALUES(?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idCollectRetention,
+      arr[i].coCollectRetention, arr[i].naCollectRetention, arr[i].idEnterprise]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert collect_retentions ready")
       return res;
     }).catch(e => {
       console.log(e);

@@ -63,6 +63,7 @@ export interface TablesLastUpdate {
   typeDocumentTableLastUpdate: string,
   codePhoneNumberTableLastUpdate: string,
   unitPriceListTableLastUpdate: string,
+  collectRetentionTableLastUpdate: string,
   page: number
 
 }

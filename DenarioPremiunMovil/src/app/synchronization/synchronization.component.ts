@@ -140,6 +140,7 @@ export class SynchronizationComponent implements OnInit {
     79: 'typeDocument',
     80: 'codePhoneNumber',
     81: 'unit_pricelist',
+    83: 'collectRetention',
   };
 
   /**
@@ -209,6 +210,7 @@ export class SynchronizationComponent implements OnInit {
     typeDocument: 'Tipo de Documento',
     codePhoneNumber: 'Código de Número Telefónico',
     unit_pricelist: 'Lista de Precio por Unidad',
+    collectRetention: 'Retenciones de Cobro',
   };
 
   constructor(
@@ -706,6 +708,11 @@ export class SynchronizationComponent implements OnInit {
           }
           case 81: {
             this.tables.unitPriceListTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 83: {
+            this.tables.collectRetentionTableLastUpdate = result[i].last_update;
             this.tables.page = 0;
             break;
           }
@@ -1403,6 +1410,13 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertUnitPriceListBatch.bind(this.synchronizationServices),
       rowKey: 'unitPriceListTable',
       tableKey: 'unitPriceListTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    collectRetention: {
+      batchFn: this.synchronizationServices.insertCollectRetentionsBatch.bind(this.synchronizationServices),
+      rowKey: 'collectRetentionTable',
+      tableKey: 'collectRetentionTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },

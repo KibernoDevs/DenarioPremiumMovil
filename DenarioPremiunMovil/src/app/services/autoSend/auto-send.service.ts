@@ -253,8 +253,15 @@ export class AutoSendService implements OnInit {
                   nuBalanceDoc: detail.nuBalanceDocOriginal,
                   nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
                 }));
-                request.collection!.collectionPayments = [];
-                resolve("ok");
+                this.collectionService.getCollectionDetailsRetentions(this.dbService.getDatabase(), coTransaction).then((collectionDetailsRetentions) => {
+                  const retentions = collectionDetailsRetentions || [];
+                  for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
+                    const detail = request.collection!.collectionDetails[i] as any;
+                    detail.collectionDetailRetentions = retentions.filter(r => r.coDocument === detail.coDocument) ?? [];
+                  }
+                  request.collection!.collectionPayments = [];
+                  resolve("ok");
+                });
               })
             } else {
               this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
@@ -272,10 +279,17 @@ export class AutoSendService implements OnInit {
                     // Añadir/normalizar la propiedad donde se guardarán los descuentos del detalle
                     detail.collectionDetailDiscounts = discounts.filter(d => d.coDocument === detail.coDocument) ?? [];
                   }
-                  this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
-                    request.collection!.collectionPayments = collectionPayments;
-                    resolve("ok");
-                  })
+                  this.collectionService.getCollectionDetailsRetentions(this.dbService.getDatabase(), coTransaction).then((collectionDetailsRetentions) => {
+                    const retentions = collectionDetailsRetentions || [];
+                    for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
+                      const detail = request.collection!.collectionDetails[i] as any;
+                      detail.collectionDetailRetentions = retentions.filter(r => r.coDocument === detail.coDocument) ?? [];
+                    }
+                    this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
+                      request.collection!.collectionPayments = collectionPayments;
+                      resolve("ok");
+                    })
+                  });
                 });
               })
             }

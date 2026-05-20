@@ -177,6 +177,47 @@ ion-modal.collectDiscounts {
   }
 }
 
+.retention-selector-label {
+  display: block;
+  margin: 4px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666666;
+}
+
+.retention-selector-item {
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.retention-selector-box {
+  text-align: center !important;
+  border: 1px solid #9c9c9c;
+  border-radius: 25px;
+  font-weight: bold;
+  height: 40px;
+  padding-left: 5%;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.retention-selector-box ion-select::part(icon) {
+  display: none !important;
+}
+
+.retention-detail-title {
+  display: block;
+  margin: 6px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.retention-amount-item {
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
 .saldo-legend {
   display: flex;
   flex-wrap: nowrap;
