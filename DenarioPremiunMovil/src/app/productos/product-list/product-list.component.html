@@ -1,15 +1,14 @@
 <div class="listado-product-structures">
-    @if(noProductsAlertShown){
-    <ion-item>
-      <ion-label class="ion-text-center" style="color: red;">
-        {{orderService.getTag("DENARIO_SIN_RESULTADOS")}}
-      </ion-label>
-    </ion-item>
-    }
+  @if(noProductsAlertShown){
+  <ion-item>
+    <ion-label class="ion-text-center" style="color: red;">
+      {{orderService.getTag("DENARIO_SIN_RESULTADOS")}}
+    </ion-label>
+  </ion-item>
+  }
   <!--  Listado clickeable de productos  -->
   <div class="product-card" *ngIf="!selectedProduct">
-    <ion-list class="espacioListasProductos" 
-      >
+    <ion-list class="espacioListasProductos">
       @for(product of productList; track product.idProduct; let i = $index){
       <div class="product-structure-title" (click)="onShowProductDetail(product)">
         <ion-item button detail="false">
@@ -18,47 +17,52 @@
             <img class="productImage" alt="" loading="lazy"
               [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
           </ion-label>
-        }
+          }
           <ion-label class="textList espaciotextoListaProduc">
             <p class="espacioentrelineas">{{ product.naProduct }}</p>
             <p class="espacioentrelineas">{{this.productTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
-            @if(orderService.unitByPriceList){
-              @for(price of product.listPrices; track price.idList){
-                <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNumber(price.nuPrice) : 'N/A'
+            @if(this.orderService.unitByPriceList){
+            @for(price of product.listPrices; track price.idList){
+            <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ?
+              formatNumber(price.nuPrice) : 'N/A'
               }} {{ product.coCurrency }} </p>
-              @if(showConversionInfo){
-                <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? convertPrice(price.nuPrice, product.coCurrency) : 'N/A' }} {{ product.coCurrencyOpposite }} </p>
-              }
-              }
+            @if(showConversionInfo){
+            <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ?
+              convertPrice(price.nuPrice, product.coCurrency) : 'N/A' }} {{ product.coCurrencyOpposite }} </p>
             }
-            @else{
+            }
+            } @else{
             <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }}
               {{ product.coCurrency }}</p>
-            
-              @if(showConversionInfo && product.priceOpposite){
+
+            @if(showConversionInfo && product.priceOpposite){
             <p class="espacioentrelineas">
               {{this.productTags.get('PROD_PRICE_PROD')}}:
               {{ formatNumber(product.priceOpposite) }} {{product.coCurrencyOpposite }} </p>
             }
             }
-              @if(this.productService.vatExemptProducts){
+            @if(this.productService.userCanSelectIVA){
+            @if(this.productService.vatExemptProducts){
             <p class="espacioentrelineas">
-            {{this.productTags.get('PROD_IVA')}}:
+              {{this.productTags.get('PROD_IVA')}}:
               {{ formatNumber(product.nuTax) }} % </p>
             }
             @if(!this.orderService.unitByPriceList && product.nuTax && product.nuTax > 0){
-              <p class="espacioentrelineas">
-                {{this.productTags.get('PROD_PRICE_WITH_IVA')}}: {{ getPrecioConIVA(product.price, product.nuTax) }} {{ product.coCurrency }}
-              </p>
-              @if(showConversionInfo && product.priceOpposite){
-              <p *ngIf="showConversionInfo && product.priceOpposite" class="espacioentrelineas">
-                {{this.productTags.get('PROD_PRICE_WITH_IVA')}}:
-                {{ getPrecioConIVA(product.priceOpposite, product.nuTax) }} {{product.coCurrencyOpposite }} </p>
-              }
+            <p class="espacioentrelineas">
+              {{this.productTags.get('PROD_PRICE_WITH_IVA')}}: {{ getPrecioConIVA(product.price, product.nuTax) }} {{
+              product.coCurrency }}
+            </p>
+            @if(showConversionInfo && product.priceOpposite){
+            <p *ngIf="showConversionInfo && product.priceOpposite" class="espacioentrelineas">
+              {{this.productTags.get('PROD_PRICE_WITH_IVA')}}:
+              {{ getPrecioConIVA(product.priceOpposite, product.nuTax) }} {{product.coCurrencyOpposite }} </p>
+            }
+            }
             }
             @if(this.orderService.showStock){
             <p class="espacioentrelineas">
-              {{this.productTags.get('PROD_STOCK_PROD')}}: {{ this.productService.formatStock(product.stock, this.orderService.quUnitDecimals) }}</p>
+              {{this.productTags.get('PROD_STOCK_PROD')}}: {{ this.productService.formatStock(product.stock,
+              this.orderService.quUnitDecimals) }}</p>
             }
             @if(this.orderService.displayProductPoints){
             <p class="espacioentrelineas">
@@ -68,21 +72,23 @@
             @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(product.idProduct)){
             @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum > 1 ){
             <p class="espacioentrelineas">
-              {{this.orderService.getTag('PED_MINIMO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum }}
-            </p>
-          }
-          @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple > 1 ){
-            <p class="espacioentrelineas">
-              {{this.orderService.getTag('PED_MULTIPLO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple }}
+              {{this.orderService.getTag('PED_MINIMO')}}: {{
+              this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum }}
             </p>
             }
-          }
+            @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple > 1 ){
+            <p class="espacioentrelineas">
+              {{this.orderService.getTag('PED_MULTIPLO')}}: {{
+              this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple }}
+            </p>
+            }
+            }
 
           </ion-label>
           <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
         </ion-item>
       </div>
-    }
+      }
     </ion-list>
     <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
       <ion-infinite-scroll-content loadingText="Por favor espere..."

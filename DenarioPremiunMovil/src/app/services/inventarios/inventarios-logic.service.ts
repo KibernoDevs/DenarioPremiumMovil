@@ -30,6 +30,7 @@ import { InvoiceDetailUnit } from 'src/app/modelos/tables/invoiceDetailUnit';
 
 
 
+
 @Injectable({
   providedIn: 'root'
 })
@@ -586,6 +587,13 @@ export class InventariosLogicService {
     for (var i = 0; i < this.newClientStock.clientStockDetails.length; i++) {
       let mapUnits = new Map<number, UnitSuggestedUtil>();
       for (var j = 0; j < this.newClientStock.clientStockDetails[i].clientStockDetailUnits.length; j++) {
+        let unit = mapUnits.get(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit);
+        if(unit){
+          //Actualizamos el stock actual sumando las unidades de cada detalle, esto para tener un total por unidad de producto y no por detalle
+          unit.currentStock += this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].quStock;
+          mapUnits.set(unit.idProductUnit, unit);
+          continue;
+        }else{
         let unitSuggestedUtil: UnitSuggestedUtil = {
           idUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit,
           idProductUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit,
@@ -603,6 +611,7 @@ export class InventariosLogicService {
         }
         
         mapUnits.set(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit, unitSuggestedUtil);
+      }
       }
       mapProducts.set(this.newClientStock.clientStockDetails[i].idProduct, mapUnits);
     }
