@@ -1,0 +1,27 @@
+[
+    {
+        "sql":"ALTER TABLE return_types ADD COLUMN id_return_category integer;",
+        "description":"Se agrega la columna 'id_return_category' a la tabla 'return_types' para establecer una relación con la categoría de devolución."
+    },
+    {
+        "sql": "ALTER TABLE client_stocks ADD COLUMN days_since_last INTEGER;",
+        "description": "Se agrega la columna 'days_since_last' a la tabla 'client_stocks' para almacenar los días desde el último inventario."
+    },
+    {
+        "sql":" ALTER TABLE client_stocks ADD COLUMN days_until_next INTEGER;",
+        "description":"Se agrega la columna 'days_until_next' a la tabla 'client_stocks' para almacenar los días hasta el próximo inventario."
+
+    },
+    {
+        "sql": "ALTER TABLE order_types ADD COLUMN items_limit INTEGER NOT NULL DEFAULT 0;",
+        "description": "Se agrega la columna 'items_limit' a la tabla 'order_types' para activar límite de productos distintos por pedido."
+    },
+    {
+        "sql": "ALTER TABLE order_types ADD COLUMN qu_items INTEGER NOT NULL DEFAULT 0;",
+        "description": "Se agrega la columna 'qu_items' a la tabla 'order_types' para la cantidad máxima de productos distintos cuando items_limit está activo."
+    },
+    {
+        "sql": "ALTER TABLE collect_discounts ADD COLUMN id_enterprise INTEGER;",
+        "description": "Se agrega la columna 'id_enterprise' a 'collect_discounts' para filtrar descuentos de cobro por empresa."
+    }
+]

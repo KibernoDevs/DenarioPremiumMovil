@@ -98,6 +98,8 @@ export class InventarioContainerComponent implements OnInit {
     this.inventariosLogicService.inventarioList = false;
     this.inventariosLogicService.showHeaderButtonsFunction(true);
     this.inventariosLogicService.initClientStockDetails();
+    this.inventariosLogicService.newClientStock.daysSinceLast = 1;
+    this.inventariosLogicService.newClientStock.daysUntilNext = 1;
   }
 
   findClientStock() {

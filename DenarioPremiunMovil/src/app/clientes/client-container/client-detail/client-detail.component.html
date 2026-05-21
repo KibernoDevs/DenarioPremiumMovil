@@ -65,21 +65,21 @@
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
             {{localCurrency}}:</ion-col>
-          <ion-col [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
+          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
         </ion-row>
         }
         @if(this.clientLogic.showConversion && !this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
             {{hardCurrency}}:</ion-col>
-          <ion-col [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
+          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
         </ion-row>
         }
         @if(!this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
             {{client.coCurrency}}:</ion-col>
-          <ion-col>{{client.nuCreditLimit}} </ion-col>
+          <ion-col>{{formatNumber(client.nuCreditLimit)}} </ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}

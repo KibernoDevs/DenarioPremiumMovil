@@ -63,12 +63,12 @@ export class ReturnLogicService {
 
   messageAlert!: MessageAlert;
   tags = new Map<string, string>([]);
-  selectedReturn: Boolean = false;
-  returnSent: Boolean = false;
-  returnChanged: Boolean = false;
-  validateReturn: Boolean = false;
-  requeridedNroFactura: Boolean = false;
-  userMustActivateGPS: Boolean = false;
+  selectedReturn: boolean = false;
+  returnSent: boolean = false;
+  returnChanged: boolean = false;
+  validateReturn: boolean = false;
+  requeridedNroFactura: boolean = false;
+  userMustActivateGPS: boolean = false;
   validateClient: boolean = false;
   bloquearFactura: boolean = true;
 

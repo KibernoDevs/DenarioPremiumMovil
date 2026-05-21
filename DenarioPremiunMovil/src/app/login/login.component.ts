@@ -67,7 +67,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.6.12";
+    this.versionApp = "6.6.14";
 
     if (localStorage.getItem("tokenExpired") === "true") {
       localStorage.removeItem("tokenExpired");

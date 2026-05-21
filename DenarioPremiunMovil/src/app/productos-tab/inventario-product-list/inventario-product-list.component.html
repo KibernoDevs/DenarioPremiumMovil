@@ -3,24 +3,24 @@
   <!--  Listado clickeable de productos  -->
   <div class="product-card product-structure-scroll">
     <div class="inventory-type-selector ion-padding-horizontal ion-padding-top">
-      <ion-label class="selector-title">Ubicacion del inventario</ion-label>
+      <ion-label class="selector-title">{{this.productsTabTags.get('PROD_INV_LIST_UBICACION') || 'Ubicación del inventario'}}</ion-label>
       <ion-segment [value]="selectedInventoryType" (ionChange)="onInventoryTypeChanged($event.detail.value)">
         <ion-segment-button value="exh">
-          <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion'}}</ion-label>
+          <ion-label>{{this.productsTabTags.get('PROD_INV_SEGMENT_EXH') || 'Exhibición'}}</ion-label>
         </ion-segment-button>
         <ion-segment-button value="dep">
-          <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito'}}</ion-label>
+          <ion-label>{{this.productsTabTags.get('PROD_INV_SEGMENT_DEP') || 'Depósito'}}</ion-label>
         </ion-segment-button>
       </ion-segment>
 
-      <ion-label class="selector-title inventory-filter-title">Filtro de productos</ion-label>
+      <ion-label class="selector-title inventory-filter-title">{{this.productsTabTags.get('PROD_INV_LIST_FILTRO') || 'Filtro de productos'}}</ion-label>
       <ion-segment class="inventory-filter-segment" [value]="inventoryFilter"
         (ionChange)="onInventoryFilterChanged($event.detail.value)">
         <ion-segment-button value="all">
-          <ion-label>Todos</ion-label>
+          <ion-label>{{this.productsTabTags.get('PROD_INV_LIST_FILTRO_TODOS') || 'Todos'}}</ion-label>
         </ion-segment-button>
         <ion-segment-button value="inventoried">
-          <ion-label>Inventariados</ion-label>
+          <ion-label>{{this.productsTabTags.get('PROD_INV_LIST_FILTRO_INVENTARIADOS') || 'Inventariados'}}</ion-label>
         </ion-segment-button>
       </ion-segment>
     </div>
@@ -45,7 +45,7 @@
               <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
               @if(isProductInventoried(product)){
               <p class="product-inventoried-chip">
-                Inventariado: {{ getInventoryLocationLabel(product) }}
+                {{this.productsTabTags.get('PROD_INV_LIST_CHIP_INVENTARIADO') || 'Inventariado:'}} {{ getInventoryLocationLabel(product) }}
               </p>
               }
             </ion-label>
@@ -58,7 +58,7 @@
 
       </ion-list>
       <ion-infinite-scroll class="products-infinite-scroll" (ionInfinite)="onIonInfinite($event)">
-        <ion-infinite-scroll-content loadingText="Por favor espere..."
+        <ion-infinite-scroll-content [loadingText]="this.productsTabTags.get('DENARIO_SCROLL_TEXT') || 'Por favor espere...'"
           loadingSpinner="bubbles"></ion-infinite-scroll-content>
       </ion-infinite-scroll>
     </ion-content>
@@ -81,7 +81,7 @@
 
         <ion-title class="inventory-modal-title">
           <div class="modal-product-name">
-            {{inventariosLogicService.productSelected.naProduct || 'Inventario'}}
+            {{inventariosLogicService.productSelected.naProduct || this.productsTabTags.get('PROD_STOCK_PROD') || 'Inventario'}}
           </div>
         </ion-title>
 
@@ -98,10 +98,10 @@
       <div class="modal-type-selector">
         <ion-segment [value]="modalInventoryType" (ionChange)="onModalInventoryTypeChanged($event.detail.value)">
           <ion-segment-button value="exh">
-            <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion'}}</ion-label>
+            <ion-label>{{this.productsTabTags.get('PROD_INV_SEGMENT_EXH') || 'Exhibición'}}</ion-label>
           </ion-segment-button>
           <ion-segment-button value="dep">
-            <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito'}}</ion-label>
+            <ion-label>{{this.productsTabTags.get('PROD_INV_SEGMENT_DEP') || 'Depósito'}}</ion-label>
           </ion-segment-button>
         </ion-segment>
       </div>
@@ -113,8 +113,8 @@
           <ion-card-header>
             <div class="capture-header-row">
               <ion-card-title>
-                {{modalInventoryType === 'exh' ? (this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion') :
-                (this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito')}}
+                {{modalInventoryType === 'exh' ? (this.productsTabTags.get('PROD_INV_SEGMENT_EXH') || 'Exhibición') :
+                (this.productsTabTags.get('PROD_INV_SEGMENT_DEP') || 'Depósito')}}
                 - {{i + 1}}
               </ion-card-title>
               @if(inventoryRows.length >= 1){
@@ -127,12 +127,18 @@
           </ion-card-header>
           <ion-card-content>
             <ion-item class="capture-form-item" lines="none">
-              <ion-input class="capture-input" type="number" min="1" label="Cantidad" labelPlacement="stacked"
-                fill="outline" placeholder="Ingresa cantidad" [(ngModel)]="row.cantidad"></ion-input>
+              <ion-input class="capture-input" type="number" min="1"
+                label="{{this.productsTabTags.get('PROD_INV_CAPTURE_CANTIDAD') || 'Cantidad'}}"
+                labelPlacement="stacked" fill="outline"
+                placeholder="{{this.productsTabTags.get('PROD_INV_CAPTURE_PLACEHOLDER_CANTIDAD') || 'Ingrese cantidad'}}"
+                [(ngModel)]="row.cantidad"></ion-input>
             </ion-item>
             <ion-item class="capture-form-item" lines="none">
-              <ion-input class="capture-input" label="Lote" labelPlacement="stacked" fill="outline"
-                placeholder="Ingresa lote" [(ngModel)]="row.lote"></ion-input>
+              <ion-input class="capture-input"
+                label="{{this.productsTabTags.get('PROD_INV_CAPTURE_LOTE') || 'Lote'}}" labelPlacement="stacked"
+                fill="outline"
+                placeholder="{{this.productsTabTags.get('PROD_INV_CAPTURE_PLACEHOLDER_LOTE') || 'Ingrese lote'}}"
+                [(ngModel)]="row.lote"></ion-input>
             </ion-item>
             <ion-item class="capture-form-item" lines="none">
               <ion-select class="capture-select" labelPlacement="stacked" interface="popover" fill="outline"
@@ -144,15 +150,15 @@
             </ion-item>
 
             <ion-item>
-              <ion-label>Fecha de vencimiento</ion-label>
+              <ion-label>{{this.productsTabTags.get('PROD_INV_CAPTURE_FECHA_VENCIMIENTO') || 'Fecha de vencimiento'}}</ion-label>
               <ion-datetime-button [datetime]="'expDate' + i"></ion-datetime-button>
             </ion-item>
             <ion-modal [keepContentsMounted]="true">
               <ng-template>
                 <ion-datetime [id]="'expDate' + i" presentation="date" [(ngModel)]="row.fechaVencimiento"
                   [showDefaultButtons]="true" max="2100-12-31T23:59:59"
-                  doneText="{{this.productsTabTags.get('INV_BOTON_ACEPTAR') || 'Aceptar'}}"
-                  cancelText="{{this.productsTabTags.get('INV_BOTON_CANCELAR') || 'Cancelar'}}"></ion-datetime>
+                  doneText="{{this.productsTabTags.get('DENARIO_BOTON_ACEPTAR') || 'Aceptar'}}"
+                  cancelText="{{this.productsTabTags.get('DENARIO_BOTON_CANCELAR') || 'Cancelar'}}"></ion-datetime>
               </ng-template>
             </ion-modal>
 

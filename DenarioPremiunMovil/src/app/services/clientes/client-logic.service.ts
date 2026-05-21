@@ -349,6 +349,8 @@ export class ClientLogicService {
       // 2) Obtener documentos de venta del cliente
       const docsResult = await this.clientesServices.getDocumentSaleByIdClient(Number(idClient));
       if (Array.isArray(docsResult)) {
+        //esta conversion no se deberia hacer si no se esta haciendo en Cobros. Deben verse igual en cobros y aca.
+        /*
         if (this.localCurrencyDefault) {
           for (const c of docsResult) {
             if (c.coCurrency !== this.localCurrency.coCurrency) {
@@ -376,7 +378,7 @@ export class ClientLogicService {
             }
           }
         }
-
+        */
         this.datos.document = docsResult;
         this.datos.document.forEach((doc) => {
           if (typeof doc.daDocument === 'string' && doc.daDocument.includes('-')) {

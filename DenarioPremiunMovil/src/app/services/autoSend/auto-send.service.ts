@@ -493,6 +493,7 @@ export class AutoSendService implements OnInit {
         const promesa = new Promise<ClientStocks>((resolve, reject) => {
           this.inventariosLogicService.getClientStock(this.dbService.getDatabase(), coTransaction).then(clientStock => {
             console.log(clientStock);
+            /* ya se buscan los details en el getClientStock. no es necesario hacer otras consultas.
             for (var i = 0; i < clientStock.clientStockDetails.length; i++) {
               this.inventariosLogicService.getClientStockDetailsUnits(this.dbService.getDatabase(), clientStock.clientStockDetails[i].coClientStockDetail, i).then(data => {
                 console.log(data);
@@ -505,11 +506,12 @@ export class AutoSendService implements OnInit {
                 }
                 console.log(clientStock.clientStockDetails[index]);
                 if (index == clientStock.clientStockDetails.length - 1)
+
                   resolve(clientStock)
               })
 
-            }
-
+            }*/
+            resolve(clientStock);
           }).catch(e => {
             console.log("Error al ejecutar getClientStock.");
             console.log(e);
@@ -611,10 +613,7 @@ export class AutoSendService implements OnInit {
             return;
           }
 
-          if (this.isBadRequestResponse(result)) {
-            this.handleBadRequestPendingTransaction(type, coTransaction, result);
-            return;
-          }
+
 
           if (result && result.errorCode == "066") {
             //que se baje de la mula, nojoda!
@@ -625,77 +624,72 @@ export class AutoSendService implements OnInit {
             this.messageService.alertModal(this.messageAlert);
             return;
           }
-          if (result && this.isBadRequestResult(result)) {
-            /*  this.messageAlert = new MessageAlert(
-               "Denario Premium",
-               result.errorMessage || "Ocurrió un error al enviar la transacción."
-             );
-             this.messageService.alertModal(this.messageAlert); */
-            void this.handleFailedTransaction(coTransaction, type, request, result);
+
+          if (this.isBadRequestResponse(result)) {
+            void this.handleBadRequestFailedTransaction(coTransaction, type, request, result);
+            return;
           }
+
+          if (this.shouldSkipAndKeepPending(result)) {
+            console.warn(
+              `[AutoSendService] Error > 99 (no 400). Se salta y se mantiene en pendientes ${type}:${coTransaction}`,
+              result
+            );
+            return;
+          }
+
+          console.warn(
+            `[AutoSendService] Se mantiene en pendientes ${type}:${coTransaction} por error no-400`,
+            result
+          );
         },
         complete: () => {
           console.info('complete');
         },
         error: (e) => {
           if (this.isBadRequestError(e)) {
-            this.handleBadRequestPendingTransaction(type, coTransaction, e);
+            void this.handleBadRequestFailedTransaction(
+              coTransaction,
+              type,
+              request,
+              this.normalizeHttpErrorPayload(e)
+            );
+            return;
+          }
+          if (this.shouldSkipAndKeepPending(e)) {
+            console.warn(
+              `[AutoSendService] Error > 99 (no 400). Se salta y se mantiene en pendientes ${type}:${coTransaction}`,
+              e
+            );
             return;
           }
           console.error(e);
-          /*
-          this.messageAlert = new MessageAlert(
-            "Denario Premium",
-            "Ocurrio un error contacte a su proveedor de servicio"
+          console.warn(
+            `[AutoSendService] Se mantiene en pendientes ${type}:${coTransaction} por error no-400`,
+            e
           );
-          this.messageService.alertModal(this.messageAlert);
-          */
         },
       });
     }
   }
 
+  /** Solo HTTP 400 / Bad Request: sale de pendientes y va a failed_transactions. */
   private isBadRequestResponse(result: any): boolean {
     if (!result) {
       return false;
     }
 
-    // Detectar cualquier error de servidor (status >= 400)
-    const status = Number(result.status ?? result.statusCode ?? result.httpStatus);
-    if (!isNaN(status) && status >= 400) {
+    const status = Number(result.httpStatus ?? result.status ?? result.statusCode);
+    if (status === 400) {
       return true;
     }
 
-    const errorCode = result.errorCode ?? result.code;
-    if (!isNaN(Number(errorCode)) && Number(errorCode) >= 400) {
-      return true;
-    }
-
-    if (typeof errorCode === 'string') {
-      const normalizedCode = errorCode.toUpperCase();
-      if (
-        normalizedCode === '400' ||
-        normalizedCode === 'BAD_REQUEST' ||
-        normalizedCode === 'ERR_BAD_REQUEST' ||
-        normalizedCode.startsWith('ERR_') ||
-        normalizedCode.includes('ERROR') ||
-        normalizedCode.startsWith('5') // errores 5xx
-      ) {
-        return true;
-      }
-    }
-
-    // Si el mensaje contiene palabras clave de error
-    const message = `${result.errorMessage ?? result.message ?? ''}`.toLowerCase();
+    const code = String(result.errorCode ?? result.code ?? '').trim();
+    const normalizedCode = code.toUpperCase();
     if (
-      message.includes('bad request') ||
-      message.includes('error') ||
-      message.includes('fail') ||
-      message.includes('server') ||
-      message.includes('internal') ||
-      message.includes('not found') ||
-      message.includes('forbidden') ||
-      message.includes('unauthorized')
+      code === '400' ||
+      normalizedCode === 'BAD_REQUEST' ||
+      normalizedCode === 'ERR_BAD_REQUEST'
     ) {
       return true;
     }
@@ -725,57 +719,87 @@ export class AutoSendService implements OnInit {
       }
     }
 
-    const message = `${error.message ?? error?.error?.message ?? error?.error?.error ?? ''}`.toLowerCase();
-    return message.includes('bad request');
+    return false;
   }
 
-  private handleBadRequestPendingTransaction(type: string, coTransaction: string, payload?: any): void {
-    console.warn(`[AutoSendService] Bad request detectado para transacción pendiente ${type}:${coTransaction}`, payload);
-
-    const pendingType = type;
-    const pendingTransaction = coTransaction;
-
-    if (pendingType === 'collect') {
-      this.collectionService.updateDocumentStForDelete(this.dbService.getDatabase(), pendingTransaction)
-        .then(() => {
-          this.deletePendingTransaction(pendingTransaction, pendingType);
-        })
-        .catch((error) => {
-          console.error(`[AutoSendService] Error al restaurar document_st para ${pendingTransaction}`, error);
-          this.deletePendingTransaction(pendingTransaction, pendingType);
-        });
-      return;
+  private shouldSkipAndKeepPending(payload: any): boolean {
+    if (!payload) {
+      return false;
     }
 
-    this.deletePendingTransaction(pendingTransaction, pendingType);
+    const status = Number(payload.httpStatus ?? payload.status ?? payload.statusCode ?? payload?.error?.status ?? payload?.error?.statusCode);
+    if (!isNaN(status)) {
+      return status > 99 && status !== 400;
+    }
+
+    const rawCode = payload.errorCode ?? payload.code ?? payload?.error?.errorCode ?? payload?.error?.code;
+    const numericCode = Number(rawCode);
+    if (!isNaN(numericCode)) {
+      return numericCode > 99 && numericCode !== 400;
+    }
+
+    if (typeof rawCode === 'string') {
+      const normalizedCode = rawCode.trim().toUpperCase();
+      if (normalizedCode.startsWith('5')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
-  /** Solo errores HTTP 400 / Bad Request (cuerpo o código de negocio). */
-  private isBadRequestResult(result: any): boolean {
-    if (result.httpStatus === 400) {
-      return true;
-    }
-    const code = String(result.errorCode ?? '').trim();
-    if (code === '400') {
-      return true;
-    }
-    const msg = String(result.errorMessage ?? '').toLowerCase();
-    return msg.includes('bad request');
-  }
-
-  private async handleFailedTransaction(coTransaction: string, type: string, request: any, result: any): Promise<void> {
+  private async handleBadRequestFailedTransaction(
+    coTransaction: string,
+    type: string,
+    request: any,
+    payload?: any
+  ): Promise<void> {
     try {
+      if (type === 'collect') {
+        await this.restoreCollectDocumentStatus(coTransaction);
+      }
+
       await this.insertFailedTransaction(
         coTransaction,
         type,
-        result?.errorCode ?? '',
-        result?.errorMessage ?? 'Transacción fallida sin mensaje de backend.',
+        payload?.errorCode ?? '400',
+        payload?.errorMessage ?? 'Bad request al enviar la transacción.',
         request
       );
+
       await this.deletePendingTransaction(coTransaction, type);
-      await this.runPendingQueue();
     } catch (e) {
-      console.log('Error al mover la transacción fallida fuera de la cola', e);
+      console.log('Error al mover bad request a transacciones fallidas', e);
+    }
+  }
+
+  private normalizeHttpErrorPayload(error: any): { errorCode: string; errorMessage: string } {
+    const nested = error?.error ?? {};
+    const status = error?.status ?? error?.statusCode ?? nested?.status ?? nested?.statusCode;
+    const errorCode = String(
+      error?.code ?? error?.errorCode ?? nested?.code ?? nested?.errorCode ?? status ?? ''
+    );
+    const errorMessage = String(
+      error?.message ??
+        nested?.message ??
+        nested?.errorMessage ??
+        nested?.error ??
+        'Error de servidor al enviar la transacción.'
+    );
+    return { errorCode, errorMessage };
+  }
+
+  private async restoreCollectDocumentStatus(coTransaction: string): Promise<void> {
+    try {
+      await this.collectionService.updateDocumentStForDelete(
+        this.dbService.getDatabase(),
+        coTransaction
+      );
+    } catch (error) {
+      console.error(
+        `[AutoSendService] Error al restaurar document_st para cobro fallido ${coTransaction}`,
+        error
+      );
     }
   }
 

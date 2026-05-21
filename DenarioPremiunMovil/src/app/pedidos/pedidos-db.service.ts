@@ -26,6 +26,7 @@ import { ProductMinMulFav } from '../modelos/tables/productMinMul';
 import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { Client } from '../modelos/tables/client';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
+import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
 @Injectable({
   providedIn: 'root'
@@ -56,13 +57,18 @@ export class PedidosDbService {
 
   getOrderTypes(db: SQLiteObject, coEnterprise: string) {
     let query = "SELECT id_order_type as idOrderType, co_order_type as coOrderType, na_order_type as naOrderType, " +
-      "default_value as defaultValue, co_enterprise as coEnterprise " +
+      "default_value as defaultValue, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
+      "items_limit as itemsLimit, qu_items as quItems " +
       "from order_types where co_enterprise = ? order by default_value DESC";
 
     return db.executeSql(query, [coEnterprise]).then(data => {
       let list: OrderType[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i) as OrderType;
+        row.defaultValue = !!row.defaultValue;
+        row.itemsLimit = !!row.itemsLimit;
+        row.quItems = Number(row.quItems ?? 0);
+        list.push(row);
       }
       return list;
     })
@@ -827,6 +833,28 @@ export class PedidosDbService {
       let list: ClientAvgProduct[] = [];
       for (let i = 0; i < data.rows.length; i++) {
         list.push(data.rows.item(i));
+      }
+      return list;
+    });
+  }
+
+  getUnitPriceList(db: SQLiteObject, idEnterprise: number) {
+    let query = "SELECT * from unit_pricelist where id_enterprise = ?";
+    return db.executeSql(query, [idEnterprise]).then(data => {
+      let list: UnitPriceList[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        let item = data.rows.item(i);
+        let upl: UnitPriceList = {
+          idUnitPriceList: item.id_unit_price_list,
+          coUnitPriceList: item.co_unit_price_list,
+          idUnit: item.id_unit,
+          coUnit: item.co_unit,
+          idList: item.id_list,
+          coList: item.co_list,
+          idEnterprise: item.id_enterprise,
+          coEnterprise: item.co_enterprise
+        };
+        list.push(upl);
       }
       return list;
     });

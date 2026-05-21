@@ -46,6 +46,8 @@ import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { ClientStocks } from '../modelos/tables/client-stocks';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
 import { CurrencyModules } from '../modelos/tables/currencyModules';
+import { ProductSuggestedUtil } from '../modelos/ProductSuggestedUtil';
+import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
 
 
@@ -91,6 +93,7 @@ export class PedidosService {
   public listaPedidos: ItemListaPedido[] = [];
   public listaList: List[] = [];
   public listaInfoModalList: List[] = [];
+  public listaUnitPriceList: UnitPriceList [] = [];
   public ivaList: IvaList[] = [];
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
@@ -132,11 +135,14 @@ export class PedidosService {
     empresa: { idEnterprise: 0, coEnterprise: '' } as Enterprise,
     cliente: { lbClient: this.getTag("PED_PLACEHOLDER_CLIENTE") } as Client,
     direccion: { idAddress: 0 } as AddresClient,
-    productos: [],
+    productUtils: [] as ProductSuggestedUtil[],
     list: {} as List,
     enviar: false,
     coClientStock: "",
     idClientStock: 0,
+    idProducts: [],
+    idUnits: [],
+    idProductUnits: [],
   }
 
   coClientStockAEnviar = '';
@@ -218,6 +224,7 @@ export class PedidosService {
 
   public displayProductPoints = false;
   public priceListInfoModal = false;
+  public unitByPriceList = false; //[unitByPriceList] muestra el precio de la otra unidad en el producto.
 
   codeTotalProductUnitMessageFlag = false;
 
@@ -249,7 +256,7 @@ export class PedidosService {
     let coEnterprise = this.empresaSeleccionada.coEnterprise;
     this.getConfig();
     if (this.monedaSeleccionada == null) {
-      this.monedaSeleccionada = this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+      this.currencySelection();
     }
 
     /*
@@ -312,6 +319,11 @@ export class PedidosService {
         this.listaInfoModalPricelist = data; 
       }); 
     });
+    }
+
+    if(this.unitByPriceList){
+      //para hacer el cambio automatico de unidad segun la lista de precio
+      this.getUnitPriceList(idEnterprise).then(data => { this.listaUnitPriceList = data; });
     }
 
   }
@@ -402,7 +414,7 @@ export class PedidosService {
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
-
+    this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -476,16 +488,42 @@ export class PedidosService {
   }
 
 
+  private isDistinctItemsLimitConfigured(): boolean {
+    const t = this.tipoOrden;
+    if (!t || t.quItems <= 0) {
+      return false;
+    }
+    const raw = t.itemsLimit as boolean | number | string | undefined;
+    return raw === true || raw === 1 || raw === '1';
+  }
+
+  private notifyIfDistinctItemsLimitJustReached(distinctNewLineAdded: boolean): void {
+    if (!distinctNewLineAdded || !this.isDistinctItemsLimitConfigured()) {
+      return;
+    }
+    const t = this.tipoOrden;
+    if (!t || this.carrito.length !== t.quItems) {
+      return;
+    }
+    this.message.transaccionMsjModalNB(
+      this.getTag('PED_LIMITE_ITEMS_TOPE_ALCANZADO') +
+        `${this.carrito.length}/${t.quItems}.`,
+    );
+  }
+
   alCarrito(prod: OrderUtil) {
     let sustitucion = false;
     if (prod.quAmount <= 0) {
       this.removeFromCarrito(prod);
       return;
     }
+    const t = this.tipoOrden;
+    const limitActive = this.isDistinctItemsLimitConfigured();
     if (this.carrito.length < 1) {
       //si no hay elementos, no hay nada que chequear.
       prod.idInfo = 0;
       this.carrito.push(prod);
+      this.notifyIfDistinctItemsLimitJustReached(true);
     } else {
       //si el elemento existe, se sustituye
       for (let i = 0; i < this.carrito.length; i++) {
@@ -498,8 +536,15 @@ export class PedidosService {
         item.idInfo = i;
       }
       if (!sustitucion) {
+        if (limitActive && t && this.carrito.length >= t.quItems) {
+          this.message.transaccionMsjModalNB(
+            this.getTag('PED_LIMITE_ITEMS_DISTINTOS') + String(t.quItems) + '.',
+          );
+          return;
+        }
         prod.idInfo = this.carrito.length;
         this.carrito.push(prod);
+        this.notifyIfDistinctItemsLimitJustReached(true);
 
       }
     }
@@ -591,6 +636,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
+        var nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [];
         if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
@@ -627,6 +673,25 @@ export class PedidosService {
             }
           });
         }
+        if(this.unitByPriceList){
+          //llenamos la lista a mostrar en el producto.
+          priceLists.forEach(pl => {
+            let list = this.listaList.filter(l => l.idList == pl.idList)[0];
+            //buscamos el nombre de la unidad de la lista de precio
+            let idUnitPL = this.listaUnitPriceList.filter(u => u.idList == pl.idList)[0]?.idUnit;
+            let naUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
+            let coUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
+
+            if(list){
+              nuPriceList.push({
+                                idList: list.idList, 
+                                naList: list.naList, 
+                                nuPrice: pl.nuPrice,
+                                coUnit: coUnit
+                              });
+            }
+          });
+        }
         //FIN LISTA DE PRECIOS
         //IVA
         let ivaProducto = 0;
@@ -650,8 +715,14 @@ export class PedidosService {
         var stock = stockList.filter(s => s.idWarehouse == this.cliente.idWarehouse)[0];
         //si el usuario no puede cambiar el warehouse,
         //se queda con el del cliente aunque no tenga stock
-        if (this.userCanChangeWarehouse && (stock == null || stock == undefined)) {
-          stock = stockList[0];
+        if (stock == null || stock == undefined) {
+          if(this.userCanChangeWarehouse){
+            stock = stockList[0];
+          }else{
+            console.log('stock del cliente no encontrado para producto ' + item.naProduct);
+            continue;
+          }
+          
         }
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
@@ -783,7 +854,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
-          "listaModalList": listaModalList
+          "listaModalList": listaModalList,
+          "nuPriceList": nuPriceList
+
         }
         orderUtils.push(ou);
 
@@ -1162,6 +1235,10 @@ export class PedidosService {
   getListForInfoModal(idEnterprise: number) {
     return this.db.getListForInfoModal(this.database, idEnterprise);
   }
+
+  getUnitPriceList(idEnterprise: number) {
+    return this.db.getUnitPriceList(this.database, idEnterprise);
+  }
   getPriceListbyEnterprise(idEnterprise: number) {
     return this.db.getPriceListbyEnterprise(this.database, idEnterprise);
   }
@@ -1452,36 +1529,25 @@ export class PedidosService {
     let empresa = this.datosPedidoSugerido.empresa;
     this.empresaSeleccionada = empresa;
     let coOrder = this.dateService.generateCO(0);
-    let ProductIds: number[] = this.datosPedidoSugerido.productos.map(p => p.idProduct);
-    let productUnitIds: number[] = [];
+    let ProductIds: number[] = this.datosPedidoSugerido.idProducts;
     let errorMsgFlag = false;
+    //let productUnitIds = this.datosPedidoSugerido.idProductUnits;
+    //mini setup de moneda para conversiones de precio
+    await this.currencyService.setup(this.dbServ.getDatabase())
+    this.currencyModule = this.currencyService.getCurrencyModule('ped');
+    this.currencySelection();
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
-    for (let i = 0; i < this.datosPedidoSugerido.productos.length; i++) {
-      const product = this.datosPedidoSugerido.productos[i];
-      const unitInfo = this.listaUnitInfo.find(u => (u.coUnit === product.coUnit) && (u.idProduct == product.idProduct));
-      //console.log('unitInfo: '+JSON.stringify(unitInfo));
-      //console.log('product: '+JSON.stringify(product));
-      if (unitInfo != undefined) {
-        productUnitIds.push(unitInfo.idProductUnit);
-      }
-    }
-
     this.listaSeleccionada = this.datosPedidoSugerido.list;
 
     //buscamos los promedios de ese cliente:
+    /*esto lo calculo en inventario-logic, para mostrarlo en el modal de totales de inventario
     let promedios: ClientAvgProduct[];
     await this.getClientAvgStock(this.empresaSeleccionada.idEnterprise, cliente.idClient,
       productUnitIds, direccion.idAddress, ProductIds).then(result => {
         promedios = result;
       });
-
-    //mini setup de moneda para conversiones de precio
-    await this.currencyService.setup(this.dbServ.getDatabase())
-    this.currencyModule = this.currencyService.getCurrencyModule('ped');
-    this.currencySelection();
-
-
+      */
 
     await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList).then(orderUtils => {
       let details: OrderDetail[] = [];
@@ -1498,7 +1564,7 @@ export class PedidosService {
         "inOrderReview": false,
         "nuAmountTotal": 0,
         "nuAmountFinal": 0,
-        "coCurrency": this.empresaSeleccionada.coCurrencyDefault,
+        "coCurrency": this.monedaSeleccionada.coCurrency,
         "daDispatch": this.dateService.hoyISO(),
         "txComment": this.getTag('INV_PED_SUG'),
         "nuPurchase": "",
@@ -1514,8 +1580,8 @@ export class PedidosService {
         "stOrder": VISIT_STATUS_SAVED,
         "coordenada": this.coordenadas,
         "nuDiscount": 0,
-        "idCurrency": this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault).idCurrency,
-        "idCurrencyConversion": this.currencyService.getOppositeCurrency(this.empresaSeleccionada.coCurrencyDefault).idCurrency,
+        "idCurrency": this.monedaSeleccionada.idCurrency,
+        "idCurrencyConversion": this.currencyService.getOppositeCurrency(this.monedaSeleccionada.coCurrency).idCurrency,
         "nuValueLocal": this.currencyService.localValue,
         "nuAmountTotalConversion": 0,
         "nuAmountFinalConversion": 0,
@@ -1534,22 +1600,21 @@ export class PedidosService {
         "stDelivery": DELIVERY_STATUS_NEW
       }
 
-      for (let i = 0; i < this.datosPedidoSugerido.productos.length; i++) {
-        let product = this.datosPedidoSugerido.productos[i];
+      for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {
+        let product = this.datosPedidoSugerido.productUtils[i];
         let item = orderUtils.filter(x => x.idProduct == product.idProduct)[0];
         let detailUnits: OrderDetailUnit[] = [];
         let coOrderDetail = this.dateService.generateCO(i);
         if ((item != undefined) && (item.nuPrice > 0)) {
           for (let j = 0; j < item.unitList.length; j++) {
             let unit = item.unitList[j];
-            let quOrder = 0;
-            let promedio = promedios.find(x => (x.idProduct == unit.idProduct) && (x.idProductUnit == unit.idProductUnit));
-            if (promedio == undefined) {
-              quOrder = product.totalUnits;
-            } else {
-              quOrder = promedio.average - product.totalUnits;
+            let suggestedUnit = this.datosPedidoSugerido.productUtils[i].unitsSuggested.filter(u => u.coUnit == unit.coUnit)[0];
+            
+            let quOrder = suggestedUnit ? suggestedUnit.quUnitSuggested : 0;
+            if(quOrder == 0){
+              continue; //si no hay cantidad sugerida, no agregamos la unidad al pedido
             }
-            let quSuggested = quOrder;
+            let quSuggested = 0;
             if (item.quMultiple > 1) {
               //caso productMinMul
               let n = quOrder % item.quMultiple;
@@ -1559,6 +1624,7 @@ export class PedidosService {
                 quSuggested = item.quMultiple - n + quOrder;
               }
             }
+            quSuggested = quOrder;
 
 
             let detailunit: OrderDetailUnit = {
@@ -1580,8 +1646,8 @@ export class PedidosService {
             "idOrderDetail": 0,
             "coOrderDetail": coOrderDetail,
             "coOrder": coOrder,
-            "coProduct": product.coProduct,
-            "naProduct": product.naProduct,
+            "coProduct": item.coProduct,
+            "naProduct": item.naProduct,
             "idProduct": product.idProduct,
             "nuPriceBase": item.nuPrice,
             "nuAmountTotal": 0,
@@ -1612,7 +1678,7 @@ export class PedidosService {
       pedido.nuDetails = details.length;
       this.order = pedido;
       //reseteamos al estado natural
-      this.desdeSugerencia = false;
+      //this.desdeSugerencia = false;
       if (this.datosPedidoSugerido.enviar) {
         //para enviarlo luego
         this.coClientStockAEnviar = this.datosPedidoSugerido.coClientStock;

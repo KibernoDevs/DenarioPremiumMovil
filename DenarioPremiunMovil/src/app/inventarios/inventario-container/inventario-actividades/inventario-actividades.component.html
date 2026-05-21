@@ -5,7 +5,7 @@
     <ion-button size="small" color="danger" fill="outline" [disabled]="selectedRowsCount === 0"
       (click)="deleteSelectedRows()">
       <ion-icon slot="start" name="trash-outline"></ion-icon>
-      Eliminar seleccionados ({{selectedRowsCount}})
+      {{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_ELIMINAR_SELECCIONADOS') || 'Eliminar seleccionados'}} ({{selectedRowsCount}})
     </ion-button>
   </div>
   }
@@ -15,14 +15,14 @@
       <thead>
         <tr>
           @if(canManageRows()) {
-          <th class="col-sel">Sel</th>
+          <th class="col-sel">{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_SEL') || 'Sel'}}</th>
           }
-          <th>{{this.inventariosLogicService.inventarioTags.get('INV_CODIGO') || 'Codigo'}}</th>
-          <th>Producto</th>
-          <th>Exhibicion</th>
-          <th>Deposito</th>
+          <th>{{this.inventariosLogicService.inventarioTags.get('INV_CODIGO') || 'Código'}}</th>
+          <th>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_PRODUCTO') || 'Producto'}}</th>
+          <th>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_EXHIBICION') || 'Exhibición'}}</th>
+          <th>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_DEPOSITO') || 'Depósito'}}</th>
           @if(canManageRows()) {
-          <th class="col-action">Accion</th>
+          <th class="col-action">{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_ACCION') || 'Acción'}}</th>
           }
         </tr>
       </thead>

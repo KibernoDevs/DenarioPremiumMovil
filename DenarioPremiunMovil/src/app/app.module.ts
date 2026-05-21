@@ -103,6 +103,7 @@ import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfM
 import { ConversionService } from './services/conversion/conversion.service';
 import { installGlobalClipboardEnablers } from 'src/app/utils/clipboard-enablers';
 import { CalculatorComponent } from './calculator/calculator.component';
+import { InventarioSugeridoPreviewComponent } from './inventarios/inventario-container/inventario-sugerido-preview/inventario-sugerido-preview.component';
 //import { HomeSidebarComponent } from './home-sidebar/home-sidebar.component';
 
 
@@ -169,6 +170,7 @@ import { CalculatorComponent } from './calculator/calculator.component';
     InventarioContainerComponent,
     InventarioHeaderComponent,
     InventarioComponent,
+    InventarioSugeridoPreviewComponent,
     InventarioGeneralComponent,
     InventarioInventarioComponent,
     InventarioActividadesComponent,

@@ -123,6 +123,15 @@ export class CurrencyService {
     }
   }
 
+  convertFrom(price: number, coCurrency: string){
+    //Convierte un precio a la moneda opuesta a coCurrency;
+    if(this.isLocalCurrency(coCurrency)){
+      return this.formatNumber(this.toHardCurrency(price));
+    }else{
+      return this.formatNumber(this.toLocalCurrency(price));
+    }
+  }
+
   toLocalCurrency(hardAmount: number): number {
     return (hardAmount * this.localValue) / this.currencyRelation;
   }

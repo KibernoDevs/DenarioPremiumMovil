@@ -6,13 +6,25 @@
         <ion-col size="12" size-sm="12" size-xs="12">
           <div>
             <div>
-              <swiper-container [pagination]="true" navigation="false" class="mySwiper" zoom="true" loop="true">
+              <swiper-container [pagination]="true" navigation="false" class="mySwiper" zoom="true" [loop]="false"
+                [rewind]="productImages.length > 1" [watchOverflow]="true">
+                @if(productImages.length > 0){
+                @for(imgSrc of productImages; track imgSrc){
+                <swiper-slide class="swiperSlide">
+                  <div class="swiper-zoom-container">
+                    <img class="sizeImgProduct" [src]="imgSrc" />
+                  </div>
+                </swiper-slide>
+                }
+                }
+                @else {
                 <swiper-slide class="swiperSlide">
                   <div class="swiper-zoom-container">
                     <img class="sizeImgProduct"
                       [src]="pSeleccionado.coProduct ? (imageServices.getImgForProduct(pSeleccionado.coProduct)) : '../../../assets/images/nodisponible.png'" />
                   </div>
                 </swiper-slide>
+                }
               </swiper-container>
             </div>
           </div>
@@ -74,11 +86,6 @@
 
 
           </ion-row>
-          <ion-row>
-            <ion-col class="tituloDetails" size="4" size-sm="4"
-              size-xs="4">{{this.productDetailTags.get('PROD_UNIT_PROD')}}</ion-col>
-            <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.naUnit}}</ion-col>
-          </ion-row>
           @if(this.orderService.displayProductPoints){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
@@ -86,6 +93,30 @@
             <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.points}}</ion-col>
           </ion-row>
           }
+          @if(this.orderService.unitByPriceList){
+          @for(price of listPrices; track price.idList){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{price.naList}} -
+              {{price.naUnit}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? formatNumber(price.nuPrice) : 'N/A' }} {{
+              price.coCurrency }}</ion-col>
+          </ion-row>
+          @if(showConversionInfo){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{price.naList}} -
+              {{price.naUnit}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? convertPrice(price.nuPrice, price.coCurrency) :
+              'N/A' }} {{ currencyService.oppositeCoCurrency(price.coCurrency) }}</ion-col>
+          </ion-row>
+          }
+          }
+          } @else{
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4"
+              size-xs="4">{{this.productDetailTags.get('PROD_UNIT_PROD')}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.naUnit}}</ion-col>
+          </ion-row>
+
           <ion-row>
 
             <ion-col class="tituloDetails titulosDetallesProductos" size="4" size-sm="4"
@@ -106,6 +137,7 @@
             <ion-col size="8" size-sm="8" size-xs="8">{{formatNumber(pSeleccionado.priceLocal)}}
               {{pSeleccionado.coCurrencyLocal}}</ion-col>
           </ion-row>
+          @if(this.productService.userCanSelectIVA){
           @if(this.productService.vatExemptProducts){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
@@ -124,6 +156,8 @@
               size-xs="4">{{this.productDetailTags.get('PROD_CONV_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.conversion}}</ion-col>
           </ion-row>
+          }
+          }
           @if(this.orderService.validateWarehouses && !hideProductWarehouse){
           <ion-row>
             <ion-col class="tituloDetails titulosDetallesProductos" size="4" size-sm="4"

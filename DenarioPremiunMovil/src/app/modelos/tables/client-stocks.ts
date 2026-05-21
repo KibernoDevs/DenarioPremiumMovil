@@ -27,7 +27,8 @@ export class ClientStocks {
             obj["hasAttachments"],
             obj["nuAttachments"],
             obj["stDelivery"],
-
+            obj["daysSinceLast"],
+            obj["daysUntilNext"]
         );
     }
 
@@ -55,6 +56,8 @@ export class ClientStocks {
         public hasAttachments: boolean,
         public nuAttachments: number,
         public stDelivery: number = DELIVERY_STATUS_NEW,
+        public daysSinceLast: number = 1,
+        public daysUntilNext: number = 1,
     ) { }
 }
 
@@ -140,5 +143,6 @@ export class ClientStocksDetailUnits {
         public daExpiration: string = "",
         public posicion: number = 0,
         public isSave: Boolean = true,
+
     ) { }
 }

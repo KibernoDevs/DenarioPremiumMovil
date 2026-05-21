@@ -52,6 +52,7 @@ export class InventarioGeneralComponent implements OnInit {
   public txComment: string = ""
   public coordenada: string = ""
   public checkAddressClient!: boolean;
+
   public viewOnly: boolean = false;
   public changeClient: boolean = false;
   public newClient!: Client;
@@ -59,10 +60,12 @@ export class InventarioGeneralComponent implements OnInit {
   public direccionAnterior!: number;
   public coDireccionAnterior!: string;
   showDateModal: boolean = false;
+  daysSinceLastInventory: number = 1;
+  daysUntilNextInventory: number = 1;
   public alertButtons = [
     /*  {
-       text: '',
-       role: 'cancel'
+      text: '',
+      role: 'cancel'
      }, */
     {
       text: '',
@@ -122,7 +125,7 @@ export class InventarioGeneralComponent implements OnInit {
       //ESTO PARA HACER EL PROCESO DE CARGA 1 SOLA VEZ Y NO CADA VEZ QUE SE LE DE A LA PESTANA GENERAL
       this.initInventario()
       this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
-      this.daClientStock = this.dateServ.hoyISOFullTime();
+      //this.daClientStock = this.dateServ.hoyISOFullTime();
       this.inventariosLogicService.alertMessage = false;
       this.inventariosLogicService.alertMessageOpen = false;
       this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
@@ -132,6 +135,8 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
     }
     this.txComment = this.inventariosLogicService.newClientStock.txComment;
+    this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
+    this.daysUntilNextInventory = this.inventariosLogicService.newClientStock.daysUntilNext;
   }
 
 
@@ -161,8 +166,8 @@ export class InventarioGeneralComponent implements OnInit {
           //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
           this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
           /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
-             this.inventariosLogicService.client = client;
-             this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
+            this.inventariosLogicService.client = client;
+            this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
 
 
            }) */
@@ -171,6 +176,8 @@ export class InventarioGeneralComponent implements OnInit {
         this.orderServ.setup();
         //ESTO ES PARA CUANDO CAMBIE DE PESTANAS, RECUPERAR LA INFORMACION YA COLOCADA
         this.txComment = this.inventariosLogicService.newClientStock.txComment;
+        this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
+        this.daysUntilNextInventory = this.inventariosLogicService.newClientStock.daysUntilNext;
         if (this.inventariosLogicService.newClientStock.idClient == undefined) {
 
           //ESTOY REALIZANDO UN INVENTARIO DESDE 0
@@ -201,8 +208,9 @@ export class InventarioGeneralComponent implements OnInit {
             this.inventariosLogicService.getClientStock(this.dbServ.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock).then(clientStock => {
               console.log(clientStock);
               if (clientStock != undefined) {
+                this.daClientStock = '';
                 if (clientStock.clientStockDetails.length == 0) {
-                  this.message.hideLoading();
+                  this.message.hideLoading();                  
                 }
 
                 for (var i = 0; i < this.inventariosLogicService.listaEmpresa.length; i++) {
@@ -274,6 +282,24 @@ export class InventarioGeneralComponent implements OnInit {
     })
   }
 
+  setDaysSinceLastInventory(){
+    if(this.daysSinceLastInventory < 1){
+      this.inventariosLogicService.newClientStock.daysSinceLast = 1;
+      this.daysSinceLastInventory = 1;
+    }else{
+      this.inventariosLogicService.newClientStock.daysSinceLast = this.daysSinceLastInventory;
+    }
+  }
+
+  setDaysUntilNextInventory(){
+    if(this.daysUntilNextInventory < 1){
+      this.inventariosLogicService.newClientStock.daysUntilNext = 1;
+      this.daysUntilNextInventory = 1;
+    }else{
+      this.inventariosLogicService.newClientStock.daysUntilNext = this.daysUntilNextInventory;
+    }
+  }
+
   onEnterpriseSelect() {
     this.inventariosLogicService.onStockValidToSave(false);
     this.inventariosLogicService.onStockValidToSend(false);
@@ -294,8 +320,8 @@ export class InventarioGeneralComponent implements OnInit {
     if (cliente) {
       if (cliente.idClient != this.inventariosLogicService.newClientStock.idClient && this.changeClient) {
         /*  this.inventariosLogicService.alertMessage = true;
-         this.inventariosLogicService.message = "Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción."
-         this.newClient = cliente; */
+        this.inventariosLogicService.message = "Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción."
+        this.newClient = cliente; */
       } else {
         this.message.showLoading().then(() => {
           this.changeClient = true;

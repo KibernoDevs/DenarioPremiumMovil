@@ -1,0 +1,125 @@
+<ion-header :translucent="true">
+    <ion-toolbar class="fondoAmarillo">
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12">
+            <ion-title class="tituloModulos">{{ inventarioTags.get('INV_PED_SUG') || 'Pedido sugerido' }}</ion-title>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    
+    <ion-buttons slot="end">
+      <ion-button (click)="close()" fill="clear" size="large" color="light">
+        <ion-icon slot="icon-only" ios="close" md="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="client-document-sale">
+  <ion-grid class="tableClientDocumentSale">
+  <ion-row>
+    <ion-col size="12">
+      {{ inventarioTags.get('INV_DIAS_ULTIMO_INVENTARIO') || 'Dias desde último inventario' }}: {{ diasDesdeUltimoInventario }}
+      <br>
+    </ion-col>
+    <ion-col size="12">
+      {{ inventarioTags.get('INV_DIAS_SIGUIENTE_INVENTARIO') || 'Dias hasta siguiente inventario' }}: {{ diasHastaSiguienteInventario }}
+      <br>     
+    </ion-col>
+  </ion-row>
+</ion-grid>
+  @if(productsSuggested.length > 0){
+  <ion-list>
+    <ion-accordion-group expand="inset">
+      @for(product of productsSuggested; track product.idProduct){
+      <ion-accordion>
+        <ion-item slot="header" >
+          <ion-label>
+            <h2>{{ getProductCode(product.idProduct) }} - {{ getProductName(product.idProduct) }}</h2>
+          </ion-label>
+        </ion-item>
+
+        <div slot="content" class="ion-padding">
+          @for(unit of product.unitsSuggested; track unit.idUnit){
+          <ion-item >
+            <ion-label>
+              {{ inventarioTags.get('INV_SUGERIDO') || 'Sugerido' }} {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
+              @if(suggestedOrderByDispatchAndReturn) {
+
+                <ion-grid>
+                  <ion-row>
+                    <ion-col>
+                      
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+
+                <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+       <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_ANTERIOR') || 'Inv. Anterior' }}</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}</ion-col>
+                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="8">{{ inventarioTags.get('INV_CAMBIO_POR_CAMBIO') || 'Cambio por Cambio' }}</ion-col> 
+    </ion-row>
+
+    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.previousStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.dispatchedStock)}}</ion-col>
+      <ion-col size="8" class="ion-text-center col">{{formatNumber(unit.straightSwapStock)}}</ion-col>
+    </ion-row>
+  </ion-grid>
+
+
+                <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+       <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">{{ inventarioTags.get('INV_VENTA') || 'Venta' }}</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_ACTUAL') || 'Inv. Actual' }}</ion-col>
+                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="7">{{ inventarioTags.get('INV_DEVOLUCION_DISTRIBUCION') || 'Dev. Distribución' }}</ion-col> 
+    </ion-row>
+
+    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.soldUnits)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.currentStock)}}</ion-col>
+      <ion-col size="7" class="ion-text-center col">{{formatNumber(unit.returnedStock)}}</ion-col>
+    </ion-row>
+  </ion-grid>
+              
+              <ion-item>{{ inventarioTags.get('INV_VENTAS_DIARIAS') || 'Ventas Diarias Estimadas' }}: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
+            }@else{
+                <ion-row>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_INVENTARIO_ACTUAL') || 'Inv. Actual' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}</ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col class="ion-align-items-start">{{formatNumber(unit.currentStock)}}</ion-col>
+                  <ion-col class="ion-align-items-start">{{formatNumber(unit.dispatchedStock)}}</ion-col>
+                </ion-row>
+            }
+            </ion-label>
+          </ion-item>
+        }
+        </div>
+      </ion-accordion>
+    }
+    </ion-accordion-group>
+  </ion-list>
+}@else{
+  <ng-template #emptyState>
+    <!-- No deberia aparecer esto, ya que el boton para traer este modal solo se habilita si hay productos sugeridos -->
+    <ion-item>
+      <ion-label>No hay productos sugeridos.</ion-label>
+    </ion-item>
+  </ng-template>
+}
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-button [disabled]="disableOrderButton" expand="block" class="botonAddAmarillo" (click)="confirm()">
+      {{ inventarioTags.get('DENARIO_BOTON_ACEPTAR') || 'Aceptar' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

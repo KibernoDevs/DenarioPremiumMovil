@@ -225,18 +225,24 @@
                 <!-- ### FECHA DE DESPACHO ### -->
                 <ion-col size="12" size-sm="12" size-xs="12">
                   <!-- caso disableDaDispatch true -->
-                  <div *ngIf="orderServ.disableDaDispatch">
+                  @if(orderServ.disableDaDispatch){
+                  <div>
                     <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
-                    <ion-button *ngIf="daDispatchChanged" [disabled]="!orderServ.pedidoModificable" placeholder="holder"
+                    @if(daDispatchChanged){
+                    <ion-button [disabled]="!orderServ.pedidoModificable" placeholder="holder"
                       (click)="setOpenDaDispatchModal(true)" color="light">
                       {{ dateServ.formatShort(this.fechaDespacho) }}
                     </ion-button>
-                    <ion-button color="light" *ngIf="!daDispatchChanged" (click)="setOpenDaDispatchModal(true)"
+                  }@else{
+                    <ion-button color="light" (click)="setOpenDaDispatchModal(true)"
                       class="letrasFechasButton">
                       {{ orderServ.getTag('DENARIO_SELEC_FECHA')}}
                     </ion-button>
+                  }
+
                   </div>
-                  <div *ngIf="!orderServ.disableDaDispatch">
+                }@else{
+                  <div>
                     <!-- caso disableDaDispatch false -->
                     <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
                     <ion-button [disabled]="!orderServ.pedidoModificable" placeholder="holder"
@@ -244,6 +250,7 @@
                       {{ dateServ.formatShort(this.fechaDespacho) }}
                     </ion-button>
                   </div>
+                }
                 </ion-col>
 
                 <!-- Modal de seleccionar fecha despacho -->
@@ -462,8 +469,8 @@
                     </ion-col>
                     <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
-                      {{ nuValueLocal }} {{ localCurrency.coCurrency }} = {{
-                      currencyServ.currencyRelation }} {{ hardCurrency.coCurrency }}
+                      {{ tasaCambio }} {{ localCurrency.coCurrency }} = {{
+                      formatNum(currencyServ.currencyRelation) }} {{ hardCurrency.coCurrency }}
                     </ion-col>
                   </ion-row>
                 </ion-grid>

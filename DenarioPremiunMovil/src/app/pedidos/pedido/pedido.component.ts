@@ -356,6 +356,7 @@ export class PedidoComponent implements OnInit {
       }
 
       this.daDispatchChanged = false;
+      this.onDateDispatchChange();
     } else {
       //copio las fechas originales para mostrarlas
       this.fechaMinima = this.dateServ.toISOString(this.orderServ.order.daOrder);
@@ -364,6 +365,7 @@ export class PedidoComponent implements OnInit {
       }
       this.fechaPedido = this.orderServ.order.daOrder;
       this.daDispatchChanged = true;
+      this.onDateDispatchChange();
     }
     //responsable
     this.naResponsible = this.orderServ.order.naResponsible;
@@ -995,11 +997,50 @@ export class PedidoComponent implements OnInit {
 
 
     } else {
-      //no se hace nada, solo el onchange()
-      this.orderServ.tipoOrden = this.tipoOrden;
-      this.tipoOrdenAnterior = this.tipoOrden;
-      this.tipoOrden = this.orderServ.tipoOrden;
-
+      const newType = this.tipoOrden;
+      const limitViolated =
+        !!newType?.itemsLimit &&
+        newType.quItems > 0 &&
+        this.orderServ.carrito.length > newType.quItems;
+      if (limitViolated) {
+        const buttonsItemsLimit = [
+          {
+            text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
+            role: 'cancel',
+            handler: () => {
+              this.orderServ.setChangesMade(false);
+              this.tipoOrden = this.tipoOrdenAnterior;
+            },
+          },
+          {
+            text: this.orderServ.getTag("DENARIO_BOTON_ACEPTAR"),
+            role: 'confirm',
+            handler: () => {
+              const empresa = this.orderServ.empresaSeleccionada;
+              const cliente = this.orderServ.cliente;
+              this.orderServ.tipoOrden = this.tipoOrden;
+              this.reset();
+              this.orderServ.empresaSeleccionada = empresa;
+              this.onEnterpriseSelect();
+              this.setClientfromSelector(cliente);
+              this.tipoOrden = this.orderServ.tipoOrden;
+              this.tipoOrdenAnterior = this.tipoOrden;
+            },
+          },
+        ];
+        this.message.alertCustomBtn(
+          {
+            header: this.orderServ.getTag("PED_NOMBRE_MODULO"),
+            message: this.orderServ.getTag("PED_RESET_ORDERTYPE_ITEMS_LIMIT"),
+          } as MessageAlert,
+          buttonsItemsLimit,
+        );
+      } else {
+        //no se hace nada, solo el onchange()
+        this.orderServ.tipoOrden = this.tipoOrden;
+        this.tipoOrdenAnterior = this.tipoOrden;
+        this.tipoOrden = this.orderServ.tipoOrden;
+      }
     }
     this.onChange();
   }
@@ -1226,8 +1267,17 @@ export class PedidoComponent implements OnInit {
 
       // Lista
       let list: List | undefined;
+      if(this.orderServ.desdeSugerencia){
+        //en la sugerencia ya tenemos una lista definida, asi que la usamos y listo, no hay que andar buscando ni nada raro
+        this.orderServ.desdeSugerencia = false;
+        list = this.orderServ.datosPedidoSugerido.list;
+      } else{
       if (this.orderServ.openOrder) {
         let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+        if (!idPriceList) {
+          console.error("El pedido no tiene pricelist asignada en los detalles");
+          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+        }else{
         let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
         if (pl.length < 1) {
           console.error("No se encontro pricelist del pedido");
@@ -1249,18 +1299,18 @@ export class PedidoComponent implements OnInit {
         } else {
           this.orderServ.listaSeleccionada = { idList: 0 } as List;
         }
-
-
+      }
       } else {
         list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-
+      }
+    }
 
         if (list != undefined) {
           this.orderServ.listaSeleccionada = list;
           this.listaAnterior = list;
           this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
         }
-      }
+      
 
 
       //Payment Condition

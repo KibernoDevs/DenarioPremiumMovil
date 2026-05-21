@@ -160,6 +160,7 @@ export class ClienteSelectorComponent implements OnInit {
   updateClientList(idEnterprise: number): Promise<any> {
 
     return this.messageService.showLoading().then(() => {
+      this.service.idEnterprise = idEnterprise;
       return this.getClients(idEnterprise).then(() => {
         //console.log("Clientes cargados");
       });
@@ -197,11 +198,11 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);
     }
-
+/*
     if (this.globalConfig.get("clientsOrderBy") == "due_date") {
       await this.oderByDueDateAndSaldo(clientsToShow);
     }
-
+*/
 
     this.clientes = [...this.clientes, ...clientsToShow];
     //}

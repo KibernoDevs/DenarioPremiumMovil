@@ -468,6 +468,32 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectPriceList(e: any, product: OrderUtil) {
     const idList = e.detail.value as number;
+    const selectEl = e?.target as HTMLIonSelectElement;
+      let prevList = product.idList;
+      if(this.orderServ.unitByPriceList){
+        //revisamos primero si tenemos esa unidad. Si no, mostramos error.
+      let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
+      if(!upl){
+        console.log("No se encontro unidad para la lista seleccionada");
+        this.message.transaccionMsjModalNB("No se encontro unidad para la lista seleccionada");
+        product.idList = prevList; //volvemos a la lista anterior, ya que no se encontro unidad para la nueva lista
+        selectEl.value = prevList;
+        this.cd.detectChanges(); 
+        return;
+      }
+      let unit = product.unitList.filter(u => u.idUnit == upl.idUnit)[0];
+      if(unit){
+        product.idUnit = unit.idUnit;
+        this.selectUnitById(unit.idUnit, product);
+      }else{
+        console.log("No se encontro unidad para la lista de precio seleccionada");
+        this.message.transaccionMsjModalNB("No se encontro unidad para la lista de precio seleccionada");
+        product.idList = prevList;
+        selectEl.value = prevList;
+        this.cd.detectChanges(); //volvemos a la lista anterior, ya que no se encontro unidad para la nueva lista
+        return;
+      }
+    }
     product.idList = idList;
 
     let pricelist = this.orderServ.listaPricelist.filter(pl => pl.idProduct == product.idProduct && pl.idList == idList)[0];
@@ -475,12 +501,18 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     product.coPriceList = pricelist.coPriceList;
 
     product.nuPrice = pricelist.nuPrice;
+
+
     this.orderServ.alCarrito(product);
   }
 
   onSelectUnit(e: any, product: OrderUtil) {
     const unit = e.detail.value;
-    product.idUnit = unit;
+    this.selectUnitById(unit, product);
+  }
+
+  selectUnitById(unitId: number, product: OrderUtil) {
+    product.idUnit = unitId;
     this.orderServ.alCarrito(product);
     product.quAmount = 0;
   }
@@ -551,6 +583,17 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   }
 
+  getNaUnitByPriceList(product: OrderUtil, idList: number): string {
+    let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
+    if (upl) {
+      let unit = this.orderServ.listaUnitInfo.filter(u => u.idUnit == upl.idUnit)[0];
+      if (unit) {
+        return unit.naUnit;
+      }
+    }
+    return '';
+  }
+
   compareWithDiscount = (o1: any, o2: any) => {
     if (o1 === o2) return true;
     if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
@@ -586,7 +629,46 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   }
 
+  private isDistinctItemsLimitActive(): boolean {
+    const t = this.orderServ.tipoOrden;
+    if (!t) {
+      return false;
+    }
+    const limitOn =
+      t.itemsLimit === true ||
+      (t.itemsLimit as unknown) === 1 ||
+      (t.itemsLimit as unknown) === '1';
+    if (!limitOn || t.quItems <= 0) {
+      return false;
+    }
+    return this.orderServ.carrito.length >= t.quItems;
+  }
+
+  private isProductInCarrito(prod: OrderUtil): boolean {
+    return this.orderServ.carrito.some((c) => c.idProduct === prod.idProduct);
+  }
+
+  hasItemsLimit(): boolean {
+    const t = this.orderServ.tipoOrden;
+    if (!t) {
+      return false;
+    }
+    const limitOn =
+      t.itemsLimit === true ||
+      (t.itemsLimit as unknown) === 1 ||
+      (t.itemsLimit as unknown) === '1';
+    return limitOn && t.quItems > 0;
+  }
+
+  itemsLimitText(): string {
+    const t = this.orderServ.tipoOrden;
+    return `Items ${this.orderServ.carrito.length}/${t?.quItems ?? 0}`;
+  }
+
   disableProduct(prod: OrderUtil) {
+    if (this.isDistinctItemsLimitActive() && !this.isProductInCarrito(prod)) {
+      return true;
+    }
     if (!prod.nuPrice) {
       return true;
     }

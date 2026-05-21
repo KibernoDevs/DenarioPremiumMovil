@@ -224,6 +224,26 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     return this.inventariosLogicService.newClientStock?.clientStockDetails?.length || 0;
   }
 
+  hasItemsLimit(): boolean {
+    const t = this.orderServ.tipoOrden;
+    if (!t) {
+      return false;
+    }
+    const limitOn =
+      t.itemsLimit === true ||
+      (t.itemsLimit as unknown) === 1 ||
+      (t.itemsLimit as unknown) === '1';
+    return limitOn && t.quItems > 0;
+  }
+
+  cartBadgeText(): string {
+    const n = this.orderServ.carrito.length;
+    if (this.hasItemsLimit()) {
+      return `${n}/${this.orderServ.tipoOrden.quItems}`;
+    }
+    return String(n);
+  }
+
   onReturnProductTab() {
     this.productStructures = false;
     this.productStructureService.onReturnProductTabClicked();

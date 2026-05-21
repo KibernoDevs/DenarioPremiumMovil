@@ -1,0 +1,535 @@
+[
+  {
+    "id": 1,
+    "name": "address_clients",
+    "table": "addressClients",
+    "idName": "id_address",
+    "sql": "CREATE TABLE IF NOT EXISTS address_clients ( id_address INTEGER PRIMARY KEY, co_address VARCHAR(50), id_client INTEGER NOT NULL, id_address_type INTEGER, co_address_type VARCHAR(50), tx_address VARCHAR(150), nu_phone VARCHAR(50), na_responsible VARCHAR(80), co_enterprise_structure VARCHAR(80), id_enterprise_structure INTEGER, co_client VARCHAR(50), na_address VARCHAR(50), co_enterprise VARCHAR(50), id_enterprise INTEGER, coordenada VARCHAR(20), editable BOOLEAN);",
+    "index": "CREATE INDEX IF NOT EXISTS idx_address_clients_id_client ON address_clients(id_client);"
+  },
+  {
+    "id": 2,
+    "name": "banks",
+    "table": "banks",
+    "idName": "id_bank",
+    "sql": "CREATE TABLE IF NOT EXISTS banks (id_bank INTEGER PRIMARY KEY, na_bank VARCHAR(80), co_bank VARCHAR(30) NOT NULL, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 3,
+    "name": "clients",
+    "table": "clients",
+    "idName": "id_client",
+    "sql": "CREATE TABLE IF NOT EXISTS clients ( id_client INTEGER PRIMARY KEY, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80) NOT NULL, na_client TEXT, nu_rif VARCHAR(15), id_channel INTEGER, id_warehouse INTEGER, id_head_quarter INTEGER, id_list INTEGER, id_payment_condition INTEGER, co_payment_condition VARCHAR(30), in_suspension BOOLEAN DEFAULT false, qu_discount DECIMAL(10,5), na_email character varying(30), nu_credit_limit DECIMAL(10,5), na_web_site character varying(150), id_currency INTEGER, co_currency VARCHAR(30), multimoneda BOOLEAN DEFAULT false, co_enterprise VARCHAR(50), id_enterprise INTEGER NOT NULL, collection_iva BOOLEAN DEFAULT false, tx_description_1 VARCHAR(255), tx_description_2 VARCHAR(255));"
+  },
+  {
+    "id": 5,
+    "name": "distribution_channels",
+    "table": "distributionChannels",
+    "idName": "id_channel",
+    "sql": "CREATE TABLE IF NOT EXISTS distribution_channels ( id_channel INTEGER PRIMARY KEY  , co_channel VARCHAR(30), na_channel VARCHAR(80), short_na_channel VARCHAR(50), co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 6,
+    "name": "document_sales",
+    "table": "documentSales",
+    "idName": "id_document",
+    "sql": "CREATE TABLE IF NOT EXISTS document_sales ( id_document INTEGER PRIMARY KEY, id_client INTEGER NOT NULL, co_client VARCHAR(50), id_document_sale_type INTEGER, co_document_sale_type VARCHAR(30), da_document TIMESTAMP, da_due_date TIMESTAMP, nu_amount_base DECIMAL(10,5), nu_amount_discount DECIMAL(10,5), nu_amount_tax DECIMAL(10,5), nu_amount_total DECIMAL(10,5), nu_balance DECIMAL(10,5), id_currency INTEGER, co_currency VARCHAR(30), nu_document VARCHAR(30), tx_comment VARCHAR(185), co_document VARCHAR(30), co_collection VARCHAR(50), nu_value_local DECIMAL(10,5), st_document_sale INTEGER, co_enterprise VARCHAR(30), id_enterprise INTEGER, da_update TIMESTAMP);"
+  },
+  {
+    "id": 7,
+    "name": "document_sale_types",
+    "table": "documentSaleTypes",
+    "idName": "id_document_sale_type",
+    "sql": "CREATE TABLE IF NOT EXISTS document_sale_types ( id_document_sale_type INTEGER PRIMARY KEY, co_type VARCHAR(30), na_type VARCHAR(80), co_equiv VARCHAR(30), co_enterprise VARCHAR(80), id_enterprise INTEGER);"
+  },
+  {
+    "id": 8,
+    "name": "enterprises",
+    "table": "enterprises",
+    "idName": "id_enterprise",
+    "sql": "CREATE TABLE IF NOT EXISTS enterprises (id_enterprise INTEGER PRIMARY KEY, lb_enterprise VARCHAR(20), co_enterprise VARCHAR(30) NOT NULL, co_currency_default VARCHAR(20), priority_selection INTEGER DEFAULT 0 NOT NULL , enterprise_default VARCHAR(20));"
+  },
+  {
+    "id": 9,
+    "name": "incidence_motives",
+    "table": "incidenceMotives",
+    "idName": "id_motive",
+    "sql": "CREATE TABLE IF NOT EXISTS incidence_motives (id_motive INTEGER PRIMARY KEY, id_type INTEGER, na_motive VARCHAR(80));"
+  },
+  {
+    "id": 10,
+    "name": "incidence_types",
+    "table": "incidenceTypes",
+    "idName": "id_type",
+    "sql": "CREATE TABLE IF NOT EXISTS incidence_types ( id_type INTEGER PRIMARY KEY, na_type VARCHAR(80),required_event BOOLEAN DEFAULT false, required_signature BOOLEAN DEFAULT false);"
+  },
+  {
+    "id": 13,
+    "name": "price_lists",
+    "table": "priceLists",
+    "idName": "id_price_list",
+    "sql": "CREATE TABLE IF NOT EXISTS price_lists (id_price_list INTEGER PRIMARY KEY  , co_price_list VARCHAR(80), id_product INTEGER NOT NULL, id_list INTEGER NOT NULL, nu_measure_unit_price DECIMAL(10,5), nu_price DECIMAL(10,5) NOT NULL, co_currency VARCHAR(30), id_currency INTEGER, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 15,
+    "name": "products",
+    "table": "products",
+    "idName": "id_product",
+    "sql": "CREATE TABLE IF NOT EXISTS products ( id_product INTEGER PRIMARY KEY, co_product VARCHAR(30) NOT NULL, na_product VARCHAR(120) NOT NULL, co_primary_unit VARCHAR(30), co_product_structure VARCHAR (30), id_product_structure INTEGER, tx_dimension VARCHAR(120), tx_packing VARCHAR(120), points NUMERIC, nu_priority INTEGER, featured_product BOOLEAN DEFAULT false, tx_description TEXT, co_enterprise VARCHAR(50), id_enterprise INTEGER, nu_tax DECIMAL(10,5));"
+  },
+  {
+    "id": 16,
+    "name": "return_motives",
+    "table": "returnMotives",
+    "idName": "id_motive",
+    "sql": "CREATE TABLE IF NOT EXISTS return_motives ( id_motive INTEGER PRIMARY KEY, na_motive VARCHAR(80));"
+  },
+  {
+    "id": 17,
+    "name": "return_types",
+    "table": "returnTypes",
+    "idName": "id_type",
+    "sql": "CREATE TABLE IF NOT EXISTS return_types (id_type INTEGER PRIMARY KEY, na_type VARCHAR(80));"
+  },
+  {
+    "id": 20,
+    "name": "bank_accounts",
+    "table": "bankAccounts",
+    "idName": "id_bank_account",
+    "sql": "CREATE TABLE IF NOT EXISTS bank_accounts ( id_bank_account INTEGER PRIMARY KEY, co_bank VARCHAR(30), id_bank INTEGER, co_account VARCHAR(30), nu_account VARCHAR(50), co_type VARCHAR(30), co_currency VARCHAR(30), id_currency INTEGER, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 23,
+    "name": "lists",
+    "table": "lists",
+    "idName": "id_list",
+    "sql": "CREATE TABLE IF NOT EXISTS lists ( id_list INTEGER PRIMARY KEY, co_list VARCHAR(30), na_list VARCHAR(80) NOT NULL, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 25,
+    "name": "stocks",
+    "table": "stocks",
+    "idName": "id_stock",
+    "sql": "CREATE TABLE IF NOT EXISTS stocks ( id_stock INTEGER PRIMARY KEY, id_product INTEGER NOT NULL, co_product VARCHAR(30), qu_stock DECIMAL(10,5) NOT NULL, id_warehouse INTEGER, co_warehouse VARCHAR(50), da_update_stock TIMESTAMP, co_enterprise VARCHAR(30), id_enterprise INTEGER);"
+  },
+  {
+    "id": 29,
+    "name": "discounts",
+    "table": "discounts",
+    "idName": "id_discount",
+    "sql": "CREATE TABLE IF NOT EXISTS discounts ( id_discount INTEGER PRIMARY KEY, id_price_list INTEGER NOT NULL, qu_discount DECIMAL(10,5), co_list VARCHAR(30) NOT NULL, id_list INTEGER, co_product VARCHAR(30), co_unit VARCHAR(30), id_unit INTEGER, qu_vol_ini DECIMAL(10,5), qu_vol_fin DECIMAL(10,5), nu_priority INTEGER, id_product INTEGER NOT NULL, co_enterprise VARCHAR(30) NOT NULL, id_enterprise INTEGER);"
+  },
+  {
+    "id": 31,
+    "name": "payment_conditions",
+    "table": "paymentConditions",
+    "idName": "id_payment_condition",
+    "sql": "CREATE TABLE IF NOT EXISTS payment_conditions ( id_payment_condition INTEGER PRIMARY KEY, co_payment_condition VARCHAR(30), na_payment_condition VARCHAR(80) NOT NULL, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 32,
+    "name": "product_units",
+    "table": "productUnits",
+    "idName": "id_product_unit",
+    "sql": "CREATE TABLE IF NOT EXISTS product_units ( id_product_unit INTEGER PRIMARY KEY, co_product_unit VARCHAR(80), co_product VARCHAR(80), id_product INTEGER, co_unit VARCHAR(80) NOT NULL, id_unit INTEGER, qu_unit DECIMAL(10,5), co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 33,
+    "name": "visits",
+    "table": "visits",
+    "idName": "id_visit",
+    "sql": "CREATE TABLE IF NOT EXISTS visits ( id_visit INTEGER NOT NULL, co_visit VARCHAR(30) PRIMARY KEY, st_visit INTEGER NOt NULL, da_visit TIMESTAMP,  coordenada VARCHAR(80), id_client INTEGER, co_client VARCHAR(80), na_client VARCHAR(80), nu_sequence INTEGER, id_user INTEGER, co_user VARCHAR(80), co_enterprise VARCHAR(80), id_enterprise INTEGER, da_real TIMESTAMP, da_initial TIMESTAMP, id_address_client INTEGER, co_address_client VARCHAR(30), nu_attachments INTEGER, has_attachments BOOLEAN, is_dispatched BOOLEAN, no_dispatched_motive VARCHAR(200), is_reassigned BOOLEAN, tx_reassigned_motive VARCHAR(200), da_reassign TIMESTAMP, is_visited BOOLEAN);"
+  },
+  {
+    "id": 34,
+    "name": "iva_lists",
+    "table": "ivaLists",
+    "idName": "id_iva_list",
+    "sql": "CREATE TABLE IF NOT EXISTS iva_lists ( id_iva_list INTEGER PRIMARY KEY NOT NULL, price_iva DECIMAL(10,5) NOT NULL DEFAULT 0, tx_description character varying(60), default_iva BOOLEAN DEFAULT false);"
+  },
+  {
+    "id": 35,
+    "name": "warehouses",
+    "table": "warehouses",
+    "idName": "id_warehouse",
+    "sql": "CREATE TABLE IF NOT EXISTS warehouses ( id_warehouse INTEGER PRIMARY KEY NOT NULL, co_warehouse character varying(30) NOT NULL, na_warehouse character varying(80) NOT NULL, co_enterprise character varying(30) NOT NULL, id_enterprise INTEGER NOT NULL);"
+  },
+  {
+    "id": 37,
+    "name": "global_discounts",
+    "table": "globalDiscounts",
+    "idName": "id_global_discount",
+    "sql": "CREATE TABLE IF NOT EXISTS global_discounts  (id_global_discount INTEGER PRIMARY KEY, global_discount VARCHAR(30) NOT NULL, tx_description character varying(60), default_global_discount BOOLEAN DEFAULT false);"
+  },
+  {
+    "id": 38,
+    "name": "client_bank_accounts",
+    "table": "clientBankAccounts",
+    "idName": "id_client_bank_account",
+    "sql": "CREATE TABLE IF NOT EXISTS client_bank_accounts ( id_client_bank_account INTEGER PRIMARY KEY, co_client_bank_account VARCHAR(30), co_bank VARCHAR(30), id_bank INTEGER, co_client VARCHAR(30), id_client INTEGER, nu_account VARCHAR(50), co_type VARCHAR(30), co_currency VARCHAR(30), id_currency INTEGER, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 39,
+    "name": "product_min_muls",
+    "table": "productMinMuls",
+    "idName": "id_product_min_mul",
+    "sql": "CREATE TABLE IF NOT EXISTS product_min_muls ( id_product_min_mul INTEGER PRIMARY KEY, co_product VARCHAR(30), id_product INTEGER, qu_minimum INTEGER, qu_multiple INTEGER, flag BOOLEAN, co_enterprise  VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 40,
+    "name": "user_informations",
+    "table": "userInformation",
+    "idName": "id_user_information",
+    "sql": "CREATE TABLE IF NOT EXISTS user_informations ( id_user_information INTEGER PRIMARY KEY, id_user INTEGER NOT NULL, co_user VARCHAR(30) NOT NULL, title VARCHAR(30) NOT NULL, content VARCHAR(1000) NOT NULL, co_enterprise VARCHAR(30) NOT NULL, id_enterprise INTEGER NOT NULL);"
+  },
+  {
+    "id": 42,
+    "name": "currency_enterprises",
+    "table": "currencyEnterprises",
+    "idName": "id_currency_enterprise",
+    "sql": "CREATE TABLE IF NOT EXISTS currency_enterprises ( id_currency_enterprise INTEGER PRIMARY KEY, id_currency INTEGER, co_currency VARCHAR(80) NOT NULL, local_currency BOOLEAN NOT NULL, hard_currency BOOLEAN NOT NULL, co_enterprise VARCHAR(30) NOT NULL, id_enterprise INTEGER);"
+  },
+  {
+    "id": 43,
+    "name": "currency_relations",
+    "table": "currencyRelations",
+    "idName": "id_currency_relation",
+    "sql": "CREATE TABLE IF NOT EXISTS currency_relations ( id_currency_relation INTEGER PRIMARY KEY, co_currency_hard VARCHAR(80) NOT NULL, co_currency_local VARCHAR(80) NOT NULL, nu_exchange_rate DECIMAL(10,5) NOT NULL DEFAULT 0, co_enterprise VARCHAR(30) NOT NULL, id_enterprise INTEGER NOT NULL);"
+  },
+  {
+    "id": 44,
+    "name": "conversion_types",
+    "table": "conversionTypes",
+    "idName": "id_conversion_type",
+    "sql": "CREATE TABLE IF NOT EXISTS conversion_types ( id_conversion_type  INTEGER PRIMARY KEY, co_conversion_type VARCHAR(80) NOT NULL, co_currency_hard VARCHAR(80) NOT NULL, co_currency_local VARCHAR(80) NOT NULL, nu_value_local DECIMAL(10,5) NOT NULL DEFAULT 0, date_conversion TIMESTAMP, co_enterprise VARCHAR(30) NOT NULL, id_enterprise INTEGER NOT NULL, id_conversion INTEGER);"
+  },
+  {
+    "id": 46,
+    "name": "type_product_structures",
+    "table": "typeProductStructures",
+    "idName": "id_type_product_structure",
+    "sql": "CREATE TABLE IF NOT EXISTS type_product_structures ( id_type_product_structure  INTEGER PRIMARY KEY, type VARCHAR(80) NOT NULL, co_type_product_structure VARCHAR(80), na_type_product_structure VARCHAR(80), sco_type_product_structure VARCHAR(80), nu_level INTEGER, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 48,
+    "name": "product_structures",
+    "table": "productStructures",
+    "idName": "id_product_structure",
+    "sql": "CREATE TABLE IF NOT EXISTS product_structures ( id_product_structure  INTEGER PRIMARY KEY, type VARCHAR(80), co_product_structure VARCHAR(80), na_product_structure VARCHAR(80), id_type_product_structure INTEGER, co_type_product_structure VARCHAR(80), sco_product_structure VARCHAR(80), sna_product_structure VARCHAR(80), co_enterprise VARCHAR(30), id_enterprise INTEGER, qu_products NUMERIC );"
+  },
+  {
+    "id": 50,
+    "name": "units",
+    "table": "units",
+    "idName": "id_unit",
+    "sql": "CREATE TABLE IF NOT EXISTS units ( id_unit INTEGER PRIMARY KEY, co_unit VARCHAR(80) NOT NULL, na_unit VARCHAR(80) NOT NULL, co_enterprise VARCHAR(80), id_enterprise INTEGER NOT NULL);"
+  },
+  {
+    "id": 52,
+    "name": "order_types",
+    "table": "orderTypes",
+    "idName": "id_order_type",
+    "sql": "CREATE TABLE IF NOT EXISTS order_types ( id_order_type INTEGER PRIMARY KEY, co_order_type VARCHAR(160), na_order_type VARCHAR(160), default_value BOOLEAN, co_enterprise VARCHAR(160), id_enterprise INTEGER);"
+  },
+  {
+    "id": 53,
+    "name": "user_product_favs",
+    "table": "userProductFavs",
+    "idName": "id_user_product_favs",
+    "sql": "CREATE TABLE IF NOT EXISTS user_product_favs ( id_user_product_favs INTEGER, co_user VARCHAR(80), id_user INTEGER, co_product VARCHAR(80), id_product INTEGER, if_change BOOLEAN DEFAULT false, co_enterprise VARCHAR(80), id_enterprise INTEGER);"
+  },
+  {
+    "id": 54,
+    "name": "client_avg_products",
+    "table": "clientAvgProducts",
+    "idName": "id_client_avg_product",
+    "sql": "CREATE TABLE IF NOT EXISTS client_avg_products ( id_client_avg_product INTEGER PRIMARY KEY, id_client INTEGER, co_client VARCHAR(30), id_product INTEGER, co_product VARCHAR(30), id_product_unit INTEGER, co_product_unit VARCHAR(30), id_address_client INTEGER, co_address_client VARCHAR(30), average INTEGER, co_enterprise VARCHAR(30), id_enterprise INTEGER);"
+  },
+  {
+    "id": 55,
+    "name": "igtf_lists",
+    "table": "igtfLists",
+    "idName": "id_igtf",
+    "sql": "CREATE TABLE IF NOT EXISTS igtf_lists ( id_igtf INTEGER PRIMARY KEY, na_igtf VARCHAR(50), price DECIMAL(10,5) NOT NULL DEFAULT 0, descripcion VARCHAR (50), default_igtf BOOLEAN DEFAULT false);"
+  },
+  {
+    "id": 56,
+    "name": "invoices",
+    "table": "invoices",
+    "idName": "id_invoice",
+    "sql": "CREATE TABLE IF NOT EXISTS invoices ( id_invoice INTEGER PRIMARY KEY, co_invoice VARCHAR(50), co_client VARCHAR(50), id_client INTEGER, da_invoice TIMESTAMP, na_responsible VARCHAR(50), id_user INTEGER, nu_amount_total DECIMAL(10,5), nu_amount_final DECIMAL(10,5), co_currency VARCHAR(50), da_dispatch TIMESTAMP, tx_comment VARCHAR(50), nu_purchase VARCHAR(50), co_user VARCHAR(50), co_payment_condition VARCHAR(50), id_payment_condition INTEGER, co_address_client VARCHAR(50), id_address_client INTEGER, nu_discount DECIMAL(10,5), id_currency INTEGER, id_conversion_type INTEGER, nu_value_local DECIMAL(10,5), nu_amount_final_conversion DECIMAL(10,5), nu_amount_total_conversion DECIMAL(10,5), co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 57,
+    "name": "invoice_details",
+    "table": "invoiceDetails",
+    "idName": "id_invoice_detail",
+    "sql": "CREATE TABLE IF NOT EXISTS invoice_details ( id_invoice_detail INTEGER PRIMARY KEY, co_invoice_detail VARCHAR(50), co_invoice VARCHAR(50), id_invoice INTEGER, co_product VARCHAR(50), id_product INTEGER, nu_amount_total DECIMAL(10,5), co_warehouse VARCHAR(50), id_warehouse INTEGER, iva DECIMAL(10,5), nu_discount_total DECIMAL(10,5), co_discount VARCHAR(50), id_discount INTEGER, co_price_list VARCHAR(50), id_price_list INTEGER, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 58,
+    "name": "invoice_detail_units",
+    "table": "invoiceDetailUnits",
+    "idName": "id_invoice_detail_unit",
+    "sql": "CREATE TABLE IF NOT EXISTS invoice_detail_units ( id_invoice_detail_unit INTEGER PRIMARY KEY, co_invoice_detail_unit VARCHAR(50), co_invoice_detail VARCHAR(50), id_invoice_detail INTEGER, co_product_unit VARCHAR(50), id_product_unit INTEGER, qu_invoice DECIMAL(10,5), co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+  },
+  {
+    "id": 63,
+    "name": "transaction_types",
+    "table": "transactionTypes",
+    "idName": "id_transaction_type",
+    "sql": "CREATE TABLE IF NOT EXISTS transaction_types ( id_transaction_type INTEGER, co_transaction_type VARCHAR(3), na_transaction_type character VARCHAR(50), require_approval BOOLEAN DEFAULT 0);"
+  },
+  {
+    "id": 64,
+    "name": "statuses",
+    "table": "statuses",
+    "idName": "id_status",
+    "sql": "CREATE TABLE IF NOT EXISTS statuses ( id_status INTEGER, co_status VARCHAR(10), na_status VARCHAR(50), status_action INTEGER);"
+  },
+  {
+    "id": 65,
+    "name": "transaction_statuses",
+    "table": "transactionStatuses",
+    "idName": "id_transaction_status",
+    "sql": "CREATE TABLE IF NOT EXISTS transaction_statuses ( id_transaction_status INTEGER, da_transaction_statuses TIMESTAMP, id_transaction_type INTEGER, co_transaction_type VARCHAR(10), co_transaction character VARCHAR(50), id_transaction INTEGER, id_status INTEGER, co_status character VARCHAR(10), tx_comment VARCHAR(255));"
+  },
+  {
+    "id": 72,
+    "name": "conversion",
+    "table": "conversion",
+    "idName": "id_conversion",
+    "sql": "CREATE TABLE IF NOT EXISTS conversion ( id_conversion INTEGER, co_conversion VARCHAR(80), na_conversion VARCHAR(80), primary_currency BOOLEAN DEFAULT 0, id_enterprise INTEGER);"
+  },
+  {
+    "id": 73,
+    "name": "modules",
+    "table": "modules",
+    "idName": "id_module",
+    "sql": "CREATE TABLE IF NOT EXISTS modules ( id_module INTEGER, co_module VARCHAR(80), na_module VARCHAR(80));"
+  },
+  {
+    "id": 74,
+    "name": "currency_modules",
+    "table": "currencyModules",
+    "idName": "id_currency_module",
+    "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER PRIMARY KEY, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1, currency_selector BOOLEAN DEFAULT 1);"
+  },
+  {
+    "id": 75,
+    "name": "difference_codes",
+    "table": "differenceCodes",
+    "idName": "id_difference_code",
+    "sql": "CREATE TABLE IF NOT EXISTS difference_codes ( id_difference_code INTEGER PRIMARY KEY, co_difference_code VARCHAR(80), na_difference_code VARCHAR(80), tx_description VARCHAR(255));"
+  },
+  {
+    "id": 76,
+    "name": "collect_discounts",
+    "table": "collectDiscounts",
+    "idName": "id_collect_discount",
+    "sql": "CREATE TABLE IF NOT EXISTS collect_discounts ( id_collect_discount INTEGER PRIMARY KEY, nu_collect_discount NUMERIC(10,10), na_collect_discount VARCHAR(200), require_input BOOLEAN DEFAULT 0);"
+  },
+  {
+    "id": 9999999,
+    "name": "versionsTables",
+    "table": "versionsTables",
+    "idName": "id_table",
+    "sql": "CREATE TABLE IF NOT EXISTS versionsTables(id_table INTEGER PRIMARY KEY,name_table VARCHAR(80),last_update VARCHAR(50),numreg INTEGER);"
+  },
+  {
+    "id": 99100,
+    "name": "global_configuration",
+    "table": "globalConfiguration",
+    "idName": "id_config",
+    "sql": "CREATE TABLE IF NOT EXISTS global_configuration(id_config NUMBER, clave VARCHAR(100), valor VARCHAR(100), descripcion VARCHAR(100));"
+  },
+  {
+    "id": 99101,
+    "name": "application_tags",
+    "table": "applicationTags",
+    "idName": "id_application_tag",
+    "sql": "CREATE TABLE IF NOT EXISTS application_tags(id_application_tag INTEGER PRIMARY KEY, co_application_tag VARCHAR(50), co_language VARCHAR(50), co_module VARCHAR(50), na_module VARCHAR(50), tag text);"
+  },
+  {
+    "id": 99102,
+    "name": "potential_clients",
+    "table": "potentialClients",
+    "idName": "co_client",
+    "sql": "CREATE TABLE IF NOT EXISTS potential_clients(id INTEGER, id_client INTEGER, co_client VARCHAR(40) PRIMARY KEY, id_user INTEGER, co_user VARCHAR(30), na_client VARCHAR(80), nu_rif VARCHAR(15), tx_address VARCHAR(150),tx_address_dispatch VARCHAR(150),tx_client VARCHAR(160),na_responsible VARCHAR(80),em_client VARCHAR(80),nu_phone VARCHAR(80),na_web_site VARCHAR(150),da_potential_client TIMESTAMP,st_potential_client INTEGER,id_enterprise INTEGER,co_enterprise VARCHAR(30),coordenada VARCHAR(50), coordenada_client VARCHAR(50), nu_attachments INTEGER, has_attachments BOOLEAN);"
+  },
+  {
+    "id": 99103,
+    "name": "pending_transactions",
+    "table": "pendingTransactions",
+    "idName": "co_transaction",
+    "sql": "CREATE TABLE IF NOT EXISTS pending_transactions(co_transaction VARCHAR(40) PRIMARY KEY, id_transaction INTEGER, type VARCHAR(30));"
+  },
+  {
+    "id": 99104,
+    "name": "user_address_clients",
+    "table": "userAddressClients",
+    "idName": "id_user_address_client",
+    "sql": "CREATE TABLE IF NOT EXISTS user_address_clients(id_user_address_client INTEGER, co_user_address_client VARCHAR(100), id_address_client INTEGER, co_address_client VARCHAR(30), tx_comment VARCHAR(100), id_user INTEGER, id_enterprise INTEGER, coordenada VARCHAR(100), status NUMBER);"
+  },
+  {
+    "id": 99105,
+    "name": "photo_products",
+    "table": "photoProducts",
+    "idName": "name",
+    "sql": "CREATE TABLE IF NOT EXISTS photo_products (name TEXT PRIMARY KEY, date NUMBER, ruta TEXT, rutaActualizada BOOLEAN DEFAULT 0);"
+  },
+  {
+    "id": 99106,
+    "name": "incidences",
+    "table": "incidences",
+    "idName": "co_incidence",
+    "sql": "CREATE TABLE IF NOT EXISTS incidences(co_incidence INTEGER PRIMARY KEY AUTOINCREMENT, id_visit INTEGER, co_visit VARCHAR(30), co_type INTEGER, co_cause INTEGER, tx_description VARCHAR(120));"
+  },
+  {
+    "id": 99107,
+    "name": "transaction_images",
+    "table": "transactionImages",
+    "idName": "id_transaction_image",
+    "sql": "CREATE TABLE IF NOT EXISTS transaction_images(id_transaction_image INTEGER, co_transaction VARCHAR(30), na_transaction VARCHAR(30), na_image VARCHAR(30));"
+  },
+  {
+    "id": 99108,
+    "name": "collections",
+    "table": "collections",
+    "idName": "id_collection",
+    "sql": "CREATE TABLE IF NOT EXISTS collections (local_id INTEGER PRIMARY KEY AUTOINCREMENT, id_collection INTEGER NOT_NULL, co_collection VARCHAR(30), co_original_collection VARCHAR(30), id_client INTEGER NOT NULL, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80), st_collection NUMERIC(1,0), da_collection TIMESTAMP, da_rate TIMESTAMP, na_responsible VARCHAR(30), id_enterprise INTEGER, co_enterprise VARCHAR(30), nu_amount_total NUMERIC(10,10), co_currency VARCHAR(30), co_type INTEGER, tx_comment VARCHAR(500), coordenada VARCHAR(50), nu_value_local NUMERIC, id_currency INTEGER, nu_difference NUMERIC(10,10), tx_conversion VARCHAR(500), nu_amount_total_conversion NUMERIC(10,10), nu_difference_conversion NUMERIC(10,10), nu_igtf NUMERIC(10,10), nu_amount_igtf NUMERIC(10,10), nu_amount_igtf_conversion NUMERIC(10,10), nu_amount_final NUMERIC(10,10), nu_amount_final_conversion NUMERIC(10,10), hasIGTF VARCHAR(5) , nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery NUMERIC(1,0));"
+  },
+  {
+    "id": 99109,
+    "name": "collection_details",
+    "table": "collectionDetails",
+    "idName": "id_collection_detail",
+    "sql": "CREATE TABLE IF NOT EXISTS collection_details (local_id INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, co_collection VARCHAR(30), co_document VARCHAR(30), in_payment_partial BOOLEAN DEFAULT false, nu_voucher_retention VARCHAR(30), nu_amount_retention NUMERIC(10,10), nu_amount_retention2 NUMERIC(10,10), nu_amount_paid NUMERIC(10,10), nu_amount_discount NUMERIC(10,10), nu_amount_doc NUMERIC(10,10), da_document TIMESTAMP, nu_balance_doc NUMERIC(10,10), co_original VARCHAR(30), co_type_doc VARCHAR(30), id_document INTEGER, nu_amount_doc_conversion NUMERIC(10,10), nu_balance_doc_conversion NUMERIC(10,10), nu_amount_retention_iva_conversion NUMERIC(10,10), nu_amount_retention_islr_conversion NUMERIC(10,10), nu_amount_discount_conversion NUMERIC(10,10), nu_amount_paid_conversion NUMERIC(10,10), nu_amount_igtf NUMERIC(10,10), nu_amount_igtf_conversion NUMERIC(10,10), da_voucher VARCHAR(20), has_discount BOOLEAN DEFAULT false, discount_comment VARCHAR(100), nu_amount_collect_discount NUMERIC(10,10), nu_collect_discount NUMERIC(10,10));"
+  },
+  {
+    "id": 99110,
+    "name": "collection_payments",
+    "table": "collectionPayments",
+    "idName": "id_collection_payment",
+    "sql": "CREATE TABLE IF NOT EXISTS collection_payments (local_id INTEGER PRIMARY KEY AUTOINCREMENT,id_collection_payment INTEGER, co_collection VARCHAR(30) ,id_collection_detail INTEGER, co_payment_method VARCHAR(30), id_bank INTEGER, nu_payment_doc VARCHAR(50), na_bank VARCHAR(80), co_client_bank_account VARCHAR(30), nu_client_bank_account VARCHAR(50), da_value TIMESTAMP, da_collection_payment TIMESTAMP, nu_collection_payment VARCHAR(30), nu_amount_partial NUMERIC(10,10), co_type VARCHAR(5), nu_amount_partial_conversion NUMERIC(10,10), id_difference_code INTEGER, co_difference_code VARCHAR(80));"
+  },
+  {
+    "id": 99111,
+    "name": "document_st",
+    "table": "documentSt",
+    "idName": "id",
+    "sql": "CREATE TABLE IF NOT EXISTS document_st (id INTEGER PRIMARY KEY, id_document INTEGER UNIQUE NOT NULL, co_document VARCHAR(30) NOT NULL, st_document INTEGER, da_update TIMESTAMP);"
+  },
+  {
+    "id": 99112,
+    "name": "returns",
+    "table": "returns",
+    "idName": "co_return",
+    "sql": "CREATE TABLE IF NOT EXISTS returns (co_return VARCHAR(30) PRIMARY KEY, id_return INTEGER NOT_NULL, st_return NUMERIC(1,0) NOT NULL, da_return TIMESTAMP, na_responsible VARCHAR(80), nu_seal VARCHAR(30), id_type INTEGER, id_client INTEGER NOT NULL, co_client VARCHAR(30) NOT NULL, id_user INTEGER NOT NULL, co_user VARCHAR(30) NOT NULL, lb_client VARCHAR(80), co_invoice VARCHAR(30), id_invoice INTEGER, tx_comment VARCHAR(500), coordenada VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(30), nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery INTEGER);"
+  },
+  {
+    "id": 99113,
+    "name": "return_details",
+    "table": "returnDetails",
+    "idName": "co_return_detail",
+    "sql": "CREATE TABLE IF NOT EXISTS return_details (co_return_detail VARCHAR(30) PRIMARY KEY, id_return INTEGER, co_return VARCHAR(30), id_product INTEGER NOT NULL, co_product VARCHAR(50), na_product VARCHAR(120), qu_product NUMERIC, id_measure_unit INTEGER, co_measure_unit VARCHAR(30), na_measure_unit VARCHAR(80), qu_unit NUMERIC, unit_co_enterprise VARCHAR(80), unit_id_enterprise INTEGER, id_product_unit INTEGER, co_product_unit VARCHAR(80) , nu_lote VARCHAR(30), da_duedate TIMESTAMP, co_document VARCHAR(30), id_motive INTEGER, na_motive VARCHAR(80));"
+  },
+  {
+    "id": 99114,
+    "name": "client_stocks",
+    "table": "clientStocks",
+    "idName": "co_client_stock",
+    "sql": "CREATE TABLE IF NOT EXISTS client_stocks (id_client_stock INTEGER,co_client_stock VARCHAR(50) PRIMARY KEY,id_user INTEGER,co_user VARCHAR(50),id_client INTEGER,co_client VARCHAR(50),id_address_client INTEGER,co_address_client VARCHAR(50),coordenada VARCHAR(50),tx_comment VARCHAR (500),id_enterprise INTEGER,co_enterprise VARCHAR(50),da_client_stock VARCHAR(80),st_client_stock INTEGER,lb_client VARCHAR(50),isSave VARCHAR(5), nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery INTEGER);"
+  },
+  {
+    "id": 99115,
+    "name": "client_stocks_details",
+    "table": "clientStocksDetails",
+    "idName": "co_client_stock_detail",
+    "sql": "CREATE TABLE IF NOT EXISTS client_stocks_details (id_client_stock_detail INTEGER, co_client_stock_detail VARCHAR(50) PRIMARY KEY, co_client_stock VARCHAR(30), co_product VARCHAR(100), na_product VARCHAR(100), id_product INTEGER, co_enterprise VARCHAR(80), id_enterprise INTEGER, posicion INTEGER, isSave VARCHAR(5))"
+  },
+  {
+    "id": 99116,
+    "name": "client_stocks_details_units",
+    "table": "clientStocksDetailsUnits",
+    "idName": "co_client_stock_detail_unit",
+    "sql": "CREATE TABLE IF NOT EXISTS client_stocks_details_units (id_client_stock_detail_unit INTEGER, co_client_stock_detail_unit VARCHAR(50) PRIMARY KEY, co_client_stock_detail VARCHAR(50), co_product_unit VARCHAR(50), co_unit VARCHAR(50), id_product_unit INTEGER, na_unit VARCHAR(50), qu_stock NUMERIC NOT NULL DEFAULT 0, co_enterprise VARCHAR(50), qu_unit INTEGER, ubicacion VARCHAR(30), id_enterprise INTEGER, da_expiration TIMESTAMP, nu_batch VARCHAR(50), posicion INTEGER, isSave VARCHAR(5))"
+  },
+  {
+    "id": 99117,
+    "name": "transaction_signatures",
+    "table": "transactionSignatures",
+    "idName": "id_transaction_signature",
+    "sql": "CREATE TABLE IF NOT EXISTS transaction_signatures (id_transaction_signature INTEGER, na_transaction TEXT NOT NULL, co_transaction VARCHAR(50),na_image TEXT NOT NULL );"
+  },
+  {
+    "id": 991178,
+    "name": "transaction_files",
+    "table": "transaction_files",
+    "idName": "id_transaction_files",
+    "sql": "CREATE TABLE IF NOT EXISTS transaction_files (id_transaction_files INTEGER, na_transaction TEXT NOT NULL, co_transaction VARCHAR(50),na_file TEXT NOT NULL );"
+  },
+  {
+    "id": 991179,
+    "name": "orders",
+    "table": "orders",
+    "idName": "id_order",
+    "sql": "CREATE TABLE IF NOT EXISTS orders ( id_order INTEGER, co_order TEXT  PRIMARY KEY, co_client TEXT, id_client INTEGER, da_order TIMESTAMP, da_created TIMESTAMP, na_responsible TEXT, id_user INTEGER, id_order_creator INTEGER, in_order_review BOOLEAN, nu_amount_total DECIMAL(10,5), nu_amount_final DECIMAL(10,5), co_currency VARCHAR(30), da_dispatch TIMESTAMP, tx_comment VARCHAR(500), nu_purchase VARCHAR(50), co_enterprise VARCHAR(30), co_user VARCHAR(30), co_payment_condition VARCHAR(30), id_payment_condition INTEGER, id_enterprise INTEGER, co_address_client VARCHAR(30), id_address_client INTEGER, nu_amount_discount DECIMAL(10,5), nu_amount_total_base DECIMAL(10,5), st_order INTEGER, coordenada VARCHAR(50), nu_discount DECIMAL(10,5), id_currency INTEGER, id_currency_conversion INTEGER, nu_value_local DECIMAL(10,5), nu_amount_total_conversion DECIMAL(10,5), nu_amount_final_conversion DECIMAL(10,5), procedencia VARCHAR(100), nu_amount_total_base_conversion DECIMAL(10,5), nu_amount_discount_conversion DECIMAL(10,5), id_order_type INTEGER, nu_attachments INTEGER, has_attachments BOOLEAN, nu_amount_total_product_discount DECIMAL(10,5), nu_amount_total_product_discount_conversion DECIMAL(10,5), nu_details INTEGER, id_distribution_channel INTEGER, co_distribution_channel TEXT, st_delivery INTEGER);"
+  },
+  {
+    "id": 991180,
+    "name": "order_details",
+    "table": "order_details",
+    "idName": "id_order_detail",
+    "sql": "CREATE TABLE IF NOT EXISTS order_details( id_order_detail INTEGER, co_order_detail TEXT PRIMARY KEY, co_order TEXT NOT NULL, co_product TEXT, na_product TEXT, id_product INTEGER NOT NULL, nu_price_base DECIMAL(10,5), nu_amount_total DECIMAL(10,5), co_warehouse TEXT, id_warehouse INTEGER, qu_suggested DECIMAL(10,5), co_enterprise TEXT, id_enterprise INTEGER, iva DECIMAL(10,5), nu_discount_total DECIMAL(10,5), co_discount TEXT, id_discount INTEGER, co_price_list TEXT, id_price_list INTEGER, posicion INTEGER, nu_price_base_conversion DECIMAL(10,5), nu_discount_total_conversion DECIMAL(10,5), nu_amount_total_conversion DECIMAL(10,5))"
+  },
+  {
+    "id": 991181,
+    "name": "order_detail_units",
+    "table": "order_detail_units",
+    "idName": "id_order_detail_unit",
+    "sql": "CREATE TABLE IF NOT EXISTS order_detail_units( id_order_detail_unit INTEGER, co_order_detail_unit TEXT PRIMARY KEY, co_order_detail TEXT, co_product_unit TEXT, id_product_unit INTEGER, qu_order DECIMAL(10,5), co_enterprise TEXT, id_enterprise INTEGER, co_unit TEXT, qu_suggested DECIMAL(10,5))"
+  },
+  {
+    "id": 991182,
+    "table": "order_detail_discount",
+    "name": "order_detail_discount",
+    "idName": "id_order_detail_discount",
+    "sql": "CREATE TABLE IF NOT EXISTS order_detail_discount(id_order_detail_discount INTEGER, co_order_detail_discount TEXT PRIMARY KEY, co_order_detail TEXT, id_order_detail INTEGER, id_discount INTEGER, qu_discount DECIMAL(10,5), nu_price_final  DECIMAL(10,5), co_enterprise TEXT, id_enterprise INTEGER );"
+  },
+  {
+    "id": 991183,
+    "table": "client_channel_order_type",
+    "name": "client_channel_order_type",
+    "idName": "id_client_channel_order_type",
+    "sql": "CREATE TABLE IF NOT EXISTS client_channel_order_type(id_client_channel_order_type INTEGER,co_client_channel_order_type VARCHAR(80),id_client INTEGER,co_client VARCHAR (80),id_distribution_channel INTEGER,co_distribution_channel VARCHAR(80),id_order_type INTEGER,co_order_type VARCHAR(80),id_enterprise INTEGER,co_enterprise VARCHAR(80));"
+  },
+  {
+    "id": 991184,
+    "table": "order_type_product_structure",
+    "name": "order_type_product_structure",
+    "idName": "id_order_type_product_structure",
+    "sql": "CREATE TABLE IF NOT EXISTS order_type_product_structure(id_order_type_product_structure INTEGER,co_order_type_product_structure VARCHAR(80),id_order_type INTEGER,co_order_type VARCHAR(80),id_product_structure INTEGER,co_product_structure VARCHAR(80),id_enterprise INTEGER,co_enterprise VARCHAR(80));"
+  },
+  {
+    "id": 991185,
+    "table": "deposits",
+    "name": "deposits",
+    "idName": "id_deposit",
+    "sql": "CREATE TABLE IF NOT EXISTS deposits(id_deposit INTEGER, co_deposit VARCHAR(30) PRIMARY KEY,da_deposit TIMESTAMP,co_bank VARCHAR(30) NOT NULL,id_bank INTEGER,nu_account VARCHAR(50),nu_document VARCHAR(30),da_document TIMESTAMP NOT NULL,nu_amount_doc NUMERIC(29,4) NOT NULL,co_currency VARCHAR(30),id_enterprise INTEGER,co_enterprise VARCHAR(50),st_deposit NUMERIC(1,0),tx_comment VARCHAR(150),nu_value_local NUMERIC,nu_amount_doc_conversion NUMERIC(29,4) NOT NULL,id_currency INTEGER ,coordenada VARCHAR(20), st_delivery NUMERIC(1,0));"
+  },
+  {
+    "id": 991186,
+    "table": "deposit_collects",
+    "name": "deposit_collects",
+    "idName": "id_deposit_collect",
+    "sql": "CREATE TABLE IF NOT EXISTS deposit_collects(id_deposit_collect INTEGER ,co_deposit_collect VARCHAR(50) PRIMARY KEY, co_deposit VARCHAR(30),co_collection VARCHAR(30),id_collection INTEGER,co_document VARCHAR(30),nu_amount_total NUMERIC(29,4),nu_total_deposit NUMERIC(29,4));"
+  },
+  {
+    "id": 991187,
+    "table": "collection_detail_discounts",
+    "name": "collection_detail_discounts",
+    "idName": "id_collection_detail_discount",
+    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_discounts(id_collection_detail_discount INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_discount INTEGER, nu_collect_discount_other NUMBER, na_collect_discount_other VARCHAR(250), co_collection VARCHAR(30));"
+  }
+]

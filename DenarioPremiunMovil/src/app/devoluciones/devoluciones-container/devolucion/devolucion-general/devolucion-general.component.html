@@ -36,12 +36,13 @@
       </div>
     </ion-col>
 
-    <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-      *ngIf="returnLogic.validateReturn && !returnLogic.bloquearFactura">
+    @if(returnLogic.validateReturn && !returnLogic.bloquearFactura){
+    <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
       <!-- debe ir en el ion-card para que el trigger funcione -->
       <invoice-selector #selectorInvoice (invoiceSeleccionado)="setInvoicefromSelector($event)"></invoice-selector>
 
     </ion-col>
+  }
 
     <!--     <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="this.returnLogic.validateReturn">
       <ion-label>{{this.generalTags.get('DEV_INVOICE')}}</ion-label>

@@ -21,7 +21,7 @@
           <ion-tab-button tab="3" (click)="onCartSelected();">
             <ion-icon name="cart"></ion-icon>
             <ion-label>Carrito</ion-label>
-            <ion-badge color="danger">{{ this.orderServ.carrito.length }}</ion-badge>
+            <ion-badge color="danger">{{ cartBadgeText() }}</ion-badge>
           </ion-tab-button> }
            @if(inventario){
           <ion-tab-button tab="4" (click)="onInventorySelected();">

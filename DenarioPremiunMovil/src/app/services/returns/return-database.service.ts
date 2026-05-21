@@ -126,7 +126,7 @@ export class ReturnDatabaseService {
       "coordenada, co_enterprise, id_enterprise, nu_attachments, has_attachments, st_delivery) " +
       "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-    const insertStatementDetails = "INSERT OR REPLACE INTO return_details(co_return, co_return_detail, id_product, co_product, na_product, qu_product, id_measure_unit, co_measure_unit, na_measure_unit, qu_unit, unit_co_enterprise, unit_id_enterprise, id_product_unit, co_product_unit, nu_lote, da_duedate, co_document, id_motive) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const insertStatementDetails = "INSERT OR REPLACE INTO return_details(id_return, co_return, co_return_detail, id_product, co_product, na_product, qu_product, id_measure_unit, co_measure_unit, na_measure_unit, qu_unit, unit_co_enterprise, unit_id_enterprise, id_product_unit, co_product_unit, nu_lote, da_duedate, co_document, id_motive) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     for (let re = 0; re < returns.length; re++) {
@@ -170,6 +170,7 @@ export class ReturnDatabaseService {
         queries.push([
           insertStatementDetails,
           [
+            devolucion.idReturn,
             devolucion.coReturn,
             detail.coReturnDetail,
             detail.idProduct,
@@ -177,11 +178,11 @@ export class ReturnDatabaseService {
             detail.naProduct,
             detail.quProduct,
             detail.unit?.idUnit,
-            detail.unit?.coUnit,
-            detail.unit?.naUnit,
+            detail.coMeasureUnit,
+            detail.naMeasureUnit,
             detail.unit?.quUnit,
-            detail.unit?.coEnterprise,
-            detail.unit?.idEnterprise,
+            devolucion.coEnterprise,
+            devolucion.idEnterprise,
             detail.unit?.idProductUnit,
             detail.unit?.coProductUnit,
             this.cleanString(detail.nuLote),

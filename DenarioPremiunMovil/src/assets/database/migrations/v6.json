@@ -10,5 +10,6 @@
     {
         "sql": "UPDATE versionsTables SET last_update = '1970-01-01 00:00:00.000'  WHERE name_table = 'stockTable'",
         "description": "Se actualiza la fecha de última actualización de la tabla 'stockTable' para forzar una sincronización completa."
+
     }
 ]

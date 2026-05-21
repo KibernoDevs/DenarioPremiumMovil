@@ -36,16 +36,22 @@ export class ProductosSearchComponent{
 
   }
 
-  onSearchClicked(event?: Event){
+  async onSearchClicked(event?: Event){
     event?.preventDefault();
-    const inputElement = event?.target as HTMLInputElement | null;
-    this.messageService.showLoading();
-    if (inputElement) {
-      this.searchText = inputElement.value;
+
+    const normalizedSearch = (this.searchText ?? '').toString().trim();
+    this.searchText = normalizedSearch;
+
+    if (!this.searchText) {
+      this.searchTextChanged.emit('');
+      this.productoService.onProductSearch('');
+      await this.messageService.hideLoading();
+      return;
     }
+
+    await this.messageService.showLoading();
     this.searchTextChanged.emit(this.searchText);
     this.productoService.onProductSearch(this.searchText);
-
   }
 
   onReturnStructures(){

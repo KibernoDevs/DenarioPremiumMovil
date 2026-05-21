@@ -131,12 +131,9 @@ export class CobrosDocumentComponent implements OnInit {
 
   onChangeCurrencyDoc(event: any) {
     const selectedCurrency = event?.target?.value?.coCurrency ?? '';
-    const currencyToFilter = selectedCurrency === 'Moneda'
-      ? this.collectService.currencySelected.coCurrency
-      : selectedCurrency;
 
-    this.collectService.documentCurrency = currencyToFilter;
-    this.applyDocumentFilter(currencyToFilter);
+    this.collectService.documentCurrency = selectedCurrency;
+    this.applyDocumentFilter(selectedCurrency);
 
     if (this.collectService.historicPartialPayment) {
       this.collectService.findIsPaymentPartial(

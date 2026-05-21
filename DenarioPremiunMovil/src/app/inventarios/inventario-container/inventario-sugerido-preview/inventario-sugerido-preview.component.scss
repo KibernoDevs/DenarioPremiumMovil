@@ -1,0 +1,178 @@
+.fondoAmarillo {
+    --background: $colorAmarillo;
+    img {
+        width: 100%;
+    }
+}
+
+.boton {
+    width: 40px;
+}
+
+.borderColor {
+    --border-color: #daab19;
+}
+
+$colorVerde: #59b02d;
+$colorVerdeRegistrar: #7dc60f;
+$colorAmarillo: #daab19;
+$colorGris: #666666;
+$colorLila: #430197;
+$fondoVerde: #59b02d;
+$fondoAmarillo: #daab19;
+$fondoLila: #430197;
+.fondoVerde {
+    background: $fondoVerde;
+}
+.fondoLila {
+    background: #430197;
+}
+.fondoAmarillo {
+  background: $fondoAmarillo;
+}
+
+.tituloModulos {
+    color: #ffffff;
+    font-weight: bold;
+    font-family: sans-serif;
+    margin: 0px;
+    font-size: 26px;
+    padding-top: 10px;
+    text-transform: capitalize !important;
+}
+
+.titulosnegrita{
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.TextActividades{
+  font-size: 12px;
+}
+.listado-enterprise-selector, .listado-tps-selector{
+  text-align: center!important;
+  border: 1px solid #9c9c9c;
+  border-radius: 25px;
+  font-weight: bold;
+  height: 40px;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.listado-enterprise-selector .select-ico, .listado-tps-selector .select-icon{
+  display: none!important;
+}
+
+ion-select::part(icon) {
+  content: url('/assets/images/flecha-down.svg');
+  color: $colorLila;
+  filter: invert(12%) sepia(82%) saturate(6980%) hue-rotate(269deg) brightness(59%) contrast(113%);
+  width: 20px;
+  height: 19px;
+  position: absolute;
+  right: 10px;
+  top: 9px;
+}
+
+ion-modal#eventModal {
+  --width: 90%;
+  --min-width: 250px;
+  --height: fit-content;
+  --border-radius: 6px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+ion-modal#eventModal .contenedorModalActividades{
+  padding: 5%;
+}
+ion-modal#eventModal h1 {
+  margin: 20px 20px 10px 20px;
+}
+ion-modal#eventModal .wrapper {
+  margin-bottom: 10px;
+}
+
+.icon-List {
+    margin-top: 9px;
+}
+
+
+.col {
+  border: solid 1px $colorLila;
+  border-bottom-style: none;
+  border-right-style: none;
+}
+
+.col:last-child {
+  border-right: solid 1px $colorLila;
+}
+
+.row:last-child .col {
+  border-bottom: solid 1px $colorLila;
+}
+
+
+
+.tablaDocumentosVenta ion-col {
+    border: 1px solid $colorLila;
+    flex-wrap: nowrap;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+.titulodepositos{
+  font-size: 18px;
+  color: $colorLila;
+  text-align: center;
+}
+
+.cabecera .col {
+  background-color:$colorLila;
+  color: #ffffff;
+}
+
+
+.tablaDocVentas {
+    flex-wrap: nowrap;
+}
+
+.tablaDocVentasGrip {
+    flex-wrap: nowrap;
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+    color: #000000;
+}
+.tablaDocVentasGrip {
+    flex-wrap: nowrap;
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+    color: #000000;
+}
+
+
+
+.popover {
+    --width: 100% !important;
+    --offset-x: 0% !important;
+    ;
+    --offset-y: 72% !important;
+    ;
+}
+
+.inp-write {
+    --border-color: #e60c0c;
+}
+
+.good {
+    --border-color: #0ce642;
+}
+
+ion-checkbox {
+  --size: 15px;
+  --checkbox-background-checked: #59b02d;
+}
+
+ion-checkbox::part(container) {
+  // border-radius: 6px;
+  border: 2px solid #59b02d;
+}
+

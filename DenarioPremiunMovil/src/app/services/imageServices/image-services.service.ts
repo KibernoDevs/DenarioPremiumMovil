@@ -488,14 +488,116 @@ export class ImageServicesService {
     }
   }
 
+  private getFilenameFromPath(path?: string): string | null {
+    if (!path) return null;
+    return path.split('/').pop() || null;
+  }
+
+  // Normaliza nombres como "12345.png" y "12345_1.png" al mismo productId ("12345")
+  private getProductKeyFromFilename(filename: string): string {
+    const basename = filename.split('.')[0] || filename;
+    return basename.split('_')[0];
+  }
+
+  private sortRelatedFilenames(productId: string, filenames: string[]): string[] {
+    const rank = (filename: string): [number, number, string] => {
+      const stem = filename.split('.')[0] || filename;
+      if (stem === productId) return [0, 0, filename];
+      if (stem.startsWith(productId + '_')) {
+        const suffix = stem.substring(productId.length + 1);
+        const parsed = Number(suffix);
+        if (suffix !== '' && Number.isFinite(parsed)) return [1, parsed, filename];
+        return [2, 0, filename];
+      }
+      return [3, 0, filename];
+    };
+
+    return [...filenames].sort((a, b) => {
+      const ra = rank(a);
+      const rb = rank(b);
+      if (ra[0] !== rb[0]) return ra[0] - rb[0];
+      if (ra[1] !== rb[1]) return ra[1] - rb[1];
+      return ra[2].localeCompare(rb[2]);
+    });
+  }
+
+  public getRelatedImageFilenames(productId: string): string[] {
+    if (!productId) return [];
+
+    const candidates = new Set<string>();
+
+    const paths = this.mapImages.get(productId) || [];
+    for (const p of paths) {
+      const filename = this.getFilenameFromPath(p);
+      if (filename) candidates.add(filename);
+    }
+
+    for (const f of this.listFilesImages) {
+      if (this.getProductKeyFromFilename(f) === productId) {
+        candidates.add(f);
+      }
+    }
+
+    for (const [filename] of this.mapImagesFilesByFilename.entries()) {
+      if (this.getProductKeyFromFilename(filename) === productId) {
+        candidates.add(filename);
+      }
+    }
+
+    for (const item of this.allFileList) {
+      const filename = this.getFilenameFromPath(item.path);
+      if (filename && this.getProductKeyFromFilename(filename) === productId) {
+        candidates.add(filename);
+      }
+    }
+
+    return this.sortRelatedFilenames(productId, Array.from(candidates));
+  }
+
+  public async getImagesForProduct(productId: string): Promise<string[]> {
+    const filenames = this.getRelatedImageFilenames(productId);
+    if (filenames.length === 0) {
+      return [];
+    }
+
+    const resolved: string[] = [];
+
+    for (const filename of filenames) {
+      if (this.mapImagesFilesByFilename.has(filename)) {
+        const cached = this.mapImagesFilesByFilename.get(filename);
+        if (cached) resolved.push(cached);
+        continue;
+      }
+
+      try {
+        const base64 = await this.getImageBase64(filename);
+        if (base64) resolved.push(base64);
+      } catch (err) {
+        console.warn('[getImagesForProduct] failed loading', filename, err);
+      }
+    }
+
+    if (resolved.length === 0 && this.mapImagesFiles.has(productId)) {
+      const legacy = this.mapImagesFiles.get(productId) || [];
+      for (const img of legacy) {
+        if (img) resolved.push(img);
+      }
+    }
+
+    return resolved;
+  }
+
 
   public getImgForProduct(productId: string): string | null {
     if (!productId) return null;
 
     try {
+      const relatedFilenames = this.getRelatedImageFilenames(productId);
+
       // 1) Buscar en cache por nombre de archivo (mapImagesFilesByFilename: filename -> base64)
-      for (const [filename, base64] of this.mapImagesFilesByFilename.entries()) {
-        if (filename.startsWith(productId) && base64) {
+      for (const filename of relatedFilenames) {
+        const base64 = this.mapImagesFilesByFilename.get(filename);
+        if (base64) {
           return base64;
         }
       }
@@ -506,25 +608,12 @@ export class ImageServicesService {
         if (arr.length > 0 && arr[0]) return arr[0];
       }
 
-      // 3) Si hay rutas locales conocidas en mapImages (Map<productKey, path[]>), intentar casar con mapImagesFilesByFilename
-      if (this.mapImages.has(productId)) {
-        const paths = this.mapImages.get(productId) || [];
-        for (const p of paths) {
-          const filename = p.split('/').pop();
-          if (filename && this.mapImagesFilesByFilename.has(filename)) {
-            return this.mapImagesFilesByFilename.get(filename)!;
-          }
-        }
-
-        // Si no hay base64 en caché, disparar carga asíncrona de la primera ruta disponible para llenar la caché
-        const firstPath = paths[0];
-        const filename = firstPath?.split('/').pop();
-        if (filename) {
-          // arrancamos la carga en background; no await para que la llamada sea síncrona
-          this.getImageBase64(filename).catch(err => {
-            console.warn('[getImgForProduct] background load failed for', filename, err);
-          });
-        }
+      // 3) Si no hay base64 en caché, disparar carga asíncrona de la primera imagen relacionada
+      const firstFilename = relatedFilenames[0];
+      if (firstFilename) {
+        this.getImageBase64(firstFilename).catch(err => {
+          console.warn('[getImgForProduct] background load failed for', firstFilename, err);
+        });
       }
 
       // 4) Fallback: buscar en allFileList por nombre (allFileList guarda objetos con name y path)

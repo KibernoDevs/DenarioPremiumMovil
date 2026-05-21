@@ -30,6 +30,7 @@
                       <!-- <ion-input formControlName="coDocument" label="{{this.tags.get('DEV_DOC')}}" -->
                       <!-- <ion-input disabled="{{ this.returnLogic.returnSent || this.returnLogic.validateReturn}}" -->
                       <ion-input label="{{ tags.get('DEV_DOC') }}" #inputCoDocument label-placement="floating"
+                        [disabled]="this.returnLogic.returnSent || returnLogic.validateReturn"
                         fill="outline" [(ngModel)]="product.coDocument" #inputDocument value="{{ product.coDocument }}"
                         [ngClass]="{ 'inp-write': !product.coDocument && returnLogic.requeridedNroFactura }" (ionInput)="inputCoDocument.value = cleanInput(inputCoDocument.value);
                         product.coDocument = cleanString(product.coDocument)" [required]="returnLogic.requeridedNroFactura ? true : false">
@@ -41,13 +42,13 @@
                       <ion-item>
                         <ion-label>{{this.tags.get('DEV_FECHA_VENCE')}}:</ion-label>
                         <ion-button (click)="setShowDateModal(i,true)" color="light" class="letrasFechasButton"
-                          disabled="{{ this.returnLogic.returnSent }}">
+                          [disabled]="this.returnLogic.returnSent">
                           {{ formatShort(this.productList[i].daDueDate ) }}
                         </ion-button>
                         <ion-modal [keepContentsMounted]="true" [isOpen]="this.productList[i].showDateModal"
                           (didDismiss)="setShowDateModal(i,false)" class="fechasModal">
                           <ng-template>
-                            <ion-datetime disabled="{{ this.returnLogic.returnSent }}"
+                            <ion-datetime [disabled]="this.returnLogic.returnSent"
                               [formatOptions]="{ date: dateServ.dateFormatOptionsShort }" [id]="'fechaVence'+i"
                               presentation="date" doneText="{{this.tags.get('DENARIO_BOTON_ACEPTAR')}}"
                               cancelText="{{this.tags.get('DENARIO_BOTON_CANCELAR')}}"

@@ -96,7 +96,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE c.id_enterprise = ? LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;
+          'WHERE c.id_enterprise = ? ';
 
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -138,7 +138,8 @@ export class ClientesDatabaseServicesService {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
         selectStatement += ' ORDER BY c.' + "lb_client";
       } else if (this.globalConfig.get("clientsOrderBy") == "due_date") {
-        selectStatement += '';
+        //primero los que tengan mayor deuda y luego por fecha de vencimiento (los mas vencidos primero)
+        selectStatement += 'ORDER BY countDueDate DESC, daDueDate ASC';
       } else selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
     }
 

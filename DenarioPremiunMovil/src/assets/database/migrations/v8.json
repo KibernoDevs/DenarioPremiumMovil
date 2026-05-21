@@ -1,0 +1,6 @@
+[
+    {
+        "sql": "CREATE TABLE IF NOT EXISTS unit_pricelist(id_unit_pricelist INTEGER PRIMARY KEY AUTOINCREMENT, co_unit_pricelist VARCHAR(30) NOT NULL, id_unit INTEGER NOT NULL, co_unit VARCHAR(30) NOT NULL, id_list INTEGER NOT NULL, co_list TEXT NOT NULL, co_enterprise TEXT NOT NULL, id_enterprise INTEGER NOT NULL, FOREIGN KEY (id_list) REFERENCES lists(id_list), FOREIGN KEY (id_unit) REFERENCES units(id_unit), FOREIGN KEY (id_enterprise) REFERENCES enterprises(id_enterprise));",
+        "description": "Crea la tabla unit_pricelist con sus claves foráneas hacia list, unit y enterprise."
+    }
+]

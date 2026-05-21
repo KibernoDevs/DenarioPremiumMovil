@@ -68,13 +68,12 @@ describe('AutoSendService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('moves failed transactions out of pending queue for non 000/066 errors', async () => {
+  it('moves unhandled server errors to failed_transactions and continues the queue', async () => {
     localStorage.setItem('connected', 'true');
 
     await service.sendTransaction({ payload: 'x' }, 'order', 'CO-1');
     await Promise.resolve();
 
-    expect(alertModalSpy).toHaveBeenCalled();
     expect(executeSqlSpy).toHaveBeenCalledWith(
       jasmine.stringMatching(/INSERT INTO failed_transactions/),
       jasmine.any(Array)
@@ -82,6 +81,31 @@ describe('AutoSendService', () => {
     expect(executeSqlSpy).toHaveBeenCalledWith(
       jasmine.stringMatching(/DELETE FROM pending_transactions/),
       ['CO-1', 'order']
+    );
+    expect(runPendingQueueSpy).toHaveBeenCalled();
+    expect(alertModalSpy).not.toHaveBeenCalled();
+  });
+
+  it('skips bad request transactions without removing them from pending', async () => {
+    (service as any).callService.and.returnValue(
+      of({
+        httpStatus: 400,
+        errorCode: '400',
+        errorMessage: 'Bad Request'
+      })
+    );
+    localStorage.setItem('connected', 'true');
+
+    await service.sendTransaction({ payload: 'x' }, 'order', 'CO-2');
+    await Promise.resolve();
+
+    expect(executeSqlSpy).not.toHaveBeenCalledWith(
+      jasmine.stringMatching(/INSERT INTO failed_transactions/),
+      jasmine.any(Array)
+    );
+    expect(executeSqlSpy).not.toHaveBeenCalledWith(
+      jasmine.stringMatching(/DELETE FROM pending_transactions/),
+      jasmine.any(Array)
     );
     expect(runPendingQueueSpy).toHaveBeenCalled();
   });

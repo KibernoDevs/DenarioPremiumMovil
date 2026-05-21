@@ -4728,19 +4728,25 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     })
   }
 
-  getCollectDiscounts(dbServ: SQLiteObject) {
-    const selectStatement = 'SELECT * FROM collect_discounts ORDER BY nu_collect_discount ASC';
-    return dbServ.executeSql(selectStatement, []).then(res => {
+  getCollectDiscounts(dbServ: SQLiteObject, idEnterprise: number) {
+    const selectStatement =
+      'SELECT * FROM collect_discounts WHERE id_enterprise = ? ORDER BY nu_collect_discount ASC';
+    return dbServ.executeSql(selectStatement, [idEnterprise]).then(res => {
       this.collectDiscounts = [] as CollectDiscounts[];
       for (var i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        const idEntRaw = row.id_enterprise;
+        const idEntParsed =
+          idEntRaw === undefined || idEntRaw === null ? null : Number(idEntRaw);
         this.collectDiscounts.push({
-          idCollectDiscount: res.rows.item(i).id_collect_discount,
-          nuCollectDiscount: res.rows.item(i).nu_collect_discount,
-          naCollectDiscount: res.rows.item(i).na_collect_discount,
-          requireInput: res.rows.item(i).require_input == "true" ? true : false,
+          idCollectDiscount: row.id_collect_discount,
+          nuCollectDiscount: row.nu_collect_discount,
+          naCollectDiscount: row.na_collect_discount,
+          requireInput: row.require_input == "true" ? true : false,
           nuAmountCollectDiscount: 0,
           nuAmountCollectDiscountConversion: 0,
           position: 0,
+          idEnterprise: idEntParsed,
         })
       }
       return Promise.resolve(true);

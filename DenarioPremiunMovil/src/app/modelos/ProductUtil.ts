@@ -47,6 +47,7 @@ export class ProductUtil {
     public nuTax: number,
     public imgName?: string, // <-- propiedad opcional para reactividad de imagen
     
+    public listPrices?: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[], // <-- [unitByPriceList] propiedad opcional para lista de precios
 
   
   ) { }

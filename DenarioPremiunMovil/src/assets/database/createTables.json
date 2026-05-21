@@ -330,6 +330,27 @@
     "sql": "CREATE TABLE IF NOT EXISTS collect_discounts ( id_collect_discount INTEGER PRIMARY KEY, nu_collect_discount NUMERIC(10,10), na_collect_discount VARCHAR(200), require_input BOOLEAN DEFAULT 0);"
   },
   {
+    "id": 77,
+    "name": "straight_swap",
+    "table": "straightSwap",
+    "idName": "id_straight_swap",
+    "sql": "CREATE TABLE IF NOT EXISTS straight_swap ( id_swap integer NOT NULL, co_swap character varying(30), id_product integer NOT NULL, co_product character varying(30), da_cambio timestamp without time zone, id_unit integer NOT NULL, co_unit character varying(30), id_product_unit integer NOT NULL, co_product_unit character varying(30), id_enterprise integer NOT NULL, co_enterprise character varying(30), qu_swap decimal(10,5), id_client integer NOT NULL, id_address_client integer NOT NULL, co_client character varying(30), co_address_client character varying(30));"
+  },
+  {
+    "id":78,
+    "name": "return_category",
+    "table": "returnCategory",
+    "idName": "id_return_category",
+    "sql": "CREATE TABLE return_category (id_return_category integer PRIMARY KEY, na_return_category VARCHAR(50) NOT NULL, add_suggestion BOOLEAN NOT NULL, subtract_suggestion BOOLEAN NOT NULL);"
+  },
+  {
+    "id": 81,
+    "name": "unit_pricelist",
+    "table": "unitPriceListTable",
+    "idName": "id_unit_pricelist",
+    "sql": "CREATE TABLE IF NOT EXISTS unit_pricelist (id_unit_pricelist INTEGER PRIMARY KEY AUTOINCREMENT, co_unit_pricelist VARCHAR(30), id_unit INTEGER NOT NULL, co_unit VARCHAR(30), id_list INTEGER NOT NULL, co_list TEXT, co_enterprise TEXT, id_enterprise INTEGER NOT NULL, da_update TIMESTAMP, co_operation CHAR(1));"
+  },
+  {
     "id": 9999999,
     "name": "versionsTables",
     "table": "versionsTables",

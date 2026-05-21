@@ -293,6 +293,31 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
+  private getAllDocumentsCurrency(): string {
+    return this.collectService.currencyListDocument[0]?.coCurrency || 'Moneda';
+  }
+
+  private resetDocumentCurrencyFilter(): void {
+    this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+    this.collectService.documentCurrency = this.getAllDocumentsCurrency();
+  }
+
+  private loadAllDocumentsSales(): Promise<void> {
+    return this.collectService.getDocumentsSales(
+      this.synchronizationServices.getDatabase(),
+      this.collectService.collection.idClient,
+      this.getAllDocumentsCurrency(),
+      this.collectService.collection.coCollection,
+      this.collectService.collection.idEnterprise
+    ).then(() => {
+      this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
+      if (this.collectService.historicPartialPayment) {
+        this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+      }
+      this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+    });
+  }
+
   async reset(client: Client) {
     this.clientSelectorService.checkClient = true;
     this.collectService.initCollect = false;
@@ -340,7 +365,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.getDocumentsSales(
           this.synchronizationServices.getDatabase(),
           this.collectService.collection.idClient,
-          this.collectService.currencySelectedDocument.coCurrency,
+          this.getAllDocumentsCurrency(),
           this.collectService.collection.coCollection,
           this.collectService.collection.idEnterprise
         ).then(() => {
@@ -755,18 +780,20 @@ export class CobrosGeneralComponent implements OnInit {
             }
 
             if (this.collectService.documentCurrency == undefined || this.collectService.documentCurrency == null || this.collectService.documentCurrency == "") {
-              this.collectService.documentCurrency = this.collectService.currencyListDocument[0].coCurrency;
-              this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+              this.resetDocumentCurrencyFilter();
             }
 
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-              this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
                 if (this.collectService.userCanSelectCollectDiscount) {
-                  this.collectService.getCollectDiscounts(this.synchronizationServices.getDatabase());
+                  this.collectService.getCollectDiscounts(
+                    this.synchronizationServices.getDatabase(),
+                    this.collectService.collection.idEnterprise
+                  );
                 }
                 this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
 
@@ -950,9 +977,9 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.setCurrencyConversion();
       this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
         this.collectService.listBankAccounts = result;
-        this.collectService.documentCurrency = event.target.value.coCurrency;
+        this.resetDocumentCurrencyFilter();
 
-        this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
+        this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.getAllDocumentsCurrency(),
           this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(response => {
 
 
@@ -989,15 +1016,6 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.documentSaleOpen = {} as DocumentSale;
     this.collectService.mapDocumentsSales.clear();
 
-    this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
-        this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
-        if (this.collectService.historicPartialPayment) {
-          this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-        }
-        this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-      });
-
     this.collectService.collection.nuAmountFinal = 0;
     this.collectService.collection.nuAmountFinalConversion = 0;
     this.collectService.collection.nuAmountTotal = 0;
@@ -1015,14 +1033,15 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.disabledSelectCollectMethodDisabled = true;
 
     this.collectService.currencySelected = currency;
-    this.collectService.currencySelectedDocument = currency;
 
     this.collectService.collection.idCurrency = currency.idCurrency;
     this.collectService.collection.coCurrency = currency.coCurrency;
 
     this.collectService.setCurrencyDocument();
+    this.resetDocumentCurrencyFilter();
     this.collectService.loadPaymentMethods();
     this.collectService.setCurrencyConversion();
+    await this.loadAllDocumentsSales();
     this.collectService.calculatePayment("", 0);
 
 

@@ -1,24 +1,29 @@
 export class OrderType {
 
-  static orderTypeJson(obj: OrderType) {
-      return new OrderType(
-          obj['idOrderType'],
-          obj['coOrderType'],
-          obj['naOrderType'],
-          obj['defaultValue'],
-          obj['coEnterprise'],
-          obj['idEnterprise'],
-        
-      );
+  static orderTypeJson(obj: Record<string, unknown>): OrderType {
+    const defRaw = obj['defaultValue'] ?? obj['default_value'];
+    const itemsRaw = obj['itemsLimit'] ?? obj['items_limit'];
+    const quRaw = obj['quItems'] ?? obj['qu_items'];
+    return new OrderType(
+      obj['idOrderType'] as number,
+      obj['coOrderType'] as string,
+      obj['naOrderType'] as string,
+      defRaw === true || defRaw === 1 || defRaw === '1',
+      obj['coEnterprise'] as string,
+      obj['idEnterprise'] as number,
+      itemsRaw === true || itemsRaw === 1 || itemsRaw === '1',
+      Number(quRaw ?? 0),
+    );
   }
 
   constructor(
-      public idOrderType: number,
-      public coOrderType: string,
-      public naOrderType: string,
-      public defaultValue: boolean,
-      public coEnterprise: string,
-      public idEnterprise: number,
-      
+    public idOrderType: number,
+    public coOrderType: string,
+    public naOrderType: string,
+    public defaultValue: boolean,
+    public coEnterprise: string,
+    public idEnterprise: number,
+    public itemsLimit: boolean,
+    public quItems: number,
   ) { }
 }

@@ -8,9 +8,9 @@
           [(ngModel)]="this.inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
           class="ion-text-center always-flip" interface="popover" >
           @for (emp of inventariosLogicService.listaEmpresa; track $index) {
-            <ion-select-option [value]="emp">{{
-              emp.lbEnterprise }}
-            </ion-select-option>
+          <ion-select-option [value]="emp">{{
+            emp.lbEnterprise }}
+          </ion-select-option>
           }
         </ion-select>
       </div>
@@ -25,64 +25,92 @@
     </ion-col>
     <!-- CLIENTE -->
     @if (!this.inventariosLogicService.inventarioSent) {
-      <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-        <!-- debe ir en el ion-card para que el trigger funcione -->
-        <app-cliente-selector #selectorCliente (clienteSeleccionado)="setClientfromSelector($event)"></app-cliente-selector>
-      </ion-col>
+    <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+      <!-- debe ir en el ion-card para que el trigger funcione -->
+      <app-cliente-selector #selectorCliente
+        (clienteSeleccionado)="setClientfromSelector($event)"></app-cliente-selector>
+    </ion-col>
     }
     <!-- SUCURSAL -->
-    @if (this.inventariosLogicService.selectedClient) {
-      <ion-grid>
-        <ion-row>
-          <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-            <div id="selectorSucursal">
-              <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_SUCURSAL')}}</ion-label>
-              <div class="listado-enterprise-selector ion-text-center">
-                <ion-select [(ngModel)]="inventariosLogicService.newClientStock.idAddressClient"
-                  class="ion-text-center always-flip" (ionChange)="onSucursalSelect()"
-                  [disabled]="this.inventariosLogicService.inventarioSent == true" labelPlacement="stacked">
-                  @for (sucursal of inventariosLogicService.addressClient; track $index) {
-                    <ion-select-option [value]="sucursal.idAddress" [disabled]="this.inventariosLogicService.inventarioSent">
-                      {{sucursal.txAddress}}
-                    </ion-select-option>
-                  }
-                </ion-select>
-              </div>
+    @if (this.inventariosLogicService.selectedClient){
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+          <div id="selectorSucursal">
+            <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_SUCURSAL')}}</ion-label>
+            <div class="listado-enterprise-selector ion-text-center">
+              <ion-select [(ngModel)]="inventariosLogicService.newClientStock.idAddressClient"
+                class="ion-text-center always-flip" (ionChange)="onSucursalSelect()"
+                [disabled]="this.inventariosLogicService.inventarioSent == true" labelPlacement="stacked">
+                @for (sucursal of inventariosLogicService.addressClient; track $index) {
+                <ion-select-option [value]="sucursal.idAddress"
+                  [disabled]="this.inventariosLogicService.inventarioSent">
+                  {{sucursal.txAddress}}
+                </ion-select-option>
+                }
+              </ion-select>
             </div>
+          </div>
 
-          </ion-col>
-          <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-            <ion-item [disabled]="this.inventariosLogicService.inventarioSent">
-              <ion-label (click)="getFechaValor()">
-                {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
-              </ion-label>
-              <a>
-                <ion-button (click)="setShowDateModal(true)" color="light" class="letrasFechasButton" disabled="true">
-                  {{ daClientStockFormatted() }}
-                </ion-button>
-              </a>
-              <ion-modal [keepContentsMounted]="true" [isOpen]="showDateModal" (didDismiss)="setShowDateModal(false)"
-                class="fechasModal">
-                <ng-template>
-                  <ion-datetime [id]="daClientStock" presentation="date" [(ngModel)]="daClientStock"
-                    [showDefaultButtons]="true" (ngModelChange)="getFechaValor()" doneText="Aceptar"
-                    cancelText="Cancelar"></ion-datetime>
-                </ng-template>
-              </ion-modal>
-            </ion-item>
-          </ion-col>
-          <!-- COMENTARIO -->
-          <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-            <div id="inputComentario">
-              <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" id="responsable"
-                [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
-                placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
-                (ionChange)="setTXComment()"
-                [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null "></ion-input>
-            </div>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
+        </ion-col>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+          <ion-item [disabled]="this.inventariosLogicService.inventarioSent">
+            <ion-label (click)="getFechaValor()">
+              {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
+            </ion-label>
+            <a>
+              <ion-button (click)="setShowDateModal(true)" color="light" class="letrasFechasButton" disabled="true">
+                {{ daClientStockFormatted() }}
+              </ion-button>
+            </a>
+            <ion-modal [keepContentsMounted]="true" [isOpen]="showDateModal" (didDismiss)="setShowDateModal(false)"
+              class="fechasModal">
+              <ng-template>
+                <ion-datetime [id]="daClientStock" presentation="date" [(ngModel)]="daClientStock"
+                  [showDefaultButtons]="true" (ngModelChange)="getFechaValor()" doneText="Aceptar"
+                  cancelText="Cancelar"></ion-datetime>
+              </ng-template>
+            </ion-modal>
+          </ion-item>
+        </ion-col>
+        @if(this.inventariosLogicService.suggestedOrderByDispatchAndReturn){
+        <!-- Dias desde ultimo Inventario -->
+        @if(false){
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+          <div id="diasDesdeUltimoInventario">
+            <ion-input fill="outline" type="number"
+              label="{{this.inventariosLogicService.inventarioTags.get('INV_DIAS_ULTIMO_INVENTARIO')}}"
+              labelPlacement="floating" [(ngModel)]="daysSinceLastInventory"
+              (ionChange)="setDaysSinceLastInventory()"
+              [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null ">
+            </ion-input>
+          </div>
+        </ion-col>
+      }
+        <!-- Dias hasta siguiente inventario -->
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+          <div id="diasHastaSiguienteInventario">
+            <ion-input fill="outline" type="number"
+              label="{{this.inventariosLogicService.inventarioTags.get('INV_DIAS_SIGUIENTE_INVENTARIO')}}"
+              labelPlacement="floating" [(ngModel)]="daysUntilNextInventory"
+              (ionChange)="setDaysUntilNextInventory() "
+              [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null ">
+            </ion-input>
+          </div>
+        </ion-col>
+        }
+        <!-- COMENTARIO -->
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+          <div id="inputComentario">
+            <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" id="responsable"
+              [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
+              placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
+              (ionChange)="setTXComment()"
+              [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null "></ion-input>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
     }
   </ion-row>
   <!-- <ion-button (click)="print()"></ion-button> -->

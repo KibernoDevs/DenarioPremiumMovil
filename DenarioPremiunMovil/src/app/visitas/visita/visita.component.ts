@@ -753,29 +753,12 @@ export class VisitaComponent implements OnInit {
   }
 
   saveEvent() {
-    /*
-        if (this.actividadSeleccionada && this.motivoSeleccionado) {
-            var ev = {
-              pos: this.listaEventos.length,
-              coIncid: 0, //coIncid se asigna al guardar la visita
-              actividad: this.actividadSeleccionada,
-              evento: this.motivoSeleccionado,
-              comentario: this.comentario,
-              saved: false
-            } as EventoVisita;
+    
+  if (this.actividadSeleccionada) {
 
-            //console.log(ev);
-            this.listaEventos.push(ev);
-            this.resetEventSelect();
-            this.setChangesMade(true);
-            this.showEventModal = false;
-            this.clientSelectorService.checkClient = true;
-        } else {
-          this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
-        } */
     let saveEvent = false;
     if (this.actividadRequiereEvento) {
-      if (this.motivoSeleccionado) {
+      if (this.motivoSeleccionado && this.motivoSeleccionado.idMotive > 0) {
         saveEvent = true;
       } else {
         this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
@@ -807,6 +790,9 @@ export class VisitaComponent implements OnInit {
       this.showEventModal = false;
       this.clientSelectorService.checkClient = true;
     }
+  }else{
+    this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
+  }
   }
 
   saveButton() {

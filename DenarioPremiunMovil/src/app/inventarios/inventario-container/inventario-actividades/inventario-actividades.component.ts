@@ -15,6 +15,9 @@ import { CLIENTSTOCK_STATUS_NEW, CLIENTSTOCK_STATUS_SAVED, CLIENTSTOCK_STATUS_SE
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
+import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
+import { ModalController } from '@ionic/angular';
+import { InventarioSugeridoPreviewComponent } from '../inventario-sugerido-preview/inventario-sugerido-preview.component';
 
 interface InventoryRow {
   rowId: string;
@@ -44,6 +47,7 @@ export class InventarioActividadesComponent implements OnInit {
   public clientStocksTotal: ClientStockTotal[] = [];
   public inventoryRows: InventoryRow[] = [];
   public router =  inject(Router);
+public modalCtrl = inject(ModalController);
   public message = inject(MessageService);
 
   public CLIENTSTOCK_STATUS_SENT = CLIENTSTOCK_STATUS_SENT;
@@ -110,6 +114,29 @@ export class InventarioActividadesComponent implements OnInit {
 
     this.inventoryRows = Array.from(groupedRows.values());
   }
+  async preguntarSugerirPedido(){
+    await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
+    
+      const modal = await this.modalCtrl.create({
+      component: InventarioSugeridoPreviewComponent,
+      cssClass: 'inventario-sugerido-modal',
+      componentProps: {
+        productsSuggested: this.inventariosLogicService.productsSuggested,
+        clientStockDetails: this.inventariosLogicService.newClientStock.clientStockDetails,
+        inventarioTags: this.inventariosLogicService.inventarioTags,
+        diasDesdeUltimoInventario: this.inventariosLogicService.newClientStock.daysSinceLast,
+        diasHastaSiguienteInventario: this.inventariosLogicService.newClientStock.daysUntilNext
+      }
+    });
+
+    await modal.present();
+
+    const { role } = await modal.onDidDismiss();
+    if (role === 'confirm') {
+      await this.sugerirPedido();
+    }
+  }
+  
 
   get selectedRowsCount() {
     return this.inventoryRows.filter(row => row.selected).length;
@@ -137,7 +164,7 @@ export class InventarioActividadesComponent implements OnInit {
   canManageRows(): boolean {
     return this.isInventoryReadOnlyStatus();
   }
-
+/*
   preguntarSugerirPedido(){
     let buttonsConfirmSend = [
       {
@@ -168,8 +195,9 @@ export class InventarioActividadesComponent implements OnInit {
     } as MessageAlert;
 
     this.message.alertCustomBtn(message ,buttonsConfirmSend);
+    
   }
-
+*/
   async sugerirPedido(){
 
     // this.orderServ.empresaSeleccionada = this.inventariosLogicService.empresaSeleccionada;
@@ -213,11 +241,14 @@ export class InventarioActividadesComponent implements OnInit {
       empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,
       direccion: direccion,
-      productos: this.clientStocksTotal,
+      productUtils: this.inventariosLogicService.productsSuggested,
       list: JSON.parse(JSON.stringify(list)),
       enviar: toSend,
       coClientStock: this.inventariosLogicService.newClientStock.coClientStock,
       idClientStock: this.inventariosLogicService.newClientStock.idClientStock,
+      idProducts: this.inventariosLogicService.idProductsSuggested,
+      idUnits: this.inventariosLogicService.idUnitsSuggested,
+      idProductUnits: this.inventariosLogicService.idProductsUnitsSuggested,
     };
     //ir a nuevo pedido
     this.router.navigate(['pedido']);
