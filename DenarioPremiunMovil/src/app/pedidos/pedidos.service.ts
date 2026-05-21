@@ -1537,7 +1537,12 @@ export class PedidosService {
     //mini setup de moneda para conversiones de precio
     await this.currencyService.setup(this.dbServ.getDatabase())
     this.currencyModule = this.currencyService.getCurrencyModule('ped');
-    this.currencySelection();
+    const monedaPreview = this.datosPedidoSugerido.monedaSeleccionadaSugerencia;
+    if (monedaPreview) {
+      this.monedaSeleccionada = monedaPreview;
+    } else {
+      this.currencySelection();
+    }
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
     this.listaSeleccionada = this.datosPedidoSugerido.list;

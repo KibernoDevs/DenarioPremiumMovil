@@ -4,6 +4,7 @@ import { AddresClient } from "./tables/addresClient";
 import { Client } from "./tables/client";
 import { ClientStocks } from "./tables/client-stocks";
 import { Enterprise } from "./tables/enterprise";
+import { CurrencyEnterprise } from "./tables/currencyEnterprise";
 import { List } from './tables/list';
 
 export class SugerenciaPedido {
@@ -35,4 +36,7 @@ export class SugerenciaPedido {
         public idProductUnits: number[] = [],
 
     ){}
+
+    /** Moneda elegida en preview Inventario pedido sugerido (solo ese flujo). */
+    monedaSeleccionadaSugerencia?: CurrencyEnterprise;
 }

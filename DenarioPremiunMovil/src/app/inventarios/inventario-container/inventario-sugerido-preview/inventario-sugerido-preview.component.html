@@ -16,6 +16,27 @@
   </ion-toolbar>
 </ion-header>
 <ion-content class="client-document-sale">
+  @if (previewReady && monedaSeleccionadaPreview) {
+  <ion-grid class="ion-padding-bottom">
+    <ion-row>
+      <ion-col size="12">
+        <ion-label>{{ monedaLabel }}:</ion-label>
+        <div class="inventario-sugerido-selector-moneda">
+          <ion-select interface="popover" labelPlacement="stacked"
+            [disabled]="isCurrencySelectorDisabled()"
+            [(ngModel)]="monedaSeleccionadaPreview"
+            [compareWith]="compareCurrencyEnterprise"
+          >
+            <ion-select-option [value]="localCurrency">{{ localCurrency.coCurrency }}</ion-select-option>
+            @if (multimoneda) {
+            <ion-select-option [value]="hardCurrency">{{ hardCurrency.coCurrency }}</ion-select-option>
+            }
+          </ion-select>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  }
   <ion-grid class="tableClientDocumentSale">
   <ion-row>
     <ion-col size="12">
@@ -118,7 +139,7 @@
 
 <ion-footer>
   <ion-toolbar>
-    <ion-button [disabled]="disableOrderButton" expand="block" class="botonAddAmarillo" (click)="confirm()">
+    <ion-button [disabled]="disableOrderButton || !previewReady || !monedaSeleccionadaPreview" expand="block" class="botonAddAmarillo" (click)="confirm()">
       {{ inventarioTags.get('DENARIO_BOTON_ACEPTAR') || 'Aceptar' }}
     </ion-button>
   </ion-toolbar>
