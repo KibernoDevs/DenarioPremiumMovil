@@ -1329,6 +1329,8 @@ export class PedidosService {
     pedido.coOrder = coOrder;
     this.coOrder = coOrder;
     pedido.idOrder = 0;
+    pedido.idClientStock = null;
+    pedido.coClientStock = null;
     pedido.stOrder = DELIVERY_STATUS_SAVED;
     pedido.stDelivery = DELIVERY_STATUS_SAVED;
     for (let i = 0; i < pedido.orderDetails.length; i++) {
@@ -1549,7 +1551,7 @@ export class PedidosService {
       });
       */
 
-    await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList).then(orderUtils => {
+    const orderUtils = await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList);
       let details: OrderDetail[] = [];
       let pedido: Orders = {
         "idOrder": 0,
@@ -1597,6 +1599,8 @@ export class PedidosService {
         "nuAttachments": 0,
         "idDistributionChannel": null,
         "coDistributionChannel": null,
+        "idClientStock": null,
+        "coClientStock": null,
         "stDelivery": DELIVERY_STATUS_NEW
       }
 
@@ -1676,6 +1680,19 @@ export class PedidosService {
       }
       pedido.orderDetails = details;
       pedido.nuDetails = details.length;
+      const idCsSuggest = this.datosPedidoSugerido.idClientStock;
+      const coCsSuggest = this.datosPedidoSugerido.coClientStock;
+      pedido.coClientStock = coCsSuggest ? coCsSuggest : null;
+      pedido.idClientStock =
+        idCsSuggest != null && typeof idCsSuggest === 'number' && idCsSuggest > 0 ? idCsSuggest : null;
+
+      if (pedido.coClientStock) {
+        await this.database.executeSql(
+          'UPDATE client_stocks SET co_order = ?, id_order = ? WHERE co_client_stock = ?',
+          [pedido.coOrder, pedido.idOrder ?? 0, pedido.coClientStock],
+        ).catch(err => console.log('[sugerirPedido] vínculo inventario:', err));
+      }
+
       this.order = pedido;
       //reseteamos al estado natural
       //this.desdeSugerencia = false;
@@ -1691,7 +1708,6 @@ export class PedidosService {
         this.message.transaccionMsjModalNB(this.getTag('PED_ERROR_SUGERIR'));
       }
 
-    })
   }
 
   getIdUser() {

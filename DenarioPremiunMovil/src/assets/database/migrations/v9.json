@@ -23,5 +23,21 @@
     {
         "sql": "ALTER TABLE collect_discounts ADD COLUMN id_enterprise INTEGER;",
         "description": "Se agrega la columna 'id_enterprise' a 'collect_discounts' para filtrar descuentos de cobro por empresa."
+    },
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN id_client_stock INTEGER;",
+        "description": "Vínculo pedido→inventario: id cliente stock."
+    },
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN co_client_stock TEXT;",
+        "description": "Vínculo pedido→inventario: código cliente stock."
+    },
+    {
+        "sql": "ALTER TABLE client_stocks ADD COLUMN id_order INTEGER;",
+        "description": "Vínculo inventario→pedido: id pedido."
+    },
+    {
+        "sql": "ALTER TABLE client_stocks ADD COLUMN co_order TEXT;",
+        "description": "Vínculo inventario→pedido: código pedido."
     }
 ]

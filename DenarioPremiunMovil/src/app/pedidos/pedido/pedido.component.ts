@@ -780,6 +780,8 @@ export class PedidoComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
       coDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.coChannel : null,
+      idClientStock: this.orderServ.order.idClientStock ?? null,
+      coClientStock: this.orderServ.order.coClientStock ?? null,
       stDelivery: stDelivery,
     } as Orders
 
@@ -1657,6 +1659,8 @@ export class PedidoComponent implements OnInit {
       nuAttachments: 0,
       idDistributionChannel: null,
       coDistributionChannel: null,
+      idClientStock: null,
+      coClientStock: null,
       stDelivery: DELIVERY_STATUS_NEW
     } as Orders;
   }

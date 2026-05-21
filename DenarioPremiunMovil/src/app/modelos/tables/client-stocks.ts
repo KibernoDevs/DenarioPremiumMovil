@@ -26,6 +26,8 @@ export class ClientStocks {
             obj["productList"],
             obj["hasAttachments"],
             obj["nuAttachments"],
+            obj["idOrder"] ?? null,
+            obj["coOrder"] ?? null,
             obj["stDelivery"],
             obj["daysSinceLast"],
             obj["daysUntilNext"]
@@ -55,6 +57,8 @@ export class ClientStocks {
         public productList: ProductUtil[],
         public hasAttachments: boolean,
         public nuAttachments: number,
+        public idOrder: number | null = null,
+        public coOrder: string | null = null,
         public stDelivery: number = DELIVERY_STATUS_NEW,
         public daysSinceLast: number = 1,
         public daysUntilNext: number = 1,

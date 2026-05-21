@@ -931,6 +931,10 @@ export class AutoSendService implements OnInit {
           'UPDATE orders SET id_order = ?, st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "pedidos", coTransaction);
+          void this.dbService.getDatabase().executeSql(
+            'UPDATE client_stocks SET id_order = ? WHERE co_order = ?',
+            [idTransaction, coTransaction],
+          ).catch(e => console.log('UPDATE client_stocks.id_order vínculo', e));
         })
         break;
 
@@ -968,6 +972,10 @@ export class AutoSendService implements OnInit {
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "inventarios", coTransaction);
+          void this.dbService.getDatabase().executeSql(
+            'UPDATE orders SET id_client_stock = ? WHERE co_client_stock = ?',
+            [idTransaction, coTransaction],
+          ).catch(e => console.log('UPDATE orders.id_client_stock vínculo', e));
         }).catch(e => {
           console.log("UPDATE NO EXITOSO ", e);
         })

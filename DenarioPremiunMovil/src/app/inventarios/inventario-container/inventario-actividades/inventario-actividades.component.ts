@@ -231,7 +231,7 @@ public modalCtrl = inject(ModalController);
     //guardar el stock actual
     var toSend =  false;
     if(this.inventariosLogicService.newClientStock.stDelivery != CLIENTSTOCK_STATUS_SENT){
-      this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
+      await this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
       this.adjuntoService.savePhotos(this.dbServ.getDatabase(),
       this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
       toSend= true;
