@@ -785,14 +785,7 @@ export class CollectionService {
       }
     })
 
-    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
-      this.historicoTasa = true;
-      this.rateSelected = this.collection.nuValueLocal;
-      this.haveRate = true;
-      this.updateRateDocument();
-      this.unlockTabsFunction(false);
-      return Promise.resolve(true);
-    } else if (this.rateList.length > 0) {
+    if (this.rateList.length > 0) {
       this.historicoTasa = true;
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
