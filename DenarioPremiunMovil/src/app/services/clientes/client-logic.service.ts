@@ -296,21 +296,21 @@ export class ClientLogicService {
         }
       }
     }
-     if (this.currencyService.multimoneda) {
-        let saldoCliente = 0, saldoOpuesto = 0;
-        for (let c = 0; c < clients.length; c++) {
-          if (clients[c].coCurrency == this.localCurrency.coCurrency) {
-            saldoCliente = clients[c].saldo1 + this.currencyService.toLocalCurrency(clients[c].saldo2);
-            saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-          } else {
-            saldoCliente = clients[c].saldo1 + this.currencyService.toHardCurrency(clients[c].saldo2);
-            saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-          }
-          clients[c].saldo1 = saldoCliente;
-          clients[c].saldo2 = saldoOpuesto;
-          saldoCliente = saldoOpuesto = 0;
+    if (this.currencyService.multimoneda) {
+      let saldoCliente = 0, saldoOpuesto = 0;
+      for (let c = 0; c < clients.length; c++) {
+        if (clients[c].coCurrency == this.localCurrency.coCurrency) {
+          saldoCliente = clients[c].saldo1 + this.currencyService.toLocalCurrency(clients[c].saldo2);
+          saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+        } else {
+          saldoCliente = clients[c].saldo1 + this.currencyService.toHardCurrency(clients[c].saldo2);
+          saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
         }
+        clients[c].saldo1 = saldoCliente;
+        clients[c].saldo2 = saldoOpuesto;
+        saldoCliente = saldoOpuesto = 0;
       }
+    }
     return clients;
   }
 
@@ -557,7 +557,9 @@ export class ClientLogicService {
     if (!dueDate) return false;
     // normalizar horas a medianoche antes de comparar
     dueDate.setHours(0, 0, 0, 0);
-    return dueDate < this.dateToday;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate < today;
   }
 
 
