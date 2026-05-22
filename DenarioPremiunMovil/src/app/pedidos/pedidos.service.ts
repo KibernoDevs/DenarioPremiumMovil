@@ -32,7 +32,7 @@ import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { Router } from '@angular/router';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { DateServiceService } from '../services/dates/date-service.service';
-import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_SAVED } from '../utils/appConstants';
 import { GlobalDiscount } from '../modelos/tables/globalDiscount';
 import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStructure';
@@ -148,6 +148,19 @@ export class PedidosService {
   coClientStockAEnviar = '';
   idClientStockAEnviar: number | null = 0;
 
+  /** Inventario sugerencia: local quedó como SAVED(3); forzar Por enviar(2) para que auto-send envíe id servidor null como inventario nuevo. */
+  async marcarInventarioSugeridoStPorEnviar(): Promise<void> {
+    const co = this.coClientStockAEnviar;
+    if (typeof co !== 'string' || co.trim().length <= 1) {
+      return;
+    }
+    await this.database
+      .executeSql(
+        'UPDATE client_stocks SET st_delivery = ? WHERE co_client_stock = ?',
+        [DELIVERY_STATUS_TO_SEND, co],
+      )
+      .catch(err => console.log('[marcarInventarioSugeridoStPorEnviar]', err));
+  }
 
   public coOrder = '';
 
