@@ -871,45 +871,13 @@ export class CobrosGeneralComponent implements OnInit {
 
   async onChangeDateRate(event: any) {
     try {
-      this.collectService.montoTotalPagar = 0;
-      this.collectService.montoTotalPagarConversion = 0;
-
-      // Esperar a que se resuelva la búsqueda de la tasa
       await this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
-      console.log("RESPUESTA FECHA TASA: ");
 
       if (this.collectService.historicPartialPayment) {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
       }
 
-      if (Array.isArray(this.collectService.documentSalesView)) {
-        try {
-          const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
-          this.collectService.documentSales = deep.map(d => ({ ...d }));
-          this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
-        } catch (e) {
-          // Fallback: copia superficial si falla la serialización
-          this.collectService.documentSales = [...this.collectService.documentSalesView];
-          this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
-          console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
-        }
-      } else {
-        this.collectService.documentSales = [];
-        this.collectService.documentSalesBackup = [];
-      }
-
-      // Convertir y recalcular (esperando a que terminen)
-      if (this.collectService.multiCurrency) {
-        await this.collectService.convertDocumentSales();
-        // Mantener conversion de moneda y actualización de UI
-        this.collectService.setCurrencyConversion();
-      }
-
-      await this.collectService.calculatePayment("", 0);
-
-      if (this.collectService.validateCollectionDate) {
-        this.collectService.updateRateTiposPago();
-      }
+      await this.recalculateAmountsForRateChange(this.collectService.validateCollectionDate);
     } catch (err) {
       console.error('[onChangeDateRate] error:', err);
     }
@@ -1063,60 +1031,11 @@ export class CobrosGeneralComponent implements OnInit {
     return utcDay /* !== 0 && utcDay !== 6 */;
   };
 
-  // Ejemplo: cobro-general.component.ts
-  // Reemplaza/adapta tu onChangeRate para normalizar la fecha como "date-only" local.
+  async onChangeRate(ev: any): Promise<void> {
+    const selectedRate = Number(ev?.detail?.value ?? ev);
+    if (!Number.isFinite(selectedRate) || selectedRate <= 0) return;
 
-  onChangeRate(ev: any) {
-    // ev puede venir como evento (ev.detail.value) o directamente como el objeto seleccionado.
-    const selected = ev?.detail?.value ?? ev;
-    if (!selected) return;
-
-    // EJEMPLO: supondremos que el objeto 'rate' tiene una propiedad con la fecha,
-    // ajusta 'dateField' al nombre real (p.e. rate.dateRate, rate.nuDate, rate.dtRate, etc.)
-    const dateFieldCandidates = ['date', 'dateRate', 'dtRate', 'nuDate', 'rateDate'];
-    let raw = null;
-    for (const f of dateFieldCandidates) {
-      if (selected[f] != null) { raw = selected[f]; break; }
-    }
-    // si no encontrás en candidate fields, podrías usar selected directamente si es string/Date:
-    if (!raw) raw = selected;
-
-    let finalDate: Date | null = null;
-
-    if (typeof raw === 'string') {
-      // Si la cadena tiene formato YYYY-MM-DD o YYYY-MM-DDTHH:mm..., extraemos la parte de fecha
-      const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (m) {
-        const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
-        finalDate = new Date(y, mo, d); // crea fecha en zona local, sin desplazamiento
-      } else {
-        // Fallback: si no es YYYY-MM-DD, intentar Date y luego forzar date-only
-        const tmp = new Date(raw);
-        if (!isNaN(tmp.getTime())) {
-          finalDate = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate());
-        }
-      }
-    } else if (raw instanceof Date) {
-      finalDate = new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
-    } else if (typeof raw === 'number') {
-      // timestamp (ms)
-      const tmp = new Date(raw);
-      finalDate = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate());
-    }
-
-    if (finalDate) {
-      // Asignar a la variable que usa la vista / formato (ajusta nombres según tu componente)
-      // Convertir Date a string ISO antes de asignar (las propiedades esperan string)
-      this.dateCollect = finalDate.toISOString();
-      // Si usás el servicio:
-      this.collectService.dateRateVisual = finalDate.toISOString();
-      // Actualizar cualquier campo derivado (por ejemplo, obtener la tasa de esa fecha)
-      // this.collectService.getDateRate(..., finalDate) <-- si tu servicio espera fecha
-    } else {
-      console.warn('onChangeRate: no pude parsear la fecha del rate seleccionado', selected, raw);
-    }
-
-    // Mantener la lógica que necesites luego de cambiar la tasa...
+    await this.applySelectedRate(selectedRate);
   }
 
   onOpenCalendar() {
@@ -1322,52 +1241,83 @@ export class CobrosGeneralComponent implements OnInit {
   /**
    * Maneja el input de la tasa manual (evento de ionInput)
    */
-  public onManualRateInput(event: any): void {
+  public async onManualRateInput(event: any): Promise<void> {
     const value = parseFloat(event.target.value);
     if (isNaN(value) || value <= 0) {
       this.manualRateError = 'Ingrese un valor numérico mayor a 0';
       return;
     }
-    if (value < this.lastRateValue) {
-      this.manualRateError = `La tasa debe ser mayor o igual a ${this.lastRateValue}`;
-      return;
-    }
     this.manualRateError = '';
-    this.rateSelected = value;
-    this.collectService.rateSelected = value;
-    this.collectService.collection.nuValueLocal = value;
+    await this.applySelectedRate(value);
+  }
+
+  private async applySelectedRate(rate: number): Promise<void> {
+    this.rateSelected = rate;
+    this.collectService.collection.nuValueLocal = rate;
     this.collectService.haveRate = true;
+    this.collectService.updateRateDocument();
+    await this.recalculateAmountsForRateChange(false);
+  }
 
+  private async recalculateAmountsForRateChange(updatePaymentDates: boolean): Promise<void> {
+    this.collectService.montoTotalPagar = 0;
+    this.collectService.montoTotalPagarConversion = 0;
 
-    if (Array.isArray(this.collectService.documentSalesView)) {
-      try {
-        const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
-        this.collectService.documentSales = deep.map(d => ({ ...d }));
-        this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
-      } catch (e) {
-        // Fallback: copia superficial si falla la serialización
-        this.collectService.documentSales = [...this.collectService.documentSalesView];
-        this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
-        console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
-      }
-    } else {
-      this.collectService.documentSales = [];
-      this.collectService.documentSalesBackup = [];
-    }
-
+    this.restoreDocumentSalesFromView();
     this.rebuildCollectionDetails();
 
-    // Recalcular el monto a pagar
-    if (typeof this.collectService.calculatePayment === 'function') {
-      this.collectService.calculatePayment('', 0);
+    if (this.collectService.multiCurrency) {
+      await this.collectService.convertDocumentSales();
+      this.collectService.setCurrencyConversion();
     }
 
+    this.syncPaymentConversionsForRateChange();
+    await this.collectService.calcularMontos('', 0);
 
+    if (updatePaymentDates) {
+      this.collectService.updateRateTiposPago();
+    }
 
-    this.collectService.convertDocumentSales();
-    this.collectService.calcularMontos('', 0);
-    this.collectService.unlockTabs().then((resp) => {
-      this.collectService.onCollectionValid(resp);
+    const validTabs = await this.collectService.unlockTabs();
+    this.collectService.onCollectionValid(validTabs);
+  }
+
+  private restoreDocumentSalesFromView(): void {
+    if (!Array.isArray(this.collectService.documentSalesView)) {
+      this.collectService.documentSales = [];
+      this.collectService.documentSalesBackup = [];
+      return;
+    }
+
+    try {
+      const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
+      this.collectService.documentSales = deep.map(d => ({ ...d }));
+      this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
+    } catch (e) {
+      this.collectService.documentSales = [...this.collectService.documentSalesView];
+      this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
+      console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
+    }
+  }
+
+  private syncPaymentConversionsForRateChange(): void {
+    const updatePago = (pago: { monto: number; montoConversion: number }): void => {
+      pago.montoConversion = this.collectService.convertirMonto(pago.monto, 0, this.collectService.collection.coCurrency);
+    };
+
+    this.collectService.pagoEfectivo.forEach(updatePago);
+    this.collectService.pagoCheque.forEach(updatePago);
+    this.collectService.pagoDeposito.forEach(updatePago);
+    this.collectService.pagoTransferencia.forEach(updatePago);
+    this.collectService.pagoMovil.forEach(updatePago);
+    this.collectService.pagoOtros.forEach(updatePago);
+
+    this.collectService.collection.collectionPayments.forEach(payment => {
+      payment.nuAmountPartialConversion = this.collectService.convertirMonto(
+        payment.nuAmountPartial,
+        0,
+        this.collectService.collection.coCurrency
+      );
     });
   }
 
@@ -1376,23 +1326,16 @@ export class CobrosGeneralComponent implements OnInit {
    */
   private rebuildCollectionDetails(): void {
     if (!Array.isArray(this.collectService.collection.collectionDetails)) return;
+    const previousDetails = new Map<number, CollectionDetail>(
+      this.collectService.collection.collectionDetails.map(detail => [detail.idDocument, detail])
+    );
     const selectedDocs = this.collectService.documentSalesView.filter(doc => doc.isSelected);
     this.collectService.collection.collectionDetails = [];
-    selectedDocs.forEach((doc, idx) => {
+    selectedDocs.forEach(doc => {
       let nuAmountTotal = 0, nuAmountBalance = 0, nuAmountTotalConversion = 0, nuAmountBalanceConversion = 0;
-      const coTypeDoc = doc.coDocumentSaleType;
-      const nuValueLocalDoc = this.collectService.collection.nuValueLocal;
       let nuBalanceOriginal, nuBalanceOriginalConversion;
+      const previousDetail = previousDetails.get(doc.idDocument);
 
-      /* if (doc.isSave) {
-        let positionCollecDetails = doc.positionCollecDetails;
-        nuAmountBalance = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuBalanceDoc ?? 0;
-        nuAmountBalanceConversion = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuBalanceDocConversion ?? 0;
-        nuAmountTotal = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuAmountDoc ?? 0;
-        nuAmountTotalConversion = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuAmountDocConversion ?? 0;
-        nuBalanceOriginal = doc.nuBalance;
-        nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
-      } else { */
       if (doc.coCurrency != this.collectService.collection.coCurrency) {
         nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
         nuAmountBalanceConversion = doc.nuBalance;
@@ -1408,32 +1351,38 @@ export class CobrosGeneralComponent implements OnInit {
         nuBalanceOriginal = doc.nuBalance;
         nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       }
-      //}
 
-      let inPaymentPartial = false;
-      let missingRetention = false;
-      if (this.collectService.coTypeModule != "2") {
-        const open = this.collectService.documentSaleOpen;
-        inPaymentPartial = this.collectService.alwaysPartialPayment || !!open?.inPaymentPartial;
-        missingRetention = this.collectService.alwaysRetention || !!open?.missingRetention;
-      }
+      const inPaymentPartial = previousDetail?.inPaymentPartial
+        ?? (this.collectService.coTypeModule != "2"
+          ? this.collectService.alwaysPartialPayment || !!this.collectService.documentSaleOpen?.inPaymentPartial
+          : false);
+      const missingRetention = previousDetail?.missingRetention
+        ?? (this.collectService.coTypeModule != "2"
+          ? this.collectService.alwaysRetention || !!this.collectService.documentSaleOpen?.missingRetention
+          : false);
+      const nuAmountRetention = previousDetail?.nuAmountRetention ?? 0;
+      const nuAmountRetention2 = previousDetail?.nuAmountRetention2 ?? 0;
+      const nuAmountDiscount = previousDetail?.nuAmountDiscount ?? 0;
+      const nuAmountCollectDiscount = previousDetail?.nuAmountCollectDiscount ?? 0;
+      const nuAmountIgtf = previousDetail?.nuAmountIgtf ?? 0;
 
       this.collectService.collection.collectionDetails.push({
+        idCollectionDetail: previousDetail?.idCollectionDetail ?? null,
         coCollection: this.collectService.collection.coCollection,
         coDocument: doc.coDocument.toString(),
         idDocument: doc.idDocument,
         inPaymentPartial: inPaymentPartial,
-        nuVoucherRetention: "",
-        nuAmountRetention: 0,
-        nuAmountRetention2: 0,
-        nuAmountRetentionConversion: 0,
-        nuAmountRetention2Conversion: 0,
-        nuAmountRetentionIslrConversion: 0,
-        nuAmountRetentionIvaConversion: 0,
+        nuVoucherRetention: previousDetail?.nuVoucherRetention ?? "",
+        nuAmountRetention: nuAmountRetention,
+        nuAmountRetention2: nuAmountRetention2,
+        nuAmountRetentionConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetention2Conversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         nuAmountPaid: nuAmountBalance,
         nuAmountPaidConversion: nuAmountBalanceConversion,
-        nuAmountDiscount: 0,
-        nuAmountDiscountConversion: 0,
+        nuAmountDiscount: nuAmountDiscount,
+        nuAmountDiscountConversion: this.collectService.convertirMonto(nuAmountDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         nuAmountDoc: nuAmountTotal!,
         nuAmountDocConversion: nuAmountTotalConversion,
         daDocument: doc.daDocument,
@@ -1443,24 +1392,31 @@ export class CobrosGeneralComponent implements OnInit {
         nuBalanceDocOriginalConversion: nuBalanceOriginalConversion!,
         coOriginal: doc.coCurrency,
         coTypeDoc: doc.coDocumentSaleType,
-        nuValueLocal: doc.nuValueLocal,
-        nuAmountIgtf: 0,
-        nuAmountIgtfConversion: 0,
-        st: 0,
-        isSave: false,
-        daVoucher: this.dateServ.onlyDateHoyISO(),
-        hasDiscount: false,
-        discountComment: "",
-        nuAmountCollectDiscount: 0,
-        nuCollectDiscount: 0,
+        nuValueLocal: this.collectService.collection.nuValueLocal,
+        nuAmountIgtf: nuAmountIgtf,
+        nuAmountIgtfConversion: this.collectService.convertirMonto(nuAmountIgtf, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        st: previousDetail?.st ?? 0,
+        isSave: previousDetail?.isSave ?? false,
+        daVoucher: previousDetail?.daVoucher ?? this.dateServ.onlyDateHoyISO(),
+        hasDiscount: previousDetail?.hasDiscount ?? false,
+        discountComment: previousDetail?.discountComment ?? "",
+        nuAmountCollectDiscount: nuAmountCollectDiscount,
+        nuCollectDiscount: previousDetail?.nuCollectDiscount ?? 0,
         missingRetention: missingRetention,
-        nuAmountCollectDiscountConversion: 0,
+        nuAmountCollectDiscountConversion: this.collectService.convertirMonto(nuAmountCollectDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        collectionDetailDiscounts: previousDetail?.collectionDetailDiscounts,
       });
       // Actualizar positionCollecDetails en los arrays de documentos
       const newPos = this.collectService.collection.collectionDetails.length - 1;
-      this.collectService.documentSales[idx].positionCollecDetails = newPos;
-      this.collectService.documentSalesBackup[idx].positionCollecDetails = newPos;
-      this.collectService.documentSalesView[idx].positionCollecDetails = newPos;
+      const docIndex = this.collectService.documentSales.findIndex(documentSale => documentSale.idDocument === doc.idDocument);
+      if (docIndex >= 0) {
+        this.collectService.documentSales[docIndex].positionCollecDetails = newPos;
+        this.collectService.documentSalesBackup[docIndex].positionCollecDetails = newPos;
+      }
+      const viewIndex = this.collectService.documentSalesView.findIndex(documentSale => documentSale.idDocument === doc.idDocument);
+      if (viewIndex >= 0) {
+        this.collectService.documentSalesView[viewIndex].positionCollecDetails = newPos;
+      }
 
       if (this.collectService.coTypeModule == "3") {
         this.collectService.collection.coOriginalCollection = doc.coCollection;

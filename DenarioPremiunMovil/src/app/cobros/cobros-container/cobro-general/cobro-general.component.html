@@ -64,7 +64,7 @@
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-input type="number"
           label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
-          label-placement="floating" fill="outline" min="{{lastRateValue || 0.01}}" step="0.01" [value]="rateSelected"
+          label-placement="floating" fill="outline" min="0.01" step="0.01" [value]="rateSelected"
           [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur()"
           id="manualRateInput" color="primary" required inputmode="decimal"></ion-input>
         @if (manualRateError) {
@@ -114,8 +114,7 @@
       @if ( this.collectService.multiCurrency && this.collectService.showConversion &&
       (
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND ||
-      this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT ||
-      this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED ||
+      this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT  ||
       this.collectService.collection.stCollection == 6
       )
       ) {
