@@ -530,6 +530,10 @@ export class PedidosService {
   }
 
   private notifyIfDistinctItemsLimitJustReached(distinctNewLineAdded: boolean): void {
+    if(!this.pedidoModificable){
+      // no debe salir si ya esta enviado.
+      return;
+    }
     if (!distinctNewLineAdded || !this.isDistinctItemsLimitConfigured()) {
       return;
     }
