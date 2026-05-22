@@ -62,11 +62,16 @@ export class ProductStructuresListComponent  implements OnInit {
     
   }
 
-  onEnterpriseChanged(ev: any) {
-    this.empresaSeleccionada = ev.target.value;
+  async onEnterpriseChanged(ev: unknown): Promise<void> {
+    const value = (ev as { detail?: { value?: Enterprise } }).detail?.value;
+    if (value == null) {
+      return;
+    }
+    this.empresaSeleccionada = value;
     this.productService.empresaSeleccionada = this.empresaSeleccionada;
     this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-    this.orderServ.setup();
+    await this.orderServ.setup();
+    this.productService.syncOrderPresentationFromPedidos(this.orderServ);
     this.tpsSeleccionada = {} as TypeProductStructure;
     this.getTypeProductStructures();
   }

@@ -264,7 +264,10 @@ export class PedidosService {
     return ((this.carrito.length > 0) || this.adjuntoService.hasItems())
   }
 
-  setup() {
+  /**
+   * Carga paralela habitual; catalogCritical garantiza datos mínimos del catálogo (listas, precios, unidades).
+   */
+  setup(): Promise<void> {
     let idEnterprise = this.empresaSeleccionada.idEnterprise;
     let coEnterprise = this.empresaSeleccionada.coEnterprise;
     this.getConfig();
@@ -280,24 +283,50 @@ export class PedidosService {
         this.monedaSeleccionada = this.currencyService.hardCurrency;
     }
     */
+    const catalogCritical: Promise<unknown>[] = [];
+
+    catalogCritical.push(
+      this.getLists(idEnterprise).then(data => {
+        this.listaList = data;
+        const idLists = this.listaList.map(l => l.idList);
+        return this.getPricelists(idEnterprise, idLists).then(pl => {
+          this.listaPricelist = pl;
+        });
+      }),
+    );
+
+    catalogCritical.push(
+      this.getUnitInfo(idEnterprise).then(data => {
+        this.listaUnitInfo = data;
+        if (this.showTotalProductUnit) {
+          this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
+        }
+      }),
+    );
+
+    if (this.unitByPriceList) {
+      catalogCritical.push(
+        this.getUnitPriceList(idEnterprise).then(data => {
+          this.listaUnitPriceList = data;
+        }),
+      );
+    }
+
+    if (this.productMinMul) {
+      catalogCritical.push(
+        this.getProductMinMulList(idEnterprise).then(data => {
+          this.listaProdMinMul = data;
+          this.fillProdMinMulMap();
+        }),
+      );
+    }
+
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
-    this.getLists(idEnterprise).then(data => { 
-      this.listaList = data;
-      let idLists = this.listaList.map(l => l.idList);
-      this.getPricelists(idEnterprise, idLists).then(data => { this.listaPricelist = data; }); 
-    });
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
     this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });    
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
-    this.getUnitInfo(idEnterprise).then(data => {
-      this.listaUnitInfo = data;
-      if (this.showTotalProductUnit) {
-        //buscamos el nombre de la unidad para mostrar en el total
-        this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
-      }
-    });
 
     if (this.validateWarehouses) {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
@@ -308,12 +337,6 @@ export class PedidosService {
     if (this.userCanSelectChannel) {
       this.getOrderTypeProductStructure(idEnterprise).then(data => { this.orderTypeProductStructure = data; });
       this.getDistributionChannels(idEnterprise).then(data => { this.distributionChannels = data; });
-    }
-    if (this.productMinMul) {
-      this.getProductMinMulList(idEnterprise).then(data => {
-        this.listaProdMinMul = data
-        this.fillProdMinMulMap();
-      });
     }
     if (this.groupByTotalByLines) {
       this.getProductStructures(idEnterprise).then(data => {
@@ -334,11 +357,7 @@ export class PedidosService {
     });
     }
 
-    if(this.unitByPriceList){
-      //para hacer el cambio automatico de unidad segun la lista de precio
-      this.getUnitPriceList(idEnterprise).then(data => { this.listaUnitPriceList = data; });
-    }
-
+    return Promise.all(catalogCritical).then(() => undefined);
   }
   fillProdMinMulMap() {
     this.listaProdMinMul.forEach((value) => {

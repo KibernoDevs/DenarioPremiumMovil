@@ -61,12 +61,13 @@ export class ProductosComponent {
   ngOnInit() {
     this.productService.productList = [];
     this.message.showLoading().then(() => {
-      this.enterpriseService.setup(this.db.getDatabase()).then(() => {
+      this.enterpriseService.setup(this.db.getDatabase()).then(async () => {
         this.productService.listaEmpresa = this.enterpriseService.empresas;
         this.productService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.orderService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.productService.multiempresa = this.enterpriseService.esMultiempresa();
-        this.orderService.setup();
+        await this.orderService.setup();
+        this.productService.syncOrderPresentationFromPedidos(this.orderService);
       });
       this.currencyService.setup(this.db.getDatabase());
 
@@ -89,10 +90,14 @@ export class ProductosComponent {
     });
   }
 
-  onSelectedProductStructure(psUtil: ProductStructureUtil) {
+  async onSelectedProductStructure(psUtil: ProductStructureUtil) {
     this.psSeleccionada = psUtil.productStructure;
     this.tpsSeleccionada = psUtil.typeProductStructure;
     this.empresaSeleccionada = psUtil.enterprise;
+    this.productService.empresaSeleccionada = this.empresaSeleccionada;
+    this.orderService.empresaSeleccionada = this.empresaSeleccionada;
+    await this.orderService.setup();
+    this.productService.syncOrderPresentationFromPedidos(this.orderService);
     this.psSelected = true;
     this.showProducts = true;
     this.showProductStructures = false;

@@ -1,15 +1,13 @@
-import { ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonInfiniteScroll } from '@ionic/angular';
-import { Subject, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ProductDetail } from 'src/app/modelos/ProductDetail';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
-import { Imagenes } from 'src/app/modelos/imagenes';
 import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
-import { Product } from 'src/app/modelos/tables/product';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
-import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
@@ -35,7 +33,7 @@ export class ProductListComponent implements OnInit {
   message = inject(MessageService);
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
-  orderService = inject(PedidosService);
+  pedidosService = inject(PedidosService);
   config = inject(GlobalConfigService);
 
   public imagesMap: { [imgName: string]: string } = {};
@@ -52,7 +50,8 @@ export class ProductListComponent implements OnInit {
   showConversionInfo: Boolean = false;
   localCurrencyDefault: Boolean = true;
   noProductsAlertShown = false;
-
+  unitByPriceList: Boolean = false;
+  showStock: Boolean = false;
   productList: ProductUtil[] = [];
   productListView: ProductUtil[] = [];
   idProductStructureList: number[] = [];
@@ -78,8 +77,7 @@ export class ProductListComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-
-    //this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
+    this.productService.syncOrderPresentationFromPedidos(this.pedidosService);
 
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
@@ -89,10 +87,12 @@ export class ProductListComponent implements OnInit {
     );
 
     // Reemite imágenes cacheadas (si existen)
-    if(this.orderService.showProductImages){
+    if (this.productService.catalogShowProductImages) {
       this.imageServices.emitCachedImages();
     }
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
+    this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
+    this.showStock = this.config.get("showStock").toLowerCase() === "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
@@ -108,7 +108,7 @@ export class ProductListComponent implements OnInit {
       if (this.productService.productList.length > 0) {
         //this.productList = this.filterProductList(this.productService.productList);
         this.productList = this.productService.productList;
-        if(this.orderService.unitByPriceList){
+        if (this.productService.catalogUnitByPriceList) {
           this.fillListPrices(this.productList);
         }
       } else {
@@ -117,6 +117,9 @@ export class ProductListComponent implements OnInit {
             this.noProductsAlertShown = false;
             //this.productList = this.filterProductList(this.productService.productList);
             this.productList = this.productService.productList;
+            if (this.productService.catalogUnitByPriceList) {
+              this.fillListPrices(this.productList);
+            }
             this.noProductsAlertShown = this.productList.length === 0;
             this.message.hideLoading();
           });
@@ -129,7 +132,7 @@ export class ProductListComponent implements OnInit {
           this.noProductsAlertShown = false;
           //this.productList = this.filterProductList(this.productService.productList);
           this.productList = this.productService.productList;
-          if(this.orderService.unitByPriceList){
+          if (this.productService.catalogUnitByPriceList) {
             this.fillListPrices(this.productList);
           }
           this.noProductsAlertShown = this.productList.length === 0;
@@ -141,12 +144,12 @@ export class ProductListComponent implements OnInit {
     //No se usa por los momentos.
     //Esta funcion filtra productos sin stock y productos sin precio, dependiendo de la configuracion seteada en PedidosService. 
     //Se dejo por si en algun momento se quiere volver a usar esta funcionalidad sin tener que reescribirla.
-    if (this.orderService.hideStock0){
+    if (this.productService.catalogHideStock0) {
       list = list.filter(product => product.stock && product.stock > 0);
     }
-    if( this.orderService.hideProdWithoutPrice){
+    if (this.productService.catalogHideProdWithoutPrice) {
       const distinctIds = new Set<number>(
-        this.orderService.listaPricelist.map(pl => pl.idProduct)
+        this.productService.catalogListaPricelist.map(pl => pl.idProduct)
       );
       list = list.filter(product => distinctIds.has(product.idProduct));
     }
@@ -166,9 +169,9 @@ export class ProductListComponent implements OnInit {
           this.noProductsAlertShown = false;
           //this.productList = this.filterProductList(this.productService.productList);
           this.productList = this.productService.productList;
-        if(this.orderService.unitByPriceList){
-          this.fillListPrices(this.productList);
-        }
+          if (this.productService.catalogUnitByPriceList) {
+            this.fillListPrices(this.productList);
+          }
           this.noProductsAlertShown = this.productList.length === 0;
           this.message.hideLoading();
         });
@@ -185,8 +188,10 @@ export class ProductListComponent implements OnInit {
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
-          //const newProducts = this.filterProductList(this.productService.productList);
           const newProducts = this.productService.productList;
+          if (this.productService.catalogUnitByPriceList) {
+            this.fillListPrices(newProducts);
+          }
           this.productList = [...this.productList, ...newProducts];
           if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
             this.infiniteScroll.disabled = true;
@@ -198,9 +203,9 @@ export class ProductListComponent implements OnInit {
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
           //const newProducts = this.filterProductList(this.productService.productList);
           const newProducts = this.productService.productList;
-          if(this.orderService.unitByPriceList){
-          this.fillListPrices(newProducts);
-        }
+          if (this.productService.catalogUnitByPriceList) {
+            this.fillListPrices(newProducts);
+          }
           this.productList = [...this.productList, ...newProducts];
           if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
             this.infiniteScroll.disabled = true;
@@ -217,7 +222,7 @@ export class ProductListComponent implements OnInit {
     this.productService.getProductDetailByIdProduct(this.db.getDatabase(), this.selectedProduct.idList, this.selectedProduct.idProduct, this.defaultCurrency).then(() => {
       this.productDetail = this.productService.productDetail;
       this.selectedProductChanged.emit(this.productDetail);
-      if(this.orderService.unitByPriceList){
+      if (this.productService.catalogUnitByPriceList) {
         this.productService.listPrices = product.listPrices;
       }
     });
@@ -235,7 +240,36 @@ export class ProductListComponent implements OnInit {
     return this.productService.formatNumber(num);
   }
 
-  fillListPrices(products: ProductUtil[]) {
+  catalogShowsMinimumQty(idProduct: number): boolean {
+    if (!this.productService.catalogHasProdMinMul(idProduct)) {
+      return false;
+    }
+    return this.productService.getCatalogProdMinMul(idProduct).quMinimum > 1;
+  }
+
+  catalogShowsMultipleQty(idProduct: number): boolean {
+    if (!this.productService.catalogHasProdMinMul(idProduct)) {
+      return false;
+    }
+    return this.productService.getCatalogProdMinMul(idProduct).quMultiple > 1;
+  }
+
+  catalogMinQty(idProduct: number): number {
+    return this.productService.getCatalogProdMinMul(idProduct).quMinimum;
+  }
+
+  catalogMulQty(idProduct: number): number {
+    return this.productService.getCatalogProdMinMul(idProduct).quMultiple;
+  }
+
+  emptyResultsLabel(): string {
+    return (
+      this.productTags.get('DENARIO_SIN_RESULTADOS')
+      ?? this.productService.getCatalogPresentationTag('DENARIO_SIN_RESULTADOS')
+    );
+  }
+
+  fillListPrices(products: ProductUtil[]): void {
     products.forEach(product => {
       this.getPriceList(product);
     });
@@ -249,13 +283,13 @@ export class ProductListComponent implements OnInit {
     //[unitByPriceList] obtenemos el precio de la lista de  precios seleccionada para mostrarlo en la lista de productos, si es que la lista de precios esta activa y tiene un precio para ese producto.
           //llenamos la lista a mostrar en el producto.
           let nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[] = [];
-          let priceLists = this.orderService.listaPricelist.filter(pl => pl.idProduct == product.idProduct);
+          let priceLists = this.productService.catalogListaPricelist.filter(pl => pl.idProduct == product.idProduct);
           priceLists.forEach(pl => {
-            let list = this.orderService.listaList.filter(l => l.idList == pl.idList)[0];
+            let list = this.productService.catalogListaList.filter(l => l.idList == pl.idList)[0];
             //buscamos el nombre de la unidad de la lista de precio
-            let idUnitPL = this.orderService.listaUnitPriceList.filter(u => u.idList == pl.idList)[0]?.idUnit;
-            let naUnit = this.orderService.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
-            let coUnit = this.orderService.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
+            let idUnitPL = this.productService.catalogListaUnitPriceList.filter(u => u.idList == pl.idList)[0]?.idUnit;
+            let naUnit = this.productService.catalogListaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
+            let coUnit = this.productService.catalogListaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
 
             if(list){
               nuPriceList.push({

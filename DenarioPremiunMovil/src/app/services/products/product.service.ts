@@ -12,10 +12,14 @@ import { Imagenes } from 'src/app/modelos/imagenes';
 import { CurrencyService } from '../currency/currency.service';
 import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
+import { List } from 'src/app/modelos/tables/list';
+import { PriceList } from 'src/app/modelos/tables/priceList';
+import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
-import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { TextService } from '../text/text.service';
+import { UnitInfo } from 'src/app/modelos/unitInfo';
 import { MAX_ITEMS_PER_PAGE } from 'src/app/utils/appConstants';
+import type { PedidosService } from 'src/app/pedidos/pedidos.service';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +32,27 @@ export class ProductService {
   globalConfig = inject(GlobalConfigService);
   psService = inject(ProductStructureService);
   textService = inject(TextService);
+
+
+
+  /** Snapshot estable para UI catálogo: copia tags/flags/tablas después de PedidosService.setup(). */
+  catalogOrderPresentationTags = new Map<string, string>();
+
+  catalogShowProductImages = false;
+  catalogDisplayProductPoints = false;
+  catalogShowStock = false;
+  catalogQuUnitDecimals = false;
+  catalogUnitByPriceList = false;
+  catalogValidateWarehouses = false;
+  catalogProductMinMul = false;
+  catalogHideStock0 = false;
+  catalogHideProdWithoutPrice = false;
+
+  catalogListaPricelist: PriceList[] = [];
+  catalogListaList: List[] = [];
+  catalogListaUnitPriceList: UnitPriceList[] = [];
+  catalogListaUnitInfo: UnitInfo[] = [];
+  private catalogProdMinMulMap = new Map<number, { quMinimum: number; quMultiple: number }>();
 
   public productList: ProductUtil[] = [];
   public typeProductStructureList: TypeProductStructure[] = [];
@@ -58,6 +83,40 @@ export class ProductService {
 
   constructor() { }
 
+  /**
+   * Copia estado desde `PedidosService` (no inyectarlo aquí: evita ciclo DI vía ReturnDatabaseService → ProductService → Pedidos).
+   */
+  syncOrderPresentationFromPedidos(ped: PedidosService): void {
+    this.catalogOrderPresentationTags = new Map(ped.tags);
+    this.catalogShowProductImages = !!ped.showProductImages;
+    this.catalogDisplayProductPoints = !!ped.displayProductPoints;
+    this.catalogShowStock = !!ped.showStock;
+    this.catalogQuUnitDecimals = !!ped.quUnitDecimals;
+    this.catalogUnitByPriceList = !!ped.unitByPriceList;
+    this.catalogValidateWarehouses = !!ped.validateWarehouses;
+    this.catalogProductMinMul = !!ped.productMinMul;
+    this.catalogHideStock0 = !!ped.hideStock0;
+    this.catalogHideProdWithoutPrice = !!ped.hideProdWithoutPrice;
+    this.catalogListaPricelist = [...ped.listaPricelist];
+    this.catalogListaList = [...ped.listaList];
+    this.catalogListaUnitPriceList = [...ped.listaUnitPriceList];
+    this.catalogListaUnitInfo = [...ped.listaUnitInfo];
+    this.catalogProdMinMulMap = new Map(ped.prodMinMulMap);
+  }
+
+  getCatalogPresentationTag(coApplicationTag: string): string {
+    const fromOrder = this.catalogOrderPresentationTags.get(coApplicationTag);
+    return typeof fromOrder === 'string' ? fromOrder : '';
+  }
+
+  getCatalogProdMinMul(idProduct: number): { quMinimum: number; quMultiple: number } {
+    const row = this.catalogProdMinMulMap.get(idProduct);
+    return row ? { ...row } : { quMinimum: 1, quMultiple: 1 };
+  }
+
+  catalogHasProdMinMul(idProduct: number): boolean {
+    return this.catalogProductMinMul && this.catalogProdMinMulMap.has(idProduct);
+  }
 
   formatStock(stock: number | null, quUnitDecimals: boolean): string {
     if (quUnitDecimals) {
