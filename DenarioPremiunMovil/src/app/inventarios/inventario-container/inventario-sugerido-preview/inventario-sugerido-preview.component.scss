@@ -95,6 +95,22 @@ ion-modal#eventModal .wrapper {
     margin-top: 9px;
 }
 
+/** Borde visible alrededor del selector de moneda (modal pedido sugerido). */
+.inventario-sugerido-selector-moneda {
+  margin-top: 4px;
+  width: 100%;
+  border: 1px solid $colorGris;
+  border-radius: 8px;
+  padding: 2px;
+  box-sizing: border-box;
+  ion-select {
+    width: 100%;
+    --border-width: 0;
+    --padding-start: 8px;
+    --padding-end: 8px;
+  }
+}
+
 
 .col {
   border: solid 1px $colorLila;

@@ -662,13 +662,46 @@ export class InventariosLogicService {
     });
   }
 
-  saveClientStockBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
+  /** Evita pérdida de vínculo pedido inventario cuando memoria está desactualizada. */
+  private async mergeStoredClientStockLinks(dbServ: SQLiteObject, clientStock: ClientStocks): Promise<void> {
+    const coCs = clientStock.coClientStock;
+    if (!coCs) {
+      return;
+    }
+    try {
+      const result = await dbServ.executeSql(
+        'SELECT co_order, id_order FROM client_stocks WHERE co_client_stock = ? LIMIT 1',
+        [coCs],
+      );
+      if (result.rows.length < 1) {
+        return;
+      }
+      const row = result.rows.item(0);
+      const rowCoOrder = row.co_order as string | null | undefined;
+      const rowIdOrder = row.id_order as number | null | undefined;
+      const coUnset = clientStock.coOrder == null || String(clientStock.coOrder).length === 0;
+      const idUnset = clientStock.idOrder == null || clientStock.idOrder === 0;
+      if (coUnset && rowCoOrder != null && String(rowCoOrder).length > 0) {
+        clientStock.coOrder = rowCoOrder;
+      }
+      if (idUnset && rowIdOrder != null && Number(rowIdOrder) > 0) {
+        clientStock.idOrder = Number(rowIdOrder);
+      }
+    } catch (e) {
+      console.log('[mergeStoredClientStockLinks]', e);
+    }
+  }
+
+  async saveClientStockBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
+    for (let i = 0; i < clientStocks.length; i++) {
+      await this.mergeStoredClientStockLinks(dbServ, clientStocks[i]);
+    }
     const insertClientStock = 'INSERT OR REPLACE INTO client_stocks ('
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
       + 'co_address_client,coordenada, tx_comment,'
       + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, '
-      + 'st_delivery, days_since_last, days_until_next) VALUES ('
-      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      + 'id_order, co_order, st_delivery, days_since_last, days_until_next) VALUES ('
+      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     const insertClientStocksDetails = "INSERT OR REPLACE INTO client_stocks_details ("
       + "id_client_stock_detail, co_client_stock_detail, co_client_stock, na_product, co_product, id_product,"
@@ -695,7 +728,8 @@ export class InventariosLogicService {
           clientStock.idClient, clientStock.coClient, clientStock.idAddressClient, clientStock.coAddressClient,
           clientStock.coordenada, clientStock.txComment, clientStock.idEnterprise, clientStock.coEnterprise,
           clientStock.stClientStock, clientStock.daClientStock, clientStock.lbClient, clientStock.isSave,
-          clientStock.nuAttachments, clientStock.hasAttachments, clientStock.stDelivery, clientStock.daysSinceLast, clientStock.daysUntilNext
+          clientStock.nuAttachments, clientStock.hasAttachments, clientStock.idOrder ?? null, clientStock.coOrder ?? null,
+          clientStock.stDelivery, clientStock.daysSinceLast, clientStock.daysUntilNext
         ]
       ]);
 
@@ -733,10 +767,12 @@ export class InventariosLogicService {
 
   }
 
-  saveClientStock(dbServ: SQLiteObject, send: Boolean) {
+  async saveClientStock(dbServ: SQLiteObject, send: Boolean) {
     var insertStatement: string = '';
 
     var batch = [];
+
+    await this.mergeStoredClientStockLinks(dbServ, this.newClientStock);
 
     if (send) {
       this.newClientStock.stDelivery = DELIVERY_STATUS_TO_SEND;
@@ -750,29 +786,30 @@ export class InventariosLogicService {
     insertStatement = 'INSERT OR REPLACE INTO client_stocks ('
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
       + 'co_address_client,coordenada, tx_comment,'
-      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, st_delivery,'
+      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, id_order, co_order, st_delivery,'
       + ' days_since_last, days_until_next) VALUES ('
-      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     var q = [insertStatement,
       [this.newClientStock.idClientStock, this.newClientStock.coClientStock, this.newClientStock.idUser, this.newClientStock.coUser,
       this.newClientStock.idClient, this.newClientStock.coClient, this.newClientStock.idAddressClient, this.newClientStock.coAddressClient,
       this.newClientStock.coordenada, this.newClientStock.txComment, this.newClientStock.idEnterprise, this.newClientStock.coEnterprise,
       this.newClientStock.stClientStock, this.newClientStock.daClientStock, this.newClientStock.lbClient, this.newClientStock.isSave,
-      this.newClientStock.nuAttachments, this.newClientStock.hasAttachments, this.newClientStock.stDelivery,
+      this.newClientStock.nuAttachments, this.newClientStock.hasAttachments,
+      this.newClientStock.idOrder ?? null, this.newClientStock.coOrder ?? null,
+      this.newClientStock.stDelivery,
       this.newClientStock.daysSinceLast, this.newClientStock.daysUntilNext]
     ];
     batch.push(q);
 
-    return dbServ.sqlBatch(batch).then(() => {
-      /* return this.getIncidencesByVisit(input[0].idVisit); */
+    try {
+      await dbServ.sqlBatch(batch);
       console.log("SE GUARDO CLIENT_STOCKS");
-      /* this.saveClientStocksDetails2(); */
-      this.saveClientStocksDetails(dbServ, this.newClientStock.clientStockDetails);
-    }).catch(e => {
+      await this.saveClientStocksDetails(dbServ, this.newClientStock.clientStockDetails);
+    } catch (e) {
       console.log("ERROR GUARDAR CLIENT_STOCKS");
       console.log(e);
-    });
+    }
 
   }
 
@@ -952,8 +989,8 @@ export class InventariosLogicService {
       + "id_client as idClient, co_client as coClient, id_address_client as idAddressClient, co_address_client as coAddressClient,"
       + "coordenada, tx_comment as txComment, id_enterprise as idEnterprise, co_enterprise as coEnterprise,"
       + "da_client_stock as daClientStock, st_client_stock as stClientStock, lb_client as lbClient, isSave as isSave, "+
-      "nu_attachments as nuAttachments, has_attachments as hasAttachments, st_delivery as stDelivery, "+
-      "days_since_last as daysSinceLast, days_until_next as daysUntilNext "
+      "nu_attachments as nuAttachments, has_attachments as hasAttachments, id_order as idOrder, co_order as coOrder, "+
+      "st_delivery as stDelivery, days_since_last as daysSinceLast, days_until_next as daysUntilNext "
       + "FROM client_stocks WHERE co_client_stock = ?"
 
     return dbServ.executeSql(selectClientStock, [coClientStock]).then(result => {
@@ -997,6 +1034,8 @@ export class InventariosLogicService {
           isSave: item.isSave,
           nuAttachments: item.nu_attachments,
           hasAttachments: item.has_attachments,
+          idOrder: item.id_order ?? null,
+          coOrder: item.co_order ?? null,
           stDelivery: item.st_delivery,
           daysSinceLast: item.days_since_last,
           daysUntilNext: item.days_until_next,
@@ -1157,7 +1196,7 @@ export class InventariosLogicService {
       "cs.id_user as idUser,cs.co_user as coUser, cs.id_client as idClient, cs.co_client as coClient, " +
       "cs.id_address_client as idAddressClient,cs.co_address_client as coAddressClient,cs.coordenada, " +
       "cs.tx_comment as txComment,cs.id_enterprise as idEnterprise, cs.co_enterprise as coEnterprise, cs.st_client_stock as stClientStock," +
-      "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.st_delivery as stDelivery, cs.days_since_last as daysSinceLast, cs.days_until_next as daysUntilNext " +
+      "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.id_order as idOrder, cs.co_order as coOrder, cs.st_delivery as stDelivery, cs.days_since_last as daysSinceLast, cs.days_until_next as daysUntilNext " +
       "FROM client_stocks cs " +
       "join clients c on cs.id_client = c.id_client " +
       "ORDER BY cs.st_delivery DESC, cs.da_client_stock DESC";

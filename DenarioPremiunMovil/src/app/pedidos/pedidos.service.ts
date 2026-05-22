@@ -32,7 +32,7 @@ import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { Router } from '@angular/router';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { DateServiceService } from '../services/dates/date-service.service';
-import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_SAVED } from '../utils/appConstants';
 import { GlobalDiscount } from '../modelos/tables/globalDiscount';
 import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStructure';
@@ -148,6 +148,19 @@ export class PedidosService {
   coClientStockAEnviar = '';
   idClientStockAEnviar: number | null = 0;
 
+  /** Inventario sugerencia: local quedó como SAVED(3); forzar Por enviar(2) para que auto-send envíe id servidor null como inventario nuevo. */
+  async marcarInventarioSugeridoStPorEnviar(): Promise<void> {
+    const co = this.coClientStockAEnviar;
+    if (typeof co !== 'string' || co.trim().length <= 1) {
+      return;
+    }
+    await this.database
+      .executeSql(
+        'UPDATE client_stocks SET st_delivery = ? WHERE co_client_stock = ?',
+        [DELIVERY_STATUS_TO_SEND, co],
+      )
+      .catch(err => console.log('[marcarInventarioSugeridoStPorEnviar]', err));
+  }
 
   public coOrder = '';
 
@@ -1329,6 +1342,8 @@ export class PedidosService {
     pedido.coOrder = coOrder;
     this.coOrder = coOrder;
     pedido.idOrder = 0;
+    pedido.idClientStock = null;
+    pedido.coClientStock = null;
     pedido.stOrder = DELIVERY_STATUS_SAVED;
     pedido.stDelivery = DELIVERY_STATUS_SAVED;
     for (let i = 0; i < pedido.orderDetails.length; i++) {
@@ -1535,7 +1550,12 @@ export class PedidosService {
     //mini setup de moneda para conversiones de precio
     await this.currencyService.setup(this.dbServ.getDatabase())
     this.currencyModule = this.currencyService.getCurrencyModule('ped');
-    this.currencySelection();
+    const monedaPreview = this.datosPedidoSugerido.monedaSeleccionadaSugerencia;
+    if (monedaPreview) {
+      this.monedaSeleccionada = monedaPreview;
+    } else {
+      this.currencySelection();
+    }
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
     this.listaSeleccionada = this.datosPedidoSugerido.list;
@@ -1549,7 +1569,7 @@ export class PedidosService {
       });
       */
 
-    await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList).then(orderUtils => {
+    const orderUtils = await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList);
       let details: OrderDetail[] = [];
       let pedido: Orders = {
         "idOrder": 0,
@@ -1597,6 +1617,8 @@ export class PedidosService {
         "nuAttachments": 0,
         "idDistributionChannel": null,
         "coDistributionChannel": null,
+        "idClientStock": null,
+        "coClientStock": null,
         "stDelivery": DELIVERY_STATUS_NEW
       }
 
@@ -1676,6 +1698,19 @@ export class PedidosService {
       }
       pedido.orderDetails = details;
       pedido.nuDetails = details.length;
+      const idCsSuggest = this.datosPedidoSugerido.idClientStock;
+      const coCsSuggest = this.datosPedidoSugerido.coClientStock;
+      pedido.coClientStock = coCsSuggest ? coCsSuggest : null;
+      pedido.idClientStock =
+        idCsSuggest != null && typeof idCsSuggest === 'number' && idCsSuggest > 0 ? idCsSuggest : null;
+
+      if (pedido.coClientStock) {
+        await this.database.executeSql(
+          'UPDATE client_stocks SET co_order = ?, id_order = ? WHERE co_client_stock = ?',
+          [pedido.coOrder, pedido.idOrder ?? 0, pedido.coClientStock],
+        ).catch(err => console.log('[sugerirPedido] vínculo inventario:', err));
+      }
+
       this.order = pedido;
       //reseteamos al estado natural
       //this.desdeSugerencia = false;
@@ -1691,7 +1726,6 @@ export class PedidosService {
         this.message.transaccionMsjModalNB(this.getTag('PED_ERROR_SUGERIR'));
       }
 
-    })
   }
 
   getIdUser() {

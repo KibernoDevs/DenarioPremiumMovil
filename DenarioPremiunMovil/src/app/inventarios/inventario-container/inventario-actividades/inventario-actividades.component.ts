@@ -15,7 +15,7 @@ import { CLIENTSTOCK_STATUS_NEW, CLIENTSTOCK_STATUS_SAVED, CLIENTSTOCK_STATUS_SE
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
-import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
+import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
 import { ModalController } from '@ionic/angular';
 import { InventarioSugeridoPreviewComponent } from '../inventario-sugerido-preview/inventario-sugerido-preview.component';
 
@@ -125,15 +125,18 @@ public modalCtrl = inject(ModalController);
         clientStockDetails: this.inventariosLogicService.newClientStock.clientStockDetails,
         inventarioTags: this.inventariosLogicService.inventarioTags,
         diasDesdeUltimoInventario: this.inventariosLogicService.newClientStock.daysSinceLast,
-        diasHastaSiguienteInventario: this.inventariosLogicService.newClientStock.daysUntilNext
+        diasHastaSiguienteInventario: this.inventariosLogicService.newClientStock.daysUntilNext,
+        empresaSeleccionada: this.inventariosLogicService.empresaSeleccionada,
+        monedaLabel: this.orderServ.getTag('PED_MONEDA'),
       }
     });
 
     await modal.present();
 
-    const { role } = await modal.onDidDismiss();
+    const dismiss = await modal.onDidDismiss<{ monedaSeleccionada?: CurrencyEnterprise }>();
+    const { role, data } = dismiss;
     if (role === 'confirm') {
-      await this.sugerirPedido();
+      await this.sugerirPedido(data?.monedaSeleccionada);
     }
   }
   
@@ -198,7 +201,7 @@ public modalCtrl = inject(ModalController);
     
   }
 */
-  async sugerirPedido(){
+  async sugerirPedido(monedaSeleccionadaSugerencia?: CurrencyEnterprise){
 
     // this.orderServ.empresaSeleccionada = this.inventariosLogicService.empresaSeleccionada;
     // this.orderServ.setup();
@@ -231,7 +234,7 @@ public modalCtrl = inject(ModalController);
     //guardar el stock actual
     var toSend =  false;
     if(this.inventariosLogicService.newClientStock.stDelivery != CLIENTSTOCK_STATUS_SENT){
-      this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
+      await this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
       this.adjuntoService.savePhotos(this.dbServ.getDatabase(),
       this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
       toSend= true;
@@ -249,6 +252,9 @@ public modalCtrl = inject(ModalController);
       idProducts: this.inventariosLogicService.idProductsSuggested,
       idUnits: this.inventariosLogicService.idUnitsSuggested,
       idProductUnits: this.inventariosLogicService.idProductsUnitsSuggested,
+      ...(monedaSeleccionadaSugerencia
+        ? { monedaSeleccionadaSugerencia }
+        : {}),
     };
     //ir a nuevo pedido
     this.router.navigate(['pedido']);

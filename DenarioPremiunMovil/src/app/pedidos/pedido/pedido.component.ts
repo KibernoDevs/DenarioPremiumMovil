@@ -530,15 +530,9 @@ export class PedidoComponent implements OnInit {
     if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
       this.orderServ.disableSendButton = true;
       this.message.showLoading().then(() => {
-        this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
+        this.saveOrder(DELIVERY_STATUS_TO_SEND).then(async (order) => {
 
           var transactions: PendingTransaction[] = [];
-          var tr: PendingTransaction = new PendingTransaction(
-            order.coOrder,
-            order.idOrder,
-            "order"
-          );
-          transactions.push(tr);
 
           if (this.orderServ.validateWarehouses && this.orderServ.validStock) {
             this.orderServ.updateStocks(order).then(() => {
@@ -547,13 +541,17 @@ export class PedidoComponent implements OnInit {
           }
 
           if (this.orderServ.coClientStockAEnviar.length > 1) {
-            //si venimos de inventario, enviamos el inventario tambien.
+            await this.orderServ.marcarInventarioSugeridoStPorEnviar();
             transactions.push({
               coTransaction: this.orderServ.coClientStockAEnviar,
               idTransaction: this.orderServ.idClientStockAEnviar,
-              type: "clientStock"
-            })
+              type: "clientStock",
+            });
           }
+
+          transactions.push(
+            new PendingTransaction(order.coOrder, order.idOrder, "order"),
+          );
 
           if (localStorage.getItem("connected") == "true") {
             this.messageAlert = new MessageAlert(
@@ -780,6 +778,8 @@ export class PedidoComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
       coDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.coChannel : null,
+      idClientStock: this.orderServ.order.idClientStock ?? null,
+      coClientStock: this.orderServ.order.coClientStock ?? null,
       stDelivery: stDelivery,
     } as Orders
 
@@ -1657,6 +1657,8 @@ export class PedidoComponent implements OnInit {
       nuAttachments: 0,
       idDistributionChannel: null,
       coDistributionChannel: null,
+      idClientStock: null,
+      coClientStock: null,
       stDelivery: DELIVERY_STATUS_NEW
     } as Orders;
   }
