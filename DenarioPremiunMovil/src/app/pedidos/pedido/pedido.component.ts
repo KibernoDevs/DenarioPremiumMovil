@@ -811,6 +811,7 @@ export class PedidoComponent implements OnInit {
             this.orderServ.listaSeleccionada = pricelist;
             this.listaAnterior = pricelist;
             this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == pricelist?.idList)
+            this.orderServ.productListToOrderUtil(this.productService.productList);
           }
         }
       ]
@@ -824,6 +825,7 @@ export class PedidoComponent implements OnInit {
       //si no hay productos no hay peo, consolidamos el cambio.
       this.listaAnterior = this.orderServ.listaSeleccionada;
       this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == this.orderServ.listaSeleccionada?.idList)
+      this.orderServ.productListToOrderUtil(this.productService.productList);
       this.orderServ.setChangesMade(true);
 
     }
@@ -1267,50 +1269,50 @@ export class PedidoComponent implements OnInit {
 
       // Lista
       let list: List | undefined;
-      if(this.orderServ.desdeSugerencia){
+      if (this.orderServ.desdeSugerencia) {
         //en la sugerencia ya tenemos una lista definida, asi que la usamos y listo, no hay que andar buscando ni nada raro
         this.orderServ.desdeSugerencia = false;
         list = this.orderServ.datosPedidoSugerido.list;
-      } else{
-      if (this.orderServ.openOrder) {
-        let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
-        if (!idPriceList) {
-          console.error("El pedido no tiene pricelist asignada en los detalles");
-          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-        }else{
-        let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-        if (pl.length < 1) {
-          console.error("No se encontro pricelist del pedido");
-          if (this.orderServ.pedidoModificable) {
-            console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
-            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-          }
-        } else {
-          let idList = pl[0].idList;
-          list = this.orderServ.listaList.find((list) => list.idList == idList);
-        }
-        if (list) {
-          this.orderServ.listaSeleccionada = list!;
-          if (list.idList > 0) {
-            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
-
-          }
-          this.listaAnterior = list!;
-        } else {
-          this.orderServ.listaSeleccionada = { idList: 0 } as List;
-        }
-      }
       } else {
-        list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-      }
-    }
+        if (this.orderServ.openOrder) {
+          let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+          if (!idPriceList) {
+            console.error("El pedido no tiene pricelist asignada en los detalles");
+            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+          } else {
+            let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
+            if (pl.length < 1) {
+              console.error("No se encontro pricelist del pedido");
+              if (this.orderServ.pedidoModificable) {
+                console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
+                list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+              }
+            } else {
+              let idList = pl[0].idList;
+              list = this.orderServ.listaList.find((list) => list.idList == idList);
+            }
+            if (list) {
+              this.orderServ.listaSeleccionada = list!;
+              if (list.idList > 0) {
+                this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
 
-        if (list != undefined) {
-          this.orderServ.listaSeleccionada = list;
-          this.listaAnterior = list;
-          this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+              }
+              this.listaAnterior = list!;
+            } else {
+              this.orderServ.listaSeleccionada = { idList: 0 } as List;
+            }
+          }
+        } else {
+          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
         }
-      
+      }
+
+      if (list != undefined) {
+        this.orderServ.listaSeleccionada = list;
+        this.listaAnterior = list;
+        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+      }
+
 
 
       //Payment Condition
