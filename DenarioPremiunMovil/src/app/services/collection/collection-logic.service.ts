@@ -3429,7 +3429,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       if (this.collection.nuAttachments > 0)
         this.collection.hasAttachments = true;
 
-      if (collection.hasIGTF) {
+      if (collection.hasIGTF && action) {
         //SE DEBE CREAR UN DOCUMENTO DE VENTA TIPO IGTF
         this.createDocumentSaleIGTF(dbServ, collection);
       }
