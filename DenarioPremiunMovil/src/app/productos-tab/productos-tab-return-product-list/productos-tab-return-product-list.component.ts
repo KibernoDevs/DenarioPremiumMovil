@@ -76,14 +76,22 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
       this.showProductList = data;
       this.noProductsAlertShown = false;
       if (this.showProductList) {
+        this.searchText = '';
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
+        if (!this.idProductStructureList || this.idProductStructureList.length === 0) {
+          this.productList = [];
+          this.noProductsAlertShown = true;
+          this.cd.detectChanges();
+          return;
+        }
         this.page = 0;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, 
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise,
           this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
             this.productList = this.productService.productList;
             this.noProductsAlertShown = (this.productList.length == 0);
+            this.cd.detectChanges();
           });
       }
     });
@@ -97,6 +105,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
       this.productList = this.productService.productList;
       this.noProductsAlertShown = (this.productList.length == 0);
       this.page = 0;
+      this.cd.detectChanges();
 
     });
 
@@ -105,6 +114,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
       this.showProductList = true;
       this.productList = this.productService.productList;
       this.noProductsAlertShown = (this.productList.length == 0);
+      this.cd.detectChanges();
     });
 
     this.featClicked = this.productService.featuredStructureClicked.subscribe((data) => {
@@ -119,6 +129,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
           this.showProductList = true;
           this.productList = this.productService.productList;
           this.noProductsAlertShown = (this.productList.length == 0);
+          this.cd.detectChanges();
         }
         )
     });
@@ -135,6 +146,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
           this.showProductList = true;
           this.productList = this.productService.productList;
           this.noProductsAlertShown = (this.productList.length == 0);
+          this.cd.detectChanges();
         }
         )
     });
@@ -178,7 +190,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     this.productStructureService.onReturnProductTabClicked();
   }
 
-  
+
 
     onIonInfinite(ev: any) {
       this.page++;
@@ -192,6 +204,15 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
             (ev as InfiniteScrollCustomEvent).target.complete();
           });
       } else {
+        if (!this.idProductStructureList || this.idProductStructureList.length === 0) {
+          this.productList = [];
+          this.noProductsAlertShown = true;
+          if (ev) {
+            (ev as InfiniteScrollCustomEvent).target.complete();
+          }
+          this.cd.detectChanges();
+          return;
+        }
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
 
@@ -199,9 +220,10 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
             if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
               this.infiniteScroll.disabled = true;
             }
+            this.cd.detectChanges();
             (ev as InfiniteScrollCustomEvent).target.complete();
           });
         }
-  
+
     }
 }

@@ -1,3 +1,7 @@
+:host {
+  display: block;
+}
+
 .productImage{
     width: auto;
     height: 60px;
@@ -36,4 +40,12 @@
 
 .listado-product-structures{
   // margin-top: 40px;
+}
+
+.cardProduct{
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
