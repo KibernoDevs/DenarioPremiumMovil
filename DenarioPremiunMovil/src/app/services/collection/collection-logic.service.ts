@@ -856,16 +856,7 @@ export class CollectionService {
     }
 
 
-    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
-      for (var j = 0; j < this.collection.collectionDetails.length; j++) {
-        monto += this.collection.collectionDetails[j].nuAmountPaid;
-        montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
-        montoTotalDiscounts += this.collection.collectionDetails[j].nuAmountRetention + this.collection.collectionDetails[j].nuAmountRetention2 + this.collection.collectionDetails[j].nuAmountDiscount;
-        this.montoTotalPagar = monto - montoTotalDiscounts;
-        this.montoTotalPagarConversion = montoConversion;
-
-      }
-    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == null) {
+    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == null) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto - montoTotalDiscounts;
