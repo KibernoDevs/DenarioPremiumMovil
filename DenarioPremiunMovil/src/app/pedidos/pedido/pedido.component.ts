@@ -1505,18 +1505,27 @@ export class PedidoComponent implements OnInit {
           maxLines?: number;
         };
 
+        const formatLineIvaPercent = (item: OrderUtil): string => {
+          const pct = Number(item?.iva ?? 0);
+          if (!Number.isFinite(pct) || pct <= 0) {
+            return '';
+          }
+          return `${this.formatNum(pct)}%`;
+        };
+
         const columns: SummaryPdfColumn[] = [
           { label: 'Código', align: 'center', width: '8%', noWrap: true, maxLines: 1 },
-          { label: 'Producto', align: 'left', width: '34%', noWrap: false, maxLines: 3 },
+          { label: 'Producto', align: 'left', width: '32%', noWrap: false, maxLines: 3 },
           { label: 'Cantidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
           { label: 'Unidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
-          { label: 'Precio Base', align: 'right', width: '11%', noWrap: true }
+          { label: 'Precio Base', align: 'right', width: '10%', noWrap: true }
         ];
 
         if (hasDiscountColumn) {
-          columns.push({ label: 'Descuento', align: 'right', width: '26%', noWrap: false, maxLines: 10 });
+          columns.push({ label: 'Descuento', align: 'right', width: '23%', noWrap: false, maxLines: 10 });
         }
-        columns.push({ label: 'Importe Total', align: 'right', width: '13%', noWrap: true });
+        columns.push({ label: 'IVA %', align: 'center', width: '7%', noWrap: true });
+        columns.push({ label: 'Importe Total', align: 'right', width: '12%', noWrap: true });
 
         const fmtMoney = (n: number): string => this.formatNum(Number.isFinite(n) ? n : 0);
         const summaryTotalsDetailLines: string[] = [
@@ -1552,6 +1561,7 @@ export class PedidoComponent implements OnInit {
           if (hasDiscountColumn) {
             row.push(buildDiscountCell(item));
           }
+          row.push(formatLineIvaPercent(item));
           row.push(this.formatNum(Number(item.subtotal ?? 0)));
           return row;
         });
