@@ -316,7 +316,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     fileName?: string;
   }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number, format?: 'letter' | 'legal' }): Promise<jsPDF> {
     const doc = new jsPDF({
-      format: opts?.format ?? 'legal',
+      format: opts?.format ?? 'letter',
       unit: 'pt',
       orientation: opts?.orientation ?? 'landscape'
     });
@@ -337,7 +337,13 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     const condensedTable = data.columns.length >= 10;
     const rowPaddingY = condensedTable ? 6 : 8;
     const lineHeight = condensedTable ? 12 : 14;
-    const tableHeaderHeight = condensedTable ? 30 : 34;
+    /** Solo grid de productos (cabecera + filas de datos) */
+    const tableCellFontPt = 9;
+    const tableLineHeight = condensedTable ? 11 : 12;
+    const tableHeaderHeight = condensedTable ? 28 : 32;
+    /** Fila Totales al pie: mantiene tamaño legible distinto al grid */
+    const footerSummaryFontPt = condensedTable ? 10 : 12;
+    const footerSummaryLineHeight = condensedTable ? 12 : 13;
 
     const normalizedWidths = this.normalizeSummaryColumnWidths(data.columns, usableWidth);
     let cursorY = topMargin;
@@ -416,12 +422,11 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       });
     };
 
-    const headerFontPt = condensedTable ? 10 : 12;
-
     const drawTableHeader = () => {
       let cellX = marginX;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(headerFontPt);
+      doc.setFontSize(tableCellFontPt);
+      const headerTextY = cursorY + tableHeaderHeight / 2 + tableCellFontPt * 0.35;
       data.columns.forEach((column, index) => {
         const cellWidth = normalizedWidths[index];
         doc.setFillColor(...headerColor);
@@ -430,7 +435,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
         doc.setTextColor(255, 255, 255);
         const align = column.align ?? 'left';
         const textX = this.getAlignedTextX(cellX, cellWidth, align, rowPaddingX);
-        doc.text(this.escapePdfText(column.label), textX, cursorY + 21, { align: align as 'left' | 'center' | 'right' });
+        doc.text(this.escapePdfText(column.label), textX, headerTextY, { align: align as 'left' | 'center' | 'right' });
         cellX += cellWidth;
       });
       cursorY += tableHeaderHeight;
@@ -453,6 +458,9 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     drawTableHeader();
 
     data.rows.forEach((row, rowIndex) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(tableCellFontPt);
+
       const preparedCells = row.map((cell, columnIndex) => {
         const column = data.columns[columnIndex] ?? {};
         const cellWidth = normalizedWidths[columnIndex];
@@ -483,8 +491,8 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       });
 
       const rowHeight = Math.max(
-        30,
-        ...preparedCells.map(lines => lines.length * lineHeight + rowPaddingY * 2)
+        condensedTable ? 26 : 28,
+        ...preparedCells.map(lines => lines.length * tableLineHeight + rowPaddingY * 2)
       );
 
       ensureTableSpace(rowHeight);
@@ -498,10 +506,10 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
         doc.rect(cellX, cursorY, cellWidth, rowHeight, 'FD');
         doc.setTextColor(32, 32, 32);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(headerFontPt);
+        doc.setFontSize(tableCellFontPt);
         const align = column.align ?? 'left';
         const textX = this.getAlignedTextX(cellX, cellWidth, align, rowPaddingX);
-        doc.text(lines, textX, cursorY + 16, { align: align as 'left' | 'center' | 'right' });
+        doc.text(lines, textX, cursorY + rowPaddingY + tableCellFontPt * 0.85, { align: align as 'left' | 'center' | 'right' });
         cellX += cellWidth;
       });
 
@@ -523,6 +531,9 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       const widthRightPx = usableWidth - widthLeftPx;
       const availableRight = Math.max(20, widthRightPx - rowPaddingX * 2);
 
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(footerSummaryFontPt);
+
       let detailBuilt: string[] = [];
       footer.detailLines.forEach(para => {
         const trimmed = para.trimEnd();
@@ -536,7 +547,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
 
       const rowHeightTotals = Math.max(
         condensedTable ? 38 : 40,
-        rowPaddingY * 2 + detailBuilt.length * lineHeight
+        rowPaddingY * 2 + detailBuilt.length * footerSummaryLineHeight
       );
 
       ensureTableSpace(rowHeightTotals);
@@ -547,18 +558,19 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       doc.rect(marginX + widthLeftPx, cursorY, widthRightPx, rowHeightTotals, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(headerFontPt);
+      doc.setFontSize(footerSummaryFontPt);
       doc.setTextColor(29, 53, 21);
       const leftCenterX = marginX + widthLeftPx / 2;
-      const baselineLeft = cursorY + (rowHeightTotals - lineHeight) / 2 + lineHeight * 0.75;
+      const footerLineH = footerSummaryLineHeight;
+      const baselineLeft = cursorY + (rowHeightTotals - footerLineH) / 2 + footerLineH * 0.75;
       doc.text(this.escapePdfText(footer.leftLabel), leftCenterX, baselineLeft, { align: 'center' });
 
       doc.setFont('helvetica', 'bold');
-      let ty = cursorY + rowPaddingY + lineHeight;
+      let ty = cursorY + rowPaddingY + footerLineH;
       detailBuilt.forEach(line => {
         const text = line.trim() ? line : ' ';
         doc.text(text, marginX + widthLeftPx + widthRightPx - rowPaddingX, ty, { align: 'right' });
-        ty += lineHeight;
+        ty += footerLineH;
       });
 
       cursorY += rowHeightTotals;

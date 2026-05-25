@@ -1584,7 +1584,7 @@ export class PedidoComponent implements OnInit {
             detailLines: summaryTotalsDetailLines
           },
           fileName: `pedido_${idOrder}_${daOrder}.pdf`
-        }, { orientation: 'landscape', scale: 1, layoutScale: 1, format: 'legal' });
+        }, { orientation: 'landscape', scale: 1, layoutScale: 1, format: 'letter' });
 
         const base64 = doc.output('datauristring');
         const trimmed = base64.split(',')[1];
