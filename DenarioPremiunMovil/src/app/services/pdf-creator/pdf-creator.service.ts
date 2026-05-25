@@ -305,11 +305,18 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     meta?: Array<{ label: string; value: string }>;
     columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
     rows: Array<Array<string>>;
+    /** @deprecated Prefer summaryTotalsRow for tabular footer */
     total?: { label: string; value: string };
+    /** Fila final tipo tabla: primera celda agrupa columnas (ej. colspan 2) con etiqueta centrada */
+    summaryTotalsRow?: {
+      labelColumnSpan: number;
+      leftLabel: string;
+      detailLines: string[];
+    };
     fileName?: string;
-  }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
+  }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number, format?: 'letter' | 'legal' }): Promise<jsPDF> {
     const doc = new jsPDF({
-      format: 'letter',
+      format: opts?.format ?? 'legal',
       unit: 'pt',
       orientation: opts?.orientation ?? 'landscape'
     });
@@ -327,9 +334,10 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     const bottomMargin = 28;
     const usableWidth = pageWidth - marginX * 2;
     const rowPaddingX = 10;
-    const rowPaddingY = 8;
-    const lineHeight = 14;
-    const tableHeaderHeight = 34;
+    const condensedTable = data.columns.length >= 10;
+    const rowPaddingY = condensedTable ? 6 : 8;
+    const lineHeight = condensedTable ? 12 : 14;
+    const tableHeaderHeight = condensedTable ? 30 : 34;
 
     const normalizedWidths = this.normalizeSummaryColumnWidths(data.columns, usableWidth);
     let cursorY = topMargin;
@@ -408,10 +416,12 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       });
     };
 
+    const headerFontPt = condensedTable ? 10 : 12;
+
     const drawTableHeader = () => {
       let cellX = marginX;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
+      doc.setFontSize(headerFontPt);
       data.columns.forEach((column, index) => {
         const cellWidth = normalizedWidths[index];
         doc.setFillColor(...headerColor);
@@ -447,9 +457,21 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
         const column = data.columns[columnIndex] ?? {};
         const cellWidth = normalizedWidths[columnIndex];
         const availableWidth = Math.max(20, cellWidth - rowPaddingX * 2);
-        let lines = column.noWrap
-          ? [this.escapePdfText(cell ?? '')]
-          : doc.splitTextToSize(this.escapePdfText(cell ?? ''), availableWidth);
+
+        let lines: string[];
+        const raw = String(cell ?? '');
+        if (column.noWrap) {
+          lines = [this.escapePdfText(raw)];
+        } else {
+          const escaped = this.escapePdfText(raw);
+          const paragraphs = escaped.split(/\n/);
+          let built: string[] = [];
+          paragraphs.forEach(para => {
+            const chunks = doc.splitTextToSize(para, availableWidth);
+            built = built.concat(Array.isArray(chunks) ? chunks : [String(chunks)]);
+          });
+          lines = built;
+        }
 
         if (column.maxLines && lines.length > column.maxLines) {
           lines = lines.slice(0, column.maxLines);
@@ -476,7 +498,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
         doc.rect(cellX, cursorY, cellWidth, rowHeight, 'FD');
         doc.setTextColor(32, 32, 32);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
+        doc.setFontSize(headerFontPt);
         const align = column.align ?? 'left';
         const textX = this.getAlignedTextX(cellX, cellWidth, align, rowPaddingX);
         doc.text(lines, textX, cursorY + 16, { align: align as 'left' | 'center' | 'right' });
@@ -486,7 +508,65 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       cursorY += rowHeight;
     });
 
-    if (data.total) {
+    const drawMergedSummaryTotalsRow = () => {
+      const footer = data.summaryTotalsRow;
+      if (!footer || footer.detailLines.length === 0) {
+        return;
+      }
+
+      const span = Math.min(
+        Math.max(1, Math.floor(Number(footer.labelColumnSpan))),
+        Math.max(1, data.columns.length - 1)
+      );
+
+      const widthLeftPx = normalizedWidths.slice(0, span).reduce((a, b) => a + b, 0);
+      const widthRightPx = usableWidth - widthLeftPx;
+      const availableRight = Math.max(20, widthRightPx - rowPaddingX * 2);
+
+      let detailBuilt: string[] = [];
+      footer.detailLines.forEach(para => {
+        const trimmed = para.trimEnd();
+        if (!trimmed) {
+          detailBuilt.push('');
+          return;
+        }
+        const chunks = doc.splitTextToSize(this.escapePdfText(trimmed), availableRight);
+        detailBuilt = detailBuilt.concat(Array.isArray(chunks) ? chunks : [String(chunks)]);
+      });
+
+      const rowHeightTotals = Math.max(
+        condensedTable ? 38 : 40,
+        rowPaddingY * 2 + detailBuilt.length * lineHeight
+      );
+
+      ensureTableSpace(rowHeightTotals);
+
+      doc.setDrawColor(184, 217, 167);
+      doc.setFillColor(...totalColor);
+      doc.rect(marginX, cursorY, widthLeftPx, rowHeightTotals, 'FD');
+      doc.rect(marginX + widthLeftPx, cursorY, widthRightPx, rowHeightTotals, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(headerFontPt);
+      doc.setTextColor(29, 53, 21);
+      const leftCenterX = marginX + widthLeftPx / 2;
+      const baselineLeft = cursorY + (rowHeightTotals - lineHeight) / 2 + lineHeight * 0.75;
+      doc.text(this.escapePdfText(footer.leftLabel), leftCenterX, baselineLeft, { align: 'center' });
+
+      doc.setFont('helvetica', 'bold');
+      let ty = cursorY + rowPaddingY + lineHeight;
+      detailBuilt.forEach(line => {
+        const text = line.trim() ? line : ' ';
+        doc.text(text, marginX + widthLeftPx + widthRightPx - rowPaddingX, ty, { align: 'right' });
+        ty += lineHeight;
+      });
+
+      cursorY += rowHeightTotals;
+    };
+
+    if (data.summaryTotalsRow?.detailLines?.length) {
+      drawMergedSummaryTotalsRow();
+    } else if (data.total) {
       const totalText = this.escapePdfText(`${data.total.label}: ${data.total.value}`);
       const totalTextWidth = Math.max(20, usableWidth - rowPaddingX * 2);
       const totalLines = doc.splitTextToSize(totalText, totalTextWidth);
