@@ -67,13 +67,13 @@ export class ProductService {
   public userCanSelectIVA:boolean = false;
 
   productoSearch = new Subject<string>;
-  onSearchClicked = new Subject<Boolean>;
-  productStructureCLicked = new Subject<Boolean>;
-  featuredStructureClicked = new Subject<Boolean>;
-  backButtonClicked = new Subject<Boolean>;
-  favoriteStructureClicked = new Subject<Boolean>;
-  inventoryTabClicked = new Subject<Boolean>;
-  carritoButtonClicked = new Subject<Boolean>();
+  onSearchClicked = new Subject<boolean>;
+  productStructureCLicked = new Subject<boolean>;
+  featuredStructureClicked = new Subject<boolean>;
+  backButtonClicked = new Subject<boolean>;
+  favoriteStructureClicked = new Subject<boolean>;
+  inventoryTabClicked = new Subject<boolean>;
+  carritoButtonClicked = new Subject<boolean>();
   returnBackClicked = new Subject<boolean>();
 
   searchTextChanged = new Subject<string>();

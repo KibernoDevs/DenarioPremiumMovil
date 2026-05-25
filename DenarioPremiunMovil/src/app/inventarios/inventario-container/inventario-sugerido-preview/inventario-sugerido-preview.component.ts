@@ -7,6 +7,7 @@ import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
@@ -38,6 +39,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private currencyService = inject(CurrencyService);
   private config = inject(GlobalConfigService);
   private dbServ = inject(SynchronizationDBService);
+  private inventariosLogicService = inject(InventariosLogicService);
 
   quUnitDecimals = false;
   suggestedOrderByDispatchAndReturn = false;
@@ -53,6 +55,9 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
 
   isCurrencySelectorDisabled(): boolean {
     if (!this.currencyService.multimoneda) {
+      return true;
+    }
+    if(this.inventariosLogicService.inventarioSent){
       return true;
     }
     if (this.isCurrencyModuleEnabled()) {
@@ -125,6 +130,9 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   }
 
   private computeDisableOrderButton(): boolean {
+    if (this.inventariosLogicService.inventarioSent) {
+      return true;
+    }
     for (const product of this.productsSuggested) {
       for (const unit of product.unitsSuggested) {
         if (unit.quUnitSuggested && unit.quUnitSuggested > 0) {

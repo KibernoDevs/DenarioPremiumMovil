@@ -100,9 +100,9 @@ export class InventariosLogicService {
   public typeDep: Boolean = false;
   public productUnitList!: Unit[];
   public unitSelected!: Unit;
-  public inventarioSent: Boolean = false;
-  public showProductList: Boolean = false;
-  public isEdit: Boolean = false;
+  public inventarioSent: boolean = false;
+  public showProductList: boolean = false;
+  public isEdit: boolean = false;
   public selectedInventoryType: 'exh' | 'dep' = 'exh';
 
   public message!: string;
