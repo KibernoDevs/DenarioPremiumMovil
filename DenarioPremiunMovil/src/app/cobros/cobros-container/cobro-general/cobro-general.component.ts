@@ -77,6 +77,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   public manualRateError: string = '';
   private lastManualRateValue: number = 0;
+  private pendingDateRateVisual: string = '';
 
   public alertButtons = [
     { text: '', role: 'confirm' },
@@ -895,15 +896,23 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onChangeDateRateMsj(event: any) {
+    const selectedDate = this.normalizeDateRateValue(event);
+    if (!selectedDate) {
+      return;
+    }
+
+    this.pendingDateRateVisual = selectedDate;
+
     if (this.collectService.collection.collectionDetails.length > 0) {
       this.collectService.mensaje = this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')! == undefined ? "Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?" : this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')!;
       this.collectService.alertMessageChangeDateRate = true
     } else {
-      this.onChangeDateRate(event);
+      this.collectService.dateRateVisual = selectedDate;
+      void this.onChangeDateRate();
     }
   }
 
-  async onChangeDateRate(event: any) {
+  async onChangeDateRate() {
     try {
       await this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
 
@@ -922,12 +931,28 @@ export class CobrosGeneralComponent implements OnInit {
     if (event.detail.role === 'confirm') {
       console.log("CAMBIAR DATERATE");
 
+      if (this.pendingDateRateVisual) {
+        this.collectService.dateRateVisual = this.pendingDateRateVisual;
+      }
+
       //await this.resetValues();
-      this.onChangeDateRate(event);
+      await this.onChangeDateRate();
     } else {
       //SI NO QUIERE CAMBIAR, DEBO COLOCAR LA FECHA ANTERIOR
       this.collectService.dateRateVisual = this.collectService.collection.daRate;
     }
+
+    this.pendingDateRateVisual = '';
+  }
+
+  private normalizeDateRateValue(value: any): string {
+    const raw = value?.detail?.value ?? value?.target?.value ?? value;
+    if (!raw) {
+      return '';
+    }
+
+    const asString = String(raw);
+    return asString.length >= 10 ? asString.substring(0, 10) : '';
   }
 
 

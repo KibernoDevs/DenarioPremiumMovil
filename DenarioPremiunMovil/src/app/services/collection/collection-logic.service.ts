@@ -886,8 +886,8 @@ export class CollectionService {
           if (this.documentSales[i].isSave) {
             let pos = this.documentSales[i].positionCollecDetails;
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-              monto += this.documentSalesBackup[i].nuAmountPaid;
-              montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
+              monto += this.documentSalesBackup[i].nuBalance;
+              montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
               montoTotalDiscounts = 0;
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
@@ -901,13 +901,8 @@ export class CollectionService {
           }
         }
 
-        if (this.userCanSelectIGTF) {
-          if (this.igtfSelected.price > 0) {
-            if (!this.separateIgtf) {
-              this.collection.collectionDetails[j].nuAmountPaid += this.cleanFormattedNumber(this.currencyService.formatNumber((this.collection.collectionDetails[j].nuAmountPaid * this.igtfSelected.price) / 100));
-            }
-          }
-        }
+        // No mutar nuAmountPaid por detalle durante recálculos de tasa.
+        // El IGTF se calcula y presenta a nivel de totales para evitar acumulaciones.
       }
     }
 
@@ -1370,7 +1365,7 @@ export class CollectionService {
         if (isNaN(this.montoTotalPagado))
           this.montoTotalPagado = 0;
         if (isNaN(this.montoTotalPagar))
-          this.montoTotalPagado = 0;
+          this.montoTotalPagar = 0;
 
         if (this.collection.collectionPayments.length == 0) {
           this.onCollectionValidToSend(false);
