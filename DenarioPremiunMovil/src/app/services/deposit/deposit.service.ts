@@ -180,6 +180,11 @@ export class DepositService {
     this.depositValidToSend.next(validToSend);
   }
 
+  /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para guardar / enviar). */
+  hasAtLeastOneDepositCollectRow(): boolean {
+    return !!(this.deposit?.depositCollect && this.deposit.depositCollect.length > 0);
+  }
+
   markDepositDirty(): void {
     this.depositDirtySincePersist = true;
   }
@@ -252,6 +257,9 @@ export class DepositService {
       }
 
       this.resetDepositExitBaseline();
+
+      this.onDepositValidToSend(false);
+      this.onDepositValidToSave(false);
 
       this.getCurrencies(dbServ, this.deposit.idEnterprise).then(resp => {
         this.getBankAccounts(dbServ, this.deposit.idEnterprise, this.currencySelected.coCurrency).then(resp => {
@@ -369,6 +377,9 @@ export class DepositService {
     }
 
     this.resetDepositExitBaseline();
+
+    this.onDepositValidToSend(false);
+    this.onDepositValidToSave(false);
 
     return Promise.resolve(true);
   }
@@ -922,8 +933,10 @@ export class DepositService {
         item.inDepositCollect = true;
         this.cobrosDetails.push(item);
       }
+      this.onDepositValidToSend(this.hasAtLeastOneDepositCollectRow());
       return this.deposit;
     }).catch(e => {
+      this.onDepositValidToSend(false);
       this.deposit.depositCollect = [] as DepositCollect[];
       console.log(e);
       return this.deposit;
