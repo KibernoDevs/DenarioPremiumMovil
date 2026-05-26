@@ -26,6 +26,7 @@ export class DepositoCobrosComponent implements OnInit {
 
 
   selectCobro(cobroDetails: CollectDeposit, index: number) {
+    this.depositService.markDepositDirty();
     var indexDepositCollect = 0;
     if (cobroDetails.isSelected) {
       cobroDetails.inDepositCollect = true;

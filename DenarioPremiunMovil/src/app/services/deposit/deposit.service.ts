@@ -67,6 +67,11 @@ export class DepositService {
   public userMustActivateGPS: boolean = true; //si la pongo en false puedes entrar al clickear rapido
   public saveOrExitOpen = false;
 
+  /** Tras guardar o abrir desde lista: hay copia coherente en BD. */
+  public depositPersistedBaseline = false;
+  /** Cambios locales desde el último guardado / apertura limpia. */
+  public depositDirtySincePersist = false;
+
   public coordenadas = '';
   public fechaMayor: string = this.dateServ.hoyISO();
   public fechaMenor!: string;
@@ -175,6 +180,28 @@ export class DepositService {
     this.depositValidToSend.next(validToSend);
   }
 
+  markDepositDirty(): void {
+    this.depositDirtySincePersist = true;
+  }
+
+  /** Tras INSERT/REPLACE exitoso o envío persistido en esta pantalla. */
+  applyPersistSucceededBaseline(): void {
+    this.depositDirtySincePersist = false;
+    this.depositPersistedBaseline = true;
+  }
+
+  /** Depósito nuevo en pantalla (aún sin guardar en esta sesión). */
+  resetDepositExitBaseline(): void {
+    this.depositPersistedBaseline = false;
+    this.depositDirtySincePersist = false;
+  }
+
+  /** Depósito abierto desde lista: ya existe en BD, sin edits locales aún. Llamar al cerrar init de apertura. */
+  markDepositOpenedFromPersistedCopy(): void {
+    this.depositPersistedBaseline = true;
+    this.depositDirtySincePersist = false;
+  }
+
   initServices(dbServ: SQLiteObject) {
     this.enterpriseServ.setup(dbServ).then(() => {
       this.disabledSaveButton = true;
@@ -224,6 +251,7 @@ export class DepositService {
         depositCollect: [] as DepositCollect[]
       }
 
+      this.resetDepositExitBaseline();
 
       this.getCurrencies(dbServ, this.deposit.idEnterprise).then(resp => {
         this.getBankAccounts(dbServ, this.deposit.idEnterprise, this.currencySelected.coCurrency).then(resp => {
@@ -269,7 +297,10 @@ export class DepositService {
             }
           }
 
-          return this.finalizeConversionAfterOpen(dbServ);
+          return this.finalizeConversionAfterOpen(dbServ).then(() => {
+            this.markDepositOpenedFromPersistedCopy();
+            return true;
+          });
           /* this.getAllCollectsToDeposit(this.deposit.coCurrency).then(resp1 => {
             this.getAllCollectsAnticipoToDeposit(this.deposit.coCurrency).then(resp2 => {
               return Promise.resolve(true)
@@ -336,6 +367,8 @@ export class DepositService {
       collectionIds: [],
       depositCollect: [] as DepositCollect[]
     }
+
+    this.resetDepositExitBaseline();
 
     return Promise.resolve(true);
   }

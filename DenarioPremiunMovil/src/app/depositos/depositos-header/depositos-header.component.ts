@@ -150,7 +150,16 @@ export class DepositosHeaderComponent implements OnInit {
 
 
   goBack() {
-    if (this.depositService.depositValid && this.depositService.deposit.stDelivery == this.DEPOSITO_STATUS_SAVED) {
+    if (!this.depositService.depositValid) {
+      this.depositService.saveOrExitOpen = false;
+      this.depositService.showBackRoute('depositos');
+      return;
+    }
+
+    const shouldPromptExitSaveOrDiscard =
+      !this.depositService.depositPersistedBaseline || this.depositService.depositDirtySincePersist;
+
+    if (shouldPromptExitSaveOrDiscard) {
       this.buttonsSalvar[0].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR_GUARDAR')!
       this.buttonsSalvar[1].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR')!
       this.buttonsSalvar[2].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
@@ -187,6 +196,7 @@ export class DepositosHeaderComponent implements OnInit {
       return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE");
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
+        this.depositService.applyPersistSucceededBaseline();
         return true;
       });
     });
@@ -198,6 +208,7 @@ export class DepositosHeaderComponent implements OnInit {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
+        this.depositService.applyPersistSucceededBaseline();
         this.messageService.alertModal(
           {
             header: this.depositService.depositTags.get('DENARIO_NOMBRE_APP')!,
@@ -206,7 +217,7 @@ export class DepositosHeaderComponent implements OnInit {
         );
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
-      })
+      });
     });
 
   }
