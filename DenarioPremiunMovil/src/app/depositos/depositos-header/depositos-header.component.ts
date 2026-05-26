@@ -171,8 +171,6 @@ export class DepositosHeaderComponent implements OnInit {
     this.saveDeposit().then(() => {
       this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
       this.alertMessageOpenSave = true;
-      this.depositService.disabledSaveButton = true;
-      this.depositService.depositValid = false;
       this.messageService.hideLoading();
     })
   }
