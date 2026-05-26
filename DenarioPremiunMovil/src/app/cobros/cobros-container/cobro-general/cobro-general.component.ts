@@ -94,9 +94,18 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.loadCodePhoneNumberList(this.synchronizationServices.getDatabase())
     ]);
 
-    // Inicializar el valor del input manual de tasa solo si no hay valor previo
+    // Si el cobro no es nuevo y tiene tasa guardada, mostrar esa tasa en el input manual.
     if (this.collectService.enabledManualRate) {
-      if (!this.collectService.rateSelected || this.collectService.rateSelected === 0) {
+      const savedRate = Number(this.collectService?.collection?.nuValueLocal ?? 0);
+      const isExistingCollection = Number(this.collectService?.collection?.stCollection ?? 0) !== this.collectService.COLLECT_STATUS_NEW
+        || Number(this.collectService?.collection?.stDelivery ?? 0) !== this.collectService.COLLECT_STATUS_NEW
+        || !!(this.collectService?.collection?.coCollection && this.collectService.collection.coCollection.trim().length > 0);
+      const useSavedRate = isExistingCollection && Number.isFinite(savedRate) && savedRate > 0;
+
+      if (useSavedRate) {
+        this.collectService.rateSelected = savedRate;
+        this.lastManualRateValue = savedRate;
+      } else if (!this.collectService.rateSelected || this.collectService.rateSelected === 0) {
         this.collectService.rateSelected = this.lastRateValue;
         this.lastManualRateValue = this.lastRateValue;
       } else {
@@ -352,7 +361,19 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.enterpriseList = this.enterpriseServ.empresas;
       this.updateSelectedEnterprise(this.collectService.collection.idEnterprise);
       this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise).then(() => {
-        if (this.collectService.historicoTasa) {
+        const savedRate = Number(this.collectService?.collection?.nuValueLocal ?? 0);
+        const isExistingCollection = Number(this.collectService?.collection?.stCollection ?? 0) !== this.collectService.COLLECT_STATUS_NEW
+          || Number(this.collectService?.collection?.stDelivery ?? 0) !== this.collectService.COLLECT_STATUS_NEW
+          || !!(this.collectService?.collection?.coCollection && this.collectService.collection.coCollection.trim().length > 0);
+        const useSavedManualRate = this.collectService.enabledManualRate
+          && isExistingCollection
+          && Number.isFinite(savedRate)
+          && savedRate > 0;
+
+        if (useSavedManualRate) {
+          this.collectService.rateSelected = savedRate;
+          this.lastManualRateValue = savedRate;
+        } else if (this.collectService.historicoTasa) {
           this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
             .then(() => {
               this.collectService.getDateRate(
@@ -742,9 +763,22 @@ export class CobrosGeneralComponent implements OnInit {
     //SE BUSCA LA MONEDA
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
+      const savedRate = Number(this.collectService?.collection?.nuValueLocal ?? 0);
+      const isExistingCollection = Number(this.collectService?.collection?.stCollection ?? 0) !== this.collectService.COLLECT_STATUS_NEW
+        || Number(this.collectService?.collection?.stDelivery ?? 0) !== this.collectService.COLLECT_STATUS_NEW
+        || !!(this.collectService?.collection?.coCollection && this.collectService.collection.coCollection.trim().length > 0);
+      const useSavedManualRate = this.collectService.enabledManualRate
+        && isExistingCollection
+        && Number.isFinite(savedRate)
+        && savedRate > 0;
+
       if (this.collectService.collection.stDelivery === this.collectService.COLLECT_STATUS_SENT) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
+        this.lastManualRateValue = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
+      } else if (useSavedManualRate) {
+        this.collectService.rateSelected = savedRate;
+        this.lastManualRateValue = savedRate;
       } else if (this.collectService.historicoTasa) {
         this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
           .then(() => {
@@ -1228,13 +1262,7 @@ export class CobrosGeneralComponent implements OnInit {
     // Si la tasa cambió, recalcular montos
     if (this.rateSelected !== this.lastManualRateValue) {
       this.lastManualRateValue = this.rateSelected;
-      // Recalcular montos y documentos
-      if (typeof this.collectService.calculatePayment === 'function') {
-        this.collectService.calculatePayment('', 0);
-      }
-      if (typeof this.collectService.calcularMontos === 'function') {
-        this.collectService.calcularMontos('', 0);
-      }
+      void this.applySelectedRate(this.rateSelected);
     }
   }
 
@@ -1242,7 +1270,8 @@ export class CobrosGeneralComponent implements OnInit {
    * Maneja el input de la tasa manual (evento de ionInput)
    */
   public async onManualRateInput(event: any): Promise<void> {
-    const value = parseFloat(event.target.value);
+    const rawValue = event?.detail?.value ?? event?.target?.value;
+    const value = parseFloat(rawValue);
     if (isNaN(value) || value <= 0) {
       this.manualRateError = 'Ingrese un valor numérico mayor a 0';
       return;
@@ -1260,26 +1289,31 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   private async recalculateAmountsForRateChange(updatePaymentDates: boolean): Promise<void> {
-    this.collectService.montoTotalPagar = 0;
-    this.collectService.montoTotalPagarConversion = 0;
+    this.collectService.isRateChangeInProgress = true;
+    try {
+      this.collectService.montoTotalPagar = 0;
+      this.collectService.montoTotalPagarConversion = 0;
 
-    this.restoreDocumentSalesFromView();
-    this.rebuildCollectionDetails();
+      this.restoreDocumentSalesFromView();
+      this.rebuildCollectionDetails();
 
-    if (this.collectService.multiCurrency) {
-      await this.collectService.convertDocumentSales();
-      this.collectService.setCurrencyConversion();
+      if (this.collectService.multiCurrency) {
+        await this.collectService.convertDocumentSales();
+        this.collectService.setCurrencyConversion();
+      }
+
+      this.syncPaymentConversionsForRateChange();
+      await this.collectService.calcularMontos('', 0);
+
+      if (updatePaymentDates) {
+        this.collectService.updateRateTiposPago();
+      }
+
+      const validTabs = await this.collectService.unlockTabs();
+      this.collectService.onCollectionValid(validTabs);
+    } finally {
+      this.collectService.isRateChangeInProgress = false;
     }
-
-    this.syncPaymentConversionsForRateChange();
-    await this.collectService.calcularMontos('', 0);
-
-    if (updatePaymentDates) {
-      this.collectService.updateRateTiposPago();
-    }
-
-    const validTabs = await this.collectService.unlockTabs();
-    this.collectService.onCollectionValid(validTabs);
   }
 
   private restoreDocumentSalesFromView(): void {

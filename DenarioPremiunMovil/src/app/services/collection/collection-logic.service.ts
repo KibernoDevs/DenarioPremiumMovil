@@ -223,6 +223,7 @@ export class CollectionService {
   private typeDocumentListLoaded: boolean = false;
   private codePhoneNumberListLoaded: boolean = false;
   public enabledManualRate: boolean = false;
+  public isRateChangeInProgress: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -785,9 +786,20 @@ export class CollectionService {
       }
     })
 
+    const savedRate = Number(this.collection?.nuValueLocal ?? 0);
+    const isExistingCollection = Number(this.collection?.stCollection ?? 0) !== this.COLLECT_STATUS_NEW
+      || Number(this.collection?.stDelivery ?? 0) !== this.COLLECT_STATUS_NEW
+      || !!(this.collection?.coCollection && this.collection.coCollection.trim().length > 0);
+    const keepSavedManualRate = this.enabledManualRate && isExistingCollection && Number.isFinite(savedRate) && savedRate > 0;
+
     if (this.rateList.length > 0) {
       this.historicoTasa = true;
-      this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
+      if (keepSavedManualRate) {
+        this.rateSelected = savedRate;
+        this.collection.nuValueLocal = savedRate;
+      } else {
+        this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
+      }
       this.haveRate = true;
       this.updateRateDocument();
       this.unlockTabsFunction(false);
@@ -856,7 +868,12 @@ export class CollectionService {
     }
 
 
-    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == null) {
+    const preserveAmountsWithoutRecalc = this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
+      || this.collection.stDelivery == this.COLLECT_STATUS_SENT
+      || this.collection.stDelivery == null
+      || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress);
+
+    if (preserveAmountsWithoutRecalc) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto - montoTotalDiscounts;
@@ -1194,7 +1211,7 @@ export class CollectionService {
     this.calculatePayment(type, index);
     if (this.coTypeModule == "0") {
       if (this.createAutomatedPrepaid) {
-        if (!this.recentOpenCollect) {
+        if (!this.recentOpenCollect && !this.isRateChangeInProgress) {
           this.mensaje = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collection.nuDifference);
           this.alertMessageOpen = true;
         }
