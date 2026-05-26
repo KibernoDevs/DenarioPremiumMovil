@@ -241,6 +241,8 @@ export class DepositService {
 
   initOpenDeposit(dbServ: SQLiteObject) {
     return this.enterpriseServ.setup(dbServ).then(() => {
+      this.parteDecimal = Number(this.globalConfig.get('parteDecimal'));
+      this.syncFormFieldsFromDeposit();
       this.bankSelected = {} as BankAccount;
       this.depositValid = false;
       this.enterpriseList = this.enterpriseServ.empresas;
@@ -257,7 +259,7 @@ export class DepositService {
             break;
           }
         }
-        this.getBankAccounts(dbServ, this.deposit.idEnterprise, this.currencySelected.coCurrency).then(resp => {
+        return this.getBankAccounts(dbServ, this.deposit.idEnterprise, this.currencySelected.coCurrency).then(resp => {
           //ya tengo todo para iniciar el deposito
           for (var i = 0; i < this.bankList.length; i++) {
             if (this.bankList[i].coBank == this.deposit.coBank) {
@@ -267,13 +269,13 @@ export class DepositService {
             }
           }
 
-          return Promise.resolve(true);
+          return this.finalizeConversionAfterOpen(dbServ);
           /* this.getAllCollectsToDeposit(this.deposit.coCurrency).then(resp1 => {
             this.getAllCollectsAnticipoToDeposit(this.deposit.coCurrency).then(resp2 => {
               return Promise.resolve(true)
             })
           }) */
-        })
+        });
       })
     })
   }
@@ -339,15 +341,34 @@ export class DepositService {
   }
 
 
-  convertirMonto(monto: number) {
-    if (!this.multiCurrency) {
+  convertirMonto(monto: number): string {
+    if (!this.isMultiCurrencyEnabled()) {
       return monto.toFixed(this.parteDecimal);
     }
-    if (this.currencySelected.localCurrency.toString() === "true") {
-      return (monto / this.deposit.nuValueLocal).toFixed(this.parteDecimal);
-    } else {
-      return (monto * this.deposit.nuValueLocal).toFixed(this.parteDecimal);
+    const nu = Number(this.deposit?.nuValueLocal ?? 0);
+    if (!Number.isFinite(nu) || nu <= 0) {
+      return (0).toFixed(this.parteDecimal);
     }
+    const co = String(this.deposit?.coCurrency ?? '').trim();
+    if (!co) {
+      return (0).toFixed(this.parteDecimal);
+    }
+    let converted: number;
+    if (this.currencyServices.isLocalCurrency(co)) {
+      converted = this.currencyServices.toHardCurrencyByNuValueLocal(monto, nu);
+    } else if (this.currencyServices.isHardCurrency(co)) {
+      converted = this.currencyServices.toLocalCurrencyByNuValueLocal(monto, nu);
+    } else {
+      const localCo = String(this.currencyServices.getLocalCurrency()?.coCurrency ?? '');
+      converted =
+        localCo && co === localCo
+          ? this.currencyServices.toHardCurrencyByNuValueLocal(monto, nu)
+          : this.currencyServices.toLocalCurrencyByNuValueLocal(monto, nu);
+    }
+    if (!Number.isFinite(converted)) {
+      converted = 0;
+    }
+    return converted.toFixed(this.parteDecimal);
   }
 
   totalizarDeposito() {
@@ -365,9 +386,15 @@ export class DepositService {
     this.deposit.nuAmountDoc = Math.round(total * factor) / factor;
     //this.nuAmountDoc = this.deposit.nuAmountDoc;
 
+    if (!this.isMultiCurrencyEnabled()) {
+      this.deposit.nuAmountDocConversion = 0;
+      return;
+    }
+
     // convertir y guardar la conversión tanto en el objeto deposit como en la variable de servicio
     const conv = Number(this.convertirMonto(this.deposit.nuAmountDoc));
-    this.deposit.nuAmountDocConversion = isNaN(conv) ? 0 : conv;
+    this.deposit.nuAmountDocConversion =
+      Number.isFinite(conv) && !isNaN(conv) ? conv : 0;
     //this.nuAmountDocConversion = this.deposit.nuAmountDocConversion;
   }
 
@@ -404,17 +431,25 @@ export class DepositService {
         }
 
         if (currencyModuleEnabled) {
-          if (this.localCurrencyDefault) {
-            let currency = this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === this.currencyServices.getLocalCurrency().coCurrency));
-            this.currencySelected = currency!;
-            this.deposit.idCurrency = currency!.idCurrency;
-            this.deposit.coCurrency = currency!.coCurrency;
-          } else {
-            let currency = this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === this.currencyServices.getHardCurrency().coCurrency));
-            this.currencySelected = currency!;
-            this.deposit.idCurrency = currency!.idCurrency;
-            this.deposit.coCurrency = currency!.coCurrency;
+          const savedCo = String(this.deposit?.coCurrency ?? '').trim();
+          let selectedCurrency: typeof this.currencyList[number] | undefined;
+          if (savedCo.length > 0) {
+            selectedCurrency = this.currencyList.find(c => String(c?.coCurrency ?? '').trim() === savedCo);
           }
+          if (!selectedCurrency) {
+            if (this.localCurrencyDefault) {
+              selectedCurrency = this.currencyList.find(
+                c =>
+                  ((c?.coCurrency ?? '').toString() === this.currencyServices.getLocalCurrency().coCurrency));
+            } else {
+              selectedCurrency = this.currencyList.find(
+                c =>
+                  ((c?.coCurrency ?? '').toString() === this.currencyServices.getHardCurrency().coCurrency));
+            }
+          }
+          this.currencySelected = selectedCurrency!;
+          this.deposit.idCurrency = selectedCurrency!.idCurrency;
+          this.deposit.coCurrency = selectedCurrency!.coCurrency;
         }
         return Promise.resolve(true);
       }).catch(e => {
@@ -596,6 +631,8 @@ export class DepositService {
 
     // Procesa cada depósito secuencialmente para evitar condiciones de carrera
     for (const deposit of deposits) {
+      const nuPersist = this.resolveNuAmountDocConversionForPersist(deposit.nuAmountDocConversion);
+      deposit.nuAmountDocConversion = nuPersist;
       // Queries locales para este depósito
       let queries: any[] = [];
 
@@ -615,7 +652,7 @@ export class DepositService {
         deposit.stDeposit,
         deposit.stDelivery,
         deposit.txComment,
-        deposit.nuAmountDocConversion,
+        nuPersist,
         deposit.nuValueLocal,
         deposit.idCurrency,
         deposit.coordenada
@@ -667,6 +704,9 @@ export class DepositService {
   }
 
   saveDeposit(dbServ: SQLiteObject, deposit: Deposit) {
+    const nuPersist = this.resolveNuAmountDocConversionForPersist(deposit.nuAmountDocConversion);
+    deposit.nuAmountDocConversion = nuPersist;
+
     let deleteStatementDeposit = 'DELETE FROM deposits WHERE co_deposit = ?';
     let deleteStatementDepositCollect = 'DELETE FROM deposit_collects WHERE co_deposit = ?';
     this.database.executeSql(deleteStatementDepositCollect, [deposit.coDeposit]);
@@ -710,7 +750,7 @@ export class DepositService {
         deposit.stDeposit,
         deposit.stDelivery,
         deposit.txComment,
-        deposit.nuAmountDocConversion,
+        nuPersist,
         deposit.nuValueLocal,
         deposit.idCurrency,
         deposit.coordenada
@@ -799,29 +839,54 @@ export class DepositService {
   }
 
   getDepositCollect(dbServ: SQLiteObject, coDeposit: string) {
-    let selectStatement =
-      'SELECT * ' +
-      'FROM deposit_collects dc JOIN collections c ON dc.co_collection = c.co_collection WHERE dc.co_deposit = ?'
+    /* Alias explícitos: SELECT * JOIN duplica nombres (co_collection, id_collection, ...) y SQLite/Cordova
+       dejan un solo valor; además antes se reusaba una sola referencia DepositCollect en el bucle. */
+    const selectStatement =
+      'SELECT ' +
+      'dc.id_deposit_collect AS dc_id_deposit_collect, ' +
+      'dc.co_deposit_collect AS dc_co_deposit_collect, ' +
+      'dc.co_deposit AS dc_co_deposit, ' +
+      'dc.co_collection AS dc_co_collection, ' +
+      'dc.id_collection AS dc_id_collection, ' +
+      'dc.nu_amount_total AS dc_nu_amount_total, ' +
+      'dc.nu_total_deposit AS dc_nu_total_deposit, ' +
+      'dc.co_document AS dc_co_document, ' +
+      'c.* ' +
+      'FROM deposit_collects dc ' +
+      'INNER JOIN collections c ON dc.co_collection = c.co_collection ' +
+      'WHERE dc.co_deposit = ?';
     return dbServ.executeSql(selectStatement, [coDeposit]).then(res => {
       this.deposit == undefined ? this.deposit = {} as Deposit : null;
       this.deposit.depositCollect = [] as DepositCollect[];
-      let depositCollect = {} as DepositCollect
-      let item;
-      for (var i = 0; i < res.rows.length; i++) {
-        depositCollect.idDepositCollect = res.rows.item(i).id_deposit_collect;
-        depositCollect.coDepositCollect = res.rows.item(i).co_deposit_collect;
-        depositCollect.coDeposit = res.rows.item(i).co_deposit;
-        depositCollect.nuAmountTotal = res.rows.item(i).nu_amount_total;
-        depositCollect.nuTotalDeposit = res.rows.item(i).nu_total_deposit;
-        depositCollect.coCollection = res.rows.item(i).id_collection;
-        depositCollect.idCollection = res.rows.item(i).co_collection;
-        this.deposit.depositCollect.push(depositCollect);
-      }
       this.cobrosDetails = [] as CollectDeposit[];
-      for (var i = 0; i < res.rows.length; i++) {
-        item = res.rows.item(i)
-        item.isSelected = this.deposit.stDelivery == this.DEPOSITO_STATUS_SAVED || this.deposit.stDelivery == this.DEPOSITO_STATUS_SENT || this.deposit.stDelivery == null ? true : false;
-        item.da_collection = this.normalizeDaDeposit(item.da_collection)
+      for (let i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        const nuTotalDeposit = Number(row.dc_nu_total_deposit ?? 0);
+
+        const depositCollect = {
+          idDepositCollect: row.dc_id_deposit_collect,
+          coDepositCollect: row.dc_co_deposit_collect ?? '',
+          coDeposit: row.dc_co_deposit ?? '',
+          coDocument: row.dc_co_document ?? '',
+          nuAmountTotal: Number(row.dc_nu_amount_total ?? 0),
+          nuTotalDeposit: Number.isFinite(nuTotalDeposit) ? nuTotalDeposit : 0,
+          coCollection: row.dc_co_collection ?? '',
+          idCollection: Number(row.dc_id_collection ?? 0),
+          st: 0,
+          isSave: true,
+          lbClient: String(row.lb_client ?? ''),
+          daCollection: this.normalizeDaDeposit(String(row.da_collection ?? '')),
+        } as DepositCollect;
+        this.deposit.depositCollect.push(depositCollect);
+
+        const item = row as unknown as CollectDeposit;
+        item.isSelected =
+          this.deposit.stDelivery === this.DEPOSITO_STATUS_SAVED ||
+          this.deposit.stDelivery === this.DEPOSITO_STATUS_SENT ||
+          this.deposit.stDelivery == null;
+        item.da_collection = this.normalizeDaDeposit(item.da_collection);
+        item.total_deposit = nuTotalDeposit;
+        item.inDepositCollect = true;
         this.cobrosDetails.push(item);
       }
       return this.deposit;
@@ -829,7 +894,7 @@ export class DepositService {
       this.deposit.depositCollect = [] as DepositCollect[];
       console.log(e);
       return this.deposit;
-    })
+    });
   }
 
   getIdsDepositCollect(dbServ: SQLiteObject, coDeposit: string) {
@@ -872,7 +937,7 @@ export class DepositService {
       'st_delivery as stDelivery,' +
       'tx_comment as txComment,' +
       'nu_value_local as nuValueLocal,' +
-      'nu_amount_doc as nuAmountDoc, ' +
+      'nu_amount_doc_conversion as nuAmountDocConversion,' +
       'coordenada as coordenada ' +
       'FROM deposits ORDER BY st_delivery DESC, da_deposit DESC, st_deposit ASC, id_deposit DESC ', []).then(async res => {
         let promises: Promise<void>[] = [];
@@ -881,7 +946,14 @@ export class DepositService {
         this.itemListaDepositos = [] as ItemListaDepositos[];
 
         for (var i = 0; i < res.rows.length; i++) {
-          let item = res.rows.item(i);
+          const rawRow = res.rows.item(i);
+          const item = { ...rawRow } as Deposit & Record<string, unknown>;
+          item.nuDocument = this.readRowString(rawRow as Record<string, unknown>, ['nuDocument', 'nu_document']);
+          item.txComment = this.readRowString(rawRow as Record<string, unknown>, ['txComment', 'tx_comment']);
+          const rawAmt =
+            Number((rawRow as Record<string, unknown>)['nuAmountDoc'] ??
+              (rawRow as Record<string, unknown>)['nu_amount_doc']);
+          item.nuAmountDoc = Number.isFinite(rawAmt) ? rawAmt : 0;
           this.listDeposits.push(item);
           let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
 
@@ -944,6 +1016,139 @@ export class DepositService {
 
   getCurrencyConversion(coCurrency: string) {
     this.currencyConversion = this.currencyServices.getOppositeCurrency(coCurrency);
+  }
+
+  private isMultiCurrencyEnabled(): boolean {
+    return this.globalConfig.get('multiCurrency') === 'true';
+  }
+
+  private resolveNuAmountDocConversionForPersist(value: unknown): number {
+    if (!this.isMultiCurrencyEnabled()) {
+      return 0;
+    }
+    const n = Number(value);
+    if (!Number.isFinite(n)) {
+      return 0;
+    }
+    return n;
+  }
+
+  /** Tras cargar cobros y cuentas, aplica tasa del día si aplica y recalcula totales. */
+  private finalizeConversionAfterOpen(dbServ: SQLiteObject): Promise<boolean> {
+    const syncConversionAndTotals = (): boolean => {
+      const coCurrency = this.deposit?.coCurrency;
+      if (coCurrency && coCurrency.length > 0) {
+        this.getCurrencyConversion(coCurrency);
+      }
+      this.syncNuValueLocalFromCurrencyServiceFallback();
+      this.totalizarDeposito();
+      return true;
+    };
+
+    if (!this.isMultiCurrencyEnabled()) {
+      return Promise.resolve(syncConversionAndTotals());
+    }
+
+    return this.ensureCurrencyServiceRatesLoaded(dbServ)
+      .then(() => this.applyTodayNuValueLocalIfEditable(dbServ))
+      .then(() => syncConversionAndTotals());
+  }
+
+  /** setup() no espera los SELECT de tasas; forzar consultas antes de convertir con CurrencyService. */
+  private ensureCurrencyServiceRatesLoaded(dbServ: SQLiteObject): Promise<void> {
+    return this.currencyServices.setup(dbServ).then(() =>
+      Promise.all([
+        this.currencyServices.queryLocalValue(dbServ),
+        this.currencyServices.queryCurrencyRelation(dbServ),
+      ]).then(() => undefined),
+    );
+  }
+
+  private applyTodayNuValueLocalIfEditable(dbServ: SQLiteObject): Promise<void> {
+    if (!this.isMultiCurrencyEnabled()) {
+      return Promise.resolve();
+    }
+    if (this.deposit?.stDelivery === this.DEPOSITO_STATUS_SENT) {
+      return Promise.resolve();
+    }
+    const today = this.dateServ.onlyDateHoyISO();
+    return this.currencyServices
+      .getLocalValuebyDate(dbServ, today)
+      .then((raw: unknown) => {
+        const rate = Number(raw);
+        if (Number.isFinite(rate) && rate > 0) {
+          this.deposit.nuValueLocal = rate;
+          return;
+        }
+        this.syncNuValueLocalFromStoredOrCurrencyRelation();
+      });
+  }
+
+  /** Si falta nuValueLocal válido tras abrir BD, completar con localValue ya cargado en CurrencyService. */
+  private syncNuValueLocalFromCurrencyServiceFallback(): void {
+    if (!this.isMultiCurrencyEnabled()) {
+      return;
+    }
+    const stored = Number(this.deposit?.nuValueLocal ?? 0);
+    if (Number.isFinite(stored) && stored > 0) {
+      return;
+    }
+    this.syncNuValueLocalFromStoredOrCurrencyRelation();
+  }
+
+  private syncNuValueLocalFromStoredOrCurrencyRelation(): void {
+    const lv = Number(this.currencyServices.localValue);
+    if (!Number.isFinite(lv) || lv <= 0) {
+      return;
+    }
+    this.deposit.nuValueLocal = lv;
+  }
+
+  /**
+   * El general del depósito enlaza `[(ngModel)]` a propiedades planas del servicio
+   * (nuDocument, txComment, daDocument), no solo a `deposit`; al reabrir desde lista
+   * hay que copiar desde `deposit` para que el campo muestre lo guardado en SQLite.
+   */
+  private syncFormFieldsFromDeposit(): void {
+    const d = this.deposit;
+    if (!d) {
+      return;
+    }
+    const row = d as unknown as Record<string, unknown>;
+    this.nuDocument = this.readRowString(row, ['nuDocument', 'nu_document']);
+    this.txComment = this.readRowString(row, ['txComment', 'tx_comment']);
+    const daDoc = this.readRowString(row, ['daDocument', 'da_document']);
+    if (daDoc.length > 0) {
+      this.daDocument = daDoc;
+    }
+    const daDep = this.readRowString(row, ['daDeposit', 'da_deposit']);
+    if (daDep.length > 0) {
+      this.dateDeposit = daDep;
+    }
+  }
+
+  /** Cordova/SQLite a veces devuelve claves en otro casing; busca candidatos y por coincidencia insensible. */
+  private readRowString(row: Record<string, unknown>, candidates: string[]): string {
+    for (const key of candidates) {
+      const v = row[key];
+      if (v !== undefined && v !== null && String(v).trim().length > 0) {
+        return String(v);
+      }
+    }
+    const rowKeys = Object.keys(row);
+    for (const cand of candidates) {
+      const want = cand.toLowerCase().replace(/_/g, '');
+      for (const rk of rowKeys) {
+        const norm = rk.toLowerCase().replace(/_/g, '');
+        if (norm === want) {
+          const v = row[rk];
+          if (v !== undefined && v !== null && String(v).trim().length > 0) {
+            return String(v);
+          }
+        }
+      }
+    }
+    return '';
   }
 
   private normalizeDaDeposit(value: string): string {
