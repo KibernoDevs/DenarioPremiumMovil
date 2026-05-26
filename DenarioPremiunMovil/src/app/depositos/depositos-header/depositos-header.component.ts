@@ -32,6 +32,9 @@ export class DepositosHeaderComponent implements OnInit {
   public subscriberDisabled: any;
   public subscriberToSend: any;
 
+  private depositGeneralAllowsSave = false;
+  private depositHasSelectedCollection = false;
+
   //public subscriptionWeightLimit: any;
   //public subscriptionAttachmentChange: any;
 
@@ -49,10 +52,12 @@ export class DepositosHeaderComponent implements OnInit {
       role: 'save',
       handler: () => {
         console.log('save and exit');
-        this.depositService.depositValid = false;
-        this.saveDeposit().then(() => {
-          this.alertMessageOpenSave = true;
+        this.saveDeposit().then((ok) => {
+          if (!ok) {
+            return;
+          }
           this.depositService.depositValid = false;
+          this.alertMessageOpenSave = true;
           this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
           setTimeout(() => {
             this.messageService.hideLoading();
@@ -96,12 +101,19 @@ export class DepositosHeaderComponent implements OnInit {
     });
 
     this.subscriberDisabled = this.depositService.depositValidToSave.subscribe((validToSave: Boolean) => {
-      this.depositService.disabledSaveButton = !validToSave;
+      this.depositGeneralAllowsSave = !!validToSave;
+      this.refreshHeaderSaveDisabled();
     });
 
     this.subscriberToSend = this.depositService.depositValidToSend.subscribe((validToSend: Boolean) => {
-      this.depositService.disabledSendButton = !validToSend;
+      this.depositHasSelectedCollection = !!validToSend;
+      this.depositService.disabledSendButton = !this.depositHasSelectedCollection;
+      this.refreshHeaderSaveDisabled();
     });
+
+    this.depositGeneralAllowsSave = false;
+    this.depositHasSelectedCollection = false;
+    this.refreshHeaderSaveDisabled();
 
     /*
     this.subscriptionAttachmentChange = this.adjuntoService.AttachmentChanged.subscribe(() => {
@@ -116,6 +128,21 @@ export class DepositosHeaderComponent implements OnInit {
     });
     */
 
+  }
+
+  private refreshHeaderSaveDisabled(): void {
+    this.depositService.disabledSaveButton = !(
+      this.depositGeneralAllowsSave && this.depositHasSelectedCollection
+    );
+  }
+
+  private alertDepositRequiresAtLeastOneCollection(): void {
+    this.messageService.alertModal({
+      header: this.depositService.depositTags.get('DEP_HEADER_MESSAGE') ?? 'Aviso',
+      message:
+        this.depositService.depositTags.get('DEP_SELECT_COB_DEP') ??
+        'Seleccione al menos un documento (cobro) para el depósito.',
+    });
   }
 
   ngOnDestroy() {
@@ -150,7 +177,16 @@ export class DepositosHeaderComponent implements OnInit {
 
 
   goBack() {
-    if (this.depositService.depositValid && this.depositService.deposit.stDelivery == this.DEPOSITO_STATUS_SAVED) {
+    if (!this.depositService.depositValid) {
+      this.depositService.saveOrExitOpen = false;
+      this.depositService.showBackRoute('depositos');
+      return;
+    }
+
+    const shouldPromptExitSaveOrDiscard =
+      !this.depositService.depositPersistedBaseline || this.depositService.depositDirtySincePersist;
+
+    if (shouldPromptExitSaveOrDiscard) {
       this.buttonsSalvar[0].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR_GUARDAR')!
       this.buttonsSalvar[1].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR')!
       this.buttonsSalvar[2].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
@@ -168,11 +204,12 @@ export class DepositosHeaderComponent implements OnInit {
 
   buttonSave() {
 
-    this.saveDeposit().then(() => {
+    this.saveDeposit().then((ok) => {
+      if (!ok) {
+        return;
+      }
       this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
       this.alertMessageOpenSave = true;
-      this.depositService.disabledSaveButton = true;
-      this.depositService.depositValid = false;
       this.messageService.hideLoading();
     })
   }
@@ -182,13 +219,18 @@ export class DepositosHeaderComponent implements OnInit {
     this.alertMessageOpenSend = true;
   }
 
-  saveDeposit(): Promise<any> {
+  saveDeposit(): Promise<boolean> {
+    if (!this.depositService.hasAtLeastOneDepositCollectRow()) {
+      this.alertDepositRequiresAtLeastOneCollection();
+      return Promise.resolve(false);
+    }
     return this.messageService.showLoading().then(() => {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_SAVED;
       this.depositService.deposit.stDelivery = this.DEPOSITO_STATUS_SAVED;
       return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE");
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
+        this.depositService.applyPersistSucceededBaseline();
         return true;
       });
     });
@@ -196,10 +238,15 @@ export class DepositosHeaderComponent implements OnInit {
   }
 
   sendDeposit() {
+    if (!this.depositService.hasAtLeastOneDepositCollectRow()) {
+      this.alertDepositRequiresAtLeastOneCollection();
+      return;
+    }
     this.messageService.showLoading().then(() => {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
+        this.depositService.applyPersistSucceededBaseline();
         this.messageService.alertModal(
           {
             header: this.depositService.depositTags.get('DENARIO_NOMBRE_APP')!,
@@ -208,7 +255,7 @@ export class DepositosHeaderComponent implements OnInit {
         );
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
-      })
+      });
     });
 
   }
