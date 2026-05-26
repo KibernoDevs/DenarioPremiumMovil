@@ -662,6 +662,8 @@ export class PedidoComponent implements OnInit {
       } else
         tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
 
+      const lineAmountBase = this.orderServ.computeCartLineBaseAmount(item);
+
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
@@ -705,7 +707,7 @@ export class PedidoComponent implements OnInit {
         item.naProduct,
         item.idProduct,
         item.nuPrice,
-        item.nuPrice * item.quAmount,
+        lineAmountBase,
         (this.orderServ.validateWarehouses ? item.coWarehouse : ''), //si validWH =  false, se manda 'vacio'
         (this.orderServ.validateWarehouses ? item.idWarehouse : 0),
         0,
@@ -723,7 +725,7 @@ export class PedidoComponent implements OnInit {
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
           this.currencyServ.toHardCurrency(tieneDescuento ? item.nuAmountDiscount : 0) : this.currencyServ.toLocalCurrency(tieneDescuento ? item.nuAmountDiscount : 0),
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
-          this.currencyServ.toHardCurrency(item.nuPrice * item.quAmount) : this.currencyServ.toLocalCurrency(item.nuPrice * item.quAmount),
+          this.currencyServ.toHardCurrency(lineAmountBase) : this.currencyServ.toLocalCurrency(lineAmountBase),
         units,
         [discount],
 

@@ -382,6 +382,7 @@
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
+                        [disabled]="orderServ.unitByPriceList"
                         (ionChange)="onSelectUnit($event, productoModal)">
                         <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{
                           unit.naUnit }}</ion-select-option>

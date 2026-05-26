@@ -496,9 +496,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     }
     product.idList = idList;
 
-    let pricelist = this.orderServ.listaPricelist.filter(pl => pl.idProduct == product.idProduct && pl.idList == idList)[0];
+    const pricelist = this.orderServ.listaPricelist.filter(pl => pl.idProduct == product.idProduct && pl.idList == idList)[0];
     product.idPriceList = pricelist.idPriceList;
     product.coPriceList = pricelist.coPriceList;
+    product.coCurrency = pricelist.coCurrency;
 
     product.nuPrice = pricelist.nuPrice;
 

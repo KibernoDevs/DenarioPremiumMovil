@@ -1006,7 +1006,8 @@ export class PedidosService {
       }
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
-        curItem += unit.quUnit * unit.quAmount * item.nuPrice;
+        const unitNuPriceForTotal = this.resolveUnitNuPriceForLineTotal(item, unit);
+        curItem += unit.quUnit * unit.quAmount * unitNuPriceForTotal;
         if (this.totalUnit) {
           this.totalUnidades(unit);
         }
@@ -1212,6 +1213,43 @@ export class PedidosService {
 
 
     this.setChangesMade(true);
+  }
+
+  /**
+   * Suma base (precio × factores por unidad) igual que `productSummary` antes de dto/IVA.
+   */
+  computeCartLineBaseAmount(item: OrderUtil): number {
+    let sum = 0;
+    for (let j = 0; j < item.unitList.length; j++) {
+      const unit = item.unitList[j];
+      sum += unit.quUnit * unit.quAmount * this.resolveUnitNuPriceForLineTotal(item, unit);
+    }
+    return sum;
+  }
+
+  /**
+   * Precio convertido aplicable a una unidad para totalizar línea del carrito.
+   * Legacy: mismo `nuPrice` del ítem. Con unitByPriceList: lista asociada a la unidad.
+   */
+  private resolveUnitNuPriceForLineTotal(item: OrderUtil, unit: UnitInfo): number {
+    if (!this.unitByPriceList) {
+      return item.nuPrice;
+    }
+    const upl = this.listaUnitPriceList.find(u => u.idUnit === unit.idUnit);
+    if (!upl) {
+      console.log('[resolveUnitNuPriceForLineTotal] Sin mapeo unidad-lista idUnit=', unit.idUnit);
+      return item.nuPrice;
+    }
+    const plRow = this.listaPricelist.find(
+      p => p.idProduct === item.idProduct && p.idList === upl.idList,
+    );
+    if (!plRow) {
+      console.log('[resolveUnitNuPriceForLineTotal] Sin pricelist idProduct=', item.idProduct, 'idList=', upl.idList);
+      return item.nuPrice;
+    }
+    return this.conversionByPriceList
+      ? plRow.nuPrice
+      : this.conversionCurrency(plRow.nuPrice, plRow.coCurrency);
   }
 
   conversionCurrency(price: number, coCurrency: string) {
