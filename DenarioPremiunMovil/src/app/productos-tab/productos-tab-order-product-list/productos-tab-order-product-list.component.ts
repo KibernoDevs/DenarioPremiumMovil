@@ -720,6 +720,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     return this.currencyServ.formatNumber(input);
   }
 
+  /**
+   * Precio visual por unidad completa (precio base * quUnit) cuando unitByPriceList.
+   */
+  getUnitPriceListDisplayPrice(product: OrderUtil, basePrice: number, coUnit: string): number {
+    const unit = product.unitList?.find(u => u.coUnit === coUnit);
+    const factor = unit?.quUnit ?? 1;
+    return basePrice * factor;
+  }
+
   onSelectProductInv() {
     console.log('Inventario not implemented.');
   }

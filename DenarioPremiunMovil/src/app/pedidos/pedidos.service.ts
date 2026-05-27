@@ -52,6 +52,7 @@ import { UnitPriceList } from '../modelos/tables/unitPriceList';
 export interface SelectedUnitPricingRow {
   naUnit: string;
   quAmount: number;
+  quUnit: number;
   naList: string;
   unitPrice: number;
   unitBaseTotal: number;
@@ -1276,6 +1277,7 @@ export class PedidosService {
       rows.push({
         naUnit: unit.naUnit,
         quAmount: unit.quAmount,
+        quUnit: unit.quUnit,
         naList,
         unitPrice,
         unitBaseTotal: this.computeUnitBaseTotal(item, unit),

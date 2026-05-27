@@ -538,7 +538,7 @@
                     @if(orderServ.unitByPriceList){
                       @for(row of getSelectedUnitPricingRows(item); track row.naUnit + row.naList){
                         <ion-item>
-                          {{row.naList}}: {{formatNum(row.unitPrice)}} {{row.coCurrency}}
+                          {{row.naList}}: {{formatNum(row.unitPrice * row.quUnit)}} {{row.coCurrency}}
                         </ion-item>
                       }
                     }@else{
