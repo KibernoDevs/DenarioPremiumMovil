@@ -37,6 +37,8 @@ import { Router } from '@angular/router';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { OrderUtil } from 'src/app/modelos/orderUtil';
+import { UnitInfo } from 'src/app/modelos/unitInfo';
+import { SelectedUnitPricingRow } from '../pedidos.service';
 import { ClientChannelOrderType } from 'src/app/modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
@@ -1426,6 +1428,14 @@ export class PedidoComponent implements OnInit {
 
   formatNum(input: number) {
     return this.currencyServ.formatNumber(input);
+  }
+
+  getSelectedUnitPricingRows(item: OrderUtil): SelectedUnitPricingRow[] {
+    return this.orderServ.getSelectedUnitPricingRows(item);
+  }
+
+  getUnitBaseTotal(item: OrderUtil, unit: UnitInfo): number {
+    return this.orderServ.computeUnitBaseTotal(item, unit);
   }
 
   canExportOrderSummaryPdf(): boolean {

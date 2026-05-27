@@ -49,7 +49,14 @@ import { CurrencyModules } from '../modelos/tables/currencyModules';
 import { ProductSuggestedUtil } from '../modelos/ProductSuggestedUtil';
 import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
-
+export interface SelectedUnitPricingRow {
+  naUnit: string;
+  quAmount: number;
+  naList: string;
+  unitPrice: number;
+  unitBaseTotal: number;
+  coCurrency: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -1230,9 +1237,52 @@ export class PedidosService {
     let sum = 0;
     for (let j = 0; j < item.unitList.length; j++) {
       const unit = item.unitList[j];
-      sum += unit.quUnit * unit.quAmount * this.resolveUnitNuPriceForLineTotal(item, unit);
+      sum += this.computeUnitBaseTotal(item, unit);
     }
     return sum;
+  }
+
+  /**
+   * Total base de una unidad con la misma fórmula de `productSummary`.
+   */
+  computeUnitBaseTotal(item: OrderUtil, unit: UnitInfo): number {
+    if (Number(unit.quAmount) <= 0) {
+      return 0;
+    }
+    return unit.quUnit * unit.quAmount * this.resolveUnitNuPriceForLineTotal(item, unit);
+  }
+
+  /**
+   * Filas de precio/base para unidades seleccionadas (Tab Totales, unitByPriceList).
+   */
+  getSelectedUnitPricingRows(item: OrderUtil): SelectedUnitPricingRow[] {
+    if (!this.unitByPriceList) {
+      return [];
+    }
+    const orderCurrency = this.monedaSeleccionada?.coCurrency ?? item.coCurrency;
+    const rows: SelectedUnitPricingRow[] = [];
+    for (let j = 0; j < item.unitList.length; j++) {
+      const unit = item.unitList[j];
+      if (Number(unit.quAmount) <= 0) {
+        continue;
+      }
+      const unitPrice = this.resolveUnitNuPriceForLineTotal(item, unit);
+      let naList = '';
+      const upl = this.listaUnitPriceList.find(u => u.idUnit === unit.idUnit);
+      if (upl) {
+        const list = this.listaList.find(l => l.idList === upl.idList);
+        naList = list?.naList ?? upl.coList ?? '';
+      }
+      rows.push({
+        naUnit: unit.naUnit,
+        quAmount: unit.quAmount,
+        naList,
+        unitPrice,
+        unitBaseTotal: this.computeUnitBaseTotal(item, unit),
+        coCurrency: orderCurrency,
+      });
+    }
+    return rows;
   }
 
   /**

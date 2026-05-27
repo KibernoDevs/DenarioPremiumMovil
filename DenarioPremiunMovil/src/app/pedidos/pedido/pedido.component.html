@@ -497,10 +497,24 @@
 
                       </ion-col>
                       <ion-col size="12" size-xs="12">
-                        <div *ngFor="let unit of item.unitList">
-                          <span class="titulosBold">{{unit.naUnit}}:</span>
-                          {{unit.quAmount}}
-                        </div>
+                        @if(orderServ.unitByPriceList){
+                          @for(unit of item.unitList; track unit.idUnit){
+                            @if(unit.quAmount > 0){
+                              <div>
+                                <span class="titulosBold">{{unit.naUnit}}:</span>
+                                {{unit.quAmount}}
+                                - <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}}:</span>
+                                {{formatNum(getUnitBaseTotal(item, unit))}}
+                                {{orderServ.monedaSeleccionada.coCurrency}}
+                              </div>
+                            }
+                          }
+                        }@else{
+                          <div *ngFor="let unit of item.unitList">
+                            <span class="titulosBold">{{unit.naUnit}}:</span>
+                            {{unit.quAmount}}
+                          </div>
+                        }
 
                       </ion-col>
                       <ion-col size="12" size-xs="12">
@@ -521,16 +535,24 @@
                 </ion-item>
                 <div slot="content">
                   <ion-list>
-                    <ion-item>
-                      <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
-                        {{item.coCurrency}}:</span>
-                      {{formatNum(item.nuPrice)}}
-                    </ion-item>
-                    <ion-item *ngIf="showConversion">
-                      <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
-                        {{item.oppositeCoCurrency}}:</span>
-                      {{formatNum(item.oppositeNuPrice)}}
-                    </ion-item>
+                    @if(orderServ.unitByPriceList){
+                      @for(row of getSelectedUnitPricingRows(item); track row.naUnit + row.naList){
+                        <ion-item>
+                          {{row.naList}}: {{formatNum(row.unitPrice)}} {{row.coCurrency}}
+                        </ion-item>
+                      }
+                    }@else{
+                      <ion-item>
+                        <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
+                          {{item.coCurrency}}:</span>
+                        {{formatNum(item.nuPrice)}}
+                      </ion-item>
+                      <ion-item *ngIf="showConversion">
+                        <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
+                          {{item.oppositeCoCurrency}}:</span>
+                        {{formatNum(item.oppositeNuPrice)}}
+                      </ion-item>
+                    }
 
                     <ion-item *ngIf="orderServ.validateWarehouses">
                       <span class="titulosBold">{{ orderServ.getTag("PED_ALMACEN")}}:</span>
