@@ -39,7 +39,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private currencyService = inject(CurrencyService);
   private config = inject(GlobalConfigService);
   private dbServ = inject(SynchronizationDBService);
-  private inventariosLogicService = inject(InventariosLogicService);
+  public inventariosLogicService = inject(InventariosLogicService);
 
   quUnitDecimals = false;
   suggestedOrderByDispatchAndReturn = false;

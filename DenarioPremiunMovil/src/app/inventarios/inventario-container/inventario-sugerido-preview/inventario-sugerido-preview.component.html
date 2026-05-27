@@ -16,7 +16,7 @@
   </ion-toolbar>
 </ion-header>
 <ion-content class="client-document-sale">
-  @if (previewReady && monedaSeleccionadaPreview) {
+  @if (previewReady && monedaSeleccionadaPreview && !inventariosLogicService.inventarioSent) {
   <ion-grid class="ion-padding-bottom">
     <ion-row>
       <ion-col size="12">
