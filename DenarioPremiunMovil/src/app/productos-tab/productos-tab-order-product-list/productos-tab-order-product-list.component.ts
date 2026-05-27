@@ -481,11 +481,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.cd.detectChanges(); 
         return;
       }
-      let unit = product.unitList.filter(u => u.idUnit == upl.idUnit)[0];
-      if(unit){
+      const unit = product.unitList.filter(u => u.idUnit == upl.idUnit)[0];
+      if (unit) {
         product.idUnit = unit.idUnit;
-        this.selectUnitById(unit.idUnit, product);
-      }else{
+        this.syncProductQuAmountWithSelectedUnit(product);
+      } else {
         console.log("No se encontro unidad para la lista de precio seleccionada");
         this.message.transaccionMsjModalNB("No se encontro unidad para la lista de precio seleccionada");
         product.idList = prevList;
@@ -512,10 +512,18 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.selectUnitById(unit, product);
   }
 
+  /**
+   * Mantiene `quAmount` alineado con la fila de `unitList` de la unidad seleccionada.
+   */
+  private syncProductQuAmountWithSelectedUnit(product: OrderUtil): void {
+    const row = product.unitList.find(u => u.idUnit === product.idUnit);
+    product.quAmount = row ? row.quAmount : 0;
+  }
+
   selectUnitById(unitId: number, product: OrderUtil) {
     product.idUnit = unitId;
+    this.syncProductQuAmountWithSelectedUnit(product);
     this.orderServ.alCarrito(product);
-    product.quAmount = 0;
   }
 
   onSelectIVA(e: any, product: OrderUtil) {

@@ -547,9 +547,17 @@ export class PedidosService {
     );
   }
 
+  private shouldRemoveProductFromCart(prod: OrderUtil): boolean {
+    const list = prod.unitList;
+    if (!list || list.length < 1) {
+      return prod.quAmount <= 0;
+    }
+    return !list.some(u => Number(u.quAmount) > 0);
+  }
+
   alCarrito(prod: OrderUtil) {
     let sustitucion = false;
-    if (prod.quAmount <= 0) {
+    if (this.shouldRemoveProductFromCart(prod)) {
       this.removeFromCarrito(prod);
       return;
     }
