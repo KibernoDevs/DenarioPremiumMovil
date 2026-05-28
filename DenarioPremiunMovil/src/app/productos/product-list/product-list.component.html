@@ -2,7 +2,7 @@
   @if(noProductsAlertShown){
   <ion-item>
     <ion-label class="ion-text-center" style="color: red;">
-      {{orderService.getTag("DENARIO_SIN_RESULTADOS")}}
+      {{ emptyResultsLabel() }}
     </ion-label>
   </ion-item>
   }
@@ -12,7 +12,7 @@
       @for(product of productList; track product.idProduct; let i = $index){
       <div class="product-structure-title" (click)="onShowProductDetail(product)">
         <ion-item button detail="false">
-          @if(this.orderService.showProductImages){
+          @if(productService.catalogShowProductImages){
           <ion-label fixed class="fixedLabel contenedorImgMargin">
             <img class="productImage" alt="" loading="lazy"
               [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
@@ -21,7 +21,7 @@
           <ion-label class="textList espaciotextoListaProduc">
             <p class="espacioentrelineas">{{ product.naProduct }}</p>
             <p class="espacioentrelineas">{{this.productTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
-            @if(this.orderService.unitByPriceList){
+            @if(unitByPriceList){
             @for(price of product.listPrices; track price.idList){
             <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ?
               formatNumber(price.nuPrice) : 'N/A'
@@ -34,7 +34,6 @@
             } @else{
             <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }}
               {{ product.coCurrency }}</p>
-
             @if(showConversionInfo && product.priceOpposite){
             <p class="espacioentrelineas">
               {{this.productTags.get('PROD_PRICE_PROD')}}:
@@ -47,7 +46,7 @@
               {{this.productTags.get('PROD_IVA')}}:
               {{ formatNumber(product.nuTax) }} % </p>
             }
-            @if(!this.orderService.unitByPriceList && product.nuTax && product.nuTax > 0){
+            @if(unitByPriceList && product.nuTax && product.nuTax > 0){
             <p class="espacioentrelineas">
               {{this.productTags.get('PROD_PRICE_WITH_IVA')}}: {{ getPrecioConIVA(product.price, product.nuTax) }} {{
               product.coCurrency }}
@@ -59,29 +58,27 @@
             }
             }
             }
-            @if(this.orderService.showStock){
+            @if(showStock){
             <p class="espacioentrelineas">
               {{this.productTags.get('PROD_STOCK_PROD')}}: {{ this.productService.formatStock(product.stock,
-              this.orderService.quUnitDecimals) }}</p>
+              this.productService.catalogQuUnitDecimals) }}</p>
             }
-            @if(this.orderService.displayProductPoints){
+            @if(this.productService.catalogDisplayProductPoints){
             <p class="espacioentrelineas">
               {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}
             </p>
             }
-            @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(product.idProduct)){
-            @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum > 1 ){
+            @if(catalogShowsMinimumQty(product.idProduct)){
             <p class="espacioentrelineas">
-              {{this.orderService.getTag('PED_MINIMO')}}: {{
-              this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum }}
+              {{productService.getCatalogPresentationTag('PED_MINIMO')}}: {{
+              catalogMinQty(product.idProduct) }}
             </p>
             }
-            @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple > 1 ){
+            @if(catalogShowsMultipleQty(product.idProduct)){
             <p class="espacioentrelineas">
-              {{this.orderService.getTag('PED_MULTIPLO')}}: {{
-              this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple }}
+              {{productService.getCatalogPresentationTag('PED_MULTIPLO')}}: {{
+              catalogMulQty(product.idProduct) }}
             </p>
-            }
             }
 
           </ion-label>

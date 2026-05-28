@@ -88,8 +88,8 @@ export class ClientesDatabaseServicesService {
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client  AND ds.co_currency != c.co_currency) nuAmountTotal2, ' +
           '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
           '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
-          '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
-          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' +
+          '(SELECT MIN(ds.da_due_date) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' +
           '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
           '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
           '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
@@ -107,8 +107,8 @@ export class ClientesDatabaseServicesService {
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client  AND ds.co_currency != c.co_currency) nuAmountTotal2, ' +
           '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
           '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
-          '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
-          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
+          '(SELECT MIN(ds.da_due_date) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
           '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
           '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
           'FROM clients c ' +
@@ -123,8 +123,8 @@ export class ClientesDatabaseServicesService {
         '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) nuAmountTotal, ' +
         '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
         '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
-        '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
-        '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
+        '(SELECT MIN(ds.da_due_date) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+        '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
         '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
         '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
         'FROM clients c ' +
@@ -136,11 +136,11 @@ export class ClientesDatabaseServicesService {
     /* selectStatement = "SELECT * FROM clients" */
     if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
-        selectStatement += ' ORDER BY c.' + "lb_client";
+        selectStatement += ' ORDER BY TRIM(LOWER(c.lb_client)) COLLATE NOCASE ASC, c.id_client ASC';
       } else if (this.globalConfig.get("clientsOrderBy") == "due_date") {
         //primero los que tengan mayor deuda y luego por fecha de vencimiento (los mas vencidos primero)
-        selectStatement += 'ORDER BY countDueDate DESC, daDueDate ASC';
-      } else selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
+        selectStatement += ' ORDER BY countDueDate DESC, daDueDate ASC, c.id_client ASC';
+      } else selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy") + ', c.id_client ASC';
     }
 
     selectStatement += ' LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;
@@ -162,11 +162,11 @@ export class ClientesDatabaseServicesService {
     let orderBy = ' '
     if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
-        orderBy += ' ORDER BY c.' + "lb_client";
+        orderBy += ' ORDER BY TRIM(LOWER(c.lb_client)) COLLATE NOCASE ASC, c.id_client ASC';
       } else if (this.globalConfig.get("clientsOrderBy") == "due_date") {
-        selectStatement += '';
+        orderBy += ' ORDER BY countDueDate DESC, daDueDate ASC, c.id_client ASC';
       } else
-        orderBy += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
+        orderBy += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy") + ', c.id_client ASC';
     }
     // Build WHERE clause: for each token require (co_product LIKE ? OR na_product LIKE ?)
     const tokenClauses: string[] = [];
@@ -196,8 +196,8 @@ export class ClientesDatabaseServicesService {
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client  AND ds.co_currency != c.co_currency) nuAmountTotal2, ' +
           '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
           '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
-          '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
-          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' +
+          '(SELECT MIN(ds.da_due_date) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' +
           '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
           '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
           '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
@@ -215,8 +215,8 @@ export class ClientesDatabaseServicesService {
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client  AND ds.co_currency != c.co_currency) nuAmountTotal2, ' +
           '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
           '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
-          '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
-          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
+          '(SELECT MIN(ds.da_due_date) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
           '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
           '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
           'FROM clients c ' +
@@ -231,8 +231,8 @@ export class ClientesDatabaseServicesService {
         '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) nuAmountTotal, ' +
         '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
         '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
-        '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
-        '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
+        '(SELECT MIN(ds.da_due_date) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+        '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
         '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
         '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
         'FROM clients c ' +
@@ -316,8 +316,9 @@ export class ClientesDatabaseServicesService {
 
          -- nueva: nombre de la condicion de pago
          (SELECT pc.na_payment_condition FROM payment_conditions pc
-            WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition
+            WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition,
 
+          (SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = c.id_enterprise) as countDueDate
   FROM clients c
   WHERE id_client = ?
 `;
@@ -343,7 +344,7 @@ export class ClientesDatabaseServicesService {
           idClient,         // saldo2Conver.id_client
           hardCurrency,     // saldo2Conver.co_currency
           idClient,         // coCurrency.id_client
-          idClient          // WHERE id_client = ?
+          idClient          // countDueDate.id_client
         ];
 
         // Ejecuta la query con los parámetros:
@@ -407,7 +408,9 @@ export class ClientesDatabaseServicesService {
 
     -- nombre de la condición de pago
     (SELECT pc.na_payment_condition FROM payment_conditions pc
-       WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition
+       WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition,
+
+     (SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = c.id_enterprise) as countDueDate
 
   FROM clients c
   WHERE c.id_client = ?
@@ -485,7 +488,9 @@ export class ClientesDatabaseServicesService {
 
     -- nombre de la condición de pago desde payment_conditions
     (SELECT pc.na_payment_condition FROM payment_conditions pc
-       WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition
+       WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition,
+
+     (SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND ds.da_due_date < DATE("now") AND  ds.id_enterprise = c.id_enterprise) as countDueDate
 
   FROM clients c
   WHERE c.id_client = ?

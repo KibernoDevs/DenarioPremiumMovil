@@ -32,7 +32,7 @@ import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { Router } from '@angular/router';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { DateServiceService } from '../services/dates/date-service.service';
-import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_SAVED } from '../utils/appConstants';
 import { GlobalDiscount } from '../modelos/tables/globalDiscount';
 import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStructure';
@@ -49,7 +49,15 @@ import { CurrencyModules } from '../modelos/tables/currencyModules';
 import { ProductSuggestedUtil } from '../modelos/ProductSuggestedUtil';
 import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
-
+export interface SelectedUnitPricingRow {
+  naUnit: string;
+  quAmount: number;
+  quUnit: number;
+  naList: string;
+  unitPrice: number;
+  unitBaseTotal: number;
+  coCurrency: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -148,6 +156,19 @@ export class PedidosService {
   coClientStockAEnviar = '';
   idClientStockAEnviar: number | null = 0;
 
+  /** Inventario sugerencia: local quedó como SAVED(3); forzar Por enviar(2) para que auto-send envíe id servidor null como inventario nuevo. */
+  async marcarInventarioSugeridoStPorEnviar(): Promise<void> {
+    const co = this.coClientStockAEnviar;
+    if (typeof co !== 'string' || co.trim().length <= 1) {
+      return;
+    }
+    await this.database
+      .executeSql(
+        'UPDATE client_stocks SET st_delivery = ? WHERE co_client_stock = ?',
+        [DELIVERY_STATUS_TO_SEND, co],
+      )
+      .catch(err => console.log('[marcarInventarioSugeridoStPorEnviar]', err));
+  }
 
   public coOrder = '';
 
@@ -251,7 +272,10 @@ export class PedidosService {
     return ((this.carrito.length > 0) || this.adjuntoService.hasItems())
   }
 
-  setup() {
+  /**
+   * Carga paralela habitual; catalogCritical garantiza datos mínimos del catálogo (listas, precios, unidades).
+   */
+  setup(): Promise<void> {
     let idEnterprise = this.empresaSeleccionada.idEnterprise;
     let coEnterprise = this.empresaSeleccionada.coEnterprise;
     this.getConfig();
@@ -267,24 +291,50 @@ export class PedidosService {
         this.monedaSeleccionada = this.currencyService.hardCurrency;
     }
     */
+    const catalogCritical: Promise<unknown>[] = [];
+
+    catalogCritical.push(
+      this.getLists(idEnterprise).then(data => {
+        this.listaList = data;
+        const idLists = this.listaList.map(l => l.idList);
+        return this.getPricelists(idEnterprise, idLists).then(pl => {
+          this.listaPricelist = pl;
+        });
+      }),
+    );
+
+    catalogCritical.push(
+      this.getUnitInfo(idEnterprise).then(data => {
+        this.listaUnitInfo = data;
+        if (this.showTotalProductUnit) {
+          this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
+        }
+      }),
+    );
+
+    if (this.unitByPriceList) {
+      catalogCritical.push(
+        this.getUnitPriceList(idEnterprise).then(data => {
+          this.listaUnitPriceList = data;
+        }),
+      );
+    }
+
+    if (this.productMinMul) {
+      catalogCritical.push(
+        this.getProductMinMulList(idEnterprise).then(data => {
+          this.listaProdMinMul = data;
+          this.fillProdMinMulMap();
+        }),
+      );
+    }
+
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
-    this.getLists(idEnterprise).then(data => { 
-      this.listaList = data;
-      let idLists = this.listaList.map(l => l.idList);
-      this.getPricelists(idEnterprise, idLists).then(data => { this.listaPricelist = data; }); 
-    });
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
     this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });    
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
-    this.getUnitInfo(idEnterprise).then(data => {
-      this.listaUnitInfo = data;
-      if (this.showTotalProductUnit) {
-        //buscamos el nombre de la unidad para mostrar en el total
-        this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
-      }
-    });
 
     if (this.validateWarehouses) {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
@@ -295,12 +345,6 @@ export class PedidosService {
     if (this.userCanSelectChannel) {
       this.getOrderTypeProductStructure(idEnterprise).then(data => { this.orderTypeProductStructure = data; });
       this.getDistributionChannels(idEnterprise).then(data => { this.distributionChannels = data; });
-    }
-    if (this.productMinMul) {
-      this.getProductMinMulList(idEnterprise).then(data => {
-        this.listaProdMinMul = data
-        this.fillProdMinMulMap();
-      });
     }
     if (this.groupByTotalByLines) {
       this.getProductStructures(idEnterprise).then(data => {
@@ -321,11 +365,7 @@ export class PedidosService {
     });
     }
 
-    if(this.unitByPriceList){
-      //para hacer el cambio automatico de unidad segun la lista de precio
-      this.getUnitPriceList(idEnterprise).then(data => { this.listaUnitPriceList = data; });
-    }
-
+    return Promise.all(catalogCritical).then(() => undefined);
   }
   fillProdMinMulMap() {
     this.listaProdMinMul.forEach((value) => {
@@ -498,6 +538,10 @@ export class PedidosService {
   }
 
   private notifyIfDistinctItemsLimitJustReached(distinctNewLineAdded: boolean): void {
+    if(!this.pedidoModificable){
+      // no debe salir si ya esta enviado.
+      return;
+    }
     if (!distinctNewLineAdded || !this.isDistinctItemsLimitConfigured()) {
       return;
     }
@@ -511,9 +555,17 @@ export class PedidosService {
     );
   }
 
+  private shouldRemoveProductFromCart(prod: OrderUtil): boolean {
+    const list = prod.unitList;
+    if (!list || list.length < 1) {
+      return prod.quAmount <= 0;
+    }
+    return !list.some(u => Number(u.quAmount) > 0);
+  }
+
   alCarrito(prod: OrderUtil) {
     let sustitucion = false;
-    if (prod.quAmount <= 0) {
+    if (this.shouldRemoveProductFromCart(prod)) {
       this.removeFromCarrito(prod);
       return;
     }
@@ -970,7 +1022,8 @@ export class PedidosService {
       }
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
-        curItem += unit.quUnit * unit.quAmount * item.nuPrice;
+        const unitNuPriceForTotal = this.resolveUnitNuPriceForLineTotal(item, unit);
+        curItem += unit.quUnit * unit.quAmount * unitNuPriceForTotal;
         if (this.totalUnit) {
           this.totalUnidades(unit);
         }
@@ -1178,6 +1231,87 @@ export class PedidosService {
     this.setChangesMade(true);
   }
 
+  /**
+   * Suma base (precio × factores por unidad) igual que `productSummary` antes de dto/IVA.
+   */
+  computeCartLineBaseAmount(item: OrderUtil): number {
+    let sum = 0;
+    for (let j = 0; j < item.unitList.length; j++) {
+      const unit = item.unitList[j];
+      sum += this.computeUnitBaseTotal(item, unit);
+    }
+    return sum;
+  }
+
+  /**
+   * Total base de una unidad con la misma fórmula de `productSummary`.
+   */
+  computeUnitBaseTotal(item: OrderUtil, unit: UnitInfo): number {
+    if (Number(unit.quAmount) <= 0) {
+      return 0;
+    }
+    return unit.quUnit * unit.quAmount * this.resolveUnitNuPriceForLineTotal(item, unit);
+  }
+
+  /**
+   * Filas de precio/base para unidades seleccionadas (Tab Totales, unitByPriceList).
+   */
+  getSelectedUnitPricingRows(item: OrderUtil): SelectedUnitPricingRow[] {
+    if (!this.unitByPriceList) {
+      return [];
+    }
+    const orderCurrency = this.monedaSeleccionada?.coCurrency ?? item.coCurrency;
+    const rows: SelectedUnitPricingRow[] = [];
+    for (let j = 0; j < item.unitList.length; j++) {
+      const unit = item.unitList[j];
+      if (Number(unit.quAmount) <= 0) {
+        continue;
+      }
+      const unitPrice = this.resolveUnitNuPriceForLineTotal(item, unit);
+      let naList = '';
+      const upl = this.listaUnitPriceList.find(u => u.idUnit === unit.idUnit);
+      if (upl) {
+        const list = this.listaList.find(l => l.idList === upl.idList);
+        naList = list?.naList ?? upl.coList ?? '';
+      }
+      rows.push({
+        naUnit: unit.naUnit,
+        quAmount: unit.quAmount,
+        quUnit: unit.quUnit,
+        naList,
+        unitPrice,
+        unitBaseTotal: this.computeUnitBaseTotal(item, unit),
+        coCurrency: orderCurrency,
+      });
+    }
+    return rows;
+  }
+
+  /**
+   * Precio convertido aplicable a una unidad para totalizar línea del carrito.
+   * Legacy: mismo `nuPrice` del ítem. Con unitByPriceList: lista asociada a la unidad.
+   */
+  private resolveUnitNuPriceForLineTotal(item: OrderUtil, unit: UnitInfo): number {
+    if (!this.unitByPriceList) {
+      return item.nuPrice;
+    }
+    const upl = this.listaUnitPriceList.find(u => u.idUnit === unit.idUnit);
+    if (!upl) {
+      console.log('[resolveUnitNuPriceForLineTotal] Sin mapeo unidad-lista idUnit=', unit.idUnit);
+      return item.nuPrice;
+    }
+    const plRow = this.listaPricelist.find(
+      p => p.idProduct === item.idProduct && p.idList === upl.idList,
+    );
+    if (!plRow) {
+      console.log('[resolveUnitNuPriceForLineTotal] Sin pricelist idProduct=', item.idProduct, 'idList=', upl.idList);
+      return item.nuPrice;
+    }
+    return this.conversionByPriceList
+      ? plRow.nuPrice
+      : this.conversionCurrency(plRow.nuPrice, plRow.coCurrency);
+  }
+
   conversionCurrency(price: number, coCurrency: string) {
     /*
      * Convierte los precios de los productos a la moneda del pedido para usar con
@@ -1329,6 +1463,8 @@ export class PedidosService {
     pedido.coOrder = coOrder;
     this.coOrder = coOrder;
     pedido.idOrder = 0;
+    pedido.idClientStock = null;
+    pedido.coClientStock = null;
     pedido.stOrder = DELIVERY_STATUS_SAVED;
     pedido.stDelivery = DELIVERY_STATUS_SAVED;
     for (let i = 0; i < pedido.orderDetails.length; i++) {
@@ -1535,7 +1671,12 @@ export class PedidosService {
     //mini setup de moneda para conversiones de precio
     await this.currencyService.setup(this.dbServ.getDatabase())
     this.currencyModule = this.currencyService.getCurrencyModule('ped');
-    this.currencySelection();
+    const monedaPreview = this.datosPedidoSugerido.monedaSeleccionadaSugerencia;
+    if (monedaPreview) {
+      this.monedaSeleccionada = monedaPreview;
+    } else {
+      this.currencySelection();
+    }
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
     this.listaSeleccionada = this.datosPedidoSugerido.list;
@@ -1549,7 +1690,7 @@ export class PedidosService {
       });
       */
 
-    await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList).then(orderUtils => {
+    const orderUtils = await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList);
       let details: OrderDetail[] = [];
       let pedido: Orders = {
         "idOrder": 0,
@@ -1597,6 +1738,8 @@ export class PedidosService {
         "nuAttachments": 0,
         "idDistributionChannel": null,
         "coDistributionChannel": null,
+        "idClientStock": null,
+        "coClientStock": null,
         "stDelivery": DELIVERY_STATUS_NEW
       }
 
@@ -1676,6 +1819,19 @@ export class PedidosService {
       }
       pedido.orderDetails = details;
       pedido.nuDetails = details.length;
+      const idCsSuggest = this.datosPedidoSugerido.idClientStock;
+      const coCsSuggest = this.datosPedidoSugerido.coClientStock;
+      pedido.coClientStock = coCsSuggest ? coCsSuggest : null;
+      pedido.idClientStock =
+        idCsSuggest != null && typeof idCsSuggest === 'number' && idCsSuggest > 0 ? idCsSuggest : null;
+
+      if (pedido.coClientStock) {
+        await this.database.executeSql(
+          'UPDATE client_stocks SET co_order = ?, id_order = ? WHERE co_client_stock = ?',
+          [pedido.coOrder, pedido.idOrder ?? 0, pedido.coClientStock],
+        ).catch(err => console.log('[sugerirPedido] vínculo inventario:', err));
+      }
+
       this.order = pedido;
       //reseteamos al estado natural
       //this.desdeSugerencia = false;
@@ -1691,7 +1847,6 @@ export class PedidosService {
         this.message.transaccionMsjModalNB(this.getTag('PED_ERROR_SUGERIR'));
       }
 
-    })
   }
 
   getIdUser() {

@@ -55,7 +55,7 @@
             }
             @if(orderServ.unitByPriceList){
               @for(price of product.nuPriceList; track price.idList){
-                <p>{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNum(price.nuPrice) : 'N/A'
+                <p>{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNum(getUnitPriceListDisplayPrice(product, price.nuPrice, price.coUnit)) : 'N/A'
               }} {{ product.coCurrency }} </p>
               }
             }@else{
@@ -291,7 +291,7 @@
                     productoModal.coProduct }}</p>
                   @if(orderServ.unitByPriceList){
                     @for(price of productoModal.nuPriceList; track price.idList){
-                      <p>{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNum(price.nuPrice) : 'N/A'
+                      <p>{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNum(getUnitPriceListDisplayPrice(productoModal, price.nuPrice, price.coUnit)) : 'N/A'
                     }} {{ productoModal.coCurrency }} </p>
                     }
                   }@else{
@@ -382,6 +382,7 @@
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
+                        [disabled]="orderServ.unitByPriceList"
                         (ionChange)="onSelectUnit($event, productoModal)">
                         <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{
                           unit.naUnit }}</ion-select-option>

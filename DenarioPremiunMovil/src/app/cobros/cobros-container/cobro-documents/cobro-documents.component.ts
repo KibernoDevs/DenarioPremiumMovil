@@ -129,6 +129,7 @@ export class CobrosDocumentComponent implements OnInit {
     this.fechaHoy = this.dateServ.onlyDateHoyISO();
     this.applyDocumentFilter(this.collectService.documentCurrency);
     this.loadCollectRetentions();
+    this.initializeDocumentCurrencyFilter();
     // this.collectService.deepFreeze(this.collectService.documentSalesView);
   }
 
@@ -366,8 +367,10 @@ export class CobrosDocumentComponent implements OnInit {
 
 
   onChangeCurrencyDoc(event: any) {
-    const selectedCurrency = event?.target?.value?.coCurrency ?? '';
+    const selected = event?.detail?.value ?? event?.target?.value;
+    const selectedCurrency = selected?.coCurrency ?? '';
 
+    this.collectService.currencySelectedDocument = selected;
     this.collectService.documentCurrency = selectedCurrency;
     this.applyDocumentFilter(selectedCurrency);
 
@@ -409,13 +412,26 @@ export class CobrosDocumentComponent implements OnInit {
 
   getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), idClient, coCurrency, coCollection, idEnterprise).then(response => {
-      this.applyDocumentFilter(this.collectService.documentCurrency || coCurrency);
+      this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
 
       if (this.collectService.historicPartialPayment) {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient).then(() => {
         });
       }
     })
+  }
+
+  private initializeDocumentCurrencyFilter(): void {
+    const monedaOption = Array.isArray(this.collectService.currencyListDocument)
+      ? this.collectService.currencyListDocument.find(c => c?.coCurrency === 'Moneda')
+      : undefined;
+
+    if (monedaOption) {
+      this.collectService.currencySelectedDocument = monedaOption;
+    }
+
+    this.collectService.documentCurrency = 'Moneda';
+    this.applyDocumentFilter('Moneda');
   }
 
   getDaDueDate(daDueDate: string) {

@@ -21,6 +21,12 @@ import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 })
 export class CobroPagosComponent implements OnInit {
 
+  /**
+   * Flag para mostrar el mensaje de automated prepaid solo una vez por ciclo de true.
+   * Se resetea cuando createAutomatedPrepaid pasa a false.
+   */
+  private hasShownAutomatedPrepaidMsg = false;
+
   public collectService = inject(CollectionService);
   public globalConfig = inject(GlobalConfigService);
   public currencyService = inject(CurrencyService)
@@ -228,6 +234,7 @@ export class CobroPagosComponent implements OnInit {
 
     this.collectService.lengthMethodPaid--;
     this.collectService.anticipoAutomatico = [];
+    this.collectService.createAutomatedPrepaid = false;
 
     // Diccionario para mapear tipo a arrays y propiedades
     type TipoPagoKey = 'ef' | 'ch' | 'de' | 'tr' | 'pm' | 'ot';
@@ -248,25 +255,6 @@ export class CobroPagosComponent implements OnInit {
     // Capturar el pago y su posición en collectionPayments ANTES de borrar
     const removedPago = pagoArray[index];
     const removedPos = removedPago.posCollectionPayment ?? index;
-    const monto = Number(removedPago.monto) || 0;
-    this.collectService.montoTotalPagado -= monto;
-    if (this.collectService.collection.coCurrency == this.collectService.localCurrency.coCurrency) {
-      this.collectService.montoTotalPagadoConversion = this.collectService.convertirMonto(this.collectService.montoTotalPagado,0, this.collectService.collection.coCurrency);
-    } else {
-      this.collectService.montoTotalPagadoConversion = this.collectService.convertirMonto(this.collectService.montoTotalPagado, 0, this.collectService.collection.coCurrency);
-    }
-
-    // Actualizar totales usando el monto del pago eliminado
-    this.collectService.collection.nuAmountFinal -= monto;
-    this.collectService.collection.nuAmountTotal -= monto;
-    this.collectService.collection.nuDifference -= monto;
-
-    this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(
-      this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency
-    );
-    this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(
-      this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency
-    );
 
     // Capturar uid del collectionPayment que vamos a eliminar (antes de hacer splice)
     const removedCp = (this.collectService.collection.collectionPayments && this.collectService.collection.collectionPayments[removedPos]) as any | undefined;
@@ -303,18 +291,19 @@ export class CobroPagosComponent implements OnInit {
       }
     });
 
-    // Revalidaciones
-    if (allPagoArrays.length > 0)
-      this.collectService.validateToSend();
-
-    if (!this.collectService.collection.collectionPayments || this.collectService.collection.collectionPayments.length == 0)
-      this.collectService.onCollectionValidToSend(false);
-
     // Borrar mapas asociados al collectionPayment eliminado (si existían)
     if (removedCpUid) {
       delete this.centsMap[removedCpUid];
       delete this.displayMap[removedCpUid];
     }
+
+    // Recalcular totales con la lógica central (calcularMontos -> calculatePayment)
+    this.collectService.calcularMontos('', 0).then(() => {
+      this.collectService.validateToSend();
+      if (!this.collectService.collection.collectionPayments || this.collectService.collection.collectionPayments.length === 0) {
+        this.collectService.onCollectionValidToSend(false);
+      }
+    });
   }
 
   getFecha(fecha: string, index: number, type: string) {
@@ -944,15 +933,21 @@ export class CobroPagosComponent implements OnInit {
   }
 
   checkCreateAutomatedPrepaid() {
-    if (!this.collectService.recentOpenCollect) {
+    if (!this.collectService.recentOpenCollect && this.collectService.createAutomatedPrepaid && !this.hasShownAutomatedPrepaidMsg) {
       this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collectService.collection.nuDifference);
       this.alertMessageOpen = true;
+      this.hasShownAutomatedPrepaidMsg = true;
     }
+
   }
 
 
   validatePayment(type: string, index: number) {
     this.collectService.alertMessageOpen = false;
+    // Si createAutomatedPrepaid pasa a false, resetea el flag para volver a mostrar el mensaje en el próximo ciclo
+    if (!this.collectService.createAutomatedPrepaid) {
+      this.hasShownAutomatedPrepaidMsg = false;
+    }
     switch (type) {
       case "ef": {
         if (this.collectService.pagoEfectivo[index].monto >= 0) {

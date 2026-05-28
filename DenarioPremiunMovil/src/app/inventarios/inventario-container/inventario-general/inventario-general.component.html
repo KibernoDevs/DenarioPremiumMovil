@@ -41,7 +41,7 @@
             <div class="listado-enterprise-selector ion-text-center">
               <ion-select [(ngModel)]="inventariosLogicService.newClientStock.idAddressClient"
                 class="ion-text-center always-flip" (ionChange)="onSucursalSelect()"
-                [disabled]="this.inventariosLogicService.inventarioSent == true" labelPlacement="stacked">
+                [disabled]="this.inventariosLogicService.inventarioSent" labelPlacement="stacked">
                 @for (sucursal of inventariosLogicService.addressClient; track $index) {
                 <ion-select-option [value]="sucursal.idAddress"
                   [disabled]="this.inventariosLogicService.inventarioSent">
@@ -81,7 +81,7 @@
             <ion-input fill="outline" type="number"
               label="{{this.inventariosLogicService.inventarioTags.get('INV_DIAS_ULTIMO_INVENTARIO')}}"
               labelPlacement="floating" [(ngModel)]="daysSinceLastInventory"
-              (ionChange)="setDaysSinceLastInventory()"
+              (ionChange)="setDaysSinceLastInventory()" [disabled]="this.inventariosLogicService.inventarioSent"
               [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null ">
             </ion-input>
           </div>
@@ -93,7 +93,7 @@
             <ion-input fill="outline" type="number"
               label="{{this.inventariosLogicService.inventarioTags.get('INV_DIAS_SIGUIENTE_INVENTARIO')}}"
               labelPlacement="floating" [(ngModel)]="daysUntilNextInventory"
-              (ionChange)="setDaysUntilNextInventory() "
+              (ionChange)="setDaysUntilNextInventory() " [disabled]="this.inventariosLogicService.inventarioSent"
               [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null ">
             </ion-input>
           </div>
@@ -105,7 +105,7 @@
             <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" id="responsable"
               [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
               placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
-              (ionChange)="setTXComment()"
+              (ionChange)="setTXComment()" [disabled]="this.inventariosLogicService.inventarioSent"
               [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null "></ion-input>
           </div>
         </ion-col>

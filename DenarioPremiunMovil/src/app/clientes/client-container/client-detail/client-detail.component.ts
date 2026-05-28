@@ -76,13 +76,13 @@ export class ClienteComponent implements OnInit {
     this.initializeClientBalances();
 
     if (this.clientLogic.multiCurrency && this.currencyService.multimoneda) {
-        if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
-          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
-          this.availableCreditConversion = this.formatNumber(this.currencyService.toHardCurrency(this.getAvailableCredit()));
-        } else {
-          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
-          this.availableCreditConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.getAvailableCredit()));
-        }
+      if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
+        this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
+        this.availableCreditConversion = this.formatNumber(this.currencyService.toHardCurrency(this.getAvailableCredit()));
+      } else {
+        this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
+        this.availableCreditConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.getAvailableCredit()));
+      }
     }
 
 
@@ -306,21 +306,26 @@ export class ClienteComponent implements OnInit {
         const doc = this.document[i];
         if (!doc) continue;
 
-        // Si es nota de crédito -> negro
-        const docType = String(doc.coDocumentSaleType ?? '').trim().toUpperCase();
-        const docNuBalance = doc.nuBalance
+        const currentColor = String(doc.colorRow ?? '').trim().toLowerCase();
+
+        // Si ya está en rojo, no se vuelve a modificar.
+        if (currentColor === 'red') {
+          doc.colorRow = 'Red';
+          this.document[i].colorRow = 'Red';
+          continue;
+        }
+
+        const docNuBalance = Number(doc.nuBalance ?? 0);
         if (docNuBalance <= 0) {
           doc.colorRow = 'black';
         } else {
-          // isDueSoon devuelve boolean -> mapeamos a color
           const dueSoon = this.clientLogic.isDueSoon(doc.daDueDate);
           doc.colorRow = dueSoon ? 'Red' : 'Blue';
         }
 
-        // Mantener sincronizado documentSalesView si existe
-        if (Array.isArray(this.document) && this.document[i]) {
-          this.document[i].colorRow = doc.colorRow;
-        }
+        // Asegura que el array fuente refleje el color calculado.
+        this.document[i].colorRow = doc.colorRow;
+
 
         // Mantener mapa actualizado (si existe entrada por idDocument)
         /*  if (doc.idDocument != null && this.mapDocumentsSales && this.mapDocumentsSales.has(doc.idDocument)) {

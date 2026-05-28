@@ -1,5 +1,0 @@
-[{
-    "id": 1,
-    "table": "address_clients",
-    "sql": "INSERT OR REPLACE INTO address_client(id_address_client INTEGER PRIMARY KEY,co_address_client VARCHAR(30),tx_address_client VARCHAR(250),email_client VARCHAR(80),na_responsible VARCHAR(150),nu_phone VARCHAR(180),nu_phone2 VARCHAR(180),zipcode VARCHAR(30),tx_reference_point VARCHAR(80),coordinates VARCHAR(150),id_client INTEGER,id_country INTEGER,id_enterprise INTEGER);"
-}]

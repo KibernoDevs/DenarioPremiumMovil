@@ -37,6 +37,8 @@ import { Router } from '@angular/router';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { OrderUtil } from 'src/app/modelos/orderUtil';
+import { UnitInfo } from 'src/app/modelos/unitInfo';
+import { SelectedUnitPricingRow } from '../pedidos.service';
 import { ClientChannelOrderType } from 'src/app/modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
@@ -530,15 +532,9 @@ export class PedidoComponent implements OnInit {
     if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
       this.orderServ.disableSendButton = true;
       this.message.showLoading().then(() => {
-        this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
+        this.saveOrder(DELIVERY_STATUS_TO_SEND).then(async (order) => {
 
           var transactions: PendingTransaction[] = [];
-          var tr: PendingTransaction = new PendingTransaction(
-            order.coOrder,
-            order.idOrder,
-            "order"
-          );
-          transactions.push(tr);
 
           if (this.orderServ.validateWarehouses && this.orderServ.validStock) {
             this.orderServ.updateStocks(order).then(() => {
@@ -547,13 +543,17 @@ export class PedidoComponent implements OnInit {
           }
 
           if (this.orderServ.coClientStockAEnviar.length > 1) {
-            //si venimos de inventario, enviamos el inventario tambien.
+            await this.orderServ.marcarInventarioSugeridoStPorEnviar();
             transactions.push({
               coTransaction: this.orderServ.coClientStockAEnviar,
               idTransaction: this.orderServ.idClientStockAEnviar,
-              type: "clientStock"
-            })
+              type: "clientStock",
+            });
           }
+
+          transactions.push(
+            new PendingTransaction(order.coOrder, order.idOrder, "order"),
+          );
 
           if (localStorage.getItem("connected") == "true") {
             this.messageAlert = new MessageAlert(
@@ -664,6 +664,8 @@ export class PedidoComponent implements OnInit {
       } else
         tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
 
+      const lineAmountBase = this.orderServ.computeCartLineBaseAmount(item);
+
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
@@ -707,7 +709,7 @@ export class PedidoComponent implements OnInit {
         item.naProduct,
         item.idProduct,
         item.nuPrice,
-        item.nuPrice * item.quAmount,
+        lineAmountBase,
         (this.orderServ.validateWarehouses ? item.coWarehouse : ''), //si validWH =  false, se manda 'vacio'
         (this.orderServ.validateWarehouses ? item.idWarehouse : 0),
         0,
@@ -725,7 +727,7 @@ export class PedidoComponent implements OnInit {
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
           this.currencyServ.toHardCurrency(tieneDescuento ? item.nuAmountDiscount : 0) : this.currencyServ.toLocalCurrency(tieneDescuento ? item.nuAmountDiscount : 0),
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
-          this.currencyServ.toHardCurrency(item.nuPrice * item.quAmount) : this.currencyServ.toLocalCurrency(item.nuPrice * item.quAmount),
+          this.currencyServ.toHardCurrency(lineAmountBase) : this.currencyServ.toLocalCurrency(lineAmountBase),
         units,
         [discount],
 
@@ -780,6 +782,8 @@ export class PedidoComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
       coDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.coChannel : null,
+      idClientStock: this.orderServ.order.idClientStock ?? null,
+      coClientStock: this.orderServ.order.coClientStock ?? null,
       stDelivery: stDelivery,
     } as Orders
 
@@ -811,6 +815,7 @@ export class PedidoComponent implements OnInit {
             this.orderServ.listaSeleccionada = pricelist;
             this.listaAnterior = pricelist;
             this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == pricelist?.idList)
+            this.orderServ.productListToOrderUtil(this.productService.productList);
           }
         }
       ]
@@ -824,6 +829,7 @@ export class PedidoComponent implements OnInit {
       //si no hay productos no hay peo, consolidamos el cambio.
       this.listaAnterior = this.orderServ.listaSeleccionada;
       this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == this.orderServ.listaSeleccionada?.idList)
+      this.orderServ.productListToOrderUtil(this.productService.productList);
       this.orderServ.setChangesMade(true);
 
     }
@@ -1267,50 +1273,50 @@ export class PedidoComponent implements OnInit {
 
       // Lista
       let list: List | undefined;
-      if(this.orderServ.desdeSugerencia){
+      if (this.orderServ.desdeSugerencia) {
         //en la sugerencia ya tenemos una lista definida, asi que la usamos y listo, no hay que andar buscando ni nada raro
         this.orderServ.desdeSugerencia = false;
         list = this.orderServ.datosPedidoSugerido.list;
-      } else{
-      if (this.orderServ.openOrder) {
-        let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
-        if (!idPriceList) {
-          console.error("El pedido no tiene pricelist asignada en los detalles");
-          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-        }else{
-        let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-        if (pl.length < 1) {
-          console.error("No se encontro pricelist del pedido");
-          if (this.orderServ.pedidoModificable) {
-            console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
-            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-          }
-        } else {
-          let idList = pl[0].idList;
-          list = this.orderServ.listaList.find((list) => list.idList == idList);
-        }
-        if (list) {
-          this.orderServ.listaSeleccionada = list!;
-          if (list.idList > 0) {
-            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
-
-          }
-          this.listaAnterior = list!;
-        } else {
-          this.orderServ.listaSeleccionada = { idList: 0 } as List;
-        }
-      }
       } else {
-        list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-      }
-    }
+        if (this.orderServ.openOrder) {
+          let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+          if (!idPriceList) {
+            console.error("El pedido no tiene pricelist asignada en los detalles");
+            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+          } else {
+            let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
+            if (pl.length < 1) {
+              console.error("No se encontro pricelist del pedido");
+              if (this.orderServ.pedidoModificable) {
+                console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
+                list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+              }
+            } else {
+              let idList = pl[0].idList;
+              list = this.orderServ.listaList.find((list) => list.idList == idList);
+            }
+            if (list) {
+              this.orderServ.listaSeleccionada = list!;
+              if (list.idList > 0) {
+                this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
 
-        if (list != undefined) {
-          this.orderServ.listaSeleccionada = list;
-          this.listaAnterior = list;
-          this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+              }
+              this.listaAnterior = list!;
+            } else {
+              this.orderServ.listaSeleccionada = { idList: 0 } as List;
+            }
+          }
+        } else {
+          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
         }
-      
+      }
+
+      if (list != undefined) {
+        this.orderServ.listaSeleccionada = list;
+        this.listaAnterior = list;
+        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+      }
+
 
 
       //Payment Condition
@@ -1424,6 +1430,14 @@ export class PedidoComponent implements OnInit {
     return this.currencyServ.formatNumber(input);
   }
 
+  getSelectedUnitPricingRows(item: OrderUtil): SelectedUnitPricingRow[] {
+    return this.orderServ.getSelectedUnitPricingRows(item);
+  }
+
+  getUnitBaseTotal(item: OrderUtil, unit: UnitInfo): number {
+    return this.orderServ.computeUnitBaseTotal(item, unit);
+  }
+
   canExportOrderSummaryPdf(): boolean {
     const stDelivery = this.orderServ.order?.stDelivery;
     return stDelivery == 1 || stDelivery === null;
@@ -1442,55 +1456,127 @@ export class PedidoComponent implements OnInit {
         const idOrder = this.orderServ.listaPedidos.find(p => p.co_order === coOrder)?.id_order ?? 0;
         const daOrder = this.orderServ.listaPedidos.find(p => p.co_order === coOrder)?.da_order?.substring(0, 10) ?? '';
         const currency = this.orderServ.monedaSeleccionada?.coCurrency || '';
-        const items = this.orderServ.carrito || [];
+        const items = (this.orderServ.carrito || []) as OrderUtil[];
 
-        const getLineGlobalDiscount = (item: any): number => {
-          if (Number(this.orderServ.dctoGlobal ?? 0) <= 0) return 0;
-          const quAmount = Number(item?.quAmount ?? 0);
-          const taxedPrice = Number(item?.taxedNuPrice ?? item?.nuPrice ?? 0);
-          const subtotal = Number(item?.subtotal ?? 0);
-          const beforeGlobal = quAmount * taxedPrice;
-          return Math.max(0, beforeGlobal - subtotal);
-        };
+        const getProductLineDiscountAmount = (item: OrderUtil): number =>
+          Math.max(0, Number(item?.nuAmountDiscount ?? 0));
 
-        const getLineDiscount = (item: any): number => {
-          const productDiscount = Number(item?.nuAmountDiscount ?? 0);
-          const globalDiscount = getLineGlobalDiscount(item);
-          return Math.max(0, productDiscount + globalDiscount);
-        };
-
-        const hasDiscountColumn = items.some(item => getLineDiscount(item) > 0)
-          || Number(this.orderServ.totalGlobalDc ?? 0) > 0
+        const hasDiscountColumn =
+          items.some(
+            item => Number(item.quDiscount ?? 0) > 0 || getProductLineDiscountAmount(item) > 0
+          )
           || Number(this.orderServ.totalDctoXProducto ?? 0) > 0;
 
-        const rows = items.map(item => {
-          const row = [
+        const buildQtyUnits = (item: OrderUtil): { qtyLines: string; unitLines: string } => {
+          const unitList = item.unitList ?? [];
+          const qtyStrings: string[] = [];
+          const unitStrings: string[] = [];
+
+          unitList.forEach(unit => {
+            if (unit.quAmount > 0 || unit.quUnit > 0) {
+              qtyStrings.push(this.formatNum(Number(unit.quAmount ?? 0)));
+              unitStrings.push(String(unit.naUnit ?? '').trim());
+            }
+          });
+
+          if (qtyStrings.length > 0) {
+            return { qtyLines: qtyStrings.join('\n'), unitLines: unitStrings.join('\n') };
+          }
+
+          const primary = unitList.find(u => u.idUnit === item.idUnit);
+          return {
+            qtyLines: this.formatNum(Number(item.quAmount ?? 0)),
+            unitLines: String(primary?.naUnit ?? '').trim()
+          };
+        };
+
+        const buildDiscountCell = (item: OrderUtil): string => {
+          const lines: string[] = [];
+          const qd = Number(item.quDiscount ?? 0);
+          if (qd > 0) {
+            const dcAmt = Number(item.nuPrice ?? 0) * qd / 100;
+            lines.push(
+              `${this.orderServ.getTag('PED_DC')} ${this.formatNum(qd)}%: ${this.formatNum(dcAmt)} ${currency}`
+            );
+            lines.push(
+              `${this.orderServ.getTag('PED_MINUS_DC')} ${this.formatNum(Number(item.discountedNuPrice ?? 0))} ${currency}`
+            );
+          }
+          const productDcAmt = getProductLineDiscountAmount(item);
+          if (lines.length === 0 && productDcAmt > 0) {
+            lines.push(`${this.formatNum(productDcAmt)} ${currency}`);
+          }
+          return lines.join('\n');
+        };
+
+        type SummaryPdfColumn = {
+          label: string;
+          align?: 'left' | 'center' | 'right';
+          width: string;
+          noWrap?: boolean;
+          maxLines?: number;
+        };
+
+        const formatLineIvaPercent = (item: OrderUtil): string => {
+          const pct = Number(item?.iva ?? 0);
+          if (!Number.isFinite(pct) || pct <= 0) {
+            return '';
+          }
+          return `${this.formatNum(pct)}%`;
+        };
+
+        const columns: SummaryPdfColumn[] = [
+          { label: 'Código', align: 'center', width: '8%', noWrap: true, maxLines: 1 },
+          { label: 'Producto', align: 'left', width: '32%', noWrap: false, maxLines: 3 },
+          { label: 'Cantidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
+          { label: 'Unidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
+          { label: 'Precio Base', align: 'right', width: '10%', noWrap: true }
+        ];
+
+        if (hasDiscountColumn) {
+          columns.push({ label: 'Descuento', align: 'right', width: '23%', noWrap: false, maxLines: 10 });
+        }
+        columns.push({ label: 'IVA %', align: 'center', width: '7%', noWrap: true });
+        columns.push({ label: 'Importe Total', align: 'right', width: '12%', noWrap: true });
+
+        const fmtMoney = (n: number): string => this.formatNum(Number.isFinite(n) ? n : 0);
+        const summaryTotalsDetailLines: string[] = [
+          `Base: ${fmtMoney(this.orderServ.totalBase)} ${currency}`
+        ];
+        if (Number(this.orderServ.totalDctoXProducto ?? 0) > 0) {
+          summaryTotalsDetailLines.push(
+            `Descuento Productos: ${fmtMoney(this.orderServ.totalDctoXProducto)} ${currency}`
+          );
+        }
+        if (Number(this.orderServ.totalGlobalDc ?? 0) > 0) {
+          summaryTotalsDetailLines.push(
+            `Descuento Global: ${fmtMoney(this.orderServ.totalGlobalDc)} ${currency}`
+          );
+        }
+        if (Number(this.orderServ.orderIVA ?? 0) > 0) {
+          summaryTotalsDetailLines.push(`IVA: ${fmtMoney(this.orderServ.orderIVA)} ${currency}`);
+        }
+        summaryTotalsDetailLines.push(
+          `Total: ${fmtMoney(Number(this.orderServ.totalPedido ?? 0))} ${currency}`
+        );
+
+        const rows = items.map((item) => {
+          const { qtyLines, unitLines } = buildQtyUnits(item);
+          const row: string[] = [
             String(item.coProduct ?? ''),
             String(item.naProduct ?? ''),
-            this.formatNum(Number(item.quAmount ?? 0)),
+            qtyLines,
+            unitLines,
             this.formatNum(Number(item.nuPrice ?? 0))
           ];
 
           if (hasDiscountColumn) {
-            row.push(this.formatNum(getLineDiscount(item)));
+            row.push(buildDiscountCell(item));
           }
-
+          row.push(formatLineIvaPercent(item));
           row.push(this.formatNum(Number(item.subtotal ?? 0)));
           return row;
         });
-
-        const columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }> = [
-          { label: 'Código', align: 'left', width: hasDiscountColumn ? '18%' : '18%', noWrap: true, maxLines: 1 },
-          { label: 'Producto', align: 'left', width: hasDiscountColumn ? '38%' : '42%', noWrap: false, maxLines: 3 },
-          { label: 'Cantidad', align: 'right', width: hasDiscountColumn ? '11%' : '12%', noWrap: true },
-          { label: 'Precio', align: 'right', width: hasDiscountColumn ? '11%' : '14%', noWrap: true }
-        ];
-
-        if (hasDiscountColumn) {
-          columns.push({ label: 'Descuento', align: 'right', width: '11%', noWrap: true });
-        }
-
-        columns.push({ label: 'Subtotal', align: 'right', width: hasDiscountColumn ? '11%' : '14%', noWrap: true });
 
         const doc = await this.pdfCreator.generateSummaryPdfDoc({
           title: `Resumen pedido`,
@@ -1504,9 +1590,13 @@ export class PedidoComponent implements OnInit {
           ],
           columns,
           rows,
-          total: { label: 'Total', value: this.formatNum(Number(this.orderServ.totalPedido ?? 0)) + ' ' + currency },
+          summaryTotalsRow: {
+            labelColumnSpan: 2,
+            leftLabel: 'Totales ',
+            detailLines: summaryTotalsDetailLines
+          },
           fileName: `pedido_${idOrder}_${daOrder}.pdf`
-        }, { orientation: 'landscape', scale: 1, layoutScale: 1 });
+        }, { orientation: 'landscape', scale: 1, layoutScale: 1, format: 'letter' });
 
         const base64 = doc.output('datauristring');
         const trimmed = base64.split(',')[1];
@@ -1657,6 +1747,8 @@ export class PedidoComponent implements OnInit {
       nuAttachments: 0,
       idDistributionChannel: null,
       coDistributionChannel: null,
+      idClientStock: null,
+      coClientStock: null,
       stDelivery: DELIVERY_STATUS_NEW
     } as Orders;
   }

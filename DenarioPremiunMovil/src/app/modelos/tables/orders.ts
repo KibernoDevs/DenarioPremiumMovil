@@ -49,6 +49,8 @@ export class Orders {
             obj['nuAttachments'],
             obj['idDistributionChannel'] || null,
             obj['coDistributionChannel'] || null,
+            obj['idClientStock'] ?? null,
+            obj['coClientStock'] ?? null,
             obj['stDelivery'],
         );
     }
@@ -99,6 +101,8 @@ export class Orders {
         public nuAttachments: number,
         public idDistributionChannel: number | null = null,
         public coDistributionChannel: string | null = null,
+        public idClientStock: number | null = null,
+        public coClientStock: string | null = null,
         public stDelivery: number,        
         
     ) { }

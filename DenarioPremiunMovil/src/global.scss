@@ -859,7 +859,6 @@ body, html {
 :host(.flex-layout) {
   display: flex;
   flex-direction: column;
-  height: 78vh;
   min-height: 0;
 }
 
@@ -867,46 +866,28 @@ ion-grid, ion-row {
   flex-shrink: 0;
 }
 
-.product-structure-scroll {
-    height: calc(93vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
-    overflow-y: auto;
-    min-height: 0;
-}
-
-.pagos-scroll {
-  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+.product-structure-scroll,
+.pagos-scroll,
+.product-devolucion-scroll,
+.detailDoc-scroll,
+.product-structure-scroll2,
+.scroll-calculadora {
+  max-height: calc(100dvh - var(--ion-safe-area-top, 0px) - var(--ion-safe-area-bottom, 0px) - 160px);
   overflow-y: auto;
   min-height: 0;
-}
-
-.product-devolucion-scroll {
-  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
-  overflow-y: auto;
-  min-height: 0;
-}
-.detailDoc-scroll {
-  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
-  overflow-y: auto;
-  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .product-structure-scroll2 {
-  height: calc(100vh - 200px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
-  overflow-y: auto;
-  min-height: 0;
+  max-height: calc(100dvh - var(--ion-safe-area-top, 0px) - var(--ion-safe-area-bottom, 0px) - 120px);
 }
 
 .scroll-lista-pedidos {
-  max-height: 80vh;      // Altura máxima relativa a la ventana
-  overflow-y: auto;      // Scroll vertical solo si es necesario
-  padding-bottom: 1em;   // Espacio inferior para evitar corte
-  width: 100%;           // Ocupa todo el ancho disponible
-}
-
-.scroll-calculadora {
-  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+  max-height: calc(100dvh - var(--ion-safe-area-top, 0px) - var(--ion-safe-area-bottom, 0px) - 120px);
   overflow-y: auto;
-  min-height: 0;
+  padding-bottom: 1em;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
  
 ion-select {

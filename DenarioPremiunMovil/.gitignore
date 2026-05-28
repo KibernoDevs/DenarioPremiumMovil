@@ -86,4 +86,5 @@ build
 /ios/App/App.xcworkspace/xcuserdata/
 
 # iOS native project (Capacitor/Xcode) - keep ignored
+/ios
 /ios/**

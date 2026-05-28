@@ -43,7 +43,7 @@ export class PriceListService {
   }
 
   /* "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.co_currency = ? order by l.na_list limit 1) as nu_price_default, " +
-       "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.co_currency = ? order by l.na_list limit 1) as co_currency_default, " + 
+       "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.co_currency = ? order by l.na_list limit 1) as co_currency_default, " +
        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.co_currency != ? order by l.na_list limit 1) as nu_price_opposite, " +
        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.co_currency != ? order by l.na_list limit 1) as co_currency_opposite, " +  */
 
@@ -51,39 +51,29 @@ export class PriceListService {
   getPriceListByIdListAndIdProduct(idList: number, idProductQuery: number, coCurrency: string) {
     var database = this.dbServ.getDatabase();
     this.productPrice = new ProductPriceUtil(idProductQuery, 0, coCurrency, 0, coCurrency);
-    if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select (select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProductQuery + " and pl.co_currency = '" + coCurrency + "') as nu_price_default, " +      
-      "(select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProductQuery + " and pl.co_currency != '" + coCurrency + "') as nu_price_opposite, " +
-      "(select pl.co_currency from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProductQuery + " and pl.co_currency != '" + coCurrency + "') as co_currency_opposite;"
-      return database.executeSql(select, []).then(data => {
-        this.productPrice = new ProductPriceUtil(
-          idProductQuery,
-          data.rows.item(0).nu_price_default, // Precio de la lista de precio
-          coCurrency, // moneda de la lista de precio
-          data.rows.item(0).nu_price_opposite, // Precio opuesto a la lista de precio
-          data.rows.item(0).co_currency_opposite, // moneda opuesta a la lista de precio
-        );
-      }).catch(e => {
-        console.log("[PriceListService] Error al cargar getPriceListByIdListAndIdProduct.");
-        console.log(e);
-      })
-    } else {
-      var select = "select (select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProductQuery + " and pl.co_currency = '" + coCurrency + "') as nu_price_default"
-      return database.executeSql(select, []).then(data => {
-        this.productPrice = new ProductPriceUtil(
-          idProductQuery,
-          data.rows.item(0).nu_price_default, // Precio de la lista de precio
-          coCurrency, // moneda de la lista de precio
-          this.currencyService.isLocalCurrency(coCurrency) ?
-            this.currencyService.toHardCurrency(data.rows.item(0).nu_price_default) :
-            this.currencyService.toLocalCurrency(data.rows.item(0).nu_price_default), // Precio en la moneda opuesta a la lista de precio
-          this.currencyService.oppositeCoCurrency(coCurrency), // moneda opuesta a la lista de precio
-        );
-        console.log('productPrice: ' + JSON.stringify(this.productPrice));
-      }).catch(e => {
-        console.log("[PriceListService] Error al cargar getPriceListByIdListAndIdProduct.");
-        console.log(e);
-      })
-    }    
+    const select = "SELECT (SELECT pl.nu_price FROM price_lists pl WHERE pl.id_list = ? AND pl.id_product = ?) AS nu_price_default, " +
+      "(SELECT pl.co_currency FROM price_lists pl WHERE pl.id_list = ? AND pl.id_product = ?) AS co_currency;";
+
+    return database.executeSql(select, [idList, idProductQuery, idList, idProductQuery]).then(data => {
+      if (!data.rows.length) {
+        return;
+      }
+
+      const priceDefault = data.rows.item(0).nu_price_default;
+      const currencyDefault = data.rows.item(0).co_currency;
+
+      this.productPrice = new ProductPriceUtil(
+        idProductQuery,
+        priceDefault, // Precio de la lista de precio
+        currencyDefault, // moneda de la lista de precio
+        this.currencyService.isLocalCurrency(currencyDefault) ?
+          this.currencyService.toHardCurrency(priceDefault) :
+          this.currencyService.toLocalCurrency(priceDefault), // Precio en la moneda opuesta a la lista de precio
+        this.currencyService.oppositeCoCurrency(currencyDefault), // moneda opuesta a la lista de precio
+      );
+    }).catch(e => {
+      console.log("[PriceListService] Error al cargar getPriceListByIdListAndIdProduct.");
+      console.log(e);
+    })
   }
 }

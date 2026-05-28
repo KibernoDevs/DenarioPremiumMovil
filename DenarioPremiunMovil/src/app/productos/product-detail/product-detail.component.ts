@@ -1,24 +1,17 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
-import { ProductListComponent } from '../product-list/product-list.component';
-import { Product } from 'src/app/modelos/tables/product';
 import { ProductDetail } from 'src/app/modelos/ProductDetail';
 import { List } from 'src/app/modelos/tables/list';
 import { PriceListService } from 'src/app/services/priceLists/price-list.service';
 import { Warehouse } from 'src/app/modelos/tables/warehouse';
 import { StockService } from 'src/app/services/stocks/stock.service';
-import { Imagenes } from 'src/app/modelos/imagenes';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Swiper } from 'swiper';
 import { register } from 'swiper/element/bundle';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
-import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductService } from 'src/app/services/products/product.service';
-import { ProductPriceUtil } from 'src/app/modelos/ProductPriceUtil';
-import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
-
-register();
+import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 
 @Component({
     selector: 'product-detail',
@@ -30,11 +23,11 @@ export class ProductDetailComponent implements OnInit, OnChanges {
 
   priceListService = inject(PriceListService);
   productService = inject(ProductService);
+  pedidosService = inject(PedidosService);
   stockService = inject(StockService);
   imageServices = inject(ImageServicesService);
   globalConfig = inject(GlobalConfigService);
   currencyService = inject(CurrencyService);
-  orderService = inject(PedidosService);
 
   @Input()
   productDetailTags = new Map<string, string>([]);
@@ -63,6 +56,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     /* this.getProductImages(); */
+    this.productService.syncOrderPresentationFromPedidos(this.pedidosService);
     this.multiCurrency = this.globalConfig.get("multiCurrency") == "true";
     this.conversionByPriceList = this.globalConfig.get("conversionByPriceList").toLowerCase() === "true";
     this.currencyModuleEnabled = this.globalConfig.get("currencyModule").toLowerCase() === "true";
@@ -76,14 +70,14 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       this.lists = this.priceListService.productlists;
       this.listSeleccionada = this.lists[0];
     });
-    if(this.orderService.validateWarehouses && !this.hideProductWarehouse){
+    if(this.productService.catalogValidateWarehouses && !this.hideProductWarehouse){
     this.stockService.getWarehousesByIdProduct(this.pSeleccionado.idProduct).then(() => {
       this.warehouses = this.stockService.productWarehouses;
       this.warehouseSeleccionado = this.warehouses[0];
     });
     }
 
-    if(this.orderService.unitByPriceList){
+    if(this.productService.catalogUnitByPriceList){
       this.listPrices = this.productService.listPrices;
     }
 
@@ -163,6 +157,28 @@ export class ProductDetailComponent implements OnInit, OnChanges {
 
   convertPrice(price: number, coCurrency: string) {
     return this.currencyService.convertFrom(price, coCurrency);
+  }
+
+  detailShowsMinimumQty(idProduct: number): boolean {
+    if (!this.productService.catalogHasProdMinMul(idProduct)) {
+      return false;
+    }
+    return this.productService.getCatalogProdMinMul(idProduct).quMinimum > 1;
+  }
+
+  detailShowsMultipleQty(idProduct: number): boolean {
+    if (!this.productService.catalogHasProdMinMul(idProduct)) {
+      return false;
+    }
+    return this.productService.getCatalogProdMinMul(idProduct).quMultiple > 1;
+  }
+
+  detailMinQty(idProduct: number): number {
+    return this.productService.getCatalogProdMinMul(idProduct).quMinimum;
+  }
+
+  detailMulQty(idProduct: number): number {
+    return this.productService.getCatalogProdMinMul(idProduct).quMultiple;
   }
 
   /*  async getProductImages() {    

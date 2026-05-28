@@ -2,8 +2,13 @@ import { Component, Input, OnInit, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
 import { ClientStocksDetail } from 'src/app/modelos/tables/client-stocks';
+import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
+import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
+import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
+import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
   selector: 'app-inventario-sugerido-preview',
@@ -17,31 +22,59 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   @Input() inventarioTags: Map<string, string> = new Map<string, string>();
   @Input() diasDesdeUltimoInventario: number = 0;
   @Input() diasHastaSiguienteInventario: number = 0;
+  @Input() empresaSeleccionada: Enterprise = {} as Enterprise;
+  @Input() monedaLabel = 'Moneda';
 
   disableOrderButton = true;
+  previewReady = false;
+
+  currencyModulePed: CurrencyModules = new CurrencyModules(0, 0, true, true, true);
+  monedaSeleccionadaPreview: CurrencyEnterprise | null = null;
+
+  /** Etiquetas / binding template (local + opcional hard). */
+  localCurrency!: CurrencyEnterprise;
+  hardCurrency!: CurrencyEnterprise;
+
   private modalCtrl = inject(ModalController);
   private currencyService = inject(CurrencyService);
   private config = inject(GlobalConfigService);
+  private dbServ = inject(SynchronizationDBService);
+  public inventariosLogicService = inject(InventariosLogicService);
 
   quUnitDecimals = false;
   suggestedOrderByDispatchAndReturn = false;
 
-  constructor() {}
+  readonly compareCurrencyEnterprise = (
+    a: CurrencyEnterprise | null,
+    b: CurrencyEnterprise | null,
+  ): boolean => !!(a && b ? a.idCurrency === b.idCurrency : a === b);
 
-  ngOnInit() {
-    this.quUnitDecimals = this.config.get("quUnitDecimals").toLocaleLowerCase() === 'true';
-    this.suggestedOrderByDispatchAndReturn = this.config.get("suggestedOrderByDispatchAndReturn").toLocaleLowerCase() === 'true';
-    for(let product of this.productsSuggested) {
-      for(let unit of product.unitsSuggested) {
-        if(unit.quUnitSuggested && unit.quUnitSuggested > 0) {
-          this.disableOrderButton = false;
-          break;
-        }
-      }
-      if(!this.disableOrderButton) {
-        break;
-      }
+  get multimoneda(): boolean {
+    return this.currencyService.multimoneda;
+  }
+
+  isCurrencySelectorDisabled(): boolean {
+    if (!this.currencyService.multimoneda) {
+      return true;
     }
+    if(this.inventariosLogicService.inventarioSent){
+      return true;
+    }
+    if (this.isCurrencyModuleEnabled()) {
+      return !this.currencyModulePed.currencySelector;
+    }
+    const multiCurrencyOrder = this.config.get('multiCurrencyOrder').toLocaleLowerCase() === 'true';
+    return !multiCurrencyOrder;
+  }
+
+  ngOnInit(): void {
+    this.quUnitDecimals = this.config.get("quUnitDecimals").toLocaleLowerCase() === 'true';
+    this.suggestedOrderByDispatchAndReturn = this.config
+      .get("suggestedOrderByDispatchAndReturn")
+      .toLocaleLowerCase() === 'true';
+
+    this.disableOrderButton = this.computeDisableOrderButton();
+    void this.initCurrencyUi();
   }
 
   getProductName(idProduct: number): string {
@@ -57,21 +90,21 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
     return detail?.clientStockDetailUnits.find(u => u.idUnit === idUnit)?.naUnit || '-';
   }
 
-  formatNumber(value: number) {
-    if(value === null || value === undefined) {
+  formatNumber(value: number): string {
+    if (value === null || value === undefined) {
       return '-';
     }
-    if(value < 0) {
-      value = 0;
+    let normalized = value;
+    if (normalized < 0) {
+      normalized = 0;
     }
-    if(this.quUnitDecimals) {
-    return this.currencyService.formatNumber(value);
-    } else {
-      return value.toString();
+    if (this.quUnitDecimals) {
+      return this.currencyService.formatNumber(normalized);
     }
+    return normalized.toString();
   }
 
-  formatDecimal(value: number) {
+  formatDecimal(value: number): string {
     return this.currencyService.formatNumber(value);
   }
 
@@ -80,6 +113,52 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   }
 
   confirm(): void {
-    this.modalCtrl.dismiss(null, 'confirm');
+    const currency = this.monedaSeleccionadaPreview ?? undefined;
+    this.modalCtrl.dismiss({ monedaSeleccionada: currency }, 'confirm');
+  }
+
+  private async initCurrencyUi(): Promise<void> {
+    try {
+      await this.currencyService.setup(this.dbServ.getDatabase());
+      this.currencyModulePed = this.currencyService.getCurrencyModule('ped');
+      this.localCurrency = this.currencyService.getLocalCurrency();
+      this.hardCurrency = this.currencyService.getHardCurrency();
+      this.monedaSeleccionadaPreview = this.resolveDefaultPedidosCurrency(this.empresaSeleccionada);
+    } finally {
+      this.previewReady = true;
+    }
+  }
+
+  private computeDisableOrderButton(): boolean {
+    if (this.inventariosLogicService.inventarioSent) {
+      return true;
+    }
+    for (const product of this.productsSuggested) {
+      for (const unit of product.unitsSuggested) {
+        if (unit.quUnitSuggested && unit.quUnitSuggested > 0) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private resolveDefaultPedidosCurrency(enterprise: Enterprise): CurrencyEnterprise | null {
+    if (!enterprise?.idEnterprise) {
+      return this.currencyService.getLocalCurrency();
+    }
+    if (!this.currencyService.multimoneda) {
+      return this.currencyService.getLocalCurrency();
+    }
+    if (this.isCurrencyModuleEnabled() && this.currencyModulePed.idModule > 0) {
+      return this.currencyModulePed.localCurrencyDefault
+        ? this.currencyService.getLocalCurrency()
+        : this.currencyService.getHardCurrency();
+    }
+    return this.currencyService.getCurrency(enterprise.coCurrencyDefault);
+  }
+
+  private isCurrencyModuleEnabled(): boolean {
+    return this.config.get('currencyModule').toLocaleLowerCase() === 'true';
   }
 }

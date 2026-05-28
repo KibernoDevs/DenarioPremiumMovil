@@ -1,7 +1,7 @@
 <div class="listado-product-structures" *ngIf="showProductList">
 
   <!--  Listado clickeable de productos  -->
-  <div class="product-card product-structure-scroll2">
+  <ion-content class="product-card cardProduct">
     @if(noProductsAlertShown){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
@@ -9,17 +9,15 @@
       </ion-label>
     </ion-item>
     }
-    <ion-content>
     <ion-list class="espacioListasProductos">
       @for(product of productList; track product.idProduct; let i = $index){
-      @if(searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) ||
-      product.naProduct.toLowerCase().includes(searchText.toLowerCase())){
       <div class="product-structure-title" (click)="onSelectProductDev(product)">
         <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
         <ion-item button detail="false">
           <ion-label fixed class="fixedLabel contenedorImgMargin">
-            <img class="productImage" alt="" loading="lazy"
-              [src]="product.coProduct ? (imageServices.getImageObservable(product.coProduct) | async) : '../../../assets/images/nodisponible.png'" />
+            <ion-img class="productImage" alt="" loading="lazy"
+              [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct) ?? '../../../assets/images/nodisponible.png') : '../../../assets/images/nodisponible.png'">
+            </ion-img>
           </ion-label>
           <ion-label class="textList espaciotextoListaProduc">
             <p class="espacioentrelineas">{{ product.naProduct }}</p>
@@ -29,12 +27,10 @@
         </ion-item>
       </div>
       }
-      }
     </ion-list>
      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
       <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
-    </ion-infinite-scroll> 
-    </ion-content>
-  </div>
+    </ion-infinite-scroll>
+  </ion-content>
 
 </div>
