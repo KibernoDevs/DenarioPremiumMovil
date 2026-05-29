@@ -31,7 +31,7 @@
               </p>
               <p>
                 {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
-                {{list.daClientStock.replace('T', ' ') | date: "dd/MM/yyyy hh:mm:ss"}}
+                {{list.daClientStock.replace('T', ' ') | date: "dd/MM/yyyy"}}
               </p>
             </ion-label>
             @if (list.stDelivery == 3) {

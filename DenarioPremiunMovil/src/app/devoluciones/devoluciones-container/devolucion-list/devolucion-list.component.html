@@ -27,8 +27,7 @@
               <p *ngIf="return.stReturn === 3" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
                 {{this.tags.get('DENARIO_DEV_SENDED')}}</p> -->
               <p class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_DATE')}}: {{ return.daReturn | date:
-                "dd/MM/yyyy
-                hh:mm:ss" }}</p>
+                "dd/MM/yyyy" }}</p>
             </ion-label>
             <ion-button *ngIf="return.stDelivery === 3" (click)="showAlertDelete(return, i)" color="danger"><ion-icon
                 slot="icon-only" name="trash"></ion-icon></ion-button>
