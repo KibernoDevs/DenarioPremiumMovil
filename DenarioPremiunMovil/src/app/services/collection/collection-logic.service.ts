@@ -1143,6 +1143,8 @@ export class CollectionService {
 
     // Buscar el pago que genera el prepago automático
     let found = false;
+    let type = "";
+    let index = 0;
     for (const { arr, tipo } of tipos) {
       if (arr && arr.length > 0) {
         for (let i = 0; i < arr.length; i++) {
@@ -1156,12 +1158,18 @@ export class CollectionService {
           // Si cumple la condición de prepago automático
           if (!found && this.prepaidRangeAmount < exceso) {
             arr[i].anticipoPrepaid = true;
+            type = arr[i].type;
+            index = i;
             found = true;
             break;
           }
         }
       }
-      if (found) break;
+      if (found) {
+        this.setAutomatedPrepaid(type, index); // Marcar el primer pago que cumple la condición
+        break;
+      }
+
     }
   }
 
@@ -1699,12 +1707,20 @@ export class CollectionService {
 
   onCollectionValidToSave(valid: boolean) {
     console.log('returnLogicService: onReturnValid');
-    this.collectValidToSave.next(valid);
+      if (!valid) {
+      if (this.createAutomatedPrepaid)
+        this.collectValidToSave.next(this.createAutomatedPrepaid);
+    } else
+      this.collectValidToSave.next(valid);
   }
 
   onCollectionValidToSend(validToSend: boolean) {
     console.log('returnLogicService: onReturnValidToSend');
-    this.collectValidToSend.next(validToSend);
+    if (!validToSend) {
+      if (this.createAutomatedPrepaid)
+        this.collectValidToSend.next(this.createAutomatedPrepaid);
+    } else
+      this.collectValidToSend.next(validToSend);
   }
 
 
