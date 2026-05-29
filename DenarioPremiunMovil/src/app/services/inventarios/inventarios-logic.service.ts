@@ -1342,11 +1342,11 @@ getInvoicesDetailUnitsByIdProductUnit(dbServ: SQLiteObject, idProductUnits: numb
 }
 
 getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], coUnits: String[], idEnterprise: number, idClient: number, dateLastInventory: string) {
-let select = "select *  from return_details rd where id_return in "+
-"(SELECT r.id_return from returns r where r.id_type in "+
+let select = "select *  from return_details rd where co_return in "+
+"(SELECT r.co_return from returns r where r.id_type in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
-  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return > '"+dateLastInventory+"') "+
+  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return >= '"+dateLastInventory.substring(0, 10)+"') "+
 "and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN ('"+coUnits.join("','")+"')";
 
   return dbServ.executeSql(select, []).then(data => {
