@@ -897,10 +897,13 @@ export class CollectionService {
           //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
           if (this.documentSales[i].isSave) {
             let pos = this.documentSales[i].positionCollecDetails;
-            if (this.documentSales[i].inPaymentPartial) {
+            if (this.collection.collectionDetails[j].inPaymentPartial === true) {
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts = 0;
+              montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+                this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+                this.documentSalesBackup[i].nuAmountRetention +
+                this.documentSalesBackup[i].nuAmountRetention2;
             } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuBalance;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
@@ -4515,7 +4518,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           coCollection: res.rows.item(i).co_collection,
           coDocument: res.rows.item(i).co_document,
           idDocument: res.rows.item(i).id_document,
-          inPaymentPartial: res.rows.item(i).in_payment_partial,
+          inPaymentPartial: res.rows.item(i).in_payment_partial === "true" ? true : false,
           nuVoucherRetention: res.rows.item(i).nu_voucher_retention,
           nuAmountRetention: res.rows.item(i).nu_amount_retention,
           nuAmountRetention2: res.rows.item(i).nu_amount_retention2,

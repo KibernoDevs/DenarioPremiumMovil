@@ -1349,14 +1349,63 @@ export class CobrosGeneralComponent implements OnInit {
     }
 
     try {
+      const collectionDetails = Array.isArray(this.collectService.collection.collectionDetails)
+        ? this.collectService.collection.collectionDetails
+        : [];
+      const detailByDocumentId = new Map<number, CollectionDetail>(
+        collectionDetails.map(detail => [detail.idDocument, detail])
+      );
       const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
-      this.collectService.documentSales = deep.map(d => ({ ...d }));
-      this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
+      const deepWithPreservedFields = deep.map(documentSale => {
+        const detail = detailByDocumentId.get(documentSale.idDocument);
+        if (detail) {
+          this.preserveCollectionDetailFieldsInDocument(documentSale, detail);
+        }
+        return documentSale;
+      });
+
+      this.collectService.documentSales = deepWithPreservedFields.map(d => ({ ...d }));
+      this.collectService.documentSalesBackup = deepWithPreservedFields.map(d => ({ ...d }));
     } catch (e) {
-      this.collectService.documentSales = [...this.collectService.documentSalesView];
-      this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
+      const collectionDetails = Array.isArray(this.collectService.collection.collectionDetails)
+        ? this.collectService.collection.collectionDetails
+        : [];
+      const detailByDocumentId = new Map<number, CollectionDetail>(
+        collectionDetails.map(detail => [detail.idDocument, detail])
+      );
+      const shallowWithPreservedFields = this.collectService.documentSalesView.map(documentSale => {
+        const copy = { ...documentSale };
+        const detail = detailByDocumentId.get(copy.idDocument);
+        if (detail) {
+          this.preserveCollectionDetailFieldsInDocument(copy, detail);
+        }
+        return copy;
+      });
+
+      this.collectService.documentSales = [...shallowWithPreservedFields];
+      this.collectService.documentSalesBackup = [...shallowWithPreservedFields];
       console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
     }
+  }
+
+  private preserveCollectionDetailFieldsInDocument(documentSale: any, detail: CollectionDetail): void {
+    const fieldsToPreserve = [
+      'nuAmountPaid',
+      'nuAmountPaidConversion',
+      'inPaymentPartial',
+      'nuAmountRetention',
+      'nuAmountRetention2',
+      'nuAmountRetention2Conversion',
+      'nuAmountRetentionConversion',
+      'nuAmountRetentionIslrConversion',
+      'nuAmountRetentionIvaConversion',
+    ];
+
+    fieldsToPreserve.forEach(field => {
+      if (Object.prototype.hasOwnProperty.call(documentSale, field)) {
+        documentSale[field] = (detail as any)[field];
+      }
+    });
   }
 
   private syncPaymentConversionsForRateChange(): void {
