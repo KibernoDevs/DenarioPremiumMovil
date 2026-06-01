@@ -196,12 +196,23 @@ ion-modal.collectDiscounts {
 }
 
 .legend-button {
+  appearance: none;
+  -webkit-appearance: none;
   background: transparent;
   border: none;
+  box-shadow: none;
+  text-shadow: none;
   padding: 0;
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+.legend-button:focus,
+.legend-button:focus-visible,
+.legend-button:active {
+  outline: none;
+  box-shadow: none;
 }
 
 .legend-dot {
