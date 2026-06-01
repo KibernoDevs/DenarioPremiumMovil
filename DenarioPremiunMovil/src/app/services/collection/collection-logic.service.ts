@@ -873,7 +873,7 @@ export class CollectionService {
       || this.collection.stDelivery == null
       || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress);
 
-    if (preserveAmountsWithoutRecalc) {
+    if (preserveAmountsWithoutRecalc && this.collection.nuAmountPaid > 0) {
       const hasAmountPaid = this.collection.nuAmountPaid !== null
         && this.collection.nuAmountPaid !== undefined
         && !isNaN(Number(this.collection.nuAmountPaid));
