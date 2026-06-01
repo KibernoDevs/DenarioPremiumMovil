@@ -904,7 +904,10 @@ export class CollectionService {
             } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuBalance;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts = 0;
+              montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+                this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+                this.documentSalesBackup[i].nuAmountRetention +
+                this.documentSalesBackup[i].nuAmountRetention2;
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
@@ -1707,7 +1710,7 @@ export class CollectionService {
 
   onCollectionValidToSave(valid: boolean) {
     console.log('returnLogicService: onReturnValid');
-      if (!valid) {
+    if (!valid) {
       if (this.createAutomatedPrepaid)
         this.collectValidToSave.next(this.createAutomatedPrepaid);
     } else
