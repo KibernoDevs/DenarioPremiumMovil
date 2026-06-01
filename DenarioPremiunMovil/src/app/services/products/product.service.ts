@@ -80,6 +80,7 @@ export class ProductService {
   searchStructures = false; //flag para saber si se busca en todas las estructuras.
 
   MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por cada consulta a la base de datos (para evitar problemas de rendimiento)
+  private productSearchRequestId = 0;
 
   constructor() { }
 
@@ -755,8 +756,12 @@ export class ProductService {
     }
   }
 
-  getProductsSearchedByCoProductAndNaProductAndIdList(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, id_list: number, page: number) {
-    var database = dbServ;
+  getProductsSearchedByCoProductAndNaProductAndIdList(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, id_list: number, page: number): Promise<void> {
+    if (page === 0) {
+      this.productSearchRequestId++;
+    }
+    const requestId = this.productSearchRequestId;
+    const database = dbServ;
     const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
 
     const tokenClauses: string[] = [];
@@ -767,100 +772,123 @@ export class ProductService {
       params.push(pattern, pattern);
     }
 
-    // always filter by enterprise
     let whereClause = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
     params.push(idEnterprise);
 
-    // if a product structure selection exists, add it (numeric)
     if (this.psService && this.psService.idProductStructureList.length > 0) {
       whereClause += " AND p.id_product_structure IN (" + this.psService.idProductStructureList.map(() => '?').join(',') + ")";
       params.push(...this.psService.idProductStructureList);
     }
 
-    //limit and offset for pagination
-    var offset = page * this.MAX_ITEMS_PER_PAGE;
+    const offset = page * this.MAX_ITEMS_PER_PAGE;
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
 
-    let orderByClause = "ORDER BY " + this.getProductsOrderByClause();
-
-
+    const orderByClause = "ORDER BY " + this.getProductsOrderByClause();
     this.productList = [];
+
+    const mapRowsWithOppositeColumns = (result: any): void => {
+      if (requestId !== this.productSearchRequestId) {
+        return;
+      }
+      try {
+        for (let i = 0; i < result.rows.length; i++) {
+          const row = result.rows.item(i);
+          this.productList.push({
+            idProduct: row.id_product,
+            coProduct: row.co_product,
+            naProduct: row.na_product,
+            points: row.points,
+            txDescription: row.tx_description,
+            idList: row.id_list,
+            price: row.nu_price,
+            coCurrency: row.co_currency,
+            priceOpposite: row.nu_price_opposite,
+            coCurrencyOpposite: row.co_currency_opposite,
+            stock: row.qu_stock,
+            idEnterprise: row.id_enterprise,
+            coEnterprise: row.co_enterprise,
+            images: this.imageServices.mapImagesFiles.get(row.co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(row.co_product)?.[0],
+            typeStocks: undefined,
+            productUnitList: undefined,
+            idProductStructure: row.id_product_structure,
+            nuTax: row.nu_tax
+          });
+        }
+      } catch (error) {
+        this.productList = [];
+        console.log("[ProductService] Error al procesar productos.");
+        console.log(error);
+      }
+    };
+
+    const mapRowsWithCalculatedOpposite = (result: any): void => {
+      if (requestId !== this.productSearchRequestId) {
+        return;
+      }
+      try {
+        for (let i = 0; i < result.rows.length; i++) {
+          const row = result.rows.item(i);
+          this.productList.push({
+            idProduct: row.id_product,
+            coProduct: row.co_product,
+            naProduct: row.na_product,
+            points: row.points,
+            txDescription: row.tx_description,
+            idList: row.id_list,
+            price: row.nu_price,
+            coCurrency: row.co_currency,
+            priceOpposite: row.co_currency === this.currencyService.getLocalCurrency ?
+              this.currencyService.toHardCurrency(row.nu_price) :
+              this.currencyService.toLocalCurrency(row.nu_price),
+            coCurrencyOpposite: row.co_currency === this.currencyService.getLocalCurrency ?
+              this.currencyService.hardCurrency.coCurrency :
+              this.currencyService.localCurrency.coCurrency,
+            stock: row.qu_stock,
+            idEnterprise: row.id_enterprise,
+            coEnterprise: row.co_enterprise,
+            images: this.imageServices.mapImagesFiles.get(row.co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(row.co_product)?.[0],
+            typeStocks: undefined,
+            productUnitList: undefined,
+            idProductStructure: row.id_product_structure,
+            nuTax: row.nu_tax
+          });
+        }
+      } catch (error) {
+        this.productList = [];
+        console.log("[ProductService] Error al procesar productos.");
+        console.log(error);
+      }
+    };
+
+    const handleSearchError = (error: unknown): void => {
+      if (requestId !== this.productSearchRequestId) {
+        return;
+      }
+      this.productList = [];
+      console.log("[ProductService] Error al cargar productos.");
+      console.log(error);
+    };
+
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
+      const select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
         " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
-      return database.executeSql(select, params).then(result => {
-        for (let i = 0; i < result.rows.length; i++) {
-          this.productList.push({
-            idProduct: result.rows.item(i).id_product,
-            coProduct: result.rows.item(i).co_product,
-            naProduct: result.rows.item(i).na_product,
-            points: result.rows.item(i).points,
-            txDescription: result.rows.item(i).tx_description,
-            idList: result.rows.item(i).id_list,
-            price: result.rows.item(i).nu_price,
-            coCurrency: result.rows.item(i).co_currency,
-            priceOpposite: result.rows.item(i).nu_price_opposite,
-            coCurrencyOpposite: result.rows.item(i).co_currency_opposite,
-            stock: result.rows.item(i).qu_stock,
-            idEnterprise: result.rows.item(i).id_enterprise,
-            coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product)?.[0],
-            typeStocks: undefined,
-            productUnitList: undefined,
-            idProductStructure: result.rows.item(i).id_product_structure,
-            nuTax: result.rows.item(i).nu_tax
-          });
-        }
-      }
-      ).catch(e => {
-        this.productList = [];
-        console.log("[ProductService] Error al cargar productos.");
-        console.log(e);
-      })
-    } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
-        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
-        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
-      return database.executeSql(select, params).then(result => {
-        for (let i = 0; i < result.rows.length; i++) {
-          this.productList.push({
-            idProduct: result.rows.item(i).id_product,
-            coProduct: result.rows.item(i).co_product,
-            naProduct: result.rows.item(i).na_product,
-            points: result.rows.item(i).points,
-            txDescription: result.rows.item(i).tx_description,
-            idList: result.rows.item(i).id_list,
-            price: result.rows.item(i).nu_price,
-            coCurrency: result.rows.item(i).co_currency,
-            priceOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.toHardCurrency(result.rows.item(i).nu_price) :
-              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price),
-            coCurrencyOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency,
-            stock: result.rows.item(i).qu_stock,
-            idEnterprise: result.rows.item(i).id_enterprise,
-            coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product)?.[0],
-            typeStocks: undefined,
-            productUnitList: undefined,
-            idProductStructure: result.rows.item(i).id_product_structure,
-            nuTax: result.rows.item(i).nu_tax
-          });
-        }
-      }
-      ).catch(e => {
-        this.productList = [];
-        console.log("[ProductService] Error al cargar productos.");
-        console.log(e);
-      })
+      return database.executeSql(select, params)
+        .then(mapRowsWithOppositeColumns)
+        .catch(handleSearchError);
     }
+
+    const select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
+      "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
+      "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
+      "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
+      "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
+    return database.executeSql(select, params)
+      .then(mapRowsWithCalculatedOpposite)
+      .catch(handleSearchError);
   }
   getProductDetailByIdProduct(dbServ: SQLiteObject, idList: number, idProduct: number, coCurrency: string) {
     var database = dbServ;

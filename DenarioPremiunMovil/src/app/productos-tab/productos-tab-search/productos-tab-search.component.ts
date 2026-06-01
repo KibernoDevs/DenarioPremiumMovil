@@ -39,6 +39,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   productStructures: Boolean = false;
   disabledSearchButton: Boolean = false;
   showBackIcon = false;
+  private searchRequestId = 0;
   productStructuresSub: any;
   //searchSub: any;
   backButtonSub: any;
@@ -124,7 +125,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.onSearchTextChanged();
   }
 
-  onSearchClicked(event?: Event) {
+  async onSearchClicked(event?: Event): Promise<void> {
     event?.preventDefault();
     if (this.disabledSearchButton || this.searchText.trim().length === 0) {
       return;
@@ -135,47 +136,48 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       this.productStructureService.idProductStructureList = [];
     }
 
+    const requestId = ++this.searchRequestId;
     this.disabledSearchButton = true;
 
-    //Buscar en estructura de producto
-    this.message.showLoading();
-    if (this.pedido) {
-      //hay que filtrar por lista de precios si estamos en pedido
-      this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
-        this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
-        this.orderServ.monedaSeleccionada.coCurrency,
-        this.orderServ.listaSeleccionada.idList, 0).then(() => {
-          this.productService.onProductTabSearchClicked();
-          this.disabledSearchButton = false;
-          this.message.hideLoading();
-        });
-    } else {
-      if(this.devolucion && this.returnLogic.requeridedNroFactura) {
-        //si requeridedNroFactura es true, solo podemos mostrar los productos de esa factura.
-        console.log('Buscando productos por factura ');
-        this.productService.searchProductsByIdInvoiceAndSearchText(this.db.getDatabase(), this.returnLogic.newReturn.idInvoice, this.searchText).then(() => {
+    await this.message.showLoading();
+    try {
+      if (this.pedido) {
+        await this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
+          this.orderServ.monedaSeleccionada.coCurrency,
+          this.orderServ.listaSeleccionada.idList, 0);
+        if (requestId !== this.searchRequestId) {
+          return;
+        }
+        this.productService.onProductTabSearchClicked();
+      } else if (this.devolucion && this.returnLogic.requeridedNroFactura) {
+        await this.productService.searchProductsByIdInvoiceAndSearchText(
+          this.db.getDatabase(), this.returnLogic.newReturn.idInvoice, this.searchText);
+        if (requestId !== this.searchRequestId) {
+          return;
+        }
         this.returnLogic.validateReturnProductList = this.productService.productList;
         this.returnLogic.productsByInvoice.next(true);
-        this.message.hideLoading();
-        });
-        
-      }else{        
-      //busqueda normal sin filtrar por lista de precios ni factura
-        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-        this.searchText,
-        this.empresaSeleccionada.idEnterprise,
-        this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
-          this.productService.onProductTabSearchClicked();
-          this.disabledSearchButton = false;
-          this.message.hideLoading();
-        });   
-
+      } else {
+        await this.productService.getProductsSearchedByCoProductAndNaProduct(
+          this.db.getDatabase(),
+          this.searchText,
+          this.empresaSeleccionada.idEnterprise,
+          this.empresaSeleccionada.coCurrencyDefault, 0);
+        if (requestId !== this.searchRequestId) {
+          return;
+        }
+        this.productService.onProductTabSearchClicked();
+      }
+    } catch (error) {
+      console.error('[ProductosTabSearch] Error en búsqueda de productos.', error);
+    } finally {
+      if (requestId === this.searchRequestId) {
+        this.disabledSearchButton = false;
+        await this.message.hideLoading();
+      }
     }
-
   }
-}
-
-
 
   onBackClicked() {
     this.showBackIcon = false;
