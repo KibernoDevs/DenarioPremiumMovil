@@ -22,7 +22,7 @@
       </div>
     </ion-col>
 
-    @if (this.collectService.cobroValid) {
+    @if (this.collectService.collection.idClient > 0) {
     <ion-col size="6" size-sm="12" size-xs="12">
       <ion-col size="6" size-sm="12" size-xs="12">
         @if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_NEW ||

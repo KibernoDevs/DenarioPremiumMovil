@@ -122,16 +122,13 @@ export class CobrosGeneralComponent implements OnInit {
     } else {
       this.subscriptions.push(
         this.clientSelectorService.ClientChanged.subscribe(client => {
+          this.clientSelectorService.checkClient = false;
           this.collectService.client = client;
           this.collectService.initCollect = true;
-          this.collectService.newClient = client;
           this.collectService.changeClient = true;
           this.collectService.onChangeClient = true;
-          this.collectService.client = this.collectService.newClient;
-          this.collectService.newClient = {} as Client;
-          this.setClientfromSelector(this.collectService.client);
-          this.collectService.cobroValid = false;
-          this.reset(client);
+          this.collectService.cobroValid = true;
+          void this.reset(client);
         }),
         this.adjuntoService.AttachmentChanged.subscribe(() => {
           this.setChangesMade(true);
@@ -851,29 +848,35 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   setClientfromSelector(client: Client) {
-    if (client != undefined) {
-      //SI ES LA PRIMERA VEZ
-      if (this.collectService.collection.idClient == 0 && client.idClient != this.collectService.collection.idClient) {
-        this.clientSelectorService.checkClient = true;
-        this.collectService.client = client;
-        this.collectService.cobroValid = true;
-        this.collectService.nameClient = client.lbClient;
-        this.collectService.collection.idClient = client.idClient;
-        this.collectService.collection.coClient = client.coClient;
-        this.collectService.collection.lbClient = client.lbClient;
-        this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
-        this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
-        this.collectService.collection.daCollection = this.dateCollect;
-        //this.collectService.currencySelected = client.coCurrency;
-
-        this.loadData();
-      } else {
-        //SE CAMBIO CLIENTE
-
-      }
-    } else {
+    if (client == undefined) {
       console.log("client vacio");
       this.collectService.nameClient = "";
+      return;
+    }
+
+    // Si ya está seleccionado el mismo cliente, no hacer nada.
+    if (client.idClient == this.collectService.collection.idClient) {
+      return;
+    }
+
+    // SI ES LA PRIMERA VEZ
+    if (this.collectService.collection.idClient == 0) {
+      this.clientSelectorService.checkClient = true;
+      this.collectService.client = client;
+      this.collectService.cobroValid = true;
+      this.collectService.nameClient = client.lbClient;
+      this.collectService.collection.idClient = client.idClient;
+      this.collectService.collection.coClient = client.coClient;
+      this.collectService.collection.lbClient = client.lbClient;
+      this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
+      this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
+      this.collectService.collection.daCollection = this.dateCollect;
+      this.loadData();
+    } else {
+      // SE CAMBIO CLIENTE (incluye selección desde resultados del buscador)
+      this.clientSelectorService.checkClient = false;
+      this.collectService.cobroValid = true;
+      void this.reset(client);
     }
   }
 
