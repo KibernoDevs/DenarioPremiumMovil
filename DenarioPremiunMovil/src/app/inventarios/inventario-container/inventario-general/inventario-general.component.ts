@@ -210,7 +210,7 @@ export class InventarioGeneralComponent implements OnInit {
               if (clientStock != undefined) {
                 this.daClientStock = '';
                 if (clientStock.clientStockDetails.length == 0) {
-                  this.message.hideLoading();                  
+                  this.message.hideLoading();
                 }
 
                 for (var i = 0; i < this.inventariosLogicService.listaEmpresa.length; i++) {
@@ -301,17 +301,48 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   onEnterpriseSelect() {
+    const enterprise = this.inventariosLogicService.empresaSeleccionada;
+
+    this.reiniciarInventarioPorEnterprise(enterprise);
+
+  }
+
+  private reiniciarInventarioPorEnterprise(enterprise: Enterprise) {
     this.inventariosLogicService.onStockValidToSave(false);
     this.inventariosLogicService.onStockValidToSend(false);
     this.inventariosLogicService.onClientStockValid(false);
-    this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise);
+    this.inventariosLogicService.initClientStockDetails();
+
+    this.inventariosLogicService.empresaSeleccionada = enterprise;
+    this.inventariosLogicService.enterpriseClientStock = enterprise;
     this.inventariosLogicService.cliente = {} as Client;
     this.inventariosLogicService.nombreCliente = "";
     this.inventariosLogicService.clientStockValid = false;
-    this.inventariosLogicService.isEdit = true;
-    this.inventariosLogicService.newClientStock.idEnterprise = this.inventariosLogicService.empresaSeleccionada.idEnterprise;
-    this.inventariosLogicService.newClientStock.coEnterprise = this.inventariosLogicService.empresaSeleccionada.coEnterprise;
-    this.orderServ.empresaSeleccionada = this.inventariosLogicService.empresaSeleccionada;
+    this.inventariosLogicService.selectedClient = false;
+    this.inventariosLogicService.newClientStock.idEnterprise = enterprise.idEnterprise;
+    this.inventariosLogicService.newClientStock.coEnterprise = enterprise.coEnterprise;
+    this.inventariosLogicService.newClientStock.daClientStock = this.dateServ.hoyISOFullTime();
+    this.inventariosLogicService.newClientStock.txComment = "";
+    this.inventariosLogicService.newClientStock.daysSinceLast = 1;
+    this.inventariosLogicService.newClientStock.daysUntilNext = 1;
+
+    this.txComment = "";
+    this.daysSinceLastInventory = 1;
+    this.daysUntilNextInventory = 1;
+    this.daClientStock = this.inventariosLogicService.newClientStock.daClientStock;
+    this.coordenada = "";
+    this.changeClient = false;
+    this.cambieCLiente = false;
+
+    if (this.inventariosLogicService.userMustActivateGPS) {
+      this.geoServ.getCurrentPosition().then(coords => {
+        this.coordenada = coords;
+        this.inventariosLogicService.newClientStock.coordenada = coords;
+      });
+    }
+
+    this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
+    this.orderServ.empresaSeleccionada = enterprise;
     this.orderServ.setup();
 
   }
