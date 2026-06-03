@@ -428,7 +428,7 @@
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
                       {{ formatNum(orderServ.totalGlobalDc) }}
                     </ion-col>
-                  }                
+                  }
                   @if(showConversion && orderServ.totalGlobalDcConv > 0){
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_GLOBAL_DC")}} {{
@@ -437,7 +437,7 @@
                     </ion-col>
                   }
                 }
-               
+
                     <div *ngIf="orderServ.userCanSelectIVA">
                       <ion-grid>
                         <ion-row>
@@ -711,7 +711,7 @@
               <app-adjunto #selectorAdjunto></app-adjunto>
             </div>
 
-            @if(orderServ.order.stDelivery == 1 || orderServ.order.stDelivery == null){
+            @if(orderServ.order.stDelivery == DELIVERY_STATUS_NEW || orderServ.order.stDelivery == DELIVERY_STATUS_SAVED || orderServ.order.stDelivery == null){
             <ion-button class="btnEnter btnBorder pdf-button-green" shape="round" expand="block"
               (click)="createOrderSummaryPdf()" [disabled]="!canExportOrderSummaryPdf()">
               Generar PDF
