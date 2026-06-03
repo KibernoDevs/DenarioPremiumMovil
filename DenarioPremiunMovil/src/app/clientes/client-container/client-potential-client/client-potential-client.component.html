@@ -1,82 +1,76 @@
 <div class="client-potential-client">
-    <h3 class="ion-text-center">{{this.clientLogic.clientTags.get('CLI_POT_LISTADO')}}</h3>
-    <div>
-        <div class="sticky-searchbar">
-            <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
-                clear-icon="trash-bin" placeholder="{{this.clientLogic.clientTags.get('CLI_PLACEHOLDER')}}"
-                [debounce]="1000" (ionInput)="handleInput($event)">
-            </ion-searchbar>
-        </div>
-        <ion-grid>
-            <ion-row>
-                <ion-col class="" size="12" size-sm="12" size-xs="12">
-                    <ion-labe *ngIf="this.clientLogic.potentialClients.length == 0">
-                        <p> <span class="titulosBold">Aun no hay clientes potenciales</span> </p>
-                    </ion-labe>
-
-                    <ion-list *ngFor="let potentialClient of clientLogic.potentialClients;index as i" button
-                        detail="false">
-                        <div
-                            *ngIf="searchText === '' || potentialClient.naClient.toLowerCase().includes(searchText) || potentialClient.nuRif.toLowerCase().includes(searchText) || potentialClient.idClient.toString().includes(searchText)">
-                            <ion-item button detail="false" *ngIf="i<10*clientLogic.indice"
-                                (click)="openPotentialClientFunction(potentialClient)">
-                                <ion-label>
-                                    <p> <span
-                                            class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_CLIENTE')}}:</span>
-                                        {{potentialClient.naClient}}
-                                    </p>
-                                    <p> <span
-                                            class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_RIF')}}:</span>
-                                        {{potentialClient.nuRif}}
-                                    </p>
-                                    <p> <span
-                                            class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_REFERENCIA')}}:</span>
-                                        {{potentialClient.idClient}}
-                                    </p>
-                                    <p> <span
-                                            class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_TELEFONO')}}:</span>
-                                        {{potentialClient.nuPhone}}
-                                    </p>
-                                    <p> <span
-                                            class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_DIRECCION')}}:</span>
-                                        {{potentialClient.txAddress}}
-                                    </p>
-                                    <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == nuevo">
-                                        {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
-                                        {{this.clientLogic.clientTags.get('CLI_POT_GUARDADO')}}
-                                    </p>
-                                    <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == porEnviar">
-                                        {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
-                                        {{this.clientLogic.clientTags.get('CLI_POT_POR_ENVIAR')}}
-                                    </p>
-                                    <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == enviado">
-                                        {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
-                                        {{this.clientLogic.clientTags.get('CLI_POT_ENVIADO')}}
-                                    </p>
-                                </ion-label>
-
-                                <div slot="end" *ngIf="potentialClient.stPotentialClient != enviado">
-                                    <ion-button size="small" color="danger" (click)="deletePotentialClient(i)">
-                                        <ion-icon slot="icon-only" name="trash"></ion-icon>
-                                    </ion-button>
-                                </div>
-                                <ion-note slot="end" *ngIf="potentialClient.stPotentialClient == enviado">
-                                    <ion-icon class="icon-List-Client" name="chevron-forward-outline"></ion-icon>
-                                </ion-note>
-                            </ion-item>
-                        </div>
-                    </ion-list>
-                </ion-col>
-
-                <ion-col class="" size="12" size-sm="12" size-xs="12">
-                    <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
-                        <ion-infinite-scroll-content
-                            loadingText="{{this.clientLogic.clientTags.get('DENARIO_SCROLL_TEXT')}}"
-                            loadingSpinner="bubbles"></ion-infinite-scroll-content>
-                    </ion-infinite-scroll>
-                </ion-col>
-
-            </ion-row>
-        </ion-grid>
+  <!--     <h3 class="ion-text-center">{{this.clientLogic.clientTags.get('CLI_POT_LISTADO')}}</h3>
+ -->
+  <div>
+    <div class="sticky-searchbar">
+      <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
+        placeholder="{{this.clientLogic.clientTags.get('CLI_PLACEHOLDER')}}" [debounce]="1000"
+        (ionInput)="handleInput($event)">
+      </ion-searchbar>
     </div>
+    <ion-grid>
+      <ion-row>
+        <ion-col class="" size="12" size-sm="12" size-xs="12">
+          <ion-labe *ngIf="this.clientLogic.potentialClients.length == 0">
+            <p> <span class="titulosBold">Aun no hay clientes potenciales</span> </p>
+          </ion-labe>
+
+          <ion-list *ngFor="let potentialClient of clientLogic.potentialClients;index as i" button detail="false">
+            <div
+              *ngIf="searchText === '' || potentialClient.naClient.toLowerCase().includes(searchText) || potentialClient.nuRif.toLowerCase().includes(searchText) || potentialClient.idClient.toString().includes(searchText)">
+              <ion-item button detail="false" *ngIf="i<10*clientLogic.indice"
+                (click)="openPotentialClientFunction(potentialClient)">
+                <ion-label>
+                  <p> <span class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_CLIENTE')}}:</span>
+                    {{potentialClient.naClient}}
+                  </p>
+                  <p> <span class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_RIF')}}:</span>
+                    {{potentialClient.nuRif}}
+                  </p>
+                  <p> <span class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_REFERENCIA')}}:</span>
+                    {{potentialClient.idClient}}
+                  </p>
+                  <p> <span class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_TELEFONO')}}:</span>
+                    {{potentialClient.nuPhone}}
+                  </p>
+                  <p> <span class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_DIRECCION')}}:</span>
+                    {{potentialClient.txAddress}}
+                  </p>
+                  <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == nuevo">
+                    {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
+                    {{this.clientLogic.clientTags.get('CLI_POT_GUARDADO')}}
+                  </p>
+                  <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == porEnviar">
+                    {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
+                    {{this.clientLogic.clientTags.get('CLI_POT_POR_ENVIAR')}}
+                  </p>
+                  <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == enviado">
+                    {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
+                    {{this.clientLogic.clientTags.get('CLI_POT_ENVIADO')}}
+                  </p>
+                </ion-label>
+
+                <div slot="end" *ngIf="potentialClient.stPotentialClient != enviado">
+                  <ion-button size="small" color="danger" (click)="deletePotentialClient(i)">
+                    <ion-icon slot="icon-only" name="trash"></ion-icon>
+                  </ion-button>
+                </div>
+                <ion-note slot="end" *ngIf="potentialClient.stPotentialClient == enviado">
+                  <ion-icon class="icon-List-Client" name="chevron-forward-outline"></ion-icon>
+                </ion-note>
+              </ion-item>
+            </div>
+          </ion-list>
+        </ion-col>
+
+        <ion-col class="" size="12" size-sm="12" size-xs="12">
+          <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+            <ion-infinite-scroll-content loadingText="{{this.clientLogic.clientTags.get('DENARIO_SCROLL_TEXT')}}"
+              loadingSpinner="bubbles"></ion-infinite-scroll-content>
+          </ion-infinite-scroll>
+        </ion-col>
+
+      </ion-row>
+    </ion-grid>
+  </div>
 </div>
