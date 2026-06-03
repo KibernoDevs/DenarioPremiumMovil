@@ -184,7 +184,7 @@ export class ProductService {
     }
 
     const normalizedOrder = configuredOrder.toLowerCase();
-    const validOrderRegex = /^(na_product|co_product)$/i;
+    const validOrderRegex = /^(na_product|co_product|nu_priority)$/i;
 
     if (!validOrderRegex.test(normalizedOrder)) {
       return fallback;

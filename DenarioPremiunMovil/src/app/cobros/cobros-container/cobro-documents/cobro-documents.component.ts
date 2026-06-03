@@ -622,15 +622,20 @@ export class CobrosDocumentComponent implements OnInit {
           this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber((this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2)));
 
       // <-- ADD: inicializar displayAmountPaid para que el input muestre el valor al abrir
+
+        const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+          this.collectService.documentSaleOpen.nuAmountRetention2;
+
       if (this.collectService.isPaymentPartial) {
         this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
       } else {
+        const nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
         try {
-          this.centsAmountPaid = Math.round((this.collectService.documentSaleOpen.nuAmountPaid ?? 0) * factor);
+          this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
         } catch {
-          this.centsAmountPaid = Math.round((this.collectService.documentSaleOpen.nuAmountPaid ?? 0) * factor);
+          this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
         }
       }
@@ -1168,11 +1173,12 @@ export class CobrosDocumentComponent implements OnInit {
 
   partialPay(event: any) {
     this.collectService.isChangePaymentPartial = true;
+    this.collectService.isChangePaymentPartialPersistence = true;
     this.collectService.isPaymentPartial = event.target.checked;
     const factor = this.centsFactor();
     if (event.target.checked) {
-      if (!this.collectService.documentSaleOpen.isSave)
-        this.collectService.amountPaid = 0;
+      //if (!this.collectService.documentSaleOpen.isSave)
+      this.collectService.amountPaid = 0;
 
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
@@ -1210,6 +1216,8 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSaleOpen.daVoucher = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].daVoucher!;
 
       if (this.collectService.isPaymentPartial) {
+        const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+          this.collectService.documentSaleOpen.nuAmountRetention2;
         this.collectService.amountPaid = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountPaid;
         this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);

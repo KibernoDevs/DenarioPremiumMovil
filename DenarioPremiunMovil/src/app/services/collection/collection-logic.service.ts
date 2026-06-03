@@ -147,6 +147,7 @@ export class CollectionService {
   public isOpen: boolean = false;
   public isPaymentPartial: boolean = false;
   public isChangePaymentPartial: boolean = false;
+  public isChangePaymentPartialPersistence: boolean = false;
   public igtfDefault: boolean = false;
   public separateIgtf: boolean = false;
   public userMustActivateGPS: boolean = true; //si la pongo en false puedes entrar al clickear rapido
@@ -868,10 +869,12 @@ export class CollectionService {
     }
 
 
-    const preserveAmountsWithoutRecalc = this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
+    const preserveAmountsWithoutRecalc = !this.isChangePaymentPartialPersistence && (
+      this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
       || this.collection.stDelivery == this.COLLECT_STATUS_SENT
       || this.collection.stDelivery == null
-      || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress);
+      || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress)
+    );
 
     if (preserveAmountsWithoutRecalc && this.collection.nuAmountPaid > 0) {
       const hasAmountPaid = this.collection.nuAmountPaid !== null
