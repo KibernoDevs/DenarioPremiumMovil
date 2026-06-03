@@ -54,6 +54,14 @@ export class CobroPagosComponent implements OnInit {
   private debounceDelay = 2000;
   private ignoreInputMap: { [uid: string]: boolean } = {};
   private bankSearchTerms: Record<string, string> = {};
+  public bankPickerOpen = false;
+  public bankPickerTitle = '';
+  private bankPickerType = '';
+  private bankPickerIndex = 0;
+  private bankPickerSource: BankSearchSource = 'banks';
+  private bankPickerList: BankOption[] = [];
+  private bankPickerTarget: 'bankAccountSelected' | 'clientBankAccountSelected' = 'bankAccountSelected';
+  private bankPickerAction: 'selectBankAccount' | 'selectListBankAccount' = 'selectBankAccount';
 
 
   public alertButtons = [
@@ -133,6 +141,107 @@ export class CobroPagosComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  public openBankPicker(
+    title: string,
+    list: BankOption[] | null | undefined,
+    type: string,
+    index: number,
+    source: BankSearchSource,
+    target: 'bankAccountSelected' | 'clientBankAccountSelected',
+    action: 'selectBankAccount' | 'selectListBankAccount'
+  ): void {
+    this.bankPickerTitle = title;
+    this.bankPickerType = type;
+    this.bankPickerIndex = index;
+    this.bankPickerSource = source;
+    this.bankPickerTarget = target;
+    this.bankPickerAction = action;
+    this.bankPickerList = Array.isArray(list) ? list : [];
+    this.bankPickerOpen = true;
+  }
+
+  public closeBankPicker(): void {
+    const key = this.getActiveBankPickerKey();
+    if (key) {
+      this.clearBankSearch(key);
+    }
+    this.bankPickerOpen = false;
+  }
+
+  public onBankPickerSearch(value: string | null | undefined): void {
+    const key = this.getActiveBankPickerKey();
+    if (!key) return;
+    this.setBankSearchTerm(key, value ?? '');
+  }
+
+  public getActiveBankPickerKey(): string {
+    if (!this.bankPickerType) return '';
+    return this.getBankSearchKey(this.bankPickerType, this.bankPickerIndex, this.bankPickerSource);
+  }
+
+  public getActiveBankPickerOptions(): BankOption[] {
+    const key = this.getActiveBankPickerKey();
+    return this.getFilteredBanks(this.bankPickerList, key);
+  }
+
+  public selectBankPickerOption(option: any): void {
+    const pos = this.getPosCollectionPaymentByType(this.bankPickerType, this.bankPickerIndex);
+    if (pos < 0) return;
+
+    if (this.bankPickerTarget === 'clientBankAccountSelected') {
+      this.collectService.clientBankAccountSelected[pos] = option;
+    } else {
+      this.collectService.bankAccountSelected[pos] = option;
+    }
+
+    if (this.bankPickerAction === 'selectListBankAccount') {
+      this.selectListBankAccount(this.bankPickerIndex, this.bankPickerType);
+    } else {
+      this.selectBankAccount(this.bankPickerIndex, this.bankPickerType);
+    }
+
+    this.closeBankPicker();
+  }
+
+  public getSelectedBankDisplay(
+    type: string,
+    index: number,
+    target: 'bankAccountSelected' | 'clientBankAccountSelected'
+  ): string {
+    const pos = this.getPosCollectionPaymentByType(type, index);
+    if (pos < 0) {
+      return this.collectService.collectionTags.get('COB_SELECTOR') || 'Seleccionar';
+    }
+
+    const selected = target === 'clientBankAccountSelected'
+      ? this.collectService.clientBankAccountSelected?.[pos]
+      : this.collectService.bankAccountSelected?.[pos];
+
+    if (!selected) {
+      return this.collectService.collectionTags.get('COB_SELECTOR') || 'Seleccionar';
+    }
+
+    const bankName = selected.naBank ?? '';
+    const account = selected.nuAccount ?? '';
+    if (bankName && account) return `${bankName} - ${account}`;
+    return bankName || this.collectService.collectionTags.get('COB_SELECTOR') || 'Seleccionar';
+  }
+
+  private getPosCollectionPaymentByType(type: string, index: number): number {
+    switch (type) {
+      case 'pm':
+        return this.collectService.pagoMovil?.[index]?.posCollectionPayment ?? -1;
+      case 'ch':
+        return this.collectService.pagoCheque?.[index]?.posCollectionPayment ?? -1;
+      case 'de':
+        return this.collectService.pagoDeposito?.[index]?.posCollectionPayment ?? -1;
+      case 'tr':
+        return this.collectService.pagoTransferencia?.[index]?.posCollectionPayment ?? -1;
+      default:
+        return -1;
+    }
   }
 
   addTipoPago(type: string) {

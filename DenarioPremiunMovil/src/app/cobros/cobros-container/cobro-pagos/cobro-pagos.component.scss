@@ -85,6 +85,98 @@ $fondoLila: #430197;
   font-size: 13px;
 }
 
+.bank-selector-with-search {
+  height: auto;
+  border-radius: 14px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bank-selector-with-search .bank-search-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin: 0;
+}
+
+.bank-selector-with-search ion-select {
+  width: 100%;
+  min-height: 40px;
+}
+
+.bank-picker-trigger {
+  --inner-padding-end: 12px;
+  --padding-start: 12px;
+  min-height: 38px;
+  border-radius: 20px;
+}
+
+.bank-picker-trigger ion-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.bank-picker-body {
+  padding: 8px 12px 12px;
+}
+
+.bank-picker-modal ion-toolbar {
+  --min-height: 52px;
+}
+
+.bank-picker-title {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.bank-picker-close {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.bank-picker-body .bank-search-item {
+  margin: 2px 0 10px;
+}
+
+.bank-picker-body .bank-search-item ion-input {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  font-size: 0.95rem;
+}
+
+.bank-picker-list-wrap {
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.bank-picker-list-wrap ion-list {
+  margin: 0;
+}
+
+.bank-picker-list-wrap ion-item {
+  --min-height: 54px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.bank-picker-option-label {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.bank-picker-empty-label {
+  font-size: 0.95rem;
+  color: #666;
+}
+
 ion-select::part(icon) {
   content: url('/assets/images/flecha-down.svg');
   color: $colorLila;
@@ -116,6 +208,16 @@ ion-modal#eventModal {
   --min-width: 250px;
   --height: fit-content;
   --border-radius: 6px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+ion-modal#bankPickerModal {
+  --width: 90%;
+  --min-width: 250px;
+  --max-width: 560px;
+  --height: fit-content;
+  --max-height: 72vh;
+  --border-radius: 10px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
 
