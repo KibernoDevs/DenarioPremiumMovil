@@ -3,3 +3,13 @@
   --background: #59b02d !important;
   color: #fff !important;
 }
+
+.title-col {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.tituloModulosLargo {
+  font-size: clamp(0.94rem, 3.9vw, 1.14rem);
+}

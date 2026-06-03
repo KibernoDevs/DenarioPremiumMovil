@@ -239,8 +239,10 @@ export class ClientesHeaderComponent implements OnInit {
     } else if (this.clientLogic.clientDocumentSaleComponent) {
       this.clientLogic.showBackRoute('clientDocumentSaleComponent');
     } else if (this.clientLogic.clientPotentialClientComponent) {
+      this.clientLogic.setNombreModulo('CLI_NOMBRE_MODULO', 'Clientes');
       this.clientLogic.showBackRoute('clientPotentialClientComponent');
     } else if (this.clientLogic.clientNewPotentialClientComponent) {
+      this.clientLogic.setNombreModulo('CLI_NOMBRE_MODULO', 'Clientes');
       this.clientLogic.showBackRoute('clientNewPotentialClientComponent');
     } else if (this.clientLogic.clientLocationChanged) {
       this.clientLogic.saveOrExitOpen = true;

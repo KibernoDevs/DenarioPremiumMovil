@@ -171,7 +171,7 @@ INSERT INTO public.application_tags(
 	('CLI_SALDO', 'CLI', 'CLIENTES', 'ESP','Saldo'),
 	('CLI_EMPRESA', 'CLI', 'CLIENTES', 'ESP','Empresa'),
 	('CLI_POT_NOMBRE_MODULO','CLI','CLIENTES','ESP','Clientes'),
-	('CLI_POT_LISTADO','CLI','CLIENTES','ESP','Listado Cliente Potencial'),
+	('CLI_POT_LISTADO','CLI','CLIENTES','ESP','Clientes Potenciales'),
 	('CLI_POT_CLIENTE','CLI','CLIENTES','ESP','Cliente'),
 	('CLI_POT_RIF','CLI','CLIENTES','ESP','RIF'),
 	('CLI_POT_REFERENCIA','CLI','CLIENTES','ESP','Nro. Ref'),
@@ -242,7 +242,8 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_MONTO_DESCUENTO','CLI','CLIENTES','ESP','Monto Descuento'),
 	('CLI_DETAIL_MONTO_DESCUENTO_CONVERSION','CLI','CLIENTES','ESP','Monto Descuento Conversión'),
   ('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
-  ('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión');
+  ('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión'),
+  ('CLI_NEW_DETAIL_NOT_FOUND','CLI','CLIENTES','ESP','Aún no hay clientes potenciales');
 
 -- TAGS COBROS
 DELETE FROM public.application_tags WHERE co_module = 'COB';
@@ -515,7 +516,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
   ('INV_ACTIVIDADES_EXHIBICION','INV','INVENTARIO','ESP','Exhibición'),
   ('INV_ACTIVIDADES_DEPOSITO','INV','INVENTARIO','ESP','Depósito'),
   ('INV_ACTIVIDADES_ACCION','INV','INVENTARIO','ESP','Acción');
-  
+
 
 
 -- PRODUCTOS

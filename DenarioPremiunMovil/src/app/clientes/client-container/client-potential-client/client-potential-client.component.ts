@@ -16,10 +16,10 @@ import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 
 
 @Component({
-    selector: 'app-client-potential-client',
-    templateUrl: './client-potential-client.component.html',
-    styleUrls: ['./client-potential-client.component.scss'],
-    standalone: false
+  selector: 'app-client-potential-client',
+  templateUrl: './client-potential-client.component.html',
+  styleUrls: ['./client-potential-client.component.scss'],
+  standalone: false
 })
 export class PotentialClientComponent implements OnInit {
 
@@ -45,12 +45,15 @@ export class PotentialClientComponent implements OnInit {
     this.nuevo = CLIENT_POTENTIAL_STATUS_NEW;
     this.enviado = CLIENT_POTENTIAL_STATUS_SENT;
     this.porEnviar = CLIENT_POTENTIAL_STATUS_TO_SEND
+
+
   }
 
   ngOnInit() {
 
     this.searchText = "";
     this.clientLogic.getPotentialClient();
+    this.clientLogic.setNombreModulo('CLI_POT_LISTADO', 'Clientes');
 
   }
 

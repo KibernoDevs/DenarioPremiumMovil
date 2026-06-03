@@ -42,7 +42,7 @@ export class ClientListComponent implements OnInit {
   public indice!: number;
   public clientDetailComponent: Boolean = false;
   public precision = this.currencyService.precision;
-  scrollDisable =  false;
+  scrollDisable = false;
   private isSearching = false;
 
   public dateToday: Date = (() => {
@@ -64,6 +64,8 @@ export class ClientListComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.clientLogic.setNombreModulo('CLI_NOMBRE_MODULO', 'Clientes');
+
     this.clientLogic.clientListComponent = true;
     this.clientLogic.clienteNuevoBlancoImg = true;
     this.searchText = "";
@@ -76,21 +78,21 @@ export class ClientListComponent implements OnInit {
 
   onIonInfinite(ev: InfiniteScrollCustomEvent) {
     this.clientLogic.clientListPage++;
-    if(this.clientLogic.clientListSearchMode) {
+    if (this.clientLogic.clientListSearchMode) {
       this.clientLogic.searchClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.searchText).then(result => {
         this.onIonInfiniteFinish(ev, result);
       });
     } else {
-    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
-      this.onIonInfiniteFinish(ev, result);
-    });
-  }
+      this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
+        this.onIonInfiniteFinish(ev, result);
+      });
+    }
   }
 
   onIonInfiniteFinish(ev: InfiniteScrollCustomEvent, result: boolean) {
-      this.scrollDisable = result;
-      (ev as InfiniteScrollCustomEvent).target.complete();
-      this.clientLogic.message.hideLoading();
+    this.scrollDisable = result;
+    (ev as InfiniteScrollCustomEvent).target.complete();
+    this.clientLogic.message.hideLoading();
   }
   handleInput(event: any) {
     this.searchText = event.target.value.toLowerCase();
@@ -150,23 +152,23 @@ export class ClientListComponent implements OnInit {
     this.service.clientes = [] as Client[];
     this.clientLogic.clientListPage = 0;
     this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
-/*
-      if (this.currencyService.multimoneda) {
-        let saldoCliente = 0, saldoOpuesto = 0;
-        for (let c = 0; c < this.clientLogic.clients.length; c++) {
-          if (this.clientLogic.clients[c].coCurrency == this.clientLogic.localCurrency.coCurrency) {
-            saldoCliente = this.clientLogic.clients[c].saldo1 + this.currencyService.toLocalCurrency(this.clientLogic.clients[c].saldo2);
-            saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-          } else {
-            saldoCliente = this.clientLogic.clients[c].saldo1 + this.currencyService.toHardCurrency(this.clientLogic.clients[c].saldo2);
-            saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-          }
-          this.clientLogic.clients[c].saldo1 = saldoCliente;
-          this.clientLogic.clients[c].saldo2 = saldoOpuesto;
-          saldoCliente = saldoOpuesto = 0;
-        }
-      }
-        */
+      /*
+            if (this.currencyService.multimoneda) {
+              let saldoCliente = 0, saldoOpuesto = 0;
+              for (let c = 0; c < this.clientLogic.clients.length; c++) {
+                if (this.clientLogic.clients[c].coCurrency == this.clientLogic.localCurrency.coCurrency) {
+                  saldoCliente = this.clientLogic.clients[c].saldo1 + this.currencyService.toLocalCurrency(this.clientLogic.clients[c].saldo2);
+                  saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+                } else {
+                  saldoCliente = this.clientLogic.clients[c].saldo1 + this.currencyService.toHardCurrency(this.clientLogic.clients[c].saldo2);
+                  saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
+                }
+                this.clientLogic.clients[c].saldo1 = saldoCliente;
+                this.clientLogic.clients[c].saldo2 = saldoOpuesto;
+                saldoCliente = saldoOpuesto = 0;
+              }
+            }
+              */
       this.service.clientes = this.clientLogic.clients;
     })
   }
