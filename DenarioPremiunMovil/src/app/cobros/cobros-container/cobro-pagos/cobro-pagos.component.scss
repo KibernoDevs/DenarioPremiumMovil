@@ -75,6 +75,16 @@ $fondoLila: #430197;
   display: none !important;
 }
 
+.bank-search-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin: 4px 0 6px;
+}
+
+.bank-search-item ion-input {
+  font-size: 13px;
+}
+
 ion-select::part(icon) {
   content: url('/assets/images/flecha-down.svg');
   color: $colorLila;

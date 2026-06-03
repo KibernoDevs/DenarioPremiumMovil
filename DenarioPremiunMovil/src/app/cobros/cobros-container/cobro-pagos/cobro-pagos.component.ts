@@ -13,6 +13,15 @@ import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 
+type BankSearchSource = 'banks' | 'accounts' | 'clientAccounts';
+
+interface BankOption {
+  naBank?: string | null;
+  nuAccount?: string | null;
+  coBank?: string | number | null;
+  coAccount?: string | number | null;
+}
+
 @Component({
   selector: 'app-cobro-pagos',
   templateUrl: './cobro-pagos.component.html',
@@ -44,6 +53,7 @@ export class CobroPagosComponent implements OnInit {
   private debounceTimers: { [uid: string]: any } = {};
   private debounceDelay = 2000;
   private ignoreInputMap: { [uid: string]: boolean } = {};
+  private bankSearchTerms: Record<string, string> = {};
 
 
   public alertButtons = [
@@ -85,6 +95,44 @@ export class CobroPagosComponent implements OnInit {
   trackByIndex(index: number, item: any) {
     if (!item) return index;
     return item.id ?? item.coCollection ?? item.__amountUid ?? index;
+  }
+
+  public getBankSearchKey(type: string, index: number, source: BankSearchSource): string {
+    return `${type}-${index}-${source}`;
+  }
+
+  public getBankSearchTerm(key: string): string {
+    return this.bankSearchTerms[key] ?? '';
+  }
+
+  public setBankSearchTerm(key: string, value: string | null | undefined): void {
+    this.bankSearchTerms[key] = value ?? '';
+  }
+
+  public clearBankSearch(key: string): void {
+    delete this.bankSearchTerms[key];
+  }
+
+  public getFilteredBanks<T extends BankOption>(bankList: T[] | null | undefined, key: string): T[] {
+    if (!Array.isArray(bankList)) return [];
+
+    const searchTerm = this.normalizeBankSearchTerm(this.bankSearchTerms[key]);
+    if (!searchTerm) return bankList;
+
+    return bankList.filter(bank => this.matchesBankSearch(bank, searchTerm));
+  }
+
+  private matchesBankSearch(bank: BankOption, searchTerm: string): boolean {
+    const searchableValues = [bank.naBank, bank.nuAccount, bank.coBank, bank.coAccount];
+    return searchableValues.some(value => this.normalizeBankSearchTerm(value).includes(searchTerm));
+  }
+
+  private normalizeBankSearchTerm(value: unknown): string {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 
   addTipoPago(type: string) {

@@ -209,13 +209,20 @@
 
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
+              <ion-item class="bank-search-item">
+                <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text"
+                  [clearInput]="true" [value]="getBankSearchTerm(getBankSearchKey('pm', pm, 'banks'))"
+                  (ionInput)="setBankSearchTerm(getBankSearchKey('pm', pm, 'banks'), $event.detail.value)">
+                </ion-input>
+              </ion-item>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoMovil[pm].posCollectionPayment]"
-                    (ionChange)="selectBankAccount(pm, 'pm')" interface="alert" labelPlacement="stacked">
-                    @for (bank of this.collectService.listBanks; track trackByIndex($index, bank)) {
+                    (ionChange)="selectBankAccount(pm, 'pm'); clearBankSearch(getBankSearchKey('pm', pm, 'banks'))"
+                    interface="alert" labelPlacement="stacked">
+                    @for (bank of getFilteredBanks(this.collectService.listBanks, getBankSearchKey('pm', pm, 'banks')); track trackByIndex($index, bank)) {
                     <ion-select-option [value]="bank">{{ bank.naBank }}
                     </ion-select-option>
                     }
@@ -226,13 +233,20 @@
 
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
+              <ion-item class="bank-search-item">
+                <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text"
+                  [clearInput]="true" [value]="getBankSearchTerm(getBankSearchKey('pm', pm, 'accounts'))"
+                  (ionInput)="setBankSearchTerm(getBankSearchKey('pm', pm, 'accounts'), $event.detail.value)">
+                </ion-input>
+              </ion-item>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoMovil[pm].posCollectionPayment]"
-                    (ionChange)="selectListBankAccount(pm, 'pm')" interface="alert" labelPlacement="stacked">
-                    @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
+                    (ionChange)="selectListBankAccount(pm, 'pm'); clearBankSearch(getBankSearchKey('pm', pm, 'accounts'))"
+                    interface="alert" labelPlacement="stacked">
+                    @for (listBankAccount of getFilteredBanks(this.collectService.listBankAccounts, getBankSearchKey('pm', pm, 'accounts')); track trackByIndex($index,
                     listBankAccount)) {
                     <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
                       {{listBankAccount.nuAccount}}
@@ -321,13 +335,20 @@
           <div class="ion-padding" slot="content">
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
+              <ion-item class="bank-search-item">
+                <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text"
+                  [clearInput]="true" [value]="getBankSearchTerm(getBankSearchKey('ch', ch, 'banks'))"
+                  (ionInput)="setBankSearchTerm(getBankSearchKey('ch', ch, 'banks'), $event.detail.value)">
+                </ion-input>
+              </ion-item>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoCheque[ch].posCollectionPayment] "
-                    (ionChange)="selectBankAccount(ch,'ch')" interface="alert" labelPlacement="stacked">
-                    @for (bank of this.collectService.listBanks; track trackByIndex($index, bank)) {
+                    (ionChange)="selectBankAccount(ch,'ch'); clearBankSearch(getBankSearchKey('ch', ch, 'banks'))"
+                    interface="alert" labelPlacement="stacked">
+                    @for (bank of getFilteredBanks(this.collectService.listBanks, getBankSearchKey('ch', ch, 'banks')); track trackByIndex($index, bank)) {
                     <ion-select-option [value]="bank">{{ bank.naBank }}
                     </ion-select-option>
                     }
@@ -447,13 +468,20 @@
           <div class="ion-padding" slot="content">
             <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
             <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item class="bank-search-item">
+                <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text"
+                  [clearInput]="true" [value]="getBankSearchTerm(getBankSearchKey('de', de, 'accounts'))"
+                  (ionInput)="setBankSearchTerm(getBankSearchKey('de', de, 'accounts'), $event.detail.value)">
+                </ion-input>
+              </ion-item>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoDeposito[de].posCollectionPayment] "
-                    (ionChange)="selectBankAccount(de, 'de')" interface="alert" labelPlacement="stacked">
-                    @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
+                    (ionChange)="selectBankAccount(de, 'de'); clearBankSearch(getBankSearchKey('de', de, 'accounts'))"
+                    interface="alert" labelPlacement="stacked">
+                    @for (listBankAccount of getFilteredBanks(this.collectService.listBankAccounts, getBankSearchKey('de', de, 'accounts')); track trackByIndex($index,
                     listBankAccount)) {
                     <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
                       {{listBankAccount.nuAccount}}
@@ -543,13 +571,20 @@
             <!-- clientBankAccount -->
             <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.clientBankAccount">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
+              <ion-item class="bank-search-item">
+                <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text"
+                  [clearInput]="true" [value]="getBankSearchTerm(getBankSearchKey('tr', tr, 'clientAccounts'))"
+                  (ionInput)="setBankSearchTerm(getBankSearchKey('tr', tr, 'clientAccounts'), $event.detail.value)">
+                </ion-input>
+              </ion-item>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
-                    (ionChange)="selectBankAccount(tr,'tr')" interface="alert" labelPlacement="stacked">
-                    @for (bank of this.collectService.clientBankAccounts; track trackByIndex($index, bank)) {
+                    (ionChange)="selectBankAccount(tr,'tr'); clearBankSearch(getBankSearchKey('tr', tr, 'clientAccounts'))"
+                    interface="alert" labelPlacement="stacked">
+                    @for (bank of getFilteredBanks(this.collectService.clientBankAccounts, getBankSearchKey('tr', tr, 'clientAccounts')); track trackByIndex($index, bank)) {
                     <ion-select-option [value]="bank">{{ bank.naBank }} - {{bank.nuAccount}}
                     </ion-select-option>
                     }
@@ -568,13 +603,20 @@
             <!-- clientBankAccount -->
 
             <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
+            <ion-item class="bank-search-item">
+              <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text" [clearInput]="true"
+                [value]="getBankSearchTerm(getBankSearchKey('tr', tr, 'accounts'))"
+                (ionInput)="setBankSearchTerm(getBankSearchKey('tr', tr, 'accounts'), $event.detail.value)">
+              </ion-input>
+            </ion-item>
             <ion-item>
               <div class="listado-enterprise-selector ion-text-center">
                 <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                   class="ion-text-center always-flip"
                   [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
-                  (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert" labelPlacement="stacked">
-                  @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
+                  (ionChange)="selectListBankAccount(tr, 'tr'); clearBankSearch(getBankSearchKey('tr', tr, 'accounts'))"
+                  interface="alert" labelPlacement="stacked">
+                  @for (listBankAccount of getFilteredBanks(this.collectService.listBankAccounts, getBankSearchKey('tr', tr, 'accounts')); track trackByIndex($index,
                   listBankAccount)) {
                   <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
                     {{listBankAccount.nuAccount}}
