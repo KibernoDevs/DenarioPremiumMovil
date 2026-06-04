@@ -905,15 +905,15 @@ export class CollectionService {
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
               montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
                 this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                this.documentSalesBackup[i].nuAmountRetention +
-                this.documentSalesBackup[i].nuAmountRetention2;
+                this.collection.collectionDetails[pos].nuAmountRetention +
+                this.collection.collectionDetails[pos].nuAmountRetention2;
             } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuBalance;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
               montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
                 this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                this.documentSalesBackup[i].nuAmountRetention +
-                this.documentSalesBackup[i].nuAmountRetention2;
+                this.collection.collectionDetails[pos].nuAmountRetention +
+                this.collection.collectionDetails[pos].nuAmountRetention2;
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
