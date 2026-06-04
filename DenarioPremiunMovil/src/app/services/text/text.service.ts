@@ -57,5 +57,9 @@ export class TextService {
     return `*${pattern}*`;
 }
 
+//Check if a string is null, undefined, empty, or only whitespace, or says "null" or "undefined" (case-insensitive)
+isNull(str: string | null | undefined): boolean {
+  return str == null || /^\s*$/.test(str) || /^(null|undefined)$/i.test(str); 
+}
 
 }
