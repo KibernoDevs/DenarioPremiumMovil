@@ -58,7 +58,7 @@ export class PedidosDbService {
   getOrderTypes(db: SQLiteObject, coEnterprise: string) {
     let query = "SELECT id_order_type as idOrderType, co_order_type as coOrderType, na_order_type as naOrderType, " +
       "default_value as defaultValue, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
-      "items_limit as itemsLimit, qu_items as quItems " +
+      "items_limit as itemsLimit, qu_items as quItems, id_iva_list as idIvaList " +
       "from order_types where co_enterprise = ? order by default_value DESC";
 
     return db.executeSql(query, [coEnterprise]).then(data => {
@@ -68,6 +68,7 @@ export class PedidosDbService {
         row.defaultValue = !!row.defaultValue;
         row.itemsLimit = !!row.itemsLimit;
         row.quItems = Number(row.quItems ?? 0);
+        row.idIvaList = row.idIvaList == null ? null : Number(row.idIvaList);
         list.push(row);
       }
       return list;
@@ -288,7 +289,11 @@ export class PedidosDbService {
     return db.executeSql(query, []).then(data => {
       let list: IvaList[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i) as IvaList;
+        row.idIvaList = Number(row.idIvaList);
+        row.priceIva = Number(row.priceIva);
+        row.defaultIVA = !!row.defaultIVA;
+        list.push(row);
       }
       return list;
     });

@@ -114,7 +114,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 9;
+  private CURRENT_DB_VERSION: number = 10;
 
   constructor(
     private navController: NavController,
@@ -1179,19 +1179,21 @@ export class SynchronizationDBService {
 
   insertOrderTypeBatch(arr: OrderType[]) {
     let insertStatement = "INSERT OR REPLACE INTO order_types(" +
-      'id_order_type,co_order_type,na_order_type,default_value,co_enterprise,items_limit,qu_items' +
+      'id_order_type,co_order_type,na_order_type,default_value,co_enterprise,items_limit,qu_items,id_iva_list' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?)'
 
     var statements = [];
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      const row = obj as OrderType & { id_iva_list?: number | null };
+      const idIvaListResolved = row.idIvaList ?? row.id_iva_list ?? null;
       const itemsLimitRaw = obj.itemsLimit as boolean | number | string | undefined;
       const itemsLimitFlag = itemsLimitRaw === true || itemsLimitRaw === 1 || itemsLimitRaw === '1';
       const defaultValRaw = obj.defaultValue as boolean | number | string | undefined;
       const defaultFlag = defaultValRaw === true || defaultValRaw === 1 || defaultValRaw === '1';
       statements.push([insertStatement, [obj.idOrderType, obj.coOrderType, obj.naOrderType,
-      defaultFlag ? 1 : 0, obj.coEnterprise, itemsLimitFlag ? 1 : 0, obj.quItems ?? 0]]);
+      defaultFlag ? 1 : 0, obj.coEnterprise, itemsLimitFlag ? 1 : 0, obj.quItems ?? 0, idIvaListResolved]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

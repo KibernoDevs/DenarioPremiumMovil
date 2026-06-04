@@ -1,0 +1,6 @@
+[
+    {
+        "sql": "ALTER TABLE order_types ADD COLUMN id_iva_list INTEGER;",
+        "description": "Se agrega la columna 'id_iva_list' a 'order_types' para vincular el tipo de pedido con una lista de IVA."
+    }
+]

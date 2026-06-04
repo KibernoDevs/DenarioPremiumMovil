@@ -104,6 +104,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       })
     );
 
+    this.subs.add(
+      this.orderServ.orderTypeIvaChanged$.subscribe(() => {
+        if (this.modoLista === 'carrito') {
+          this.cd.markForCheck();
+          return;
+        }
+        if (this.productList?.length) {
+          this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+        }
+        this.cd.markForCheck();
+      })
+    );
+
     this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
       this.searchText = value;
     });
@@ -608,6 +621,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
     // numeric string vs number
     return (o1 != null && o2 != null && Number(o1) === Number(o2));
+  }
+
+  compareIvaPrice(a: number | string, b: number | string): boolean {
+    return Number(a) === Number(b);
   }
 
   /*
