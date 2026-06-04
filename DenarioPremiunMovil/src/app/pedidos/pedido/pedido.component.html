@@ -711,7 +711,7 @@
               <app-adjunto #selectorAdjunto></app-adjunto>
             </div>
 
-            @if(orderServ.order.stDelivery == DELIVERY_STATUS_NEW || orderServ.order.stDelivery == DELIVERY_STATUS_SAVED || orderServ.order.stDelivery == null){
+            @if(orderServ.order.stDelivery == DELIVERY_STATUS_SENT || orderServ.order.stDelivery == DELIVERY_STATUS_SAVED || orderServ.order.stDelivery == null){
             <ion-button class="btnEnter btnBorder pdf-button-green" shape="round" expand="block"
               (click)="createOrderSummaryPdf()" [disabled]="!canExportOrderSummaryPdf()">
               Generar PDF

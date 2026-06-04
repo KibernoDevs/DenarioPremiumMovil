@@ -623,14 +623,18 @@ export class CobrosDocumentComponent implements OnInit {
 
       // <-- ADD: inicializar displayAmountPaid para que el input muestre el valor al abrir
 
-        const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
-          this.collectService.documentSaleOpen.nuAmountRetention2;
+      const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+        this.collectService.documentSaleOpen.nuAmountRetention2;
 
       if (this.collectService.isPaymentPartial) {
         this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
       } else {
-        const nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
+        let nuAmountPaidNet;
+        if (this.collectService.collection.stDelivery == 3)
+          nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0);
+        else
+          nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
         try {
           this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
