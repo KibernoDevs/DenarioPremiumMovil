@@ -155,8 +155,11 @@ export class InventarioGeneralComponent implements OnInit {
     this.inventariosLogicService.initInventario = false;
     this.inventariosLogicService.cliente = {} as Client;
 
-    if (this.cambieCLiente)
+    if (this.cambieCLiente){
       this.inventariosLogicService.cliente = this.newClient;
+      this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
+
+    }
 
     this.message.showLoading().then(() => {
       this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
@@ -164,7 +167,7 @@ export class InventarioGeneralComponent implements OnInit {
         if (!this.inventariosLogicService.inventarioSent) {
           //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
           //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
-          this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
+          this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
           /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
             this.inventariosLogicService.client = client;
             this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
@@ -341,7 +344,7 @@ export class InventarioGeneralComponent implements OnInit {
       });
     }
 
-    this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
+    this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
     this.orderServ.empresaSeleccionada = enterprise;
     this.orderServ.setup();
 
