@@ -411,7 +411,8 @@ INSERT INTO public.application_tags(
   ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono'),
   ('COB_DESCUENTO', 'COB', 'COBROS', 'ESP', 'Monto descuento'),
   ('COB_IVA', 'COB', 'COBROS', 'ESP', 'Monto IVA'),
-  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total');
+  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total'),
+  ('COB_RESET_ENTERPRISE_CONFIRMA', 'COB', 'COBROS', 'ESP','Se ha detectado cambio del empresa por lo que deberá iniciar nuevamente la transacción.');
 
 
 

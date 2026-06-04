@@ -1198,7 +1198,7 @@ export class CobrosGeneralComponent implements OnInit {
     if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0 || this.collectService.nameClient != "") {
       this.collectService.alertMessageChangeEnterprise = true;
 
-      this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
+      this.collectService.mensaje = this.collectService.collectionTags.get('COB_RESET_ENTERPRISE_CONFIRMA')!;
     } else {
       this.collectService.cobroValid = false;
       this.collectService.changeClient = false;
