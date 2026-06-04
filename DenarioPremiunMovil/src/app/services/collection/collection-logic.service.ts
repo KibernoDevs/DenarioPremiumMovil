@@ -901,8 +901,8 @@ export class CollectionService {
           if (this.documentSales[i].isSave) {
             let pos = this.documentSales[i].positionCollecDetails;
             if (this.collection.collectionDetails[j].inPaymentPartial === true) {
-              monto += this.documentSalesBackup[i].nuAmountPaid;
-              montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
+              monto += this.collection.collectionDetails[pos].nuAmountPaid;
+              montoConversion += this.convertirMonto(this.collection.collectionDetails[pos].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
               montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
                 this.collection.collectionDetails[pos].nuAmountCollectDiscount +
                 this.collection.collectionDetails[pos].nuAmountRetention +
