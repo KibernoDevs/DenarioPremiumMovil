@@ -376,18 +376,24 @@ export class VisitaComponent implements OnInit {
       //en este caso no se puede continuar si no hay coordenadas
       this.geoServ.getCurrentPosition().then(coords => {
         if (coords.length > 0) {
+          const fechaInicio = this.dateServ.hoyISOFullTime();
+          this.fechaVisita = fechaInicio;
+          this.fechaInitial = fechaInicio;
 
           this.segment = 'actividades';
+          this.setCoordinates(coords);
         } else {
           console.log("no hay coordenadas, locacion debe estar inactiva");
           this.initialLock = true;
           this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
           this.initVisitRedLabel = true;
         }
-        this.setCoordinates(coords);
       });
     } else {
       //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.
+      const fechaInicio = this.dateServ.hoyISOFullTime();
+      this.fechaVisita = fechaInicio;
+      this.fechaInitial = fechaInicio;
       this.initialLock = false;
       this.segment = 'actividades';
       this.geoServ.getCurrentPosition().then(coords => {
@@ -753,7 +759,7 @@ export class VisitaComponent implements OnInit {
   }
 
   saveEvent() {
-    
+
   if (this.actividadSeleccionada) {
 
     let saveEvent = false;
