@@ -993,6 +993,7 @@ export class PedidoComponent implements OnInit {
             this.setClientfromSelector(cliente);
             this.tipoOrden = this.orderServ.tipoOrden;
             this.tipoOrdenAnterior = this.tipoOrden;
+            this.orderServ.syncOrderTypeIvaOnProducts();
           }
         }
       ]
@@ -1033,6 +1034,7 @@ export class PedidoComponent implements OnInit {
               this.setClientfromSelector(cliente);
               this.tipoOrden = this.orderServ.tipoOrden;
               this.tipoOrdenAnterior = this.tipoOrden;
+              this.orderServ.syncOrderTypeIvaOnProducts();
             },
           },
         ];
@@ -1048,6 +1050,7 @@ export class PedidoComponent implements OnInit {
         this.orderServ.tipoOrden = this.tipoOrden;
         this.tipoOrdenAnterior = this.tipoOrden;
         this.tipoOrden = this.orderServ.tipoOrden;
+        this.orderServ.syncOrderTypeIvaOnProducts();
       }
     }
     this.onChange();
@@ -1176,6 +1179,7 @@ export class PedidoComponent implements OnInit {
 
     this.tipoOrdenAnterior = this.tipoOrden;
     this.orderServ.tipoOrden = this.tipoOrden;
+    this.orderServ.syncOrderTypeIvaOnProducts();
 
   }
 
@@ -1254,6 +1258,7 @@ export class PedidoComponent implements OnInit {
             }
             this.tipoOrdenAnterior = this.tipoOrden;
             this.orderServ.tipoOrden = this.tipoOrden;
+            this.orderServ.syncOrderTypeIvaOnProducts();
           }
 
         })
@@ -1269,6 +1274,7 @@ export class PedidoComponent implements OnInit {
           }
           this.tipoOrdenAnterior = this.tipoOrden;
           this.orderServ.tipoOrden = this.tipoOrden; //para filtrar structures luego
+          this.orderServ.syncOrderTypeIvaOnProducts();
         }
       }
 

@@ -103,6 +103,7 @@ export class PedidosService {
   public listaInfoModalList: List[] = [];
   public listaUnitPriceList: UnitPriceList [] = [];
   public ivaList: IvaList[] = [];
+  public orderTypeIvaChanged$ = new Subject<void>();
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
     naLine: String,
@@ -528,6 +529,49 @@ export class PedidosService {
   }
 
 
+  private resolveDefaultIvaPrice(): number {
+    if (!this.ivaList?.length) {
+      return 0;
+    }
+    const idIvaList = this.tipoOrden?.idIvaList;
+    if (idIvaList != null) {
+      const matched = this.ivaList.find(i => Number(i.idIvaList) === Number(idIvaList));
+      if (matched) {
+        return Number(matched.priceIva);
+      }
+    }
+    const defaultEntry = this.ivaList.find(i => {
+      const raw = i.defaultIVA as boolean | number | string | undefined;
+      return raw === true || raw === 1 || raw === '1';
+    });
+    if (defaultEntry) {
+      return Number(defaultEntry.priceIva);
+    }
+    return Number(this.ivaList[0]?.priceIva ?? 0);
+  }
+
+  private shouldApplyOrderTypeIva(): boolean {
+    return !this.vatExemptProducts && (!this.openOrder || this.pedidoModificable);
+  }
+
+  private applyOrderTypeIvaToProduct(item: OrderUtil): void {
+    item.iva = this.resolveDefaultIvaPrice();
+    const base = item.discountedNuPrice > 0 ? item.discountedNuPrice : item.nuPrice;
+    item.ivaProducto = base * (item.iva / 100);
+    item.taxedNuPrice = base + item.ivaProducto;
+  }
+
+  syncOrderTypeIvaOnProducts(): void {
+    if (!this.shouldApplyOrderTypeIva()) {
+      return;
+    }
+    for (const item of this.carrito) {
+      this.applyOrderTypeIvaToProduct(item);
+    }
+    this.productSummary();
+    this.orderTypeIvaChanged$.next();
+  }
+
   private isDistinctItemsLimitConfigured(): boolean {
     const t = this.tipoOrden;
     if (!t || t.quItems <= 0) {
@@ -638,8 +682,11 @@ export class PedidosService {
 
       const sub = this.carrito.filter(p => p.idProduct == item.idProduct);
       if (sub.length > 0) {
-        //si esta en el carrito, simplemente sustituimos
-        orderUtils.push(sub[0]);
+        const cartItem = sub[0];
+        if (this.shouldApplyOrderTypeIva()) {
+          this.applyOrderTypeIvaToProduct(cartItem);
+        }
+        orderUtils.push(cartItem);
       } else {
         const prod = this.listaProductos.find((p => p.idProduct == item.idProduct));
         if (prod == undefined) {
@@ -753,9 +800,8 @@ export class PedidosService {
           ivaProducto = price * item.nuTax / 100;
           iva = item.nuTax;
         } else {
-          //viene de la lista de iva
-          iva = this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
-            ivaProducto = price * iva / 100;
+          iva = this.resolveDefaultIvaPrice();
+          ivaProducto = price * iva / 100;
         }
         //STOCK Y WAREHOUSES
         const stockList = this.listaStock.filter(s => s.idProduct == item.idProduct);
@@ -1680,6 +1726,7 @@ export class PedidosService {
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
     this.listaSeleccionada = this.datosPedidoSugerido.list;
+    this.tipoOrden = this.listaOrderTypes[0];
 
     //buscamos los promedios de ese cliente:
     /*esto lo calculo en inventario-logic, para mostrarlo en el modal de totales de inventario

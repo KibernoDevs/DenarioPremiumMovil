@@ -289,7 +289,11 @@ export class PedidosDbService {
     return db.executeSql(query, []).then(data => {
       let list: IvaList[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i) as IvaList;
+        row.idIvaList = Number(row.idIvaList);
+        row.priceIva = Number(row.priceIva);
+        row.defaultIVA = !!row.defaultIVA;
+        list.push(row);
       }
       return list;
     });

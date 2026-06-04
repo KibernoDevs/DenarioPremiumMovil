@@ -167,7 +167,7 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select [value]="product.iva" interface="popover" labelPlacement="stacked"
+                  <ion-select [value]="product.iva" [compareWith]="compareIvaPrice" interface="popover" labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                     (ionChange)="onSelectIVA($event, product)">
                     <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva
@@ -396,7 +396,7 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
+                      <ion-select [value]="productoModal.iva" [compareWith]="compareIvaPrice" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                         (ionChange)="onSelectIVA($event, productoModal)">
                         <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva
