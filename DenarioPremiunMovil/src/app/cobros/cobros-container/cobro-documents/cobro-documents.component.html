@@ -548,9 +548,13 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                               <ion-label position="stacked">
                                 {{ this.collectService.collectionTags.get('COB_DESCUENTO') || 'Descuento manual' }}
                               </ion-label>
-                              <ion-input type="number" min="0" inputmode="decimal"
-                                [ngModel]="manualCollectDiscountAmount"
-                                (ngModelChange)="setManualCollectDiscountAmount($event)">
+                              <ion-input type="text" inputmode="numeric"
+                                [value]="displayManualCollectDiscount || formatFromCents(centsManualCollectDiscount)"
+                                (keydown)="onManualCollectDiscountKeyDown($event)"
+                                (focus)="onManualCollectDiscountFocus()"
+                                (blur)="onManualCollectDiscountBlur()"
+                                (paste)="onManualCollectDiscountPaste($event)"
+                                (input)="onManualCollectDiscountInput($event)">
                               </ion-input>
                             </ion-item>
                             <!-- <ion-item *ngFor="let d of this.collectService.collectDiscounts">
