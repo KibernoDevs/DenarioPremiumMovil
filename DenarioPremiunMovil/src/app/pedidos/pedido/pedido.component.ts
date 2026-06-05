@@ -1450,12 +1450,13 @@ export class PedidoComponent implements OnInit {
     const stDelivery = this.orderServ.order?.stDelivery;
     return stDelivery === DELIVERY_STATUS_NEW
       || stDelivery === DELIVERY_STATUS_SAVED
+      || stDelivery === DELIVERY_STATUS_SENT
       || stDelivery === null;
   }
 
   async createOrderSummaryPdf() {
     if (!this.canExportOrderSummaryPdf()) {
-      this.message.transaccionMsjModalNB('Solo se puede generar el PDF cuando el pedido esta enviado.');
+      this.message.transaccionMsjModalNB('No se puede generar el PDF para este pedido en su estado actual.');
       return;
     }
 
