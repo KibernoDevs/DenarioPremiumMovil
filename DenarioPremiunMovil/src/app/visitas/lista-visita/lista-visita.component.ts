@@ -7,7 +7,7 @@ import { Visit } from 'src/app/modelos/tables/visit';
 import { VISIT_STATUS_NOT_VISITED, VISIT_STATUS_SAVED, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants';
 import { ReadVarExpr } from '@angular/compiler';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
-import { Platform } from '@ionic/angular';
+import { Platform, ViewWillEnter } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
@@ -20,7 +20,7 @@ import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
   styleUrls: ['./lista-visita.component.scss'],
   standalone: false
 })
-export class ListaVisitaComponent implements OnInit {
+export class ListaVisitaComponent implements OnInit, ViewWillEnter {
   listaVisitas: Visit[] = []
   searchText = "";
 
@@ -53,20 +53,21 @@ export class ListaVisitaComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.refreshList();
     this.headerDelete = this.getTag('VIS_HEADER_MENSAJE');
     this.mensajeDelete = this.getTag('VIS_BORRAR_CONFIRMA');
     this.service.coordenadas = "";
     this.rolTransportista = this.service.rolTransportista;
     if (this.service.userMustActivateGPS) {
       this.geoLoc.getCurrentPosition().then(xy => {
-    if (xy.length > 0) {
-      this.service.coordenadas = xy;      
+        if (xy.length > 0) {
+          this.service.coordenadas = xy;
+        }
+      });
     }
-  })
-} else {
+  }
 
-}
+  ionViewWillEnter(): void {
+    this.refreshList();
   }
 
   ngOnDestroy() {
