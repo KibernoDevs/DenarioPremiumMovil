@@ -105,11 +105,22 @@ $fondoLila: #430197;
   min-height: 40px;
 }
 
+.listado-enterprise-selector:has(.bank-picker-trigger) {
+  height: auto !important;
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding-left: 0;
+  overflow: visible;
+}
+
 .bank-picker-trigger {
   --inner-padding-end: 12px;
   --padding-start: 12px;
-  min-height: 38px;
+  --min-height: 44px;
+  width: 100%;
+  margin: 0;
   border-radius: 20px;
+  box-sizing: border-box;
 }
 
 .bank-picker-trigger ion-label {
