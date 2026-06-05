@@ -805,7 +805,7 @@ export class InventariosLogicService {
     try {
       await dbServ.sqlBatch(batch);
       console.log("SE GUARDO CLIENT_STOCKS");
-      await this.saveClientStocksDetails(dbServ, this.newClientStock.clientStockDetails);
+      await this.saveClientStocksDetails(dbServ,this.newClientStock.coClientStock, this.newClientStock.clientStockDetails);
     } catch (e) {
       console.log("ERROR GUARDAR CLIENT_STOCKS");
       console.log(e);
@@ -813,7 +813,7 @@ export class InventariosLogicService {
 
   }
 
-  saveClientStocksDetails(dbServ: SQLiteObject, clientStockDetails: ClientStocksDetail[]) {
+  saveClientStocksDetails(dbServ: SQLiteObject, coClientStock: string, clientStockDetails: ClientStocksDetail[]) {
     let insertStatement: string = "";
     var batch: any[] = [];
 
@@ -843,7 +843,7 @@ export class InventariosLogicService {
         [insertStatement,
           [
             clientStockDetails[i].idClientStockDetail, this.newClientStock.clientStockDetails[i].coClientStockDetail,
-            clientStockDetails[i].coClientStock, this.newClientStock.clientStockDetails[i].naProduct,
+            coClientStock, this.newClientStock.clientStockDetails[i].naProduct,
             clientStockDetails[i].coProduct, this.newClientStock.clientStockDetails[i].idProduct,
             clientStockDetails[i].coEnterprise, this.newClientStock.clientStockDetails[i].idEnterprise,
             clientStockDetails[i].posicion, this.newClientStock.clientStockDetails[i].isSave
