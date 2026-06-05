@@ -904,7 +904,7 @@ export class CollectionService {
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
       return;
     } else {
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) {
         monto = Number(this.collection.nuAmountTotal ?? 0);
         montoConversion = Number(this.collection.nuAmountTotalConversion ?? 0);
       } else
