@@ -363,8 +363,16 @@ export class InventarioGeneralComponent implements OnInit {
           this.newClient = {} as Client;
           this.inventariosLogicService.onStockValidToSave(true);
           this.inventariosLogicService.isEdit = true;
-          this.inventariosLogicService.newClientStock.coClientStock = this.dateServ.generateCO(0);
-          this.inventariosLogicService.newClientStock.idClientStock = 0; // este se va a actualizar con la repsuesta del API
+
+          const isNewInventory = !this.inventariosLogicService.newClientStock.coClientStock;
+          if (isNewInventory) {
+            this.inventariosLogicService.newClientStock.coClientStock = this.dateServ.generateCO(0);
+            this.inventariosLogicService.newClientStock.idClientStock = 0; // este se va a actualizar con la repsuesta del API
+            this.inventariosLogicService.newClientStock.daClientStock = this.dateServ.hoyISOFullTime();
+            this.inventariosLogicService.newClientStock.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+            this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW;
+          }
+
           this.inventariosLogicService.cliente = cliente;
           this.inventariosLogicService.clientStockValid = true;
           this.inventariosLogicService.nombreCliente = cliente.lbClient;
@@ -378,12 +386,8 @@ export class InventarioGeneralComponent implements OnInit {
           this.inventariosLogicService.newClientStock.idUser = Number(localStorage.getItem("idUser"));
           this.inventariosLogicService.newClientStock.coUser = localStorage.getItem('coUser') || "[]";
           this.inventariosLogicService.enterpriseClientStock = this.inventariosLogicService.empresaSeleccionada;
-          this.inventariosLogicService.newClientStock.daClientStock = this.dateServ.hoyISOFullTime();
           this.inventariosLogicService.newClientStock.txComment = this.txComment;
           this.inventariosLogicService.newClientStock.coordenada = this.coordenada;
-          /* this.inventariosLogicService.newClientStock.daClientStock =  */
-          this.inventariosLogicService.newClientStock.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
-          this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW;
           this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(), this.inventariosLogicService.cliente.idClient).then((result) => {
             if (result) {
               this.direccionAnterior = this.inventariosLogicService.newClientStock.idAddressClient;
@@ -470,9 +474,19 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.inventarioSent = false;
       this.inventariosLogicService.disableSaveButton = true;
       this.inventariosLogicService.cannotSendClientStock = true;
+
+      const preservedTransaction = {
+        coClientStock: this.inventariosLogicService.newClientStock.coClientStock,
+        idClientStock: this.inventariosLogicService.newClientStock.idClientStock,
+        stDelivery: this.inventariosLogicService.newClientStock.stDelivery,
+        stClientStock: this.inventariosLogicService.newClientStock.stClientStock,
+        daClientStock: this.inventariosLogicService.newClientStock.daClientStock,
+      };
+
       this.inventariosLogicService.newClientStock = {} as ClientStocks;
       this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
       this.inventariosLogicService.newClientStock.productList = [] as ProductUtil[];
+      Object.assign(this.inventariosLogicService.newClientStock, preservedTransaction);
       this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
       this.inventariosLogicService.typeStocks = [] as Inventarios[];
       this.inventariosLogicService.initInventario = false;
@@ -480,7 +494,7 @@ export class InventarioGeneralComponent implements OnInit {
       this.alertButtons2[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')!
       this.alertButtons2[1].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
-      this.daClientStock = this.dateServ.hoyISOFullTime();
+      this.daClientStock = preservedTransaction.daClientStock || this.dateServ.hoyISOFullTime();
       this.inventariosLogicService.alertMessage = false;
       this.inventariosLogicService.alertMessageOpen = false;
       this.setClientfromSelector(this.newClient);
