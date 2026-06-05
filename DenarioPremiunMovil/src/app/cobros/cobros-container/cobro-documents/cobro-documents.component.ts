@@ -54,6 +54,8 @@ export class CobrosDocumentComponent implements OnInit {
   public discountComment: string = '';
   public manualCollectDiscountAmount: number = 0;
   private manualCollectDiscountAmountBackup: number = 0;
+  public centsManualCollectDiscount: number | undefined;
+  public displayManualCollectDiscount: string = '';
   private readonly MANUAL_COLLECT_DISCOUNT_ID = -1;
   private readonly MANUAL_COLLECT_DISCOUNT_LABEL = 'Descuento manual';
 
@@ -70,6 +72,7 @@ export class CobrosDocumentComponent implements OnInit {
   private retentionKeyInFlight: boolean = false;
   private retention2KeyInFlight: boolean = false;
   private amountPaidKeyInFlight: boolean = false;
+  private manualCollectDiscountKeyInFlight: boolean = false;
   public disabledCollectDiscountButton: boolean = false;
   // When true, discount checkboxes should be disabled in the template
   public disableDiscountCheckboxes: boolean = false;
@@ -566,6 +569,8 @@ export class CobrosDocumentComponent implements OnInit {
           const persistedDiscounts = this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!;
           this.manualCollectDiscountAmount = this.getManualCollectDiscountFromDetails(persistedDiscounts);
           this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
+          this.centsManualCollectDiscount = undefined;
+          this.syncManualCollectDiscountInput();
           const selectedIds = persistedDiscounts
             .map(cdd => Number(cdd.idCollectDiscount))
             .filter(id => !Number.isNaN(id) && id > 0);
@@ -574,6 +579,8 @@ export class CobrosDocumentComponent implements OnInit {
         } else {
           this.manualCollectDiscountAmount = 0;
           this.manualCollectDiscountAmountBackup = 0;
+          this.centsManualCollectDiscount = 0;
+          this.displayManualCollectDiscount = '';
         }
       }
 
@@ -703,6 +710,8 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.selectedCollectDiscounts = [];
       this.manualCollectDiscountAmount = 0;
       this.manualCollectDiscountAmountBackup = 0;
+      this.centsManualCollectDiscount = 0;
+      this.displayManualCollectDiscount = '';
       return;
     }
 
@@ -712,6 +721,8 @@ export class CobrosDocumentComponent implements OnInit {
       : [];
     this.manualCollectDiscountAmount = this.getManualCollectDiscountFromDetails(discounts);
     this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
+    this.centsManualCollectDiscount = undefined;
+    this.syncManualCollectDiscountInput();
 
     const ids = discounts
       .map(d => Number(d.idCollectDiscount))
@@ -975,7 +986,7 @@ export class CobrosDocumentComponent implements OnInit {
           (hasSelectedDiscounts || this.hasManualCollectDiscount())) {
           this.setCollectionDetailDiscounts(this.collectService.documentSaleOpen.positionCollecDetails!, this.collectService.selectedCollectDiscounts);
         }
-        this.collectService.calculatePayment("", 0);
+        this.collectService.calculatePayment("", 0, true);
         this.cdr.detectChanges();
         console.log("GUARDAR")
         this.collectService.isOpen = false;
@@ -2149,6 +2160,132 @@ export class CobrosDocumentComponent implements OnInit {
     }
   }
 
+  // --- MANUAL COLLECT DISCOUNT handlers ---
+  private syncManualCollectDiscountInput(amount?: number): void {
+    if (amount !== undefined) {
+      this.manualCollectDiscountAmount = Math.max(0, Number(amount) || 0);
+    }
+    const factor = this.centsFactor();
+    this.centsManualCollectDiscount = Math.round(this.manualCollectDiscountAmount * factor) || 0;
+    if (this.manualCollectDiscountAmount > 0) {
+      try {
+        this.displayManualCollectDiscount = this.currencyService.formatNumber(this.manualCollectDiscountAmount);
+      } catch {
+        this.displayManualCollectDiscount = this.formatFromCents(this.centsManualCollectDiscount);
+      }
+    } else {
+      this.displayManualCollectDiscount = '';
+    }
+  }
+
+  private ensureManualCollectDiscountInit(): void {
+    if (this.centsManualCollectDiscount !== undefined) return;
+    this.syncManualCollectDiscountInput();
+  }
+
+  public onManualCollectDiscountKeyDown(ev: any): void {
+    const key = String(ev?.key ?? '');
+    const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
+    if (allowed.includes(key)) return;
+
+    this.ensureManualCollectDiscountInit();
+
+    const MAX_CENTS = 999999999999;
+
+    if (/^\d$/.test(key)) {
+      this.manualCollectDiscountKeyInFlight = true;
+      const digit = parseInt(key, 10);
+      this.centsManualCollectDiscount = Math.min(MAX_CENTS, (this.centsManualCollectDiscount ?? 0) * 10 + digit);
+      this.updateManualCollectDiscountModel();
+      ev.preventDefault();
+      setTimeout(() => { this.manualCollectDiscountKeyInFlight = false; }, 0);
+      return;
+    }
+
+    if (key === 'Backspace') {
+      this.manualCollectDiscountKeyInFlight = true;
+      this.centsManualCollectDiscount = Math.trunc((this.centsManualCollectDiscount ?? 0) / 10);
+      this.updateManualCollectDiscountModel();
+      ev.preventDefault();
+      setTimeout(() => { this.manualCollectDiscountKeyInFlight = false; }, 0);
+      return;
+    }
+
+    if (key === 'Delete') {
+      this.manualCollectDiscountKeyInFlight = true;
+      this.centsManualCollectDiscount = 0;
+      this.updateManualCollectDiscountModel();
+      ev.preventDefault();
+      setTimeout(() => { this.manualCollectDiscountKeyInFlight = false; }, 0);
+      return;
+    }
+
+    ev.preventDefault();
+  }
+
+  public onManualCollectDiscountFocus(): void {
+    this.ensureManualCollectDiscountInit();
+    if ((this.centsManualCollectDiscount ?? 0) === 0) {
+      this.displayManualCollectDiscount = this.formatFromCents(0);
+    }
+  }
+
+  public onManualCollectDiscountBlur(): void {
+    this.ensureManualCollectDiscountInit();
+    const parsed = (this.centsManualCollectDiscount ?? 0) / this.centsFactor();
+    this.manualCollectDiscountAmount = Math.max(0, parsed);
+    try {
+      this.displayManualCollectDiscount = parsed > 0
+        ? this.currencyService.formatNumber(parsed)
+        : '';
+    } catch {
+      this.displayManualCollectDiscount = this.formatFromCents(this.centsManualCollectDiscount);
+    }
+  }
+
+  public onManualCollectDiscountInput(ev: any): void {
+    if (this.manualCollectDiscountKeyInFlight) {
+      this.manualCollectDiscountKeyInFlight = false;
+      return;
+    }
+
+    try {
+      const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
+      const inputType = ev?.inputType ?? '';
+      const MAX_CENTS = 999999999999;
+
+      this.ensureManualCollectDiscountInit();
+
+      if (inputType.includes('delete') || inputChar === null) {
+        this.centsManualCollectDiscount = Math.trunc((this.centsManualCollectDiscount ?? 0) / 10);
+      } else if (inputChar && /^\d$/.test(inputChar)) {
+        const digit = parseInt(inputChar, 10);
+        this.centsManualCollectDiscount = Math.min(MAX_CENTS, (this.centsManualCollectDiscount ?? 0) * 10 + digit);
+      } else {
+        const raw = ev?.target?.value ?? String(ev ?? '');
+        this.centsManualCollectDiscount = this.parsePastedToCents(raw);
+      }
+
+      this.updateManualCollectDiscountModel();
+      this.displayManualCollectDiscount = this.formatFromCents(this.centsManualCollectDiscount);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  public onManualCollectDiscountPaste(ev: ClipboardEvent): void {
+    ev.preventDefault();
+    const text = ev.clipboardData?.getData('text') ?? '';
+    this.centsManualCollectDiscount = this.parsePastedToCents(text);
+    this.updateManualCollectDiscountModel();
+  }
+
+  private updateManualCollectDiscountModel(): void {
+    const cents = this.centsManualCollectDiscount ?? 0;
+    this.manualCollectDiscountAmount = Math.max(0, cents / this.centsFactor());
+    this.displayManualCollectDiscount = this.formatFromCents(cents);
+  }
+
   selectCollectDiscount(event: any) {
     const selected = event?.detail?.value ?? this.collectService.selectedCollectDiscounts;
     console.log('selectCollectDiscount - selected ids:', selected);
@@ -2168,6 +2305,8 @@ export class CobrosDocumentComponent implements OnInit {
 
   openAssignDiscounts() {
     this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
+    this.centsManualCollectDiscount = undefined;
+    this.syncManualCollectDiscountInput();
     // Normalize selectedCollectDiscounts into prevSelectedCollectDiscounts
     if (Array.isArray(this.collectService.selectedCollectDiscounts)) {
       this.collectService.prevSelectedCollectDiscounts = (this.collectService.selectedCollectDiscounts as any[]).map(item => {
@@ -2258,6 +2397,8 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.tempSelectedCollectDiscounts = [];
     this.manualCollectDiscountAmount = 0;
     this.manualCollectDiscountAmountBackup = 0;
+    this.centsManualCollectDiscount = 0;
+    this.displayManualCollectDiscount = '';
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
 
     if (Number.isInteger(index) && index >= 0 && index < (this.collectService.collection.collectionDetails?.length ?? 0)) {
@@ -2271,7 +2412,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   async acceptCollectDiscounts() {
-    this.setManualCollectDiscountAmount(this.manualCollectDiscountAmount);
+    this.onManualCollectDiscountBlur();
 
     this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
 
@@ -2322,6 +2463,8 @@ export class CobrosDocumentComponent implements OnInit {
       ? manualFromDetails
       : this.manualCollectDiscountAmountBackup;
     this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
+    this.centsManualCollectDiscount = undefined;
+    this.syncManualCollectDiscountInput();
     // Keep modal closed
     this.assignDiscountsOpen = false;
     this.cdr.detectChanges();
@@ -2398,6 +2541,7 @@ export class CobrosDocumentComponent implements OnInit {
         } as CollectDiscounts);
       }
       this.manualCollectDiscountAmount = manualDiscountApplied;
+      this.centsManualCollectDiscount = Math.round(manualDiscountApplied * factor) || 0;
 
       selectedIds.forEach(id => {
         const temp = this.collectService.tempSelectedCollectDiscounts.find(cd => cd.idCollectDiscount === id);
@@ -2433,11 +2577,11 @@ export class CobrosDocumentComponent implements OnInit {
         + this.collectService.collection.collectionDetails[idxDetail].nuAmountDiscount
       const newBalance = runningBalance - discounts;
 
-      // Reflejar de inmediato el nuevo monto a pagar
+      // Reflejar de inmediato el nuevo monto a pagar (nuBalance conserva el saldo original;
+      // calculatePayment resta nuAmountCollectDiscount sobre backup.nuBalance)
       this.collectService.amountPaid = newBalance;
       if (this.collectService.documentSaleOpen) {
         this.collectService.documentSaleOpen.nuAmountPaid = newBalance;
-        this.collectService.documentSaleOpen.nuBalance = newBalance;
       }
 
       // Actualizar visual de monto a pagar en caliente
@@ -2472,16 +2616,16 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.collection.collectionDetails = clonedDetails;
       }
 
-      // sincronizar arrays de documentos
+      // sincronizar arrays de documentos (no mutar nuBalance: calculatePayment lo usa como saldo base)
       const ds = [...this.collectService.documentSales];
       if (ds[this.indexDocumentSaleOpen]) {
-        ds[this.indexDocumentSaleOpen] = { ...ds[this.indexDocumentSaleOpen], nuBalance: newBalance, nuAmountPaid: newBalance };
+        ds[this.indexDocumentSaleOpen] = { ...ds[this.indexDocumentSaleOpen], nuAmountPaid: newBalance };
       }
       this.collectService.documentSales = ds;
 
       const dsb = [...this.collectService.documentSalesBackup];
       if (dsb[this.indexDocumentSaleOpen]) {
-        dsb[this.indexDocumentSaleOpen] = { ...dsb[this.indexDocumentSaleOpen], nuBalance: newBalance, nuAmountPaid: newBalance };
+        dsb[this.indexDocumentSaleOpen] = { ...dsb[this.indexDocumentSaleOpen], nuAmountPaid: newBalance };
       }
       this.collectService.documentSalesBackup = dsb;
 
@@ -2590,7 +2734,7 @@ export class CobrosDocumentComponent implements OnInit {
   public setManualCollectDiscountAmount(value: any): void {
     const parsed = Number(String(value ?? '').replace(',', '.'));
     const cleanValue = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-    this.manualCollectDiscountAmount = cleanValue;
+    this.syncManualCollectDiscountInput(cleanValue);
   }
 
   public hasSelectedOrManualCollectDiscounts(): boolean {

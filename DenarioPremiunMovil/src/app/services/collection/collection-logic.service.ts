@@ -851,7 +851,7 @@ export class CollectionService {
     }
   }
 
-  async calculatePayment(type: string, index: number) {
+  async calculatePayment(type: string, index: number, forceRecalc: boolean = false) {
 
     this.montoTotalPagar = 0;
     let monto = 0;
@@ -878,7 +878,7 @@ export class CollectionService {
     }
 
 
-    const preserveAmountsWithoutRecalc = !this.isChangePaymentPartialPersistence && (
+    const preserveAmountsWithoutRecalc = !forceRecalc && !this.isChangePaymentPartialPersistence && (
       this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
       || this.collection.stDelivery == this.COLLECT_STATUS_SENT
       || this.collection.stDelivery == null
@@ -2047,8 +2047,8 @@ export class CollectionService {
 
       detail.nuAmountPaid = this.amountPaid
       detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-      detail.nuBalanceDoc = open.nuBalance;
-      detail.nuBalanceDocConversion = this.convertirMonto(open.nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
+      // nuBalanceDoc conserva el saldo original del documento; los descuentos de cobro
+      // se aplican vía nuAmountCollectDiscount en calculatePayment
       detail.daVoucher = open.daVoucher;
       detail.nuAmountDiscountConversion = this.convertirMonto(detail.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention = open.nuAmountRetention;
