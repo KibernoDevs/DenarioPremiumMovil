@@ -62,3 +62,6 @@ DenarioPremiunMovil/ios/
 !DenarioPremiunMovil/ios/App/App/Assets.xcassets/Splash.imageset/Default@2x~universal~anyany-dark.png
 !DenarioPremiunMovil/ios/App/App/Assets.xcassets/Splash.imageset/Default@3x~universal~anyany-dark.png
 DenarioPremiunMovil/android/app/src/main/res/xml/network_security_config.xml
+
+# Guías y notas locales de entorno (no subir al repo)
+docs-local/

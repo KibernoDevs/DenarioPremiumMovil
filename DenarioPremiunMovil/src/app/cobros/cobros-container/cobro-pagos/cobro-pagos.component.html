@@ -422,8 +422,8 @@
             <ion-label> {{this.collectService.collectionTags.get('COB_DEPOSITO')}}</ion-label>
           </ion-item>
           <div class="ion-padding" slot="content">
-            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
             <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
               <div class="listado-enterprise-selector ion-text-center">
                 <ion-item button detail="false" lines="none" class="bank-picker-trigger"
                   (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_RECEPTOR') || 'Banco receptor', this.collectService.listBankAccounts, 'de', de, 'accounts', 'bankAccountSelected', 'selectBankAccount')">
@@ -527,13 +527,15 @@
             </ion-col>
             <!-- clientBankAccount -->
 
-            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
-            <div class="listado-enterprise-selector ion-text-center">
-              <ion-item button detail="false" lines="none" class="bank-picker-trigger"
-                (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_RECEPTOR') || 'Banco receptor', this.collectService.listBankAccounts, 'tr', tr, 'accounts', 'bankAccountSelected', 'selectListBankAccount')">
-                <ion-label>{{ getSelectedBankDisplay('tr', tr, 'bankAccountSelected') }}</ion-label>
-              </ion-item>
-            </div>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_RECEPTOR') || 'Banco receptor', this.collectService.listBankAccounts, 'tr', tr, 'accounts', 'bankAccountSelected', 'selectListBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('tr', tr, 'bankAccountSelected') }}</ion-label>
+                </ion-item>
+              </div>
+            </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-item disabled="{{transferencia.disabled}}">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_REFERENCIA')}}"
