@@ -159,9 +159,74 @@ export class DateServiceService {
   }
 
   formatShort(input: string) {
-    var r = this.dateFrom(input);
+    if (!input) {
+      return '';
+    }
+
+    const r = this.dateFrom(input);
+    if (isNaN(r.getTime())) {
+      return '';
+    }
 
     return this.dateFormatShort.format(r);
+  }
+
+  /**
+   * Normaliza dateRate del cobro a formato BD: YYYY-MM-DD HH:mm:ss
+   */
+  normalizeDateRateToDbDateTime(dateRate: string | null | undefined): string {
+    const raw = (dateRate ?? '').toString().trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return `${raw} 00:00:00`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(raw)) {
+      return raw;
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) {
+      return raw.replace('T', ' ');
+    }
+    if (raw) {
+      const parsed = this.dateFrom(raw);
+      if (!isNaN(parsed.getTime())) {
+        return this.formatDbDateTime(parsed);
+      }
+    }
+    return this.toDbDateTime(this.hoyISO());
+  }
+
+  /**
+   * Convierte ISO (T), fecha simple o datetime local a YYYY-MM-DD HH:mm:ss
+   */
+  toDbDateTime(input: string | null | undefined): string {
+    const trimmed = (input ?? '').toString().trim();
+    if (!trimmed) {
+      return this.normalizeDateRateToDbDateTime(this.onlyDateHoyISO());
+    }
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return `${trimmed} 00:00:00`;
+    }
+    if (trimmed.includes('T')) {
+      const [datePart, timePart = '00:00:00'] = trimmed.split('T');
+      return `${datePart} ${timePart.substring(0, 8)}`;
+    }
+    const parsed = this.dateFrom(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      return this.formatDbDateTime(parsed);
+    }
+    return this.normalizeDateRateToDbDateTime(this.onlyDateHoyISO());
+  }
+
+  private formatDbDateTime(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hour = date.getHours().toString().padStart(2, '0');
+    const minute = date.getMinutes().toString().padStart(2, '0');
+    const second = date.getSeconds().toString().padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
   }
 
   generateCO(i: number) {
