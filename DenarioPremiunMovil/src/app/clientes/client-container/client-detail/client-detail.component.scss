@@ -104,6 +104,11 @@ ion-modal.compartirDoc {
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
 
+ion-modal.compartirDocPreview {
+  --height: 85%;
+  --min-width: 95%;
+}
+
 /* Asegura que el contenido del modal no quede oculto por el footer fijo */
 .compartirDoc .compartirDoc-content {
   padding-bottom: 82px; /* dejar espacio para el footer (ajusta si cambias la altura) */
