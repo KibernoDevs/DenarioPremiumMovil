@@ -2,7 +2,7 @@
 <app-client-header></app-client-header>
 }
 <ion-content class="client-detail">
-  <ion-segment value="default" [(ngModel)]="this.clientLogic.segment" scrollable>
+  <ion-segment value="default" [(ngModel)]="this.clientLogic.segment" scrollable (ionChange)="onClientSegmentChange($event)">
     <ion-segment-button value="default">
       <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
     </ion-segment-button>
@@ -166,8 +166,8 @@
         }
       </ion-grid>
     </div>
-    <div *ngSwitchCase="'docVentas'">
-      @if(document.length > 0){
+    <div *ngSwitchCase="'docVentas'" class="doc-ventas-tab">
+      @if(documentSalesTotalRows > 0){
       <div class="saldo-legend">
         <button class="legend-item legend-button" id="legendBlueHint" type="button">
           <span class="legend-dot legend-blue" aria-hidden="true"></span>
@@ -211,9 +211,14 @@
         </ng-template>
       </ion-popover>
 
-      @if(document.length > 0){
-      <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
-        <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+      @if(documentSalesTotalRows > 0){
+      <div class="documents-view">
+      <div class="documents-table-panel" #documentsTablePanel>
+        <div class="documents-table-x-scroll" #documentsTableXScroll>
+          <div class="documents-table-stack">
+            <div class="documents-table-header-wrap" #documentsHeaderScroll>
+              <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+                <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
           @if(!clientLogic.fromSelector){
           <ion-col size="2" class="titulosBold col borderSuperiorIzquierdo"></ion-col>
           }
@@ -282,8 +287,14 @@
           <ion-col size="4" class="titulosBold col borderSuperiorDerecho">
             {{clientLogic.clientTags.get("CLI_DOC_SALE_TXCOMMENT")}}
           </ion-col>
-        </ion-row>
-        @for(documento of document; track $index; let i = $index){
+                </ion-row>
+              </ion-grid>
+            </div>
+            <div class="documents-table-body-wrap" #documentsBodyScroll
+              (touchstart)="onDocumentsTableBodyTouchStart($event)"
+              (touchmove)="onDocumentsTableBodyTouchMove($event)">
+              <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+        @for(documento of document; track documento.idDocument; let i = $index){
         <ion-row class="tablaDocumentosVenta tablaDocVentas row">
           @if(!clientLogic.fromSelector){
           <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
@@ -392,7 +403,33 @@
           </ion-col>
         </ion-row>
         }
-      </ion-grid>
+              </ion-grid>
+            </div>
+          </div>
+        </div>
+
+        @if(canShowDocumentPagination){
+        <nav class="document-pagination" aria-label="Paginacion de documentos">
+          <button type="button" class="document-pagination__btn" (click)="goToPreviousDocumentsPage()"
+            [disabled]="!canGoToPreviousDocumentsPage" aria-label="Pagina anterior">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </button>
+          <div class="document-pagination__summary">
+            <span class="document-pagination__page">
+              {{ documentSalesCurrentPage + 1 }} / {{ documentSalesTotalPages }}
+            </span>
+            <span class="document-pagination__range">
+              {{ documentSalesPageStart }}-{{ documentSalesPageEnd }} de {{ documentSalesTotalRows }}
+            </span>
+          </div>
+          <button type="button" class="document-pagination__btn" (click)="goToNextDocumentsPage()"
+            [disabled]="!canGoToNextDocumentsPage" aria-label="Pagina siguiente">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </button>
+        </nav>
+        }
+      </div>
+      </div>
       }
 
     </div>
