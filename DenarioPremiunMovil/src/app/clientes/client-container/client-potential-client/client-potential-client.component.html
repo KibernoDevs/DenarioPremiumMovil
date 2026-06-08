@@ -11,9 +11,13 @@
     <ion-grid>
       <ion-row>
         <ion-col class="" size="12" size-sm="12" size-xs="12">
-          <ion-labe *ngIf="this.clientLogic.potentialClients.length == 0">
-            <p> <span class="titulosBold">Aún no hay clientes potenciales</span> </p>
-          </ion-labe>
+          @if (clientLogic.potentialClients.length === 0) {
+          <ion-item>
+            <ion-label class="ion-text-center" style="color: red;">
+              Aún no hay clientes potenciales
+            </ion-label>
+          </ion-item>
+          }
 
           <ion-list *ngFor="let potentialClient of clientLogic.potentialClients;index as i" button detail="false">
             <div

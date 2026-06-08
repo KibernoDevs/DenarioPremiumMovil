@@ -11,9 +11,8 @@
         <ion-col size="9" size-sm="9" size-xs="6" class="title-col">
           <h1
             class="tituloModulos"
-            [class.tituloModulosLargo]="this.clientLogic.nombreModuloEsLargo"
-            [class.tituloModulosCorto]="!this.clientLogic.nombreModuloEsLargo"
-          >{{this.clientLogic.nombreModulo}}</h1>
+            [class.tituloModulosLargo]="clientLogic.nombreModuloEsLargo"
+          >{{ clientLogic.nombreModulo }}</h1>
         </ion-col>
         <ion-col size="1" size-sm="1" size-xs="2" offset-sm="1" offset-xs="2" *ngIf="clientLogic.clienteNuevoBlancoImg">
           <img class="fechaAtras" alt="" src="../../../assets/images/clientesNuevoBlanco.svg" />

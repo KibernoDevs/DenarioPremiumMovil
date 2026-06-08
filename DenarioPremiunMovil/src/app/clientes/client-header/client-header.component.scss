@@ -8,8 +8,25 @@
   display: flex;
   align-items: center;
   min-width: 0;
+  overflow: hidden;
+}
+
+.tituloModulos {
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
 }
 
 .tituloModulosLargo {
-  font-size: clamp(0.94rem, 3.9vw, 1.14rem);
+  font-size: clamp(1.0rem, 3.4vw, 1.05rem);
+  text-overflow: clip;
+}
+
+@media (max-width: 576px) {
+  .tituloModulosLargo {
+    font-size: clamp(1.0rem, 3.1vw, 0.95rem);
+  }
 }

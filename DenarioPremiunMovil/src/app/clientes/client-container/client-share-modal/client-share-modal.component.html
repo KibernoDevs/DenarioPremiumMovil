@@ -1,100 +1,148 @@
-<div #invoiceContent>
+@if (client) {
+<ion-header class="compartirDoc-header" slot="fixed">
+  <ion-toolbar>
+    <ion-title class="tituloCompartir">
+      {{ clientLogic.clientTags.get('CLI_DETAIL_TAB_DOCUMENTO_VENTA') || 'Vista previa' }}
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
 
-  <div class="tablaInfoClientes tablaInfoclients">
-    <table class="tabla-info-cliente" role="table" cellspacing="0" cellpadding="4">
-      <tbody>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</td>
-          <td>{{client.lblEnterprise}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</td>
-          <td>{{client.naClient}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</td>
-          <td>{{client.coClient}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</td>
-          <td>{{client.naPriceList}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{tagRif}}:</td>
-          <td>{{client.nuRif}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</td>
-          <td>{{client.naResponsible}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</td>
-          <td class="email-cell">{{client.naEmail}}</td>
-        </tr>
-        <tr>
-          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</td>
-          <td>{{client.nuPhone}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="tablaInfoClientes tablaDocVentasGrip">
-    <table class="tabla-doc-ventas" role="table" cellspacing="0" cellpadding="4">
-      <thead>
-        <tr class="cabecera">
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</th>
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}</th>
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}</th>
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}</th>
-          <th *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion" class="titulosBold col">
-            {{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}</th>
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{ localCurrency }}</th>
-          <th *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion" class="titulosBold col">
-            {{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{ hardCurrency }}</th>
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}} {{ localCurrency }}</th>
-          <th *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion" class="titulosBold col">
-            {{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}} {{ hardCurrency }}</th>
-          <th class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}</th>
-          <th class="titulosBold col borderSuperiorDerecho">
-            {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let documento of document; index as i" class="tablaDocumentosVenta">
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{documento.coDocumentSaleType}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{documento.coDocument}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{documento.coCurrency}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{getDaDueDate(documento.daDueDate)}}</td>
-          <td *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion" class="ion-text-center col"
-            [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">{{formatNumber(documento.nuValueLocal)}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{toLocalCurrency(documento.nuAmountTotal, documento)}}</td>
-          <td *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion" class="ion-text-center col"
-            [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">{{toHardCurrency(documento.nuAmountTotal,
-            documento)}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{toLocalCurrency(documento.nuBalance, documento)}}</td>
-          <td *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion"
-            class="ion-text-center col borderInferiorDerecho"
-            [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">{{toHardCurrency(documento.nuBalance,
-            documento)}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{documento.daDocument}}</td>
-          <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-            {{documento.daDueDate}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+<ion-content class="compartirDoc-content share-preview-content">
+  <div class="share-preview">
+    <div class="tablaInfoClientes tablaInfoclients">
+      <table class="tabla-info-cliente" role="table" cellspacing="0" cellpadding="4">
+        <tbody>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_EMPRESA') }}:</td>
+            <td>{{ client.lblEnterprise }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_NOMBRE') }}:</td>
+            <td>{{ client.naClient }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_CODIGO') }}:</td>
+            <td>{{ client.coClient }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_LISTA_PRECIO') }}:</td>
+            <td>{{ client.naPriceList }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ tagRif }}:</td>
+            <td>{{ client.nuRif }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_CONTACTO') }}:</td>
+            <td>{{ client.naResponsible }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_EMAIL') }}:</td>
+            <td class="email-cell">{{ client.naEmail }}</td>
+          </tr>
+          <tr>
+            <td class="titulosBold">{{ clientLogic.clientTags.get('CLI_DETAIL_TELEFONO') }}:</td>
+            <td>{{ client.nuPhone }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-</div>
-<!--
-    <ion-fab *ngIf="this.clientLogic.segment === 'docVentas'" slot="fixed" vertical="bottom" horizontal="end">
-        <ion-fab-button (click)="exportPdf()">
-            <ion-icon name="share-social-outline"></ion-icon>
-        </ion-fab-button>
-    </ion-fab> -->
+    <div class="tablaInfoClientes tablaDocVentasGrip">
+      <div class="share-preview-table-scroll">
+        <table class="tabla-doc-ventas" role="table" cellspacing="0" cellpadding="4">
+          <thead>
+            <tr class="cabecera">
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_TIPO') }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_NUMERO_DOCUMENTO') }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONEDA_DOC') }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_DIAS_VENCIMIENTO') }}</th>
+              @if (showConversion) {
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_TASA') }}</th>
+              }
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONTO') }} {{ localCurrency }}</th>
+              @if (showConversion) {
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONTO') }} {{ hardCurrency }}</th>
+              }
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_SALDO') }} {{ localCurrency }}</th>
+              @if (showConversion) {
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_SALDO') }} {{ hardCurrency }}</th>
+              }
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_FECHA_DOCUMENTO') }}</th>
+              <th class="titulosBold col borderSuperiorDerecho">
+                {{ clientLogic.clientTags.get('CLI_DETAIL_FECHA_VENCIMIENTO') }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (documento of document; track documento.coDocument) {
+            <tr class="tablaDocumentosVenta">
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ documento.coDocumentSaleType }}
+              </td>
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ documento.coDocument }}
+              </td>
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ documento.coCurrency }}
+              </td>
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ getDaDueDate(documento.daDueDate) }}
+              </td>
+              @if (showConversion) {
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ formatNumber(documento.nuValueLocal) }}
+              </td>
+              }
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ toLocalCurrency(documento.nuAmountTotal, documento) }}
+              </td>
+              @if (showConversion) {
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ toHardCurrency(documento.nuAmountTotal, documento) }}
+              </td>
+              }
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ toLocalCurrency(documento.nuBalance, documento) }}
+              </td>
+              @if (showConversion) {
+              <td class="ion-text-center col borderInferiorDerecho"
+                [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ toHardCurrency(documento.nuBalance, documento) }}
+              </td>
+              }
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ documento.daDocument }}
+              </td>
+              <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
+                {{ documento.daDueDate }}
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer slot="fixed" class="compartirDoc-footer">
+  <ion-toolbar>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6">
+          <ion-button expand="block" size="small" color="light" [disabled]="exporting" (click)="cancelPreview()">
+            {{ clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR') || 'Cancelar' }}
+          </ion-button>
+        </ion-col>
+        <ion-col size="6">
+          <ion-button expand="block" size="small" class="botonAddVerde" [disabled]="exporting" (click)="exportPdf()">
+            <ion-icon slot="start" name="share-social-outline"></ion-icon>
+            {{ 'Compartir PDF' }}
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-footer>
+}

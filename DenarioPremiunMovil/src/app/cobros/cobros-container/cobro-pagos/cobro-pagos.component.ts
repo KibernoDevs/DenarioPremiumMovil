@@ -63,6 +63,14 @@ export class CobroPagosComponent implements OnInit {
   private bankPickerTarget: 'bankAccountSelected' | 'clientBankAccountSelected' = 'bankAccountSelected';
   private bankPickerAction: 'selectBankAccount' | 'selectListBankAccount' = 'selectBankAccount';
 
+  private normalizedCollectionDateRate(): string {
+    return this.dateServ.normalizeDateRateToDbDateTime(this.collectService.dateRate);
+  }
+
+  private toDbDateTime(value: string): string {
+    return this.dateServ.toDbDateTime(value);
+  }
+
 
   public alertButtons = [
     /*  {
@@ -251,19 +259,8 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
 
 
-    // Normalize dateRate: if it's in 'YYYY-MM-DD' form, append ' 00:00:00'.
-    // If it's already 'YYYY-MM-DD HH:MM:SS' keep as-is.
-    const rawDateRate = (this.collectService.dateRate || '').toString().trim();
-    let daRate = rawDateRate;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDateRate)) {
-      daRate = rawDateRate + ' 00:00:00';
-    } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(rawDateRate)) {
-      // already has time, keep as-is
-      daRate = rawDateRate;
-    } else {
-      // fallback: leave as raw value (could be empty or different format)
-      daRate = rawDateRate;
-    }
+    // Normalizar dateRate del cobro a YYYY-MM-DD HH:mm:ss
+    const daRate = this.normalizedCollectionDateRate();
 
     this.collectService.onCollectionValidToSend(false)
     // Nuevo: referencia al pago creado (se asigna dentro del switch)
@@ -480,21 +477,21 @@ export class CobroPagosComponent implements OnInit {
 
       case "de": {
         this.collectService.pagoDeposito[index].fecha = fecha;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daCollectionPayment = this.toDbDateTime(fecha);
         this.collectService.validateToSend();
         break;
       }
 
       case "tr": {
         this.collectService.pagoTransferencia[index].fecha = fecha;
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = this.toDbDateTime(fecha);
         this.collectService.validateToSend();
         break;
       }
 
       case "pm": {
         this.collectService.pagoMovil[index].fecha = fecha;
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment = this.toDbDateTime(fecha);
         this.collectService.validateToSend();
         break;
       }
@@ -511,74 +508,75 @@ export class CobroPagosComponent implements OnInit {
     switch (type) {
       case "ef": {
         if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoEfectivo[index].fecha = this.collectService.dateRate + " 00:00:00";
+          this.collectService.pagoEfectivo[index].fecha = this.normalizedCollectionDateRate();
         } else {
-          this.collectService.pagoEfectivo[index].fecha = fecha + " 00:00:00";
-          fecha = fecha + " 00:00:00";
+          this.collectService.pagoEfectivo[index].fecha = this.toDbDateTime(fecha);
+          fecha = this.toDbDateTime(fecha);
         }
         break
       }
 
       case "ch": {
         if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoCheque[index].fechaValor = this.collectService.dateRate + " 00:00:00";
+          this.collectService.pagoCheque[index].fechaValor = this.normalizedCollectionDateRate();
         } else {
-          this.collectService.pagoCheque[index].fechaValor = fecha + " 00:00:00";
-          fecha = fecha + " 00:00:00";
+          this.collectService.pagoCheque[index].fechaValor = this.toDbDateTime(fecha);
+          fecha = this.toDbDateTime(fecha);
         }
 
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.daValue = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.daValue
+          = this.toDbDateTime(this.collectService.pagoCheque[index].fechaValor);
         this.collectService.validateToSend();
         break;
       }
 
       case "de": {
         if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoDeposito[index].fecha = this.collectService.dateRate + " 00:00:00";
+          this.collectService.pagoDeposito[index].fecha = this.normalizedCollectionDateRate();
         } else {
-          this.collectService.pagoDeposito[index].fecha = fecha + " 00:00:00";
-          fecha = fecha + " 00:00:00";
+          this.collectService.pagoDeposito[index].fecha = this.toDbDateTime(fecha);
+          fecha = this.toDbDateTime(fecha);
         }
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daValue = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daValue
+          = this.toDbDateTime(this.collectService.pagoDeposito[index].fecha);
         this.collectService.validateToSend();
         break
       }
 
       case "tr": {
         if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoTransferencia[index].fecha = this.collectService.dateRate + " 00:00:00";
+          this.collectService.pagoTransferencia[index].fecha = this.normalizedCollectionDateRate();
         } else {
-          this.collectService.pagoTransferencia[index].fecha = fecha + " 00:00:00";
-          fecha = fecha + " 00:00:00";
+          this.collectService.pagoTransferencia[index].fecha = this.toDbDateTime(fecha);
+          fecha = this.toDbDateTime(fecha);
         }
 
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment
+          = this.toDbDateTime(this.collectService.pagoTransferencia[index].fecha);
         this.collectService.validateToSend();
         break;
       }
 
       case "pm": {
         if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoMovil[index].fecha = this.collectService.dateRate + " 00:00:00";
+          this.collectService.pagoMovil[index].fecha = this.normalizedCollectionDateRate();
         } else {
-          this.collectService.pagoMovil[index].fecha = fecha + " 00:00:00";
-          fecha = fecha + " 00:00:00";
+          this.collectService.pagoMovil[index].fecha = this.toDbDateTime(fecha);
+          fecha = this.toDbDateTime(fecha);
         }
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment
+          = this.toDbDateTime(this.collectService.pagoMovil[index].fecha);
         this.collectService.validateToSend();
         break;
       }
 
       case "ot": {
         if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoOtros[index].fecha = this.collectService.dateRate + " 00:00:00";
+          this.collectService.pagoOtros[index].fecha = this.normalizedCollectionDateRate();
         } else {
-          this.collectService.pagoOtros[index].fecha = fecha + " 00:00:00";
-          fecha = fecha + " 00:00:00";
+          this.collectService.pagoOtros[index].fecha = this.toDbDateTime(fecha);
         }
         this.collectService.validateToSend();
         break;
@@ -594,7 +592,7 @@ export class CobroPagosComponent implements OnInit {
       const payment = this.collectService.collection.collectionPayments![posCollectionPayment]!;
 
       if (this.collectService.validateCollectionDate) {
-        const dateRate = this.collectService.dateRate + " 00:00:00";
+        const dateRate = this.normalizedCollectionDateRate();
         setFecha(dateRate);
         payment.daCollectionPayment = dateRate;
         payment.daValue = dateRate;
@@ -602,7 +600,7 @@ export class CobroPagosComponent implements OnInit {
       } else {
         const today = this.dateServ.hoyISO();
         setFecha(today);
-        const formatted = today.split("T")[0] + " " + today.split("T")[1];
+        const formatted = this.toDbDateTime(today);
         payment.daCollectionPayment = formatted;
         payment.daValue = formatted;
         this.collectService.enableDate = false;
@@ -642,7 +640,10 @@ export class CobroPagosComponent implements OnInit {
         }
 
         applyDateToPayment(pos, (v) => this.collectService.pagoCheque[index].fecha = v);
-        this.collectService.pagoCheque[index].fechaValor = this.dateServ.hoyISO();
+        this.collectService.pagoCheque[index].fechaValor = this.collectService.validateCollectionDate
+          ? this.normalizedCollectionDateRate()
+          : this.dateServ.hoyISO();
+        payment.daValue = this.toDbDateTime(this.collectService.pagoCheque[index].fechaValor);
         this.collectService.pagoCheque[index].disabled = false;
 
         payment.coCollection = this.collectService.collection.coCollection;
@@ -767,7 +768,7 @@ export class CobroPagosComponent implements OnInit {
       case "ef": {
         this.collectService.pagoEfectivo[i].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[i].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.pagoEfectivo[i].fecha.split("T")[0] + " " + this.collectService.pagoEfectivo[i].fecha.split("T")[1];;
+          = this.toDbDateTime(this.collectService.pagoEfectivo[i].fecha);
         this.collectService.validateToSend();
         break
       }
@@ -780,7 +781,7 @@ export class CobroPagosComponent implements OnInit {
       case "de": {
         this.collectService.pagoDeposito[i].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[i].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.pagoDeposito[i].fecha.split("T")[0] + " " + this.collectService.pagoDeposito[i].fecha.split("T")[1];;
+          = this.toDbDateTime(this.collectService.pagoDeposito[i].fecha);
         this.collectService.validateToSend();
         break
       }
@@ -788,7 +789,7 @@ export class CobroPagosComponent implements OnInit {
       case "tr": {
         this.collectService.pagoTransferencia[i].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[i].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.pagoTransferencia[i].fecha.split("T")[0] + " " + this.collectService.pagoTransferencia[i].fecha.split("T")[1];;
+          = this.toDbDateTime(this.collectService.pagoTransferencia[i].fecha);
         this.collectService.validateToSend();
         break;
       }
@@ -796,7 +797,7 @@ export class CobroPagosComponent implements OnInit {
       case "pm": {
         this.collectService.pagoMovil[i].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[i].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.pagoMovil[i].fecha.split("T")[0] + " " + this.collectService.pagoMovil[i].fecha.split("T")[1];
+          = this.toDbDateTime(this.collectService.pagoMovil[i].fecha);
         this.collectService.validateToSend();
         break;
       }
@@ -804,7 +805,7 @@ export class CobroPagosComponent implements OnInit {
       case "ot": {
         this.collectService.pagoOtros[i].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[i].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.pagoOtros[i].fecha.split("T")[0] + " " + this.collectService.pagoOtros[i].fecha.split("T")[1];;
+          = this.toDbDateTime(this.collectService.pagoOtros[i].fecha);
         this.collectService.validateToSend();
         break;
       }
@@ -833,7 +834,7 @@ export class CobroPagosComponent implements OnInit {
 
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.daCollectionPayment
           = this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.daValue
-          = this.collectService.pagoEfectivo[index].fecha.split("T")[0] + " " + this.collectService.pagoEfectivo[index].fecha.split("T")[1];
+          = this.toDbDateTime(this.collectService.pagoEfectivo[index].fecha);
         this.validatePayment("ef", index);
         break
       }
@@ -1262,28 +1263,17 @@ export class CobroPagosComponent implements OnInit {
         this.collectService.pagoTransferencia[index].numeroCuenta = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].nuAccount;
         //
         if (this.collectService.validateCollectionDate) {
-          //LA FECHA DE LOS PAGOS DEBE SER LA MISMA QUE LA FECHA DE LA TASA
-          this.collectService.pagoTransferencia[index].fecha = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daValue!
-            = this.collectService.dateRate + " 00:00:00";
-
+          const dateRate = this.normalizedCollectionDateRate();
+          this.collectService.pagoTransferencia[index].fecha = dateRate;
+          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = dateRate;
+          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daValue = dateRate;
           this.collectService.enableDate = true;
-
         } else {
           this.collectService.pagoTransferencia[index].fecha = this.dateServ.hoyISO();
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.pagoTransferencia[index].fecha.split("T")[0] + " " + this.collectService.pagoTransferencia[index].fecha.split("T")[1];
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daValue!
-            = this.collectService.pagoTransferencia[index].fecha.split("T")[0] + " " + this.collectService.pagoTransferencia[index].fecha.split("T")[1];
-
+          const formatted = this.toDbDateTime(this.collectService.pagoTransferencia[index].fecha);
+          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = formatted;
+          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daValue = formatted;
           this.collectService.enableDate = false;
-
         }
 
         this.collectService.pagoTransferencia[index].disabled = false;
@@ -1313,14 +1303,16 @@ export class CobroPagosComponent implements OnInit {
         pago.numeroCuentaDestino = selectedDestBank.nuAccount;
 
         if (this.collectService.validateCollectionDate) {
-          pago.fecha = this.collectService.dateRate + " 00:00:00";
-          this.collectService.collection.collectionPayments![pos]!.daCollectionPayment = this.collectService.dateRate + " 00:00:00";
-          this.collectService.collection.collectionPayments![pos]!.daValue = this.collectService.dateRate + " 00:00:00";
+          const dateRate = this.normalizedCollectionDateRate();
+          pago.fecha = dateRate;
+          this.collectService.collection.collectionPayments![pos]!.daCollectionPayment = dateRate;
+          this.collectService.collection.collectionPayments![pos]!.daValue = dateRate;
           this.collectService.enableDate = true;
         } else {
           pago.fecha = this.dateServ.hoyISO();
-          this.collectService.collection.collectionPayments![pos]!.daCollectionPayment = pago.fecha.split("T")[0] + " " + pago.fecha.split("T")[1];
-          this.collectService.collection.collectionPayments![pos]!.daValue = pago.fecha.split("T")[0] + " " + pago.fecha.split("T")[1];
+          const formatted = this.toDbDateTime(pago.fecha);
+          this.collectService.collection.collectionPayments![pos]!.daCollectionPayment = formatted;
+          this.collectService.collection.collectionPayments![pos]!.daValue = formatted;
           this.collectService.enableDate = false;
         }
 
