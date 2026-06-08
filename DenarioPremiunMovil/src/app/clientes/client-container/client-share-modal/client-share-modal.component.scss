@@ -4,6 +4,27 @@
   height: 100%;
 }
 
+.compartirDoc-header ion-toolbar {
+  --min-height: 56px;
+  --padding-start: 4px;
+  --padding-end: 4px;
+}
+
+.preview-header-btn {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  margin: 0;
+}
+
+.preview-header-btn--share {
+  color: var(--ion-color-success, #59b02d);
+}
+
+.compartirDoc-header .tituloCompartir {
+  padding-inline: 48px;
+  font-size: 1rem;
+}
+
 .share-preview {
   padding: 8px 12px 16px;
 }

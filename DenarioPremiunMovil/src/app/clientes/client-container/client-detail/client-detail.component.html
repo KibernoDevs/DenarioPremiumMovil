@@ -443,9 +443,11 @@
   </ion-fab>
   }
   }
-  <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="openShareModal(false)" class="compartirDoc compartirDocPreview">
+  <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="onShareModalDismiss()" class="compartirDoc compartirDocPreview">
     <ng-template>
-      <app-client-share-modal [client]="client"></app-client-share-modal>
+      @if(clientShareModalOpen && shareDocuments.length){
+      <app-client-share-modal [client]="client" [documents]="shareDocuments"></app-client-share-modal>
+      }
     </ng-template>
   </ion-modal>
   <ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)" class="compartirDoc">

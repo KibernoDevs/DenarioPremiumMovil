@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnInit, AfterViewInit, Output, ElementRef, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { ClientShareModalComponent } from '../client-share-modal/client-share-modal.component';
 import { SynchronizationDBService } from '../../../services/synchronization/synchronization-db.service';
@@ -20,7 +20,7 @@ type ClientWithBalanceAlias = Client & { saldo?: number };
   styleUrls: ['./client-detail.component.scss'],
   standalone: false
 })
-export class ClienteComponent implements OnInit {
+export class ClienteComponent implements OnInit, AfterViewInit {
 
   private globalConfig = inject(GlobalConfigService);
   public clientLogic = inject(ClientLogicService);
@@ -28,6 +28,10 @@ export class ClienteComponent implements OnInit {
 
   public params!: any;
   public document!: DocumentSale[];
+  public allDocuments: DocumentSale[] = [];
+  public readonly DOCUMENT_SALES_PAGE_SIZE = 30;
+  public documentSalesCurrentPage = 0;
+  public documentSalesTotalRows = 0;
   public client!: Client;
   public sub!: object;
   public idCliente!: number;
@@ -45,11 +49,21 @@ export class ClienteComponent implements OnInit {
   subjectClientShareModalOpen: any;
   // selección múltiple de documentos
   public selectedDocuments: string[] = [];
+  public shareDocuments: DocumentSale[] = [];
 
   // control de modales
   public clientShareModalOpen = false;
   public clientSelectShareModalOpen = false;
 
+  @ViewChild('documentsTablePanel') documentsTablePanel?: ElementRef<HTMLElement>;
+  @ViewChild('documentsTableXScroll') documentsTableXScroll?: ElementRef<HTMLElement>;
+  @ViewChild('documentsHeaderScroll') documentsHeaderScroll?: ElementRef<HTMLElement>;
+  @ViewChild('documentsBodyScroll') documentsBodyScroll?: ElementRef<HTMLElement>;
+
+  private documentsTableBodyTouchStartX = 0;
+  private documentsTableBodyTouchStartY = 0;
+  private documentsTableBodyTouchScrollLeft = 0;
+  private documentsTableBodyScrollAxis: 'x' | 'y' | null = null;
 
   @Input() showHeader: boolean = false;
 
@@ -86,16 +100,29 @@ export class ClienteComponent implements OnInit {
     }
 
 
-    this.document = this.clientLogic.datos.document;
+    this.allDocuments = Array.isArray(this.clientLogic.datos.document)
+      ? [...this.clientLogic.datos.document]
+      : [];
+    this.documentSalesTotalRows = this.allDocuments.length;
+    this.documentSalesCurrentPage = 0;
+    this.getColorRowDocumentSale();
+    this.applyDocumentPage();
 
     this.tagRif = this.globalConfig.get("tagRif")!;
 
     this.subjectClientShareModalOpen = this.clientLogic.closeClientShareModal.subscribe((open: Boolean) => {
       this.clientShareModalOpen = false;
     });
+  }
 
-    this.getColorRowDocumentSale();
+  ngAfterViewInit(): void {
+    this.scheduleDocumentsTableLayoutSync();
+  }
 
+  public onClientSegmentChange(event: CustomEvent): void {
+    if (event.detail?.value === 'docVentas') {
+      this.scheduleDocumentsTableLayoutSync();
+    }
   }
 
   ngOnDestroy() {
@@ -141,6 +168,236 @@ export class ClienteComponent implements OnInit {
     this.clientLogic.clientDetailComponent = false;
     this.clientLogic.clientDocumentSaleComponent = true;
     this.clientLogic.opendDocClick = true;
+  }
+
+  public get documentSalesTotalPages(): number {
+    return Math.max(Math.ceil(this.documentSalesTotalRows / this.DOCUMENT_SALES_PAGE_SIZE), 1);
+  }
+
+  public get documentSalesPageStart(): number {
+    if (this.documentSalesTotalRows === 0) {
+      return 0;
+    }
+
+    return (this.documentSalesCurrentPage * this.DOCUMENT_SALES_PAGE_SIZE) + 1;
+  }
+
+  public get documentSalesPageEnd(): number {
+    const nextPageEnd = (this.documentSalesCurrentPage + 1) * this.DOCUMENT_SALES_PAGE_SIZE;
+
+    return Math.min(nextPageEnd, this.documentSalesTotalRows);
+  }
+
+  public get canShowDocumentPagination(): boolean {
+    return this.documentSalesTotalRows > this.DOCUMENT_SALES_PAGE_SIZE;
+  }
+
+  public get canGoToPreviousDocumentsPage(): boolean {
+    return this.documentSalesCurrentPage > 0;
+  }
+
+  public get canGoToNextDocumentsPage(): boolean {
+    return this.documentSalesPageEnd < this.documentSalesTotalRows;
+  }
+
+  public goToPreviousDocumentsPage(): void {
+    if (!this.canGoToPreviousDocumentsPage) {
+      return;
+    }
+
+    this.loadDocumentsPage(this.documentSalesCurrentPage - 1);
+  }
+
+  public goToNextDocumentsPage(): void {
+    if (!this.canGoToNextDocumentsPage) {
+      return;
+    }
+
+    this.loadDocumentsPage(this.documentSalesCurrentPage + 1);
+  }
+
+  public onDocumentsTableBodyTouchStart(event: TouchEvent): void {
+    if (event.touches.length !== 1) {
+      return;
+    }
+
+    this.documentsTableBodyTouchStartX = event.touches[0].clientX;
+    this.documentsTableBodyTouchStartY = event.touches[0].clientY;
+    this.documentsTableBodyTouchScrollLeft = this.documentsTableXScroll?.nativeElement?.scrollLeft ?? 0;
+    this.documentsTableBodyScrollAxis = null;
+  }
+
+  public onDocumentsTableBodyTouchMove(event: TouchEvent): void {
+    const xScroll = this.documentsTableXScroll?.nativeElement;
+
+    if (!xScroll || event.touches.length !== 1) {
+      return;
+    }
+
+    const touch = event.touches[0];
+    const deltaX = this.documentsTableBodyTouchStartX - touch.clientX;
+    const deltaY = this.documentsTableBodyTouchStartY - touch.clientY;
+
+    if (!this.documentsTableBodyScrollAxis) {
+      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) {
+        return;
+      }
+
+      this.documentsTableBodyScrollAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
+    }
+
+    if (this.documentsTableBodyScrollAxis !== 'x') {
+      return;
+    }
+
+    xScroll.scrollLeft = this.documentsTableBodyTouchScrollLeft + deltaX;
+  }
+
+  private loadDocumentsPage(page: number): void {
+    this.documentSalesCurrentPage = Math.max(page, 0);
+    this.applyDocumentPage();
+    this.resetDocumentsTableScroll();
+  }
+
+  private applyDocumentPage(): void {
+    const start = this.documentSalesCurrentPage * this.DOCUMENT_SALES_PAGE_SIZE;
+    this.document = this.allDocuments.slice(start, start + this.DOCUMENT_SALES_PAGE_SIZE);
+    this.scheduleDocumentsTableLayoutSync();
+  }
+
+  private getIonColumnSize(col: HTMLElement): number {
+    const size = col.getAttribute('size');
+
+    return size ? parseInt(size, 10) : 12;
+  }
+
+  private getDocumentsTableColumns(row: Element | null): HTMLElement[] {
+    if (!row) {
+      return [];
+    }
+
+    return Array.from(row.querySelectorAll('ion-col')) as HTMLElement[];
+  }
+
+  private clearDocumentsTableColumnStyles(cols: HTMLElement[]): void {
+    cols.forEach(col => {
+      col.style.width = '';
+      col.style.minWidth = '';
+      col.style.maxWidth = '';
+    });
+  }
+
+  private syncDocumentsTableLayout(): void {
+    const tablePanel = this.documentsTablePanel?.nativeElement;
+    const tableStack = this.documentsTableXScroll?.nativeElement?.querySelector('.documents-table-stack') as HTMLElement | null;
+    const headerWrap = this.documentsHeaderScroll?.nativeElement;
+    const bodyWrap = this.documentsBodyScroll?.nativeElement;
+
+    if (!tablePanel || !tableStack || !headerWrap || !bodyWrap) {
+      return;
+    }
+
+    const headerRow = headerWrap.querySelector('ion-row.cabecera');
+    const bodyGrid = bodyWrap.querySelector('ion-grid');
+
+    if (!headerRow || !bodyGrid) {
+      return;
+    }
+
+    const headerCols = this.getDocumentsTableColumns(headerRow);
+    const bodyRows = Array.from(bodyGrid.querySelectorAll('ion-row'));
+    const bodyCols = bodyRows.reduce<HTMLElement[]>((cols, row) => {
+      return cols.concat(this.getDocumentsTableColumns(row));
+    }, []);
+
+    if (headerCols.length === 0 || bodyRows.length === 0) {
+      return;
+    }
+
+    this.clearDocumentsTableColumnStyles([...headerCols, ...bodyCols]);
+    tablePanel.style.removeProperty('--documents-table-width');
+
+    requestAnimationFrame(() => {
+      const headerRows = Array.from(headerWrap.querySelectorAll('ion-row')) as HTMLElement[];
+      const bodyRowElements = bodyRows as HTMLElement[];
+
+      headerRows.forEach(row => {
+        row.style.tableLayout = 'auto';
+      });
+      bodyRowElements.forEach(row => {
+        row.style.tableLayout = 'auto';
+      });
+
+      const columnSizes = headerCols.map(col => this.getIonColumnSize(col));
+      const totalSize = columnSizes.reduce((sum, size) => sum + size, 0);
+      const minWidths = new Array<number>(headerCols.length).fill(0);
+
+      const measureColumnWidth = (col: HTMLElement, index: number): void => {
+        if (index >= headerCols.length) {
+          return;
+        }
+
+        minWidths[index] = Math.max(minWidths[index], col.scrollWidth, col.getBoundingClientRect().width);
+      };
+
+      headerCols.forEach(measureColumnWidth);
+      bodyRows.forEach(row => {
+        this.getDocumentsTableColumns(row).forEach(measureColumnWidth);
+      });
+
+      const minTableWidth = minWidths.reduce((sum, width) => sum + width, 0);
+      const viewportWidth = this.documentsTableXScroll?.nativeElement?.clientWidth ?? bodyWrap.clientWidth;
+      const tableWidth = Math.max(minTableWidth, viewportWidth);
+      const assignedWidths = columnSizes.map((size, index) => {
+        const proportionalWidth = Math.ceil((size / totalSize) * tableWidth);
+
+        return Math.max(minWidths[index], proportionalWidth);
+      });
+      const resolvedTableWidth = assignedWidths.reduce((sum, width) => sum + width, 0);
+      const tableWidthPx = `${resolvedTableWidth}px`;
+
+      tablePanel.style.setProperty('--documents-table-width', tableWidthPx);
+
+      const applyColumnWidth = (col: HTMLElement, index: number): void => {
+        const widthPx = `${assignedWidths[index]}px`;
+        col.style.width = widthPx;
+        col.style.minWidth = widthPx;
+        col.style.maxWidth = widthPx;
+      };
+
+      headerCols.forEach(applyColumnWidth);
+      bodyRows.forEach(row => {
+        this.getDocumentsTableColumns(row).forEach(applyColumnWidth);
+      });
+
+      headerRows.forEach(row => {
+        row.style.tableLayout = 'fixed';
+      });
+      bodyRowElements.forEach(row => {
+        row.style.tableLayout = 'fixed';
+      });
+    });
+  }
+
+  private resetDocumentsTableScroll(): void {
+    const body = this.documentsBodyScroll?.nativeElement;
+    const xScroll = this.documentsTableXScroll?.nativeElement;
+
+    if (body) {
+      body.scrollTop = 0;
+    }
+
+    if (xScroll) {
+      xScroll.scrollLeft = 0;
+    }
+  }
+
+  private scheduleDocumentsTableLayoutSync(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.syncDocumentsTableLayout();
+      });
+    });
   }
 
   viewCoordenada(verCrear: Boolean, client: Client, module: string) {
@@ -235,8 +492,16 @@ export class ClienteComponent implements OnInit {
   }
 
   public selectAllDocuments(): void {
-    this.selectedDocuments = Array.isArray(this.clientLogic.datos?.document)
-      ? this.clientLogic.datos.document.map(d => d.coDocument)
+    this.selectedDocuments = this.getShareableDocuments().map(doc => doc.coDocument);
+  }
+
+  private getShareableDocuments(): DocumentSale[] {
+    if (this.allDocuments.length > 0) {
+      return this.allDocuments;
+    }
+
+    return Array.isArray(this.clientLogic.datos?.document)
+      ? this.clientLogic.datos.document
       : [];
   }
 
@@ -245,26 +510,28 @@ export class ClienteComponent implements OnInit {
   }
 
   public openShareModal(open: boolean): void {
-    // Obtener lista de documentos actuales
-    const docs: DocumentSale[] = Array.isArray(this.clientLogic.datos?.document)
-      ? this.clientLogic.datos.document
-      : [];
-
-    // Asegurar array destino
-    if (!Array.isArray(this.clientLogic.documentsSaleSelectShared)) {
-      this.clientLogic.documentsSaleSelectShared = [];
+    if (!open) {
+      this.clientShareModalOpen = false;
+      return;
     }
 
-    // Mapear selectedDocuments (coDocument strings) a objetos DocumentSale y asignar sin duplicados
+    const docs = this.getShareableDocuments();
     const selectedDocs = this.selectedDocuments
-      .map(co => docs.find(d => d.coDocument === co))
-      .filter((d): d is DocumentSale => !!d);
+      .map(co => docs.find(doc => doc.coDocument === co))
+      .filter((doc): doc is DocumentSale => !!doc);
 
-    // Reemplazamos la colección compartida por los objetos seleccionados (sin duplicados)
+    if (selectedDocs.length === 0) {
+      return;
+    }
+
+    this.shareDocuments = selectedDocs;
     this.clientLogic.documentsSaleSelectShared = selectedDocs;
+    this.clientShareModalOpen = true;
+  }
 
-    // Abrir/cerrar modal
-    this.clientShareModalOpen = !!open;
+  public onShareModalDismiss(): void {
+    this.clientShareModalOpen = false;
+    this.shareDocuments = [];
   }
 
   onChangeAddress($event: any) {
@@ -317,10 +584,10 @@ export class ClienteComponent implements OnInit {
 
   getColorRowDocumentSale() {
     try {
-      if (!Array.isArray(this.document)) return;
+      if (!Array.isArray(this.allDocuments)) return;
 
-      for (let i = 0; i < this.document.length; i++) {
-        const doc = this.document[i];
+      for (let i = 0; i < this.allDocuments.length; i++) {
+        const doc = this.allDocuments[i];
         if (!doc) continue;
 
         const currentColor = String(doc.colorRow ?? '').trim().toLowerCase();
@@ -328,7 +595,7 @@ export class ClienteComponent implements OnInit {
         // Si ya está en rojo, no se vuelve a modificar.
         if (currentColor === 'red') {
           doc.colorRow = 'Red';
-          this.document[i].colorRow = 'Red';
+          this.allDocuments[i].colorRow = 'Red';
           continue;
         }
 
@@ -341,7 +608,7 @@ export class ClienteComponent implements OnInit {
         }
 
         // Asegura que el array fuente refleje el color calculado.
-        this.document[i].colorRow = doc.colorRow;
+        this.allDocuments[i].colorRow = doc.colorRow;
 
 
         // Mantener mapa actualizado (si existe entrada por idDocument)

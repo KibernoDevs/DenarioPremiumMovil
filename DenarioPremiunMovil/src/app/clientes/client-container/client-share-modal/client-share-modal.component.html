@@ -1,9 +1,29 @@
 @if (client) {
 <ion-header class="compartirDoc-header" slot="fixed">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button
+        fill="clear"
+        class="preview-header-btn"
+        [disabled]="exporting"
+        [attr.aria-label]="clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR') || 'Cerrar'"
+        (click)="cancelPreview()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
     <ion-title class="tituloCompartir">
       {{ clientLogic.clientTags.get('CLI_DETAIL_TAB_DOCUMENTO_VENTA') || 'Vista previa' }}
     </ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        class="preview-header-btn preview-header-btn--share"
+        [disabled]="exporting || document.length === 0"
+        aria-label="Compartir"
+        (click)="exportPdf()">
+        <ion-icon slot="icon-only" name="share-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -125,24 +145,4 @@
     </div>
   </div>
 </ion-content>
-
-<ion-footer slot="fixed" class="compartirDoc-footer">
-  <ion-toolbar>
-    <ion-grid>
-      <ion-row>
-        <ion-col size="6">
-          <ion-button expand="block" size="small" color="light" [disabled]="exporting" (click)="cancelPreview()">
-            {{ clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR') || 'Cancelar' }}
-          </ion-button>
-        </ion-col>
-        <ion-col size="6">
-          <ion-button expand="block" size="small" class="botonAddVerde" [disabled]="exporting" (click)="exportPdf()">
-            <ion-icon slot="start" name="share-social-outline"></ion-icon>
-            {{ 'Compartir PDF' }}
-          </ion-button>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
-  </ion-toolbar>
-</ion-footer>
 }

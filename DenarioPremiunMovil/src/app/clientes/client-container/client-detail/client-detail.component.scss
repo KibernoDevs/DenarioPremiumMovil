@@ -109,10 +109,10 @@ ion-modal.compartirDocPreview {
   --min-width: 95%;
 }
 
-/* Asegura que el contenido del modal no quede oculto por el footer fijo */
+/* Asegura que el contenido del modal no quede oculto por el header fijo */
 .compartirDoc .compartirDoc-content {
-  padding-bottom: 82px; /* dejar espacio para el footer (ajusta si cambias la altura) */
-  max-height: calc(100vh - 90px); /* evita overflow excesivo, opcional */
+  padding-bottom: 16px;
+  max-height: calc(100vh - 90px);
   overflow: auto;
 }
 
@@ -133,10 +133,10 @@ ion-modal.compartirDocPreview {
   }
 }
 
-/* Dejamos espacio en el contenido para header y footer */
+/* Dejamos espacio en el contenido para header */
 .compartirDoc-content {
-  padding-top: 56px;   /* ajustar si tu header ocupa más/menos */
-  padding-bottom: 82px; /* igual que antes para no tapar footer */
+  padding-top: 56px;
+  padding-bottom: 16px;
   --overflow: auto;
 }
 
@@ -214,4 +214,147 @@ ion-modal.compartirDocPreview {
   font-size: 12px;
   color: #222;
   max-width: 220px;
+}
+
+.doc-ventas-tab {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 180px);
+  max-height: calc(100dvh - 180px);
+  min-height: calc(100dvh - 180px);
+  overflow: hidden;
+}
+
+.doc-ventas-tab .saldo-legend {
+  flex-shrink: 0;
+}
+
+.documents-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.documents-table-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.documents-table-x-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.documents-table-stack {
+  display: flex;
+  flex-direction: column;
+  width: var(--documents-table-width, 100%);
+  min-height: 100%;
+  height: 100%;
+}
+
+.documents-table-header-wrap {
+  flex-shrink: 0;
+}
+
+.documents-table-body-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.documents-table-header-wrap .tablaDocVentasGrip,
+.documents-table-body-wrap .tablaDocVentasGrip {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  flex-wrap: nowrap;
+  width: var(--documents-table-width, 100%);
+  min-width: var(--documents-table-width, 100%);
+}
+
+.documents-table-header-wrap ion-row,
+.documents-table-body-wrap ion-row {
+  display: table;
+  table-layout: fixed;
+  width: var(--documents-table-width, 100%);
+  flex-wrap: nowrap;
+}
+
+.documents-table-header-wrap ion-col,
+.documents-table-body-wrap ion-col {
+  display: table-cell !important;
+  vertical-align: middle;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.document-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: 0;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(67, 1, 151, 0.12);
+  background: #fafafa;
+}
+
+.document-pagination__btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: $colorLila;
+  padding: 6px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  flex: 0 0 auto;
+
+  &:disabled {
+    opacity: 0.35;
+  }
+
+  ion-icon {
+    font-size: 22px;
+  }
+}
+
+.document-pagination__summary {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.document-pagination__page {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.document-pagination__range {
+  display: block;
+  font-size: 11px;
+  color: #666;
 }

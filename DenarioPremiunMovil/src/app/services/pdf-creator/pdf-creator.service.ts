@@ -749,23 +749,26 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       .catch(e => console.log('Error abriendo PDF', e));
   }
 
-    async savePdf(base64: string, fileName = 'document.pdf') {
+  async savePdf(
+    base64: string,
+    fileName = 'document.pdf',
+    directory: Directory = Directory.External,
+  ) {
     const result = await Filesystem.writeFile({
       path: fileName,
       data: base64,
-      directory: Directory.External
-    }).then(res => {return res}).catch(err => {
+      directory,
+    }).then(res => res).catch(err => {
       console.error('Error saving PDF file:', err);
       throw err;
     });
     return result;
-    //await this.openPdf(result.uri);
   }
 
-  deletePdf(fileName: string) {
+  deletePdf(fileName: string, directory: Directory = Directory.External) {
     return Filesystem.deleteFile({
       path: fileName,
-      directory: Directory.External
+      directory,
     });
   }
 }

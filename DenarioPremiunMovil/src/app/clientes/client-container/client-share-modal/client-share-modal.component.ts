@@ -1,10 +1,11 @@
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, inject, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Client } from 'src/app/modelos/tables/client';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
+import { Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
 @Component({
@@ -13,7 +14,7 @@ import { Share } from '@capacitor/share';
   styleUrls: ['./client-share-modal.component.scss'],
   standalone: false,
 })
-export class ClientShareModalComponent implements OnInit {
+export class ClientShareModalComponent implements OnInit, OnChanges {
   public clientLogic = inject(ClientLogicService);
   public currencyService = inject(CurrencyService);
   private globalConfig = inject(GlobalConfigService);
@@ -24,6 +25,7 @@ export class ClientShareModalComponent implements OnInit {
   public hardCurrency = '';
 
   @Input() client?: Client;
+  @Input() documents: DocumentSale[] = [];
 
   public document: DocumentSale[] = [];
   public tagRif = '';
@@ -33,25 +35,62 @@ export class ClientShareModalComponent implements OnInit {
     return this.clientLogic.multiCurrency && this.clientLogic.showConversion;
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.initializeModalContext();
+    this.syncDocumentsFromInput();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['documents']) {
+      this.syncDocumentsFromInput();
+    }
+  }
+
+  private initializeModalContext(): void {
     this.localCurrency = this.currencyService.localCurrency?.coCurrency ?? '';
     if (this.clientLogic.multiCurrency) {
       this.hardCurrency = this.currencyService.hardCurrency?.coCurrency ?? '';
     }
-    this.document = this.clientLogic.documentsSaleSelectShared ?? [];
     this.client = this.client ?? this.clientLogic.datos?.client;
     this.tagRif = this.globalConfig.get('tagRif')!;
-
-    if (!this.client || this.document.length === 0) {
-      console.error('ClientShareModal: missing client or documents for PDF export');
-      this.cancelPreview();
-      return;
-    }
   }
 
-  getDaDueDate(daDueDate: string) {
-    const dateDoc = new Date(daDueDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3')).getTime();
-    return Math.abs(Math.round((new Date().getTime() - dateDoc) / 86400000));
+  private syncDocumentsFromInput(): void {
+    const source = this.documents?.length
+      ? this.documents
+      : (this.clientLogic.documentsSaleSelectShared ?? []);
+
+    this.document = [...source];
+  }
+
+  getDaDueDate(daDueDate: string): number {
+    if (!daDueDate) {
+      return 0;
+    }
+
+    const rawDate = String(daDueDate).split(' ')[0].trim();
+    let dueDate: Date | null = null;
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
+      const [day, month, year] = rawDate.split('/').map(Number);
+      dueDate = new Date(year, month - 1, day);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      const [year, month, day] = rawDate.split('-').map(Number);
+      dueDate = new Date(year, month - 1, day);
+    } else {
+      const parsed = new Date(rawDate);
+      dueDate = Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    if (!dueDate) {
+      return 0;
+    }
+
+    const today = new Date();
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+
+    return Math.abs(Math.floor((todayOnly.getTime() - dueDateOnly.getTime()) / 86400000));
   }
 
   formatNumber(num: number) {
@@ -149,13 +188,16 @@ export class ClientShareModalComponent implements OnInit {
     });
   }
 
-  async exportPdf() {
-    if (this.exporting || !this.client) {
+  async exportPdf(): Promise<void> {
+    if (this.exporting || !this.client || this.document.length === 0) {
+      console.error('ClientShareModal: missing client or documents for PDF export');
       return;
     }
 
     this.exporting = true;
     await this.message.showLoading();
+
+    const shareDirectory = Directory.Cache;
 
     try {
       const tags = this.clientLogic.clientTags;
@@ -180,19 +222,30 @@ export class ClientShareModalComponent implements OnInit {
 
       const base64 = doc.output('datauristring');
       const trimmed = base64.split(',')[1];
-      const filename = 'invoice_' + (client.lbClient ?? 'client') + '.pdf';
-      const res = await this.pdfCreator.savePdf(trimmed, filename);
+      const filename = `invoice_${client.coClient ?? 'client'}.pdf`;
+      const res = await this.pdfCreator.savePdf(trimmed, filename, shareDirectory);
+
+      await this.message.hideLoading();
 
       try {
-        await Share.share({ url: res.uri });
+        await Share.share({
+          title: filename,
+          dialogTitle: 'Compartir PDF',
+          files: [res.uri],
+        });
+        this.finishShare(filename, shareDirectory);
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.toLowerCase().includes('cancel')) {
+          this.deleteTempPdf(filename, shareDirectory);
+          return;
+        }
         console.error('Error sharing PDF:', err);
+        this.deleteTempPdf(filename, shareDirectory);
       }
-
-      this.finishShare(filename);
     } catch (err) {
       console.error('Error saving PDF:', err);
-      this.finishShare();
+      await this.message.hideLoading();
     } finally {
       this.exporting = false;
     }
@@ -202,19 +255,19 @@ export class ClientShareModalComponent implements OnInit {
     this.clientLogic.closeClientShareModalFunction();
   }
 
-  deleteTempPdf(fileName: string) {
-    this.pdfCreator.deletePdf(fileName).then(() => {
+  deleteTempPdf(fileName: string, directory: Directory = Directory.External) {
+    this.pdfCreator.deletePdf(fileName, directory).then(() => {
       console.log('Temporary PDF deleted:', fileName);
-    }).catch((delErr: any) => {
+    }).catch((delErr: unknown) => {
       console.error('Error deleting temporary PDF file:', delErr);
     });
   }
 
-  finishShare(filename?: string) {
+  finishShare(filename?: string, directory: Directory = Directory.External) {
     if (filename) {
-      this.deleteTempPdf(filename);
+      this.deleteTempPdf(filename, directory);
     }
     this.clientLogic.closeClientShareModalFunction();
-    this.message.hideLoading();
+    void this.message.hideLoading();
   }
 }
