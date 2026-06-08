@@ -138,31 +138,27 @@ export class CobrosDocumentComponent implements OnInit {
 
     this.collectService.currencySelectedDocument = selected;
     this.collectService.documentCurrency = selectedCurrency;
-    this.applyDocumentFilter(selectedCurrency);
-
-    if (this.collectService.historicPartialPayment) {
-      this.collectService.findIsPaymentPartial(
-        this.synchronizationServices.getDatabase(),
-        this.collectService.collection.idClient
-      ).then(() => {
-      });
-    }
+    void this.loadDocumentsSalePage(0);
   }
 
   private applyDocumentFilter(coCurrency: string): void {
     const source = this.collectService.documentSalesView?.length
       ? this.collectService.documentSalesView
       : this.collectService.documentSales;
+    const pageIds = this.collectService.documentSalesPageIds;
+    const pageSource = pageIds?.size
+      ? source.filter(doc => pageIds.has(doc.idDocument))
+      : source;
 
-    if (!Array.isArray(source) || source.length === 0) {
+    if (!Array.isArray(pageSource) || pageSource.length === 0) {
       this.filteredDocumentsView = [];
       this.collectService.documentsSaleComponent = false;
       return;
     }
 
     this.filteredDocumentsView = (!coCurrency || coCurrency === 'Moneda')
-      ? source
-      : source.filter(doc => doc.coCurrency === coCurrency);
+      ? pageSource
+      : pageSource.filter(doc => doc.coCurrency === coCurrency);
 
     this.collectService.documentsSaleComponent = this.filteredDocumentsView.length > 0;
   }
@@ -176,15 +172,88 @@ export class CobrosDocumentComponent implements OnInit {
     );
   }
 
-  getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
-    this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), idClient, coCurrency, coCollection, idEnterprise).then(response => {
-      this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+  getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number): Promise<void> {
+    return this.loadDocumentsSalePage(0, idClient, coCurrency, coCollection, idEnterprise);
+  }
 
-      if (this.collectService.historicPartialPayment) {
-        this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient).then(() => {
-        });
+  public get documentSalesTotalPages(): number {
+    const total = this.collectService.documentSalesTotalRows;
+    const pageSize = this.collectService.documentSalesPageSize;
+    return Math.max(Math.ceil(total / pageSize), 1);
+  }
+
+  public get documentSalesPageStart(): number {
+    if (this.collectService.documentSalesTotalRows === 0) {
+      return 0;
+    }
+
+    return (this.collectService.documentSalesCurrentPage * this.collectService.documentSalesPageSize) + 1;
+  }
+
+  public get documentSalesPageEnd(): number {
+    const nextPageEnd = (this.collectService.documentSalesCurrentPage + 1) * this.collectService.documentSalesPageSize;
+    return Math.min(nextPageEnd, this.collectService.documentSalesTotalRows);
+  }
+
+  public get canShowDocumentPagination(): boolean {
+    return this.collectService.documentSalesTotalRows > this.collectService.documentSalesPageSize;
+  }
+
+  public get canGoToPreviousDocumentsPage(): boolean {
+    return this.collectService.documentSalesCurrentPage > 0;
+  }
+
+  public get canGoToNextDocumentsPage(): boolean {
+    return this.documentSalesPageEnd < this.collectService.documentSalesTotalRows;
+  }
+
+  public goToPreviousDocumentsPage(): void {
+    if (!this.canGoToPreviousDocumentsPage) {
+      return;
+    }
+
+    void this.loadDocumentsSalePage(this.collectService.documentSalesCurrentPage - 1);
+  }
+
+  public goToNextDocumentsPage(): void {
+    if (!this.canGoToNextDocumentsPage) {
+      return;
+    }
+
+    void this.loadDocumentsSalePage(this.collectService.documentSalesCurrentPage + 1);
+  }
+
+  private async loadDocumentsSalePage(
+    page: number,
+    idClient: number = this.collectService.collection.idClient,
+    coCurrency: string = this.collectService.documentCurrency || 'Moneda',
+    coCollection: string = this.collectService.collection.coCollection,
+    idEnterprise: number = this.collectService.collection.idEnterprise
+  ): Promise<void> {
+    const pageSize = this.collectService.documentSalesPageSize || this.collectService.DOCUMENT_SALES_PAGE_SIZE;
+    const safePage = Math.max(page, 0);
+
+    await this.collectService.getDocumentsSales(
+      this.synchronizationServices.getDatabase(),
+      idClient,
+      coCurrency,
+      coCollection,
+      idEnterprise,
+      {
+        limit: pageSize,
+        offset: safePage * pageSize,
+        includeSelected: true
       }
-    })
+    );
+
+    this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+
+    if (this.collectService.historicPartialPayment) {
+      await this.collectService.findIsPaymentPartial(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection.idClient
+      );
+    }
   }
 
   private initializeDocumentCurrencyFilter(): void {
@@ -197,6 +266,7 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     this.collectService.documentCurrency = 'Moneda';
+    this.collectService.documentSalesCurrentPage = 0;
     this.applyDocumentFilter('Moneda');
   }
 

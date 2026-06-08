@@ -42,6 +42,12 @@ import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 
+export interface DocumentSalesPagination {
+  limit: number;
+  offset: number;
+  includeSelected?: boolean;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -79,6 +85,11 @@ export class CollectionService {
   public documentSales: DocumentSale[] = [];
   public documentSalesBackup: DocumentSale[] = [];
   public documentSalesView: DocumentSale[] = [];
+  public readonly DOCUMENT_SALES_PAGE_SIZE = 50;
+  public documentSalesPageSize: number = this.DOCUMENT_SALES_PAGE_SIZE;
+  public documentSalesCurrentPage: number = 0;
+  public documentSalesTotalRows: number = 0;
+  public documentSalesPageIds = new Set<number>();
   public igtfSelected!: IgtfList;
   public igtfList!: IgtfList[];
   public retention!: Retention;
@@ -2581,13 +2592,26 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     })
   }
 
-  getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
+  async getDocumentsSales(
+    dbServ: SQLiteObject,
+    idClient: number,
+    coCurrency: string,
+    coCollection: string,
+    idEnterprise: number,
+    pagination?: DocumentSalesPagination
+  ): Promise<DocumentSale[] | void> {
 
     if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) return Promise.resolve();
     this.documentSales = [] as DocumentSale[];
     this.documentSalesBackup = [] as DocumentSale[];
     this.documentSalesView = [] as DocumentSale[];
     this.mapDocumentsSales.clear();
+    this.documentSalesPageIds.clear();
+
+    if (pagination) {
+      this.documentSalesPageSize = pagination.limit;
+      this.documentSalesCurrentPage = Math.floor(pagination.offset / pagination.limit);
+    }
 
     const moduleType = this.coTypeModule;
     const currencyIsEmpty = coCurrency === '' || coCurrency === 'Moneda';
@@ -2601,29 +2625,24 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       coCollection
     });
 
-    return dbServ.executeSql(query, params).then(data => {
-      this.documentsSaleComponent = data.rows.length > 0;
-
-      for (let i = 0; i < data.rows.length; i++) {
-        const row = data.rows.item(i);
-        row.missing_re
-        if (this.mapDocumentsSales.has(row.id_document)) continue;
-
-        const doc = this.mapRowToDocumentSale(row, isIgtf);
-        const backup = Object.assign({}, doc);
-
-        this.documentSales.push(doc);
-        this.documentSalesBackup.push(backup);
-        this.mapDocumentsSales.set(row.id_document, doc);
-
-        if (!this.isOpenCollect) {
-          this.applyExistingSelection(i, doc, backup);
-        } else {
-          doc.isSelected = false;
-          backup.isSelected = false;
-        }
+    try {
+      if (pagination) {
+        this.documentSalesTotalRows = await this.countDocumentsSales(dbServ, query, params);
       }
 
+      const paginated = this.applyDocumentsSalesPagination(query, params, pagination);
+      const data = await dbServ.executeSql(paginated.query, paginated.params);
+      this.addDocumentSalesRows(data, isIgtf, true);
+
+      if (pagination?.includeSelected) {
+        await this.addSelectedDocumentsSales(dbServ, coCollection, isIgtf);
+      }
+
+      if (!pagination) {
+        this.documentSalesTotalRows = this.documentSales.length;
+      }
+
+      this.documentsSaleComponent = this.documentSales.length > 0;
       this.documentSalesView = JSON.parse(JSON.stringify(this.documentSales));
 
       if (this.multiCurrency)
@@ -2631,7 +2650,69 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       this.getColorRowDocumentSale();
       return this.documentSales;
-    }).catch(() => Promise.resolve(this.documentSales));
+    } catch {
+      return Promise.resolve(this.documentSales);
+    }
+  }
+
+  private applyDocumentsSalesPagination(
+    query: string,
+    params: any[],
+    pagination?: DocumentSalesPagination
+  ): { query: string; params: any[] } {
+    if (!pagination) {
+      return { query, params };
+    }
+
+    return {
+      query: `${query} LIMIT ? OFFSET ?`,
+      params: [...params, pagination.limit, pagination.offset]
+    };
+  }
+
+  private async countDocumentsSales(dbServ: SQLiteObject, query: string, params: any[]): Promise<number> {
+    const countQuery = `SELECT COUNT(1) AS total FROM (SELECT DISTINCT id_document FROM (${query}) documents_count)`;
+    const data = await dbServ.executeSql(countQuery, params);
+    return Number(data.rows.item(0)?.total ?? 0);
+  }
+
+  private addDocumentSalesRows(data: any, isIgtf: boolean, markAsPageRow: boolean): void {
+    for (let i = 0; i < data.rows.length; i++) {
+      const row = data.rows.item(i);
+
+      if (markAsPageRow) {
+        this.documentSalesPageIds.add(row.id_document);
+      }
+
+      if (this.mapDocumentsSales.has(row.id_document)) continue;
+
+      const doc = this.mapRowToDocumentSale(row, isIgtf);
+      const backup = Object.assign({}, doc);
+      const index = this.documentSales.length;
+
+      this.documentSales.push(doc);
+      this.documentSalesBackup.push(backup);
+      this.mapDocumentsSales.set(row.id_document, doc);
+
+      if (!this.isOpenCollect) {
+        this.applyExistingSelection(index, doc, backup);
+      } else {
+        doc.isSelected = false;
+        backup.isSelected = false;
+      }
+    }
+  }
+
+  private async addSelectedDocumentsSales(dbServ: SQLiteObject, coCollection: string, isIgtf: boolean): Promise<void> {
+    if (!coCollection) {
+      return;
+    }
+
+    const query =
+      'SELECT DISTINCT d.* FROM document_sales d ' +
+      'WHERE d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection = ?)';
+    const data = await dbServ.executeSql(query, [coCollection]);
+    this.addDocumentSalesRows(data, isIgtf, false);
   }
 
   private buildDocsQuery(opts: {

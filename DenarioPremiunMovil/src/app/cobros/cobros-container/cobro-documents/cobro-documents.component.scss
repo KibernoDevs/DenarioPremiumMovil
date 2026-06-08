@@ -241,6 +241,18 @@ ion-modal.collectDiscounts {
   max-width: 220px;
 }
 
+.document-pagination {
+  font-size: 12px;
+  margin: 4px 0 8px 0;
+}
+
+.document-pagination__summary {
+  color: #333;
+  line-height: 1.2;
+  min-width: 130px;
+  text-align: center;
+}
+
 .payment-details {
   white-space: pre-line;
   text-align: left;

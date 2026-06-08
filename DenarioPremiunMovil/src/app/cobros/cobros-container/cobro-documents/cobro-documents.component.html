@@ -70,6 +70,33 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
   </button>
 </div>
 }
+
+@if(canShowDocumentPagination){
+<ion-grid class="document-pagination">
+  <ion-row class="ion-align-items-center ion-justify-content-center">
+    <ion-col size="auto">
+      <ion-button size="small" fill="outline" (click)="goToPreviousDocumentsPage()"
+        [disabled]="!canGoToPreviousDocumentsPage">
+        Anterior
+      </ion-button>
+    </ion-col>
+    <ion-col size="auto" class="document-pagination__summary">
+      <div>
+        Pagina {{this.collectService.documentSalesCurrentPage + 1}} de {{documentSalesTotalPages}}
+      </div>
+      <small>
+        Mostrando {{documentSalesPageStart}}-{{documentSalesPageEnd}} de
+        {{this.collectService.documentSalesTotalRows}}
+      </small>
+    </ion-col>
+    <ion-col size="auto">
+      <ion-button size="small" fill="outline" (click)="goToNextDocumentsPage()" [disabled]="!canGoToNextDocumentsPage">
+        Siguiente
+      </ion-button>
+    </ion-col>
+  </ion-row>
+</ion-grid>
+}
 <ion-popover trigger="legendBlueHint" triggerAction="click">
   <ng-template>
     <div class="legend-popover">

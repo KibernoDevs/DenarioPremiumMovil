@@ -309,13 +309,26 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.documentCurrency = this.getAllDocumentsCurrency();
   }
 
+  private getDocumentSalesFirstPageOptions(): { limit: number; offset: number; includeSelected: boolean } {
+    const limit = this.collectService.DOCUMENT_SALES_PAGE_SIZE;
+    this.collectService.documentSalesPageSize = limit;
+    this.collectService.documentSalesCurrentPage = 0;
+
+    return {
+      limit,
+      offset: 0,
+      includeSelected: true
+    };
+  }
+
   private loadAllDocumentsSales(): Promise<void> {
     return this.collectService.getDocumentsSales(
       this.synchronizationServices.getDatabase(),
       this.collectService.collection.idClient,
       this.getAllDocumentsCurrency(),
       this.collectService.collection.coCollection,
-      this.collectService.collection.idEnterprise
+      this.collectService.collection.idEnterprise,
+      this.getDocumentSalesFirstPageOptions()
     ).then(() => {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
       if (this.collectService.historicPartialPayment) {
@@ -386,7 +399,8 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.collection.idClient,
           this.getAllDocumentsCurrency(),
           this.collectService.collection.coCollection,
-          this.collectService.collection.idEnterprise
+          this.collectService.collection.idEnterprise,
+          this.getDocumentSalesFirstPageOptions()
         ).then(() => {
           if (this.collectService.historicPartialPayment) {
             this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
@@ -817,7 +831,8 @@ export class CobrosGeneralComponent implements OnInit {
 
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
+              this.getDocumentSalesFirstPageOptions()).then(() => {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
@@ -1010,7 +1025,8 @@ export class CobrosGeneralComponent implements OnInit {
         this.resetDocumentCurrencyFilter();
 
         this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.getAllDocumentsCurrency(),
-          this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(response => {
+          this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
+          this.getDocumentSalesFirstPageOptions()).then(response => {
 
 
             if (this.collectService.historicPartialPayment) {
