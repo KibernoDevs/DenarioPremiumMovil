@@ -85,7 +85,7 @@ export class CollectionService {
   public documentSales: DocumentSale[] = [];
   public documentSalesBackup: DocumentSale[] = [];
   public documentSalesView: DocumentSale[] = [];
-  public readonly DOCUMENT_SALES_PAGE_SIZE = 50;
+  public readonly DOCUMENT_SALES_PAGE_SIZE = 30;
   public documentSalesPageSize: number = this.DOCUMENT_SALES_PAGE_SIZE;
   public documentSalesCurrentPage: number = 0;
   public documentSalesTotalRows: number = 0;
