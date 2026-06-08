@@ -183,7 +183,7 @@ export class ClientLogicService {
     const tagValue = this.clientTags.get(tagKey);
     const moduleTitle = (tagValue && tagValue.trim().length > 0) ? tagValue.trim() : fallback;
     this.nombreModulo = moduleTitle;
-    this.nombreModuloEsLargo = moduleTitle.length > 14;
+    this.nombreModuloEsLargo = moduleTitle.length > 12;
   }
 
   getEnterprise() {
