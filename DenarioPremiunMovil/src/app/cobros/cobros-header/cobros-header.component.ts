@@ -340,24 +340,26 @@ export class CobrosHeaderComponent implements OnInit {
           this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros").then(() => {
             console.log(response);
             this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-            if (this.collectService.createAutomatedPrepaid) {
-              //DEBO CREAR EL ANTICIPO AUTOMATICO
-              this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
-                console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
-                this.collectService.createAutomatedPrepaid = false;
-                this.collectService.anticipoAutomatico = [];
-              });
-            }
+            this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
+              if (shouldCreatePrepaid) {
+                //DEBO CREAR EL ANTICIPO AUTOMATICO
+                this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
+                  console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
+                  this.collectService.createAutomatedPrepaid = false;
+                  this.collectService.anticipoAutomatico = [];
+                });
+              }
 
-            this.collectService.initCollect = true;
-            this.collectService.disableSavedButton = true;
-            this.collectService.disableSendButton = true;
-            this.collectService.showHeaderButtons = false;
-            this.collectService.cobroComponent = false;
-            this.collectService.cobrosComponent = true;
-            this.collectService.collectValid = false;
-            this.collectService.collectionIsSave = false;
-            this.messageService.hideLoading();
+              this.collectService.initCollect = true;
+              this.collectService.disableSavedButton = true;
+              this.collectService.disableSendButton = true;
+              this.collectService.showHeaderButtons = false;
+              this.collectService.cobroComponent = false;
+              this.collectService.cobrosComponent = true;
+              this.collectService.collectValid = false;
+              this.collectService.collectionIsSave = false;
+              this.messageService.hideLoading();
+            });
           })
 
 

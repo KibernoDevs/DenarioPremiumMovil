@@ -888,6 +888,9 @@ export class CollectionService {
       return;
     }
 
+    if (Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
+      this.syncMontosPagadosFromPayments();
+    }
 
     const preserveAmountsWithoutRecalc = !forceRecalc && !this.isChangePaymentPartialPersistence && (
       this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
@@ -896,16 +899,17 @@ export class CollectionService {
       || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress)
     );
 
-    if (preserveAmountsWithoutRecalc && this.collection.nuAmountPaid > 0) {
-      const hasAmountPaid = this.collection.nuAmountPaid !== null
-        && this.collection.nuAmountPaid !== undefined
-        && !isNaN(Number(this.collection.nuAmountPaid));
+    const persistedAmountToPay = Number(this.collection.nuAmountPaid) > 0
+      ? Number(this.collection.nuAmountPaid)
+      : Number(this.collection.nuAmountFinal ?? 0);
+
+    if (preserveAmountsWithoutRecalc && persistedAmountToPay > 0) {
       const hasAmountPaidConversion = this.collection.nuAmountPaidConversion !== null
         && this.collection.nuAmountPaidConversion !== undefined
         && !isNaN(Number(this.collection.nuAmountPaidConversion));
 
-      monto = hasAmountPaid ? Number(this.collection.nuAmountPaid) : Number(this.collection.nuAmountFinal ?? 0);
-      montoConversion = hasAmountPaidConversion
+      monto = persistedAmountToPay;
+      montoConversion = Number(this.collection.nuAmountPaid) > 0 && hasAmountPaidConversion
         ? Number(this.collection.nuAmountPaidConversion)
         : Number(this.collection.nuAmountFinalConversion ?? 0);
       this.montoTotalPagar = monto - montoTotalDiscounts;
@@ -913,7 +917,8 @@ export class CollectionService {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
-      return;
+      this.resolveAutomatedPrepaid(type, index);
+      return Promise.resolve(this.createAutomatedPrepaid);
     } else {
       if (this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) {
         monto = Number(this.collection.nuAmountTotal ?? 0);
@@ -997,47 +1002,124 @@ export class CollectionService {
 
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
     this.collection.nuAmountTotalConversion = this.convertirMonto(this.collection.nuAmountTotal, 0, this.collection.coCurrency);
-    //SI ESTA VARIABLE ESDTAS EN TRUE, DEBO CREAR UN ANTICIPO
-    if (this.automatedPrepaid && this.coTypeModule == "0") {
-      let isEqualCurrency = true;
-      //en que moneda sacar la cuenta del exceso
-      if (this.prepaidRangeCurrency === this.collection.coCurrency) {
-        isEqualCurrency = true;
-      } else {
-        isEqualCurrency = false;
+    this.resolveAutomatedPrepaid(type, index);
+    return Promise.resolve(this.createAutomatedPrepaid);
+  }
+
+  private syncMontosPagadosFromPayments(): void {
+    this.montoTotalPagado = 0;
+
+    if (this.tipoPagoEfectivo) {
+      for (const pago of this.pagoEfectivo) {
+        this.montoTotalPagado += Number(pago.monto ?? 0);
       }
-
-      if (!this.existPartialPayment) {
-        //con esta variable prepaidRangeAmount debo calcular el rango de exceso del monto pagado para crear el anticipo
-        if (isEqualCurrency) {
-          if (Number(this.prepaidRangeAmount < this.collection.nuDifference)) {
-            this.createAutomatedPrepaid = true;
-          } else {
-            this.createAutomatedPrepaid = false;
-          }
-        } else {
-          if (Number(this.prepaidRangeAmount < this.collection.nuDifferenceConversion)) {
-            this.createAutomatedPrepaid = true;
-          } else {
-            this.createAutomatedPrepaid = false;
-          }
-        }
-      } else {
-        this.createAutomatedPrepaid = false;
-      }
-
-      // Siempre limpiar flags antes de marcar el nuevo
-      this.checkTiposPago();
-      if (this.createAutomatedPrepaid)
-        this.setAutomatedPrepaid(type, index);
-
-      this.validateToSend();
-      return Promise.resolve(this.createAutomatedPrepaid);
-    } else {
-      this.checkTiposPago(); // limpiar flags si no hay anticipo
-      this.validateToSend();
-      return Promise.resolve(this.createAutomatedPrepaid);
     }
+    if (this.tipoPagoCheque) {
+      for (const pago of this.pagoCheque) {
+        this.montoTotalPagado += Number(pago.monto ?? 0);
+      }
+    }
+    if (this.tipoPagoDeposito) {
+      for (const pago of this.pagoDeposito) {
+        this.montoTotalPagado += Number(pago.monto ?? 0);
+      }
+    }
+    if (this.tipoPagoTransferencia) {
+      for (const pago of this.pagoTransferencia) {
+        this.montoTotalPagado += Number(pago.monto ?? 0);
+      }
+    }
+    if (this.tipoPagoPagoMovil) {
+      for (const pago of this.pagoMovil) {
+        this.montoTotalPagado += Number(pago.monto ?? 0);
+      }
+    }
+    if (this.tipoPagoOtros) {
+      for (const pago of this.pagoOtros) {
+        this.montoTotalPagado += Number(pago.monto ?? 0);
+      }
+    }
+
+    this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
+  }
+
+  private getAmountToPayForPrepaidCheck(): number {
+    const runtimeAmount = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
+    if (runtimeAmount > 0) {
+      return runtimeAmount;
+    }
+    return Number(this.collection.nuAmountFinal ?? this.collection.nuAmountPaid ?? 0);
+  }
+
+  private getPaymentExcessAmount(): number {
+    this.syncMontosPagadosFromPayments();
+    const amountPaid = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
+    const amountToPay = this.cleanFormattedNumber(this.currencyService.formatNumber(this.getAmountToPayForPrepaidCheck()));
+    return amountPaid - amountToPay;
+  }
+
+  private isPositiveExcessWithinTolerance(excess: number): boolean {
+    if (excess <= 0) {
+      return true;
+    }
+    if (!this.tolerancia0 || this.TipoTolerancia !== 0) {
+      return false;
+    }
+    if (this.collection.coCurrency !== this.MonedaTolerancia) {
+      return false;
+    }
+    return excess < this.RangoToleranciaPositiva;
+  }
+
+  private getPrepaidExcessAmount(): number {
+    const excess = this.getPaymentExcessAmount();
+    if (excess <= 0 || this.isPositiveExcessWithinTolerance(excess)) {
+      return 0;
+    }
+    if (this.prepaidRangeCurrency === this.collection.coCurrency) {
+      return excess;
+    }
+    const conversionExcess = Number(this.collection.nuDifferenceConversion ?? 0);
+    return conversionExcess > 0 ? conversionExcess : excess;
+  }
+
+  shouldCreateAutomatedPrepaidOnSend(): boolean {
+    if (!this.automatedPrepaid || this.coTypeModule !== '0' || this.existPartialPayment) {
+      return false;
+    }
+
+    const prepaidExcess = this.getPrepaidExcessAmount();
+    if (prepaidExcess <= this.prepaidRangeAmount) {
+      return false;
+    }
+
+    return this.createAutomatedPrepaid
+      && Array.isArray(this.anticipoAutomatico)
+      && this.anticipoAutomatico.length > 0;
+  }
+
+  refreshAutomatedPrepaidBeforeSend(): Promise<boolean> {
+    return this.calcularMontos('', 0).then(() => {
+      this.resolveAutomatedPrepaid('', 0);
+      return this.shouldCreateAutomatedPrepaidOnSend();
+    });
+  }
+
+  private resolveAutomatedPrepaid(type: string, index: number): void {
+    this.createAutomatedPrepaid = false;
+
+    if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
+      const prepaidExcess = this.getPrepaidExcessAmount();
+      if (prepaidExcess > this.prepaidRangeAmount) {
+        this.createAutomatedPrepaid = true;
+      }
+    }
+
+    this.checkTiposPago();
+    if (this.createAutomatedPrepaid) {
+      this.setAutomatedPrepaid(type, index);
+    }
+    this.validateToSend();
   }
 
   checkTiposPago() {
@@ -1173,35 +1255,17 @@ export class CollectionService {
       }
     });
 
-    // Buscar el pago que genera el prepago automático
-    let found = false;
-    let type = "";
-    let index = 0;
-    for (const { arr, tipo } of tipos) {
-      if (arr && arr.length > 0) {
-        for (let i = 0; i < arr.length; i++) {
-          // Calcular el exceso para este pago
-          let exceso = 0;
-          // Si el pago tiene un monto válido
-          if (arr[i] && typeof arr[i].monto === 'number') {
-            // El exceso es el monto pagado menos el monto total a pagar
-            exceso = arr[i].monto - this.montoTotalPagar;
-          }
-          // Si cumple la condición de prepago automático
-          if (!found && this.prepaidRangeAmount < exceso) {
-            arr[i].anticipoPrepaid = true;
-            type = arr[i].type;
-            index = i;
-            found = true;
-            break;
-          }
-        }
-      }
-      if (found) {
-        this.setAutomatedPrepaid(type, index); // Marcar el primer pago que cumple la condición
-        break;
-      }
+    const excess = this.getPrepaidExcessAmount();
+    if (excess <= this.prepaidRangeAmount) {
+      return;
+    }
 
+    for (let i = tipos.length - 1; i >= 0; i--) {
+      const { arr, tipo } = tipos[i];
+      if (arr && arr.length > 0) {
+        this.setAutomatedPrepaid(tipo, arr.length - 1);
+        return;
+      }
     }
   }
 
