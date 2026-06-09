@@ -213,8 +213,16 @@
 
       @if(documentSalesTotalRows > 0){
       <div class="documents-view">
-      <div class="documents-table-panel" #documentsTablePanel>
-        <div class="documents-table-x-scroll" #documentsTableXScroll>
+      <div class="documents-table-panel" #documentsTablePanel [class.documents-table-panel--ready]="documentsTableLayoutReady">
+        @if (!documentsTableLayoutReady) {
+        <div class="documents-table-skeleton" aria-hidden="true">
+          <div class="documents-table-skeleton__header"></div>
+          @for (row of documentsTableSkeletonRows; track row) {
+          <div class="documents-table-skeleton__row"></div>
+          }
+        </div>
+        }
+        <div class="documents-table-scroll" #documentsTableScroll>
           <div class="documents-table-stack">
             <div class="documents-table-header-wrap" #documentsHeaderScroll>
               <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
@@ -290,9 +298,7 @@
                 </ion-row>
               </ion-grid>
             </div>
-            <div class="documents-table-body-wrap" #documentsBodyScroll
-              (touchstart)="onDocumentsTableBodyTouchStart($event)"
-              (touchmove)="onDocumentsTableBodyTouchMove($event)">
+            <div class="documents-table-body-wrap" #documentsBodyWrap>
               <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
         @for(documento of document; track documento.idDocument; let i = $index){
         <ion-row class="tablaDocumentosVenta tablaDocVentas row">
