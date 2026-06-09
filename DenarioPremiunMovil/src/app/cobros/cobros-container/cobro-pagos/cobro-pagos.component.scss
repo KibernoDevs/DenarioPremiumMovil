@@ -4,9 +4,45 @@
   font-weight: bold;
 }
 
-.stickyTotal {
-  top: 47px;
-  z-index: 0;
+.pagos-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.pagos-sticky-header {
+  position: sticky;
+  top: var(--pagos-sticky-top, 48px);
+  z-index: 5;
+  background: #fff;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid rgba(67, 1, 151, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.pagos-sticky-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.pagos-sticky-totals__row {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.pagos-sticky-action {
+  width: 100%;
+}
+
+.pagos-sticky-action ion-button {
+  margin: 0;
+}
+
+.pagos-scroll {
+  width: 100%;
+  padding: 0 4px 12px;
 }
 
 .colorText {

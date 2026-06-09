@@ -23,6 +23,7 @@ export class CobroComponent implements OnInit, OnDestroy {
   public collectValidTabsLocal: boolean = false;
 
   public segment = 'default';
+  public documentsTabMounted = false;
   public fecha!: Date;
 
   constructor() {
@@ -56,6 +57,14 @@ export class CobroComponent implements OnInit, OnDestroy {
         this.collectService.collectValidTabs = data.valueOf();
       }, 0);
     });
+  }
+
+  onSegmentChange(event: CustomEvent): void {
+    const value = event.detail?.value as string;
+    if (value === 'documentos') {
+      this.documentsTabMounted = true;
+    }
+    this.onChangeTab(value);
   }
 
   onChangeTab(tab: string) {

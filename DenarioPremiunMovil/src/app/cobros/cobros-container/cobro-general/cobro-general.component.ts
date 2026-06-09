@@ -295,13 +295,6 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  private updateSelectedIgtf(price: number) {
-    const igtf = this.collectService.igtfList.find(i => i.price == price);
-    if (igtf) {
-      this.collectService.igtfSelected = igtf;
-    }
-  }
-
   private getAllDocumentsCurrency(): string {
     return this.collectService.currencyListDocument[0]?.coCurrency || 'Moneda';
   }
@@ -411,13 +404,9 @@ export class CobrosGeneralComponent implements OnInit {
 
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
-        //this.collectService.disabledCurrency = true;
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
-          this.updateSelectedIgtf(this.collectService.collection.nuIgtf);
+          this.loadData();
         });
-
-
-        this.loadData();
       });
     });
   }
@@ -595,6 +584,7 @@ export class CobrosGeneralComponent implements OnInit {
         }
       }
     }
+    this.collectService.restoreCollectionIgtfFields();
     this.collectService.calcularMontos("", 0);
     this.collectService.checkTiposPago();
     this.collectService.validateToSend();
