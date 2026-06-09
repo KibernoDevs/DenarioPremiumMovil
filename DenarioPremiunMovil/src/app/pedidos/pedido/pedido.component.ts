@@ -44,6 +44,7 @@ import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProdu
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
 import { Share } from '@capacitor/share';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 
 @Component({
   selector: 'app-pedido',
@@ -1831,5 +1832,10 @@ export class PedidoComponent implements OnInit {
     //var days = 86400000; /* 1000 * 60 * 60 * 24; */
 
     return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
+  }
+
+  get clienteTabLabel(): string {
+    const cliente = this.orderServ.cliente;
+    return formatClientForTab(cliente?.naClient, cliente?.coClient, cliente?.lbClient);
   }
 }

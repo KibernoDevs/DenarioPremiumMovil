@@ -12,6 +12,7 @@ import { ReturnLogicService } from 'src/app/services/returns/return-logic.servic
 import { COLOR_AMARILLO, DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
 import { InvoiceSelectorComponent } from './invoice-selector/invoice-selector.component';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 
 @Component({
   selector: 'devolucion-general',
@@ -103,6 +104,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         this.cliente.idClient = this.returnLogic.newReturn.idClient;
         this.cliente.coClient = this.returnLogic.newReturn.coClient;
         this.cliente.lbClient = this.returnLogic.newReturn.lbClient;
+        this.cliente.naClient = this.returnLogic.newReturn.naClient || this.cliente.lbClient;
         this.nombreCliente = this.cliente.lbClient;
         this.hasClient = true;
         this.returnLogic.bloquearFactura = false;
@@ -119,6 +121,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     this.clientChangeSubscription = this.selectorService.ClientChanged.subscribe(client => {
       this.selectorService.checkClient = false;
       this.cliente = client;
+      this.cliente.naClient = client.naClient || client.lbClient;
       this.nombreCliente = client.lbClient;
       this.reset();
     });
@@ -161,6 +164,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
       this.cliente = cliente;
       this.bloquearFactura = false;
       this.nombreCliente = cliente.lbClient;
+      this.cliente.naClient = cliente.naClient || cliente.lbClient;
       this.returnLogic.clientReturn = this.cliente;
       //this.returnLogic.setChange(true, false);
       this.returnLogic.newReturn.idClient = this.cliente.idClient;
@@ -250,6 +254,10 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
       }
     }
 
+  }
+
+  get clienteTabLabel(): string {
+    return formatClientForTab(this.cliente?.naClient, this.cliente?.coClient, this.cliente?.lbClient);
   }
 
 }

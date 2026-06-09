@@ -19,6 +19,7 @@ import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 
 
 
@@ -180,6 +181,7 @@ export class InventarioGeneralComponent implements OnInit {
           this.inventariosLogicService.cliente.idClient = this.inventariosLogicService.newClientStock.idClient;
           this.inventariosLogicService.cliente.coClient = this.inventariosLogicService.newClientStock.coClient;
           this.inventariosLogicService.cliente.lbClient = this.inventariosLogicService.newClientStock.lbClient;
+          this.inventariosLogicService.cliente.naClient = this.inventariosLogicService.newClientStock.lbClient;
           this.inventariosLogicService.nombreCliente = this.inventariosLogicService.newClientStock.lbClient;
 
           //PARA BUSCAR LAS FOTOS DE UN INVENTARIO GUARDADO
@@ -370,6 +372,7 @@ export class InventarioGeneralComponent implements OnInit {
           }
 
           this.inventariosLogicService.cliente = cliente;
+          this.inventariosLogicService.cliente.naClient = cliente.naClient || cliente.lbClient;
           this.inventariosLogicService.clientStockValid = true;
           this.inventariosLogicService.nombreCliente = cliente.lbClient;
           this.inventariosLogicService.clientClientStock = this.inventariosLogicService.cliente;
@@ -595,5 +598,9 @@ export class InventarioGeneralComponent implements OnInit {
     console.log(this.inventariosLogicService.newClientStock);
   }
 
+  get clienteTabLabel(): string {
+    const cliente = this.inventariosLogicService.cliente;
+    return formatClientForTab(cliente?.naClient, cliente?.coClient, cliente?.lbClient);
+  }
 
 }

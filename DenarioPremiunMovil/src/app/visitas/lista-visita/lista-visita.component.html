@@ -50,12 +50,11 @@
 
   <ion-list *ngFor="let visit of listaVisitas;" button detail="false">
     <!-- <ion-button (click)="service.changeDateVisit()"></ion-button> -->
-    <div
-      *ngIf="searchText === '' || visit.coVisit.toLowerCase().includes(searchText) || visit.naClient.toLowerCase().includes(searchText)">
+    <div *ngIf="matchesVisitSearch(visit)">
       <ion-item button detail="false">
         <ion-label (click)="selectVisit(visit)">
           <ion-text>{{ getTag("VIS_REF") }}{{ visit.idVisit }}</ion-text><br>
-          <ion-text>{{ getTag("VIS_CLIENTE") }} {{ visit.naClient}}</ion-text><br>
+          <ion-text>{{ getTag("VIS_CLIENTE") }} {{ formatVisitClient(visit) }}</ion-text><br>
           <ion-text>{{ getTag("VIS_STATUS") }}</ion-text>
           <ion-text [ngStyle]="{'color': statusColor(visit.stVisit)}">
             {{ getStatusVisitName(visit.stVisit, visit.isReassigned) }} </ion-text><br>

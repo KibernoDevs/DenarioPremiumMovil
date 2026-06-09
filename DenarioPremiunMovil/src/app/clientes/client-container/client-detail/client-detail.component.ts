@@ -11,6 +11,7 @@ import { Coordinate } from 'src/app/modelos/coordinate';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 
 type ClientWithBalanceAlias = Client & { saldo?: number };
 
@@ -621,5 +622,9 @@ export class ClienteComponent implements OnInit, AfterViewInit {
     } catch (err) {
       console.warn('[CollectionService] getColorRowDocumentSale error:', err);
     }
+  }
+
+  get clienteTabLabel(): string {
+    return formatClientForTab(this.client?.naClient, this.client?.coClient, this.client?.lbClient);
   }
 }

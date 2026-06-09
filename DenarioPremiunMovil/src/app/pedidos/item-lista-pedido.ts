@@ -3,6 +3,7 @@ export interface ItemListaPedido {
     id_order: number;
     co_order: string;
     co_client: string;
+    na_client: string;
     lb_client: string;
     st_order: number;// añadido para compatibilidad con versiones anteriores
     da_order: string;
