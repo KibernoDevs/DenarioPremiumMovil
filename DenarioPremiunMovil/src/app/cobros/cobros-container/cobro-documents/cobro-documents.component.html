@@ -95,8 +95,16 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
   </ng-template>
 </ion-popover>
 
-<div class="documents-table-panel" #documentsTablePanel>
-  <div class="documents-table-x-scroll" #documentsTableXScroll>
+<div class="documents-table-panel" #documentsTablePanel [class.documents-table-panel--ready]="documentsTableLayoutReady">
+  @if (!documentsTableLayoutReady) {
+  <div class="documents-table-skeleton" aria-hidden="true">
+    <div class="documents-table-skeleton__header"></div>
+    @for (row of documentsTableSkeletonRows; track row) {
+    <div class="documents-table-skeleton__row"></div>
+    }
+  </div>
+  }
+  <div class="documents-table-scroll" #documentsTableScroll>
     <div class="documents-table-stack">
       <div class="documents-table-header-wrap" #documentsHeaderScroll>
         <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
@@ -185,12 +193,10 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
         </ion-row>
         </ion-grid>
       </div>
-      <div class="documents-table-body-wrap" #documentsBodyScroll
-        (touchstart)="onDocumentsTableBodyTouchStart($event)"
-        (touchmove)="onDocumentsTableBodyTouchMove($event)">
+      <div class="documents-table-body-wrap" #documentsBodyWrap>
         <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
   @for (documentSale of filteredDocumentsView; track documentSale.idDocument) {
-  <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+  <ion-row class="tabladocumentSalesVenta tablaDocVentas row" [class.documents-row-selected]="documentSale.isSelected">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
       <ion-button (click)="openDocumentSale(getSourceIndex(documentSale), $event)" size="small" disabled="{{!documentSale.isSelected}}">

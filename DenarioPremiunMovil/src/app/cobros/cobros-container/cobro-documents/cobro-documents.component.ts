@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CollectionDetailDiscounts, CollectionPayment } from 'src/app/modelos/tables/collection';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
@@ -23,7 +23,7 @@ import { MessageService } from 'src/app/services/messageService/message.service'
   styleUrls: ['./cobro-documents.component.scss'],
   standalone: false
 })
-export class CobrosDocumentComponent implements OnInit {
+export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public collectService = inject(CollectionService);
   public globalConfig = inject(GlobalConfigService);
@@ -92,16 +92,17 @@ export class CobrosDocumentComponent implements OnInit {
   public totalView: number = 0;
   public totalViewConversion: number = 0;
   public filteredDocumentsView: DocumentSale[] = [];
+  public documentsTableLayoutReady = true;
+  public readonly documentsTableSkeletonRows = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
   @ViewChild('documentsTablePanel') documentsTablePanel?: ElementRef<HTMLElement>;
-  @ViewChild('documentsTableXScroll') documentsTableXScroll?: ElementRef<HTMLElement>;
+  @ViewChild('documentsTableScroll') documentsTableScroll?: ElementRef<HTMLElement>;
   @ViewChild('documentsHeaderScroll') documentsHeaderScroll?: ElementRef<HTMLElement>;
-  @ViewChild('documentsBodyScroll') documentsBodyScroll?: ElementRef<HTMLElement>;
+  @ViewChild('documentsBodyWrap') documentsBodyWrap?: ElementRef<HTMLElement>;
 
-  private documentsTableBodyTouchStartX = 0;
-  private documentsTableBodyTouchStartY = 0;
-  private documentsTableBodyTouchScrollLeft = 0;
-  private documentsTableBodyScrollAxis: 'x' | 'y' | null = null;
+  private documentsTableLayoutKey = '';
+  private documentsTableLayoutFrame = 0;
+  private documentsTableResizeObserver?: ResizeObserver;
 
 
   public alertButtons = [
@@ -140,6 +141,31 @@ export class CobrosDocumentComponent implements OnInit {
     // this.collectService.deepFreeze(this.collectService.documentSalesView);
   }
 
+  ngAfterViewInit(): void {
+    const panel = this.documentsTablePanel?.nativeElement;
+    if (!panel || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    let lastWidth = 0;
+    this.documentsTableResizeObserver = new ResizeObserver(entries => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      if (width > 0 && Math.abs(width - lastWidth) > 1) {
+        lastWidth = width;
+        this.invalidateDocumentsTableLayoutCache();
+        this.scheduleDocumentsTableLayoutSync(0, false);
+      }
+    });
+    this.documentsTableResizeObserver.observe(panel);
+  }
+
+  ngOnDestroy(): void {
+    this.documentsTableResizeObserver?.disconnect();
+    if (this.documentsTableLayoutFrame) {
+      cancelAnimationFrame(this.documentsTableLayoutFrame);
+    }
+  }
+
 
 
   onChangeCurrencyDoc(event: any) {
@@ -151,7 +177,7 @@ export class CobrosDocumentComponent implements OnInit {
     void this.loadDocumentsSalePage(0);
   }
 
-  private applyDocumentFilter(coCurrency: string): void {
+  private applyDocumentFilter(coCurrency: string, scheduleLayout = true): void {
     const source = this.collectService.documentSalesView?.length
       ? this.collectService.documentSalesView
       : this.collectService.documentSales;
@@ -163,7 +189,12 @@ export class CobrosDocumentComponent implements OnInit {
     if (!Array.isArray(pageSource) || pageSource.length === 0) {
       this.filteredDocumentsView = [];
       this.collectService.documentsSaleComponent = false;
+      this.documentsTableLayoutReady = true;
       return;
+    }
+
+    if (scheduleLayout) {
+      this.markDocumentsTableLayoutPending();
     }
 
     this.filteredDocumentsView = (!coCurrency || coCurrency === 'Moneda')
@@ -171,7 +202,19 @@ export class CobrosDocumentComponent implements OnInit {
       : pageSource.filter(doc => doc.coCurrency === coCurrency);
 
     this.collectService.documentsSaleComponent = this.filteredDocumentsView.length > 0;
-    this.scheduleDocumentsTableLayoutSync();
+    if (scheduleLayout) {
+      this.scheduleDocumentsTableLayoutSync(0, false);
+    }
+  }
+
+  private markDocumentsTableLayoutPending(): void {
+    this.documentsTableLayoutReady = false;
+    this.cdr.markForCheck();
+  }
+
+  private completeDocumentsTableLayout(): void {
+    this.documentsTableLayoutReady = true;
+    this.cdr.markForCheck();
   }
 
   public getSourceIndex(documentSale: DocumentSale): number {
@@ -234,43 +277,6 @@ export class CobrosDocumentComponent implements OnInit {
     void this.loadDocumentsSalePage(this.collectService.documentSalesCurrentPage + 1);
   }
 
-  public onDocumentsTableBodyTouchStart(event: TouchEvent): void {
-    if (event.touches.length !== 1) {
-      return;
-    }
-
-    this.documentsTableBodyTouchStartX = event.touches[0].clientX;
-    this.documentsTableBodyTouchStartY = event.touches[0].clientY;
-    this.documentsTableBodyTouchScrollLeft = this.documentsTableXScroll?.nativeElement?.scrollLeft ?? 0;
-    this.documentsTableBodyScrollAxis = null;
-  }
-
-  public onDocumentsTableBodyTouchMove(event: TouchEvent): void {
-    const xScroll = this.documentsTableXScroll?.nativeElement;
-
-    if (!xScroll || event.touches.length !== 1) {
-      return;
-    }
-
-    const touch = event.touches[0];
-    const deltaX = this.documentsTableBodyTouchStartX - touch.clientX;
-    const deltaY = this.documentsTableBodyTouchStartY - touch.clientY;
-
-    if (!this.documentsTableBodyScrollAxis) {
-      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) {
-        return;
-      }
-
-      this.documentsTableBodyScrollAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
-    }
-
-    if (this.documentsTableBodyScrollAxis !== 'x') {
-      return;
-    }
-
-    xScroll.scrollLeft = this.documentsTableBodyTouchScrollLeft + deltaX;
-  }
-
   private getIonColumnSize(col: HTMLElement): number {
     const size = col.getAttribute('size');
 
@@ -285,123 +291,196 @@ export class CobrosDocumentComponent implements OnInit {
     return Array.from(row.querySelectorAll('ion-col')) as HTMLElement[];
   }
 
-  private clearDocumentsTableColumnStyles(cols: HTMLElement[]): void {
-    cols.forEach(col => {
-      col.style.width = '';
-      col.style.minWidth = '';
-      col.style.maxWidth = '';
+  private getDocumentsTableRowsToMeasure(bodyRows: Element[]): Element[] {
+    if (bodyRows.length <= 3) {
+      return bodyRows;
+    }
+
+    const middleIndex = Math.floor(bodyRows.length / 2);
+    return [bodyRows[0], bodyRows[middleIndex], bodyRows[bodyRows.length - 1]];
+  }
+
+  private invalidateDocumentsTableLayoutCache(): void {
+    this.documentsTableLayoutKey = '';
+  }
+
+  private buildDocumentsTableLayoutKey(
+    headerColsCount: number,
+    bodyRowsCount: number,
+    viewportWidth: number
+  ): string {
+    return [
+      this.collectService.documentSalesCurrentPage,
+      this.collectService.documentCurrency,
+      headerColsCount,
+      bodyRowsCount,
+      viewportWidth
+    ].join('|');
+  }
+
+  private applyProvisionalDocumentsTableLayout(
+    tablePanel: HTMLElement,
+    headerCols: HTMLElement[],
+    bodyRows: Element[],
+    viewportWidth: number
+  ): void {
+    const columnSizes = headerCols.map(col => this.getIonColumnSize(col));
+    const totalSize = columnSizes.reduce((sum, size) => sum + size, 0);
+
+    if (totalSize === 0) {
+      return;
+    }
+
+    const minColumnWidth = 52;
+    const minWidths = columnSizes.map(size => Math.max(minColumnWidth, size * 10));
+    const minTableWidth = minWidths.reduce((sum, width) => sum + width, 0);
+    const tableWidth = Math.max(minTableWidth, viewportWidth);
+    const assignedWidths = columnSizes.map((size, index) => {
+      const proportionalWidth = Math.ceil((size / totalSize) * tableWidth);
+      return Math.max(minWidths[index], proportionalWidth);
+    });
+    const resolvedTableWidth = assignedWidths.reduce((sum, width) => sum + width, 0);
+
+    tablePanel.style.setProperty('--documents-table-width', `${resolvedTableWidth}px`);
+
+    const applyColumnWidth = (col: HTMLElement, index: number): void => {
+      const widthPx = `${assignedWidths[index]}px`;
+      col.style.width = widthPx;
+      col.style.minWidth = widthPx;
+      col.style.maxWidth = widthPx;
+    };
+
+    headerCols.forEach(applyColumnWidth);
+    bodyRows.forEach(row => {
+      this.getDocumentsTableColumns(row).forEach(applyColumnWidth);
     });
   }
 
-  private syncDocumentsTableLayout(): void {
+  private syncDocumentsTableLayout(): boolean {
     const tablePanel = this.documentsTablePanel?.nativeElement;
-    const tableStack = this.documentsTableXScroll?.nativeElement?.querySelector('.documents-table-stack') as HTMLElement | null;
+    const tableStack = this.documentsTableScroll?.nativeElement?.querySelector('.documents-table-stack') as HTMLElement | null;
     const headerWrap = this.documentsHeaderScroll?.nativeElement;
-    const bodyWrap = this.documentsBodyScroll?.nativeElement;
+    const bodyWrap = this.documentsBodyWrap?.nativeElement;
 
     if (!tablePanel || !tableStack || !headerWrap || !bodyWrap) {
-      return;
+      return false;
     }
 
     const headerRow = headerWrap.querySelector('ion-row.cabecera');
     const bodyGrid = bodyWrap.querySelector('ion-grid');
 
     if (!headerRow || !bodyGrid) {
-      return;
+      return false;
     }
 
     const headerCols = this.getDocumentsTableColumns(headerRow);
     const bodyRows = Array.from(bodyGrid.querySelectorAll('ion-row'));
-    const bodyCols = bodyRows.reduce<HTMLElement[]>((cols, row) => {
-      return cols.concat(this.getDocumentsTableColumns(row));
-    }, []);
 
     if (headerCols.length === 0 || bodyRows.length === 0) {
-      return;
+      this.completeDocumentsTableLayout();
+      return true;
     }
 
-    this.clearDocumentsTableColumnStyles([...headerCols, ...bodyCols]);
-    tablePanel.style.removeProperty('--documents-table-width');
+    const viewportWidth = this.documentsTableScroll?.nativeElement?.clientWidth ?? bodyWrap.clientWidth;
+    const layoutKey = this.buildDocumentsTableLayoutKey(headerCols.length, bodyRows.length, viewportWidth);
 
-    requestAnimationFrame(() => {
-      const headerRows = Array.from(headerWrap.querySelectorAll('ion-row')) as HTMLElement[];
-      const bodyRowElements = bodyRows as HTMLElement[];
+    if (layoutKey === this.documentsTableLayoutKey) {
+      this.completeDocumentsTableLayout();
+      return true;
+    }
 
-      headerRows.forEach(row => {
-        row.style.tableLayout = 'auto';
-      });
-      bodyRowElements.forEach(row => {
-        row.style.tableLayout = 'auto';
-      });
+    this.applyProvisionalDocumentsTableLayout(tablePanel, headerCols, bodyRows, viewportWidth);
 
-      const columnSizes = headerCols.map(col => this.getIonColumnSize(col));
-      const totalSize = columnSizes.reduce((sum, size) => sum + size, 0);
-      const minWidths = new Array<number>(headerCols.length).fill(0);
+    const headerRows = Array.from(headerWrap.querySelectorAll('ion-row')) as HTMLElement[];
+    const bodyRowElements = bodyRows as HTMLElement[];
+    const rowsToMeasure = this.getDocumentsTableRowsToMeasure(bodyRows);
 
-      const measureColumnWidth = (col: HTMLElement, index: number): void => {
-        if (index >= headerCols.length) {
-          return;
-        }
-
-        minWidths[index] = Math.max(minWidths[index], col.scrollWidth, col.getBoundingClientRect().width);
-      };
-
-      headerCols.forEach(measureColumnWidth);
-      bodyRows.forEach(row => {
-        this.getDocumentsTableColumns(row).forEach(measureColumnWidth);
-      });
-
-      const minTableWidth = minWidths.reduce((sum, width) => sum + width, 0);
-      const viewportWidth = this.documentsTableXScroll?.nativeElement?.clientWidth ?? bodyWrap.clientWidth;
-      const tableWidth = Math.max(minTableWidth, viewportWidth);
-      const assignedWidths = columnSizes.map((size, index) => {
-        const proportionalWidth = Math.ceil((size / totalSize) * tableWidth);
-
-        return Math.max(minWidths[index], proportionalWidth);
-      });
-      const resolvedTableWidth = assignedWidths.reduce((sum, width) => sum + width, 0);
-      const tableWidthPx = `${resolvedTableWidth}px`;
-
-      tablePanel.style.setProperty('--documents-table-width', tableWidthPx);
-
-      const applyColumnWidth = (col: HTMLElement, index: number): void => {
-        const widthPx = `${assignedWidths[index]}px`;
-        col.style.width = widthPx;
-        col.style.minWidth = widthPx;
-        col.style.maxWidth = widthPx;
-      };
-
-      headerCols.forEach(applyColumnWidth);
-      bodyRows.forEach(row => {
-        this.getDocumentsTableColumns(row).forEach(applyColumnWidth);
-      });
-
-      headerRows.forEach(row => {
-        row.style.tableLayout = 'fixed';
-      });
-      bodyRowElements.forEach(row => {
-        row.style.tableLayout = 'fixed';
-      });
+    headerRows.forEach(row => {
+      row.style.tableLayout = 'auto';
     });
+    bodyRowElements.forEach(row => {
+      row.style.tableLayout = 'auto';
+    });
+
+    const columnSizes = headerCols.map(col => this.getIonColumnSize(col));
+    const totalSize = columnSizes.reduce((sum, size) => sum + size, 0);
+    const minWidths = new Array<number>(headerCols.length).fill(0);
+
+    const measureColumnWidth = (col: HTMLElement, index: number): void => {
+      if (index >= headerCols.length) {
+        return;
+      }
+
+      minWidths[index] = Math.max(minWidths[index], col.scrollWidth, col.getBoundingClientRect().width);
+    };
+
+    headerCols.forEach(measureColumnWidth);
+    rowsToMeasure.forEach(row => {
+      this.getDocumentsTableColumns(row).forEach(measureColumnWidth);
+    });
+
+    const minTableWidth = minWidths.reduce((sum, width) => sum + width, 0);
+    const tableWidth = Math.max(minTableWidth, viewportWidth);
+    const assignedWidths = columnSizes.map((size, index) => {
+      const proportionalWidth = Math.ceil((size / totalSize) * tableWidth);
+
+      return Math.max(minWidths[index], proportionalWidth);
+    });
+    const resolvedTableWidth = assignedWidths.reduce((sum, width) => sum + width, 0);
+    const tableWidthPx = `${resolvedTableWidth}px`;
+
+    tablePanel.style.setProperty('--documents-table-width', tableWidthPx);
+
+    const applyColumnWidth = (col: HTMLElement, index: number): void => {
+      const widthPx = `${assignedWidths[index]}px`;
+      col.style.width = widthPx;
+      col.style.minWidth = widthPx;
+      col.style.maxWidth = widthPx;
+    };
+
+    headerCols.forEach(applyColumnWidth);
+    bodyRows.forEach(row => {
+      this.getDocumentsTableColumns(row).forEach(applyColumnWidth);
+    });
+
+    headerRows.forEach(row => {
+      row.style.tableLayout = 'fixed';
+    });
+    bodyRowElements.forEach(row => {
+      row.style.tableLayout = 'fixed';
+    });
+
+    this.documentsTableLayoutKey = layoutKey;
+    this.completeDocumentsTableLayout();
+    return true;
   }
 
   private resetDocumentsTableScroll(): void {
-    const body = this.documentsBodyScroll?.nativeElement;
-    const xScroll = this.documentsTableXScroll?.nativeElement;
+    const scrollContainer = this.documentsTableScroll?.nativeElement;
 
-    if (body) {
-      body.scrollTop = 0;
-    }
-
-    if (xScroll) {
-      xScroll.scrollLeft = 0;
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+      scrollContainer.scrollLeft = 0;
     }
   }
 
-  private scheduleDocumentsTableLayoutSync(): void {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this.syncDocumentsTableLayout();
+  private scheduleDocumentsTableLayoutSync(retryCount = 0, markPending = true): void {
+    if (markPending && retryCount === 0) {
+      this.markDocumentsTableLayoutPending();
+    }
+
+    if (this.documentsTableLayoutFrame) {
+      cancelAnimationFrame(this.documentsTableLayoutFrame);
+    }
+
+    this.documentsTableLayoutFrame = requestAnimationFrame(() => {
+      this.documentsTableLayoutFrame = requestAnimationFrame(() => {
+        this.documentsTableLayoutFrame = 0;
+        const synced = this.syncDocumentsTableLayout();
+
+        if (!synced && retryCount < 2) {
+          this.scheduleDocumentsTableLayoutSync(retryCount + 1);
+        }
       });
     });
   }
@@ -429,7 +508,8 @@ export class CobrosDocumentComponent implements OnInit {
       }
     );
 
-    this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+    this.markDocumentsTableLayoutPending();
+    this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda', false);
 
     if (this.collectService.historicPartialPayment) {
       await this.collectService.findIsPaymentPartial(
@@ -439,7 +519,8 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     this.resetDocumentsTableScroll();
-    this.scheduleDocumentsTableLayoutSync();
+    this.invalidateDocumentsTableLayoutCache();
+    this.scheduleDocumentsTableLayoutSync(0, false);
   }
 
   private initializeDocumentCurrencyFilter(): void {
@@ -497,6 +578,7 @@ export class CobrosDocumentComponent implements OnInit {
     if (event.target.value.price == 0)
       this.collectService.separateIgtf = false;
 
+    this.collectService.syncCollectionIgtfFields();
     this.collectService.calculatePayment("", 0);
     this.cdr.detectChanges();
   }
@@ -505,6 +587,7 @@ export class CobrosDocumentComponent implements OnInit {
     /* console.log(igtfDefault)
     this.collectService.separateIgtf = igtfDefault.target.checked; */
     this.collectService.collection.hasIGTF = this.collectService.separateIgtf;
+    this.collectService.syncCollectionIgtfFields();
     this.collectService.calculatePayment("", 0);
     this.cdr.detectChanges();
     if (this.collectService.igtfSelected.price <= 0 && this.collectService.separateIgtf) {

@@ -65,12 +65,6 @@ $fondoLila: #430197;
     overflow-x: scroll !important;
     overflow-y: hidden;
     color: #000000;
-}
-.tablaDocVentasGrip {
-    flex-wrap: nowrap;
-    overflow-x: scroll !important;
-    overflow-y: hidden;
-    color: #000000;
     font-size: 12px;
 }
 
@@ -242,13 +236,6 @@ ion-modal.collectDiscounts {
   max-width: 220px;
 }
 
-.legend-popover {
-  padding: 10px 12px;
-  font-size: 12px;
-  color: #222;
-  max-width: 220px;
-}
-
 .documents-view {
   display: flex;
   flex-direction: column;
@@ -258,6 +245,16 @@ ion-modal.collectDiscounts {
   min-height: calc(100dvh - 150px);
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  gap: 6px;
+}
+
+.documents-view .saldo-legend {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f7f5fb;
+  border: 1px solid rgba(67, 1, 151, 0.1);
 }
 
 .documents-table-panel {
@@ -267,35 +264,118 @@ ion-modal.collectDiscounts {
   width: 100%;
   min-height: 0;
   overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(67, 1, 151, 0.14);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(67, 1, 151, 0.08);
 }
 
-.documents-table-x-scroll {
+.documents-table-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #fafafa;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.documents-table-panel--ready .documents-table-skeleton {
+  opacity: 0;
+}
+
+.documents-table-skeleton__header,
+.documents-table-skeleton__row {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(67, 1, 151, 0.08) 0%,
+    rgba(67, 1, 151, 0.14) 50%,
+    rgba(67, 1, 151, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: documents-table-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.documents-table-skeleton__header {
+  flex-shrink: 0;
+  height: 44px;
+}
+
+.documents-table-skeleton__row {
+  flex-shrink: 0;
+  height: 42px;
+}
+
+@keyframes documents-table-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.documents-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto;
+  opacity: 0;
+  transition: opacity 0.18s ease;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  contain: strict;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67, 1, 151, 0.35) transparent;
+  background: #fafafa;
+}
+
+.documents-table-panel--ready .documents-table-scroll {
+  opacity: 1;
+}
+
+.documents-table-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.documents-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(67, 1, 151, 0.35);
+  border-radius: 999px;
 }
 
 .documents-table-stack {
   display: flex;
   flex-direction: column;
   width: var(--documents-table-width, 100%);
-  min-height: 100%;
-  height: 100%;
+  min-width: var(--documents-table-width, 100%);
 }
 
 .documents-table-header-wrap {
+  position: sticky;
+  top: 0;
   flex-shrink: 0;
+  z-index: 2;
+  border-bottom: 2px solid $colorLila;
+  background: #fff;
 }
 
 .documents-table-body-wrap {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
+  flex: 1 0 auto;
+  overflow: visible;
+}
+
+.documents-table-header-wrap ion-grid,
+.documents-table-body-wrap ion-grid {
+  --ion-grid-padding: 0;
+  --ion-grid-column-padding: 0;
+  padding: 0 !important;
 }
 
 .documents-table-header-wrap .tablaDocVentasGrip,
@@ -305,6 +385,7 @@ ion-modal.collectDiscounts {
   flex-wrap: nowrap;
   width: var(--documents-table-width, 100%);
   min-width: var(--documents-table-width, 100%);
+  font-size: 11px;
 }
 
 .documents-table-header-wrap ion-row,
@@ -321,26 +402,94 @@ ion-modal.collectDiscounts {
   vertical-align: middle;
   text-align: center;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.documents-table-panel .col {
+  border: none;
+  border-right: 1px solid rgba(67, 1, 151, 0.1);
+  border-bottom: 1px solid rgba(67, 1, 151, 0.08);
+  padding: 9px 7px;
+  min-height: 42px;
+}
+
+.documents-table-panel .col:last-child {
+  border-right: none;
+}
+
+.documents-table-header-wrap .cabecera .col {
+  background-color: $colorLila;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 10px 7px;
+  min-height: 44px;
+  border-right-color: rgba(255, 255, 255, 0.18);
+  border-bottom: none;
+}
+
+.documents-table-header-wrap .titulosBold {
+  font-weight: 700;
+}
+
+.documents-table-body-wrap .tabladocumentSalesVenta {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 42px;
+}
+
+.documents-table-body-wrap .tabladocumentSalesVenta:nth-child(even) {
+  background-color: #f3f2f6;
+}
+
+.documents-table-body-wrap .tabladocumentSalesVenta:nth-child(odd) {
+  background-color: #fff;
+}
+
+.documents-table-body-wrap .tabladocumentSalesVenta.documents-row-selected {
+  background-color: rgba(89, 176, 45, 0.14) !important;
+  box-shadow: inset 3px 0 0 $colorVerde;
+}
+
+.documents-table-body-wrap ion-button {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  margin: 0;
+  height: 32px;
+}
+
+.documents-table-body-wrap ion-checkbox {
+  --size: 18px;
+  margin: 0 auto;
+}
+
+.documents-table-body-wrap .payment-details {
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .document-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  gap: 8px;
   width: 100%;
   flex-shrink: 0;
   margin-top: auto;
   margin-bottom: 0;
-  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(67, 1, 151, 0.12);
-  background: #fafafa;
+  background: linear-gradient(180deg, #fafafa 0%, #f3f1f7 100%);
+  border-radius: 0 0 10px 10px;
 }
 
 .document-pagination__btn {
   appearance: none;
-  border: none;
-  background: transparent;
+  border: 1px solid rgba(67, 1, 151, 0.16);
+  background: #fff;
   color: $colorLila;
   padding: 6px;
   border-radius: 50%;
@@ -350,13 +499,19 @@ ion-modal.collectDiscounts {
   min-width: 36px;
   min-height: 36px;
   flex: 0 0 auto;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:not(:disabled):active {
+    background: rgba(67, 1, 151, 0.08);
+  }
 
   &:disabled {
     opacity: 0.35;
+    border-color: rgba(67, 1, 151, 0.08);
   }
 
   ion-icon {
-    font-size: 22px;
+    font-size: 20px;
   }
 }
 
@@ -364,20 +519,21 @@ ion-modal.collectDiscounts {
   flex: 1;
   min-width: 0;
   text-align: center;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .document-pagination__page {
   display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #333;
+  font-size: 13px;
+  font-weight: 700;
+  color: $colorLila;
 }
 
 .document-pagination__range {
   display: block;
   font-size: 11px;
   color: #666;
+  margin-top: 2px;
 }
 
 .payment-details {
