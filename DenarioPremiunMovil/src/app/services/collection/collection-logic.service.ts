@@ -3292,6 +3292,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   getIgtfList(dbServ: SQLiteObject) {
 
     this.igtfList = [] as IgtfList[];
+    const savedIgtfPrice = Number(this.collection?.nuIgtf ?? 0);
 
     return dbServ.executeSql('SELECT ' +
       'id_igtf as idIgtf, ' +
@@ -3303,12 +3304,43 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         for (let i = 0; i < data.rows.length; i++) {
           const item = data.rows.item(i);
           this.igtfList.push(item);
-          if (item.defaultIgtf === "true")
+          if (savedIgtfPrice <= 0 && item.defaultIgtf === "true") {
             this.igtfSelected = item;
+          }
         }
 
+        this.restoreCollectionIgtfFields();
         return Promise.resolve(this.igtfList)
       })
+  }
+
+  private toBooleanFlag(value: unknown): boolean {
+    return value === true || value === 1 || String(value ?? '').toLowerCase() === 'true' || String(value ?? '') === '1';
+  }
+
+  syncCollectionIgtfFields(): void {
+    if (!this.userCanSelectIGTF) {
+      return;
+    }
+    this.collection.nuIgtf = Number(this.igtfSelected?.price ?? 0);
+    this.collection.hasIGTF = this.separateIgtf;
+  }
+
+  restoreCollectionIgtfFields(): void {
+    if (!this.userCanSelectIGTF || !Array.isArray(this.igtfList) || this.igtfList.length === 0) {
+      return;
+    }
+
+    const savedPrice = Number(this.collection?.nuIgtf ?? 0);
+    if (savedPrice > 0) {
+      const matchedIgtf = this.igtfList.find(item => Number(item.price) === savedPrice);
+      if (matchedIgtf) {
+        this.igtfSelected = matchedIgtf;
+      }
+    }
+
+    this.separateIgtf = this.toBooleanFlag(this.collection?.hasIGTF);
+    this.collection.hasIGTF = this.separateIgtf;
   }
 
 
@@ -3673,6 +3705,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       this.collection.nuAttachments = number;
       if (this.collection.nuAttachments > 0)
         this.collection.hasAttachments = true;
+
+      this.syncCollectionIgtfFields();
 
       if (collection.hasIGTF && action) {
         //SE DEBE CREAR UN DOCUMENTO DE VENTA TIPO IGTF
