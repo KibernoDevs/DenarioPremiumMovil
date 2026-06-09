@@ -68,7 +68,7 @@
           <!-- CLIENTE -->
           <ion-col size="6" size-sm="12" size-xs="12">
             <ion-input label-placement="floating" fill="outline" [ngClass]="{'inp-write': clientRedLabel}"
-              label='{{ getTag("VIS_CLIENTE") }}' value="{{ nombreCliente }}" id="clienteSelect"
+              label='{{ getTag("VIS_CLIENTE") }}' value="{{ clienteTabLabel }}" id="clienteSelect"
               [disabled]="viewOnly || fromWeb"></ion-input>
             <ion-label *ngIf="clientRedLabel" color="danger" class="campoObligatorio">
               {{ getTag('DENARIO_CAMPO_OBLIGATORIO') }}

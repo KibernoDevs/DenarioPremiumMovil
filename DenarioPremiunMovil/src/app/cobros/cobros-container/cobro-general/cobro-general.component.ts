@@ -28,6 +28,7 @@ import { IonInput } from '@ionic/angular/directives/proxies';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { BancoReceptor } from 'src/app/modelos/bancoReceptor';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 
@@ -279,6 +280,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.collection.idClient = client.idClient;
     this.collectService.collection.coClient = client.coClient;
     this.collectService.collection.lbClient = client.lbClient;
+    this.collectService.collection.naClient = client.naClient || client.lbClient;
   }
 
   private updateSelectedEnterprise(idEnterprise: number) {
@@ -875,6 +877,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.collection.idClient = client.idClient;
       this.collectService.collection.coClient = client.coClient;
       this.collectService.collection.lbClient = client.lbClient;
+      this.collectService.collection.naClient = client.naClient || client.lbClient;
       this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
       this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
       this.collectService.collection.daCollection = this.dateCollect;
@@ -1591,5 +1594,10 @@ export class CobrosGeneralComponent implements OnInit {
       return Math.max(...this.collectService.rateList);
     }
     return this.collectService.rateSelected || 0.01;
+  }
+
+  get clienteTabLabel(): string {
+    const collection = this.collectService.collection;
+    return formatClientForTab(collection?.naClient, collection?.coClient, collection?.lbClient);
   }
 }

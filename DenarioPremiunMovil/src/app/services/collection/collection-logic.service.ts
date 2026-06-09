@@ -4650,6 +4650,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.coCurrency = res.rows.item(0).co_currency;
         collection.coType = res.rows.item(0).co_type;
         collection.txComment = res.rows.item(0).tx_comment;
+        collection.lbClient = res.rows.item(0).lb_client;
         collection.naClient = res.rows.item(0).lb_client;
         collection.idClient = res.rows.item(0).id_client;
         collection.coClient = res.rows.item(0).co_client;

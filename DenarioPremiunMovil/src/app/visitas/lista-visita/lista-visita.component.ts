@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
+import { formatClientForList } from 'src/app/utils/client-display.util';
 
 
 @Component({
@@ -139,6 +140,20 @@ export class ListaVisitaComponent implements OnInit, ViewWillEnter {
 
   getTag(tagName: string) {
     return this.service.getTag(tagName);
+  }
+
+  formatVisitClient(visit: Visit): string {
+    return formatClientForList(visit.coClient, visit.naClient);
+  }
+
+  matchesVisitSearch(visit: Visit): boolean {
+    if (this.searchText === '') {
+      return true;
+    }
+    const search = this.searchText;
+    return visit.coVisit.toLowerCase().includes(search)
+      || (visit.coClient ?? '').toLowerCase().includes(search)
+      || (visit.naClient ?? '').toLowerCase().includes(search);
   }
 
   getStatusVisitName(stVisit: number, isReassigned: boolean) {

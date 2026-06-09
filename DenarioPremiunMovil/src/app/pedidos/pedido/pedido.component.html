@@ -91,7 +91,7 @@
                 <div id="inputClient">
                   <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'" [ngClass]="{'inp-write': clientRedLabel}"
                     label-placement="floating" fill="outline" [disabled]="orderServ.openOrder"
-                    value="{{ this.orderServ.cliente.lbClient }}" id="clienteSelect" color="primary">
+                    value="{{ clienteTabLabel }}" id="clienteSelect" color="primary">
                   </ion-input>
                   <ion-label *ngIf="clientRedLabel" color="danger">
                     {{ orderServ.getTag('PED_CHECK_CLIENTE') }}

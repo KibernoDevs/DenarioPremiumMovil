@@ -9,6 +9,7 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { formatClientForList } from 'src/app/utils/client-display.util';
 
 @Component({
   selector: 'app-pedidos-lista',
@@ -167,6 +168,22 @@ export class PedidosListaComponent implements OnInit {
       tag = '';
     }
     return tag;
+  }
+
+  formatOrderClient(order: ItemListaPedido): string {
+    return formatClientForList(order.co_client, order.na_client, order.lb_client);
+  }
+
+  matchesOrderSearch(order: ItemListaPedido): boolean {
+    if (this.searchText === '') {
+      return true;
+    }
+    const search = this.searchText;
+    return order.co_order.toLowerCase().includes(search)
+      || (order.co_client ?? '').toLowerCase().includes(search)
+      || (order.na_client ?? '').toLowerCase().includes(search)
+      || (order.lb_client ?? '').toLowerCase().includes(search)
+      || order.id_order.toString().toLowerCase().includes(search);
   }
 
   public buttonsDelete: { text: string; role: string; handler: () => void; }[] =

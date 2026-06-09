@@ -33,11 +33,7 @@
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</ion-col>
-          <ion-col>{{client.naClient}}</ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
-          <ion-col>{{client.coClient}}</ion-col>
+          <ion-col>{{ clienteTabLabel }}</ion-col>
         </ion-row>
         @if(!this.clientLogic.esTransportista){
         <ion-row>

@@ -29,13 +29,12 @@
 
   <div class="scroll-lista-pedidos">
     <ion-list *ngFor="let order of orderServ.listaPedidos; index as i" button detail="false">
-      <div
-        *ngIf="searchText === '' || order.co_order.toLowerCase().includes(searchText) || order.lb_client.toLowerCase().includes(searchText) || order.id_order.toString().toLowerCase().includes(searchText)">
+      <div *ngIf="matchesOrderSearch(order)">
         <ion-item button detail="false">
           <ion-label (click)="selectOrder(order)">
             <p>{{ getTag("PED_NU_REF") }}: {{ order.id_order }}</p>
             <p *ngIf="showCoOrder">CO_ORDER: {{ order.co_order }}</p>
-            <p>{{ getTag("PED_CLIENTE") }}: {{ order.lb_client}}</p>
+            <p>{{ getTag("PED_CLIENTE") }}: {{ formatOrderClient(order) }}</p>
             <p>{{ getTag("PED_STATUS") }}: {{ getStatusOrderName(order.st_delivery? order.st_delivery: order.st_order,
               order.na_status, order.id_order) }}</p>
             <p>{{ getTag("PED_FECHA") }}: {{order.da_order.substring(0,10) }}</p>
