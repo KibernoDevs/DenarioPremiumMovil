@@ -912,8 +912,10 @@ export class CollectionService {
       montoConversion = Number(this.collection.nuAmountPaid) > 0 && hasAmountPaidConversion
         ? Number(this.collection.nuAmountPaidConversion)
         : Number(this.collection.nuAmountFinalConversion ?? 0);
-      this.montoTotalPagar = monto - montoTotalDiscounts;
-      this.montoTotalPagarConversion = montoConversion;
+      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(persistedAmountToPay));
+      this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
+      this.restoreCollectionIgtfFields();
+      this.restorePersistedIgtfDisplayAmounts();
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
@@ -961,7 +963,8 @@ export class CollectionService {
 
     if (this.userCanSelectIGTF
       && this.collection.coCurrency == this.hardCurrency.coCurrency) {
-      this.montoIgtf = this.cleanFormattedNumber(this.currencyService.formatNumber(((monto * this.igtfSelected.price) / 100)));
+      const igtfRate = this.normalizeIgtfPrice(this.igtfSelected?.price);
+      this.montoIgtf = this.cleanFormattedNumber(this.currencyService.formatNumber(((monto * igtfRate) / 100)));
       this.montoIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
 
       if (this.separateIgtf) {
@@ -1002,6 +1005,7 @@ export class CollectionService {
 
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
     this.collection.nuAmountTotalConversion = this.convertirMonto(this.collection.nuAmountTotal, 0, this.collection.coCurrency);
+    this.syncCollectionIgtfFields();
     this.resolveAutomatedPrepaid(type, index);
     return Promise.resolve(this.createAutomatedPrepaid);
   }
@@ -3292,7 +3296,6 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   getIgtfList(dbServ: SQLiteObject) {
 
     this.igtfList = [] as IgtfList[];
-    const savedIgtfPrice = Number(this.collection?.nuIgtf ?? 0);
 
     return dbServ.executeSql('SELECT ' +
       'id_igtf as idIgtf, ' +
@@ -3302,16 +3305,50 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       'default_igtf as defaultIgtf ' +
       'FROM igtf_lists;', []).then(data => {
         for (let i = 0; i < data.rows.length; i++) {
-          const item = data.rows.item(i);
-          this.igtfList.push(item);
-          if (savedIgtfPrice <= 0 && item.defaultIgtf === "true") {
-            this.igtfSelected = item;
-          }
+          this.igtfList.push(data.rows.item(i));
         }
 
         this.restoreCollectionIgtfFields();
         return Promise.resolve(this.igtfList)
       })
+  }
+
+  private normalizeIgtfPrice(value: unknown): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private findIgtfListItemByPrice(savedPrice: number): IgtfList | undefined {
+    if (savedPrice <= 0 || !Array.isArray(this.igtfList)) {
+      return undefined;
+    }
+
+    const epsilon = 0.0001;
+    return this.igtfList.find(item => {
+      const itemPrice = this.normalizeIgtfPrice(item?.price);
+      return Math.abs(itemPrice - savedPrice) < epsilon;
+    });
+  }
+
+  private restorePersistedIgtfDisplayAmounts(): void {
+    if (!this.userCanSelectIGTF || this.collection.coCurrency !== this.hardCurrency?.coCurrency) {
+      this.montoIgtf = 0;
+      this.montoIgtfConversion = 0;
+      return;
+    }
+
+    const savedIgtfAmount = this.normalizeIgtfPrice(this.collection?.nuAmountIgtf);
+    if (savedIgtfAmount <= 0) {
+      this.montoIgtf = 0;
+      this.montoIgtfConversion = 0;
+      return;
+    }
+
+    this.montoIgtf = this.cleanFormattedNumber(this.currencyService.formatNumber(savedIgtfAmount));
+    const savedIgtfConversion = this.normalizeIgtfPrice(this.collection?.nuAmountIgtfConversion);
+    this.montoIgtfConversion = savedIgtfConversion > 0
+      ? this.cleanFormattedNumber(this.currencyService.formatNumber(savedIgtfConversion))
+      : this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
   }
 
   private toBooleanFlag(value: unknown): boolean {
@@ -3322,8 +3359,154 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     if (!this.userCanSelectIGTF) {
       return;
     }
-    this.collection.nuIgtf = Number(this.igtfSelected?.price ?? 0);
+    this.collection.nuIgtf = this.normalizeIgtfPrice(this.igtfSelected?.price);
     this.collection.hasIGTF = this.separateIgtf;
+  }
+
+  compareIgtfOptions(first: IgtfList | null | undefined, second: IgtfList | null | undefined): boolean {
+    if (!first || !second) {
+      return first === second;
+    }
+
+    const firstId = Number(first.idIgtf ?? 0);
+    const secondId = Number(second.idIgtf ?? 0);
+    if (firstId > 0 && secondId > 0) {
+      return firstId === secondId;
+    }
+
+    return Math.abs(this.normalizeIgtfPrice(first.price) - this.normalizeIgtfPrice(second.price)) < 0.0001;
+  }
+
+  mergePersistedCollectionIgtfFields(source: Collection): void {
+    if (!source?.coCollection || !this.collection) {
+      return;
+    }
+
+    this.collection.nuIgtf = this.normalizeIgtfPrice(source.nuIgtf);
+    this.collection.hasIGTF = source.hasIGTF;
+    this.collection.nuAmountIgtf = this.normalizeIgtfPrice(source.nuAmountIgtf);
+    this.collection.nuAmountIgtfConversion = this.normalizeIgtfPrice(source.nuAmountIgtfConversion);
+
+    const listIndex = this.listCollect.findIndex(item => item.coCollection === source.coCollection);
+    if (listIndex >= 0) {
+      this.listCollect[listIndex].nuIgtf = this.collection.nuIgtf;
+      this.listCollect[listIndex].hasIGTF = this.collection.hasIGTF;
+      this.listCollect[listIndex].nuAmountIgtf = this.collection.nuAmountIgtf;
+      this.listCollect[listIndex].nuAmountIgtfConversion = this.collection.nuAmountIgtfConversion;
+    }
+  }
+
+  updateListCollectIgtfFromCollection(collection: Collection): void {
+    if (!collection?.coCollection) {
+      return;
+    }
+
+    const listIndex = this.listCollect.findIndex(item => item.coCollection === collection.coCollection);
+    if (listIndex < 0) {
+      return;
+    }
+
+    this.listCollect[listIndex].nuIgtf = this.normalizeIgtfPrice(collection.nuIgtf);
+    this.listCollect[listIndex].hasIGTF = collection.hasIGTF;
+    this.listCollect[listIndex].nuAmountIgtf = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    this.listCollect[listIndex].nuAmountIgtfConversion = this.normalizeIgtfPrice(collection.nuAmountIgtfConversion);
+  }
+
+  private isPersistedCollection(): boolean {
+    const stDelivery = Number(this.collection?.stDelivery ?? 0);
+    const stCollection = Number(this.collection?.stCollection ?? 0);
+    const isSave = Number(this.collection?.isSave ?? 0);
+
+    if (stDelivery === this.COLLECT_STATUS_NEW
+      && stCollection === this.COLLECT_STATUS_NEW
+      && isSave === 0) {
+      return false;
+    }
+
+    return stDelivery === this.COLLECT_STATUS_SAVED
+      || stDelivery === this.COLLECT_STATUS_TO_SEND
+      || stDelivery === this.COLLECT_STATUS_SENT
+      || isSave === 1;
+  }
+
+  private applyDefaultIgtfSelection(): void {
+    const defaultIgtf = this.igtfList.find(item => item.defaultIgtf === 'true');
+    if (!defaultIgtf) {
+      return;
+    }
+
+    this.igtfSelected = defaultIgtf;
+    this.syncCollectionIgtfFields();
+  }
+
+  private resolveSavedIgtfPrice(): number {
+    let savedPrice = this.normalizeIgtfPrice(this.collection?.nuIgtf);
+    if (savedPrice > 0) {
+      return savedPrice;
+    }
+
+    if (!this.isPersistedCollection()) {
+      return 0;
+    }
+
+    return this.inferSavedIgtfRateFromAmounts();
+  }
+
+  private inferSavedIgtfRateFromAmounts(): number {
+    const igtfAmount = this.normalizeIgtfPrice(this.collection?.nuAmountIgtf);
+    if (igtfAmount <= 0 || !Array.isArray(this.igtfList) || this.igtfList.length === 0) {
+      return 0;
+    }
+
+    let baseAmount = this.normalizeIgtfPrice(this.collection?.nuAmountPaid);
+    if (baseAmount <= 0) {
+      baseAmount = this.normalizeIgtfPrice(this.collection?.nuAmountFinal);
+    }
+
+    if (!this.separateIgtf && igtfAmount > 0 && baseAmount > igtfAmount) {
+      baseAmount -= igtfAmount;
+    }
+
+    if (baseAmount <= 0) {
+      return 0;
+    }
+
+    const inferredRate = (igtfAmount * 100) / baseAmount;
+    const matchedIgtf = this.findIgtfListItemByPrice(inferredRate);
+    if (matchedIgtf) {
+      return this.normalizeIgtfPrice(matchedIgtf.price);
+    }
+
+    let closestIgtf: IgtfList | undefined;
+    let closestDiff = Number.POSITIVE_INFINITY;
+    for (const item of this.igtfList) {
+      const diff = Math.abs(this.normalizeIgtfPrice(item.price) - inferredRate);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIgtf = item;
+      }
+    }
+
+    if (closestIgtf && closestDiff <= 0.05) {
+      return this.normalizeIgtfPrice(closestIgtf.price);
+    }
+
+    return 0;
+  }
+
+  private applyIgtfSelectionByPrice(savedPrice: number): boolean {
+    if (savedPrice <= 0) {
+      return false;
+    }
+
+    const matchedIgtf = this.findIgtfListItemByPrice(savedPrice);
+    if (!matchedIgtf) {
+      return false;
+    }
+
+    this.igtfSelected = matchedIgtf;
+    this.collection.nuIgtf = this.normalizeIgtfPrice(matchedIgtf.price);
+    return true;
   }
 
   restoreCollectionIgtfFields(): void {
@@ -3331,16 +3514,18 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       return;
     }
 
-    const savedPrice = Number(this.collection?.nuIgtf ?? 0);
-    if (savedPrice > 0) {
-      const matchedIgtf = this.igtfList.find(item => Number(item.price) === savedPrice);
-      if (matchedIgtf) {
-        this.igtfSelected = matchedIgtf;
-      }
-    }
-
     this.separateIgtf = this.toBooleanFlag(this.collection?.hasIGTF);
     this.collection.hasIGTF = this.separateIgtf;
+
+    if (!this.isPersistedCollection()) {
+      this.applyDefaultIgtfSelection();
+      return;
+    }
+
+    const savedPrice = this.resolveSavedIgtfPrice();
+    if (savedPrice > 0 && this.applyIgtfSelectionByPrice(savedPrice)) {
+      return;
+    }
   }
 
 
@@ -3806,6 +3991,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           ]
         ).then(data => {
           console.log("COLLECTION INSERT", data);
+          this.updateListCollectIgtfFromCollection(collection);
 
           //cobro o igtf
           if (collection.coType == '0' || collection.coType == '2' || collection.coType == '3' || collection.coType == '4') {

@@ -140,7 +140,7 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  public setSendedCollection() {
+  public async setSendedCollection() {
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
 
     this.collectService.initLogicService();
@@ -158,19 +158,21 @@ export class CobrosGeneralComponent implements OnInit {
     this.rateSelected = this.collectService.collection.nuValueLocal;
 
     this.initializeCurrenciesAndRates();
-    this.collectService.loadPaymentMethods();
+    await this.collectService.loadPaymentMethods();
+
+    if (!this.collectService.igtfList?.length) {
+      await this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+    }
+    this.collectService.restoreCollectionIgtfFields();
+
     this.loadPayments();
+
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
-
-      if (!this.collectService.igtfList?.length)
-        this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
-
       this.collectService.changeEnterprise = false;
-
     });
   }
 
@@ -195,6 +197,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   private handleOpenCollect() {
     this.collectService.isOpenCollect = false;
+    this.collectService.newCollect = false;
     this.collectService.recentOpenCollect = true;
     this.collectService.createAutomatedPrepaid = false;
     this.collectService.anticipoAutomatico = [];
@@ -354,8 +357,10 @@ export class CobrosGeneralComponent implements OnInit {
 
         });
     this.initializeCurrenciesAndRates();
-    if (!this.collectService.igtfList?.length)
-      this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+    if (!this.collectService.igtfList?.length) {
+      await this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+    }
+    this.collectService.restoreCollectionIgtfFields();
     this.loadData();
   }
 
@@ -407,6 +412,7 @@ export class CobrosGeneralComponent implements OnInit {
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
+          this.collectService.restoreCollectionIgtfFields();
           this.loadData();
         });
       });
@@ -679,11 +685,11 @@ export class CobrosGeneralComponent implements OnInit {
               }); */
           // }
 
-          if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0)
+          if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0) {
             this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
-
-
-
+          } else {
+            this.collectService.restoreCollectionIgtfFields();
+          }
         }
 
         this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);

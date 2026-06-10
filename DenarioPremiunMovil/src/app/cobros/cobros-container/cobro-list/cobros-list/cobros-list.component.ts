@@ -238,7 +238,12 @@ export class CobrosListComponent implements OnInit {
           this.collectService.collection.coordenada = this.coordenada;
         }
 
-        this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
+        this.collectService.getCollection(this.synchronizationServices.getDatabase(), coCollection).then(persistedCollection => {
+          if (persistedCollection?.coCollection) {
+            this.collectService.mergePersistedCollectionIgtfFields(persistedCollection);
+          }
+
+          this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
           this.collectService.getCollectionDetailsDiscounts(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsDiscounts => {
 
@@ -272,6 +277,7 @@ export class CobrosListComponent implements OnInit {
               this.messageService.hideLoading();
             })
           })
+        });
         });
       })
     });

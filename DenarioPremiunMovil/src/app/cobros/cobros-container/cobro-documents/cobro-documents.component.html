@@ -30,6 +30,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
   </ion-label>
   <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.igtfSelected"
+    [compareWith]="compareIgtfOptions"
     (ionChange)="onChangeIgtf($event)" labelPlacement="stacked">
     @for (igtf of this.collectService.igtfList; track $index) {
     <ion-select-option [value]="igtf">{{igtf.naIgtf}} -

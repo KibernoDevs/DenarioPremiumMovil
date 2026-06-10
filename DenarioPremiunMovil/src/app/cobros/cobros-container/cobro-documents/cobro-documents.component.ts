@@ -14,6 +14,7 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+import { IgtfList } from 'src/app/modelos/tables/igtfList';
 import { MessageService } from 'src/app/services/messageService/message.service';
 
 
@@ -565,22 +566,32 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   getIgtfList() {
-    const found = this.collectService.igtfList.find(item => item.defaultIgtf === "true");
-    if (found) {
-      this.collectService.igtfSelected = found;
-    }
+    this.collectService.restoreCollectionIgtfFields();
+    this.cdr.detectChanges();
   }
 
-  onChangeIgtf(event: any) {
-    console.log(event.target.value);
-    this.collectService.igtfSelected = event.target.value;
+  compareIgtfOptions = (first: IgtfList | null | undefined, second: IgtfList | null | undefined): boolean => {
+    return this.collectService.compareIgtfOptions(first, second);
+  };
 
-    if (event.target.value.price == 0)
+  onChangeIgtf(event: any) {
+    const selected = event?.detail?.value ?? event?.target?.value;
+    if (selected) {
+      this.collectService.igtfSelected = selected;
+    }
+
+    if (this.normalizeIgtfSelectionPrice() === 0) {
       this.collectService.separateIgtf = false;
+    }
 
     this.collectService.syncCollectionIgtfFields();
-    this.collectService.calculatePayment("", 0);
+    this.collectService.calculatePayment('', 0, true);
     this.cdr.detectChanges();
+  }
+
+  private normalizeIgtfSelectionPrice(): number {
+    const parsed = Number(this.collectService.igtfSelected?.price ?? 0);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
   separateIgtf() {
@@ -588,7 +599,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.collectService.separateIgtf = igtfDefault.target.checked; */
     this.collectService.collection.hasIGTF = this.collectService.separateIgtf;
     this.collectService.syncCollectionIgtfFields();
-    this.collectService.calculatePayment("", 0);
+    this.collectService.calculatePayment('', 0, true);
     this.cdr.detectChanges();
     if (this.collectService.igtfSelected.price <= 0 && this.collectService.separateIgtf) {
       //MANDAR MENSAJE DE ERROR, IGTF SEPARADO DEBE SER MAYOR A 0
