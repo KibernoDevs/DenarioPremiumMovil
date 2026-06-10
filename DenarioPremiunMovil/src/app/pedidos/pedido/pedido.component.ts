@@ -989,9 +989,9 @@ export class PedidoComponent implements OnInit {
             this.orderServ.tipoOrden = this.tipoOrden;
             this.reset();
             this.orderServ.empresaSeleccionada = empresa;
-            this.onEnterpriseSelect();
+            this.reapplyEnterpriseContextAfterReset();
             //this.orderServ.cliente = cliente;
-            this.setClientfromSelector(cliente);
+            this.setClientfromSelector(cliente, false, true);
             this.tipoOrden = this.orderServ.tipoOrden;
             this.tipoOrdenAnterior = this.tipoOrden;
             this.orderServ.syncOrderTypeIvaOnProducts();
@@ -1031,8 +1031,8 @@ export class PedidoComponent implements OnInit {
               this.orderServ.tipoOrden = this.tipoOrden;
               this.reset();
               this.orderServ.empresaSeleccionada = empresa;
-              this.onEnterpriseSelect();
-              this.setClientfromSelector(cliente);
+              this.reapplyEnterpriseContextAfterReset();
+              this.setClientfromSelector(cliente, false, true);
               this.tipoOrden = this.orderServ.tipoOrden;
               this.tipoOrdenAnterior = this.tipoOrden;
               this.orderServ.syncOrderTypeIvaOnProducts();
@@ -1114,6 +1114,13 @@ export class PedidoComponent implements OnInit {
       }
     }
   }
+  private reapplyEnterpriseContextAfterReset(): void {
+    this.empresaSeleccionada = this.orderServ.empresaSeleccionada;
+    this.orderServ.setup();
+    this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
+    this.segmentLock();
+  }
+
   onEnterpriseSelect() {
     if (this.orderServ.carrito.length > 0 || this.adjuntoService.hasItems() || this.orderServ.cliente.idClient) {
       // el pedido tiene cosas, asi que hay que resetear
@@ -1200,7 +1207,11 @@ export class PedidoComponent implements OnInit {
     return a && b ? a.idCurrency === b.idCurrency : a === b;
   }
 
-  setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
+  setClientfromSelector(
+    cliente: Client,
+    skipDebtValidation: boolean = false,
+    preserveOrderType: boolean = false,
+  ) {
     if (cliente) {
 
       if (!skipDebtValidation && !this.orderServ.openOrder
@@ -1224,7 +1235,7 @@ export class PedidoComponent implements OnInit {
               text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
               role: 'confirm',
               handler: () => {
-                this.setClientfromSelector(cliente, true);
+                this.setClientfromSelector(cliente, true, preserveOrderType);
               },
             }
           ]
@@ -1249,7 +1260,26 @@ export class PedidoComponent implements OnInit {
           this.listaDistributionChannel = this.orderServ.distributionChannels.filter((d) => data.find((c) => c.idDistributionChannel == d.idChannel));
           this.distChannel = this.listaDistributionChannel[0];
           this.listaOrderTypes = this.orderServ.listaOrderTypes.filter((o) => data.find((c) => c.idOrderType == o.idOrderType));
-          if (this.orderServ.orderTypeByEnterprise && !this.orderServ.openOrder) {
+          if (!preserveOrderType) {
+            if (this.orderServ.orderTypeByEnterprise && !this.orderServ.openOrder) {
+              this.selectOrderTypebyEnterprise();
+            } else {
+              if (this.orderServ.openOrder) {
+                this.tipoOrden = this.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
+              } else {
+                this.tipoOrden = this.listaOrderTypes[0];
+              }
+              this.tipoOrdenAnterior = this.tipoOrden;
+              this.orderServ.tipoOrden = this.tipoOrden;
+              this.orderServ.syncOrderTypeIvaOnProducts();
+            }
+          }
+
+        })
+      } else {
+        this.listaOrderTypes = this.orderServ.listaOrderTypes;
+        if (!preserveOrderType) {
+          if (this.orderServ.orderTypeByEnterprise) {
             this.selectOrderTypebyEnterprise();
           } else {
             if (this.orderServ.openOrder) {
@@ -1258,24 +1288,9 @@ export class PedidoComponent implements OnInit {
               this.tipoOrden = this.listaOrderTypes[0];
             }
             this.tipoOrdenAnterior = this.tipoOrden;
-            this.orderServ.tipoOrden = this.tipoOrden;
+            this.orderServ.tipoOrden = this.tipoOrden; //para filtrar structures luego
             this.orderServ.syncOrderTypeIvaOnProducts();
           }
-
-        })
-      } else {
-        this.listaOrderTypes = this.orderServ.listaOrderTypes;
-        if (this.orderServ.orderTypeByEnterprise) {
-          this.selectOrderTypebyEnterprise();
-        } else {
-          if (this.orderServ.openOrder) {
-            this.tipoOrden = this.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
-          } else {
-            this.tipoOrden = this.listaOrderTypes[0];
-          }
-          this.tipoOrdenAnterior = this.tipoOrden;
-          this.orderServ.tipoOrden = this.tipoOrden; //para filtrar structures luego
-          this.orderServ.syncOrderTypeIvaOnProducts();
         }
       }
 
