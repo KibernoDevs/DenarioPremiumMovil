@@ -36,6 +36,7 @@ import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { Request } from 'src/app/modelos/request';
 import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
 import { PendingTransactionsAttachments } from 'src/app/modelos/tables/pendingTransactionsAttachments';
+import { DateServiceService } from '../dates/date-service.service';
 
 @Injectable({
   providedIn: 'root'
@@ -56,6 +57,7 @@ export class AutoSendService implements OnInit {
   private depositService = inject(DepositService);
   private visitService = inject(VisitasService);
   private orderService = inject(PedidosService);
+  private dateServ = inject(DateServiceService);
 
   public rolTransportista = false;
   private isProcessingPending = false;
@@ -770,6 +772,47 @@ export class AutoSendService implements OnInit {
     }
   }
 
+  private resolveFailedTransactionContext(
+    request: any,
+    type: string
+  ): { idUser: number; coUser: string; idEnterprise: number; coEnterprise: string } {
+    const idUser = Number(localStorage.getItem('idUser') ?? 0);
+    const coUser = localStorage.getItem('coUser') ?? '';
+    const entity = this.getFailedTransactionEntity(request, type);
+    const idEnterprise = entity?.idEnterprise ?? 0;
+    const coEnterprise = entity?.coEnterprise ?? '';
+    return { idUser, coUser, idEnterprise, coEnterprise };
+  }
+
+  private getFailedTransactionEntity(request: any, type: string): {
+    idEnterprise?: number;
+    coEnterprise?: string;
+  } | null {
+    if (!request) {
+      return null;
+    }
+    switch (type) {
+      case 'collect':
+        return request.collection ?? null;
+      case 'order':
+        return request.order ?? null;
+      case 'deposit':
+        return request.deposit ?? null;
+      case 'potentialClient':
+        return request.potentialClient ?? null;
+      case 'visit':
+        return request.visit ?? null;
+      case 'return':
+        return request.returns ?? null;
+      case 'clientStock':
+        return request.clientStock ?? null;
+      case 'updateaddress':
+        return request.userAddressClient ?? null;
+      default:
+        return null;
+    }
+  }
+
   private insertFailedTransaction(
     coTransaction: string,
     type: string,
@@ -784,9 +827,25 @@ export class AutoSendService implements OnInit {
       txObject = JSON.stringify({ serializationError: true });
     }
 
+    const coFailedTransaction = this.dateServ.generateCO(0);
+    const { idUser, coUser, idEnterprise, coEnterprise } =
+      this.resolveFailedTransactionContext(request, type);
+
     return this.dbService.getDatabase().executeSql(
-      'INSERT INTO failed_transactions(co_transaction, type, error_code, error_message, transaction_object, da_failed) VALUES(?,?,?,?,?,?)',
-      [coTransaction, type, errorCode, errorMessage, txObject, new Date().toISOString()]
+      'INSERT INTO failed_transactions(co_failed_transaction, co_transaction, type, error_code, error_message, transaction_object, da_failed, co_user, id_user, co_enterprise, id_enterprise) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+      [
+        coFailedTransaction,
+        coTransaction,
+        type,
+        errorCode,
+        errorMessage,
+        txObject,
+        new Date().toISOString(),
+        coUser,
+        idUser,
+        coEnterprise,
+        idEnterprise,
+      ]
     );
   }
 
