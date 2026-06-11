@@ -319,6 +319,7 @@ export class ReturnLogicService {
     this.productList = [];
     return this.returnDatabaseService.getDetailsByCoReturn(dbServ, coReturn).then((result) => {
       this.productList = result;
+      this.productListCart.next(this.productList);
     }).catch(e => {
       this.newReturn = {} as Return;
       console.log("[ReturnLogicService] Error al cargar findReturnDetails.");

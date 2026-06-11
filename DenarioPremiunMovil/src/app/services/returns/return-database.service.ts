@@ -101,36 +101,124 @@ export class ReturnDatabaseService {
 
   // AHORA BUSCO LOS DETALLES PASANDO EL CO_RETURN
   getDetailsByCoReturn(dbServ: SQLiteObject, coReturn: string) {
+    const retrieveStatement = 'select co_return_detail as coReturnDetail, id_return as idReturn, co_return as coReturn, id_product as idProduct,' +
+      ' co_product as coProduct, na_product as naProduct, qu_product as quProduct, id_measure_unit, co_measure_unit as coMeasureUnit, na_measure_unit as naMeasureUnit, qu_unit, ' +
+      'unit_co_enterprise, unit_id_enterprise, id_product_unit, co_product_unit,  ' +
+      ' nu_lote as nuLote, da_duedate as daDueDate, co_document as coDocument, id_motive as idMotive FROM return_details where co_return = ?';
 
-    var retrieveStatement = "select co_return_detail as coReturnDetail, id_return as idReturn, co_return as coReturn, id_product as idProduct," +
-      " co_product as coProduct, na_product as naProduct, qu_product as quProduct, id_measure_unit, co_measure_unit as coMeasureUnit, na_measure_unit as naMeasureUnit, qu_unit, " +
-      "unit_co_enterprise, unit_id_enterprise, id_product_unit, co_product_unit,  " +
-      " nu_lote as nuLote, da_duedate as daDueDate, co_document as coDocument, id_motive as idMotive FROM return_details where co_return = ?";
-    return dbServ.executeSql(retrieveStatement, [coReturn]).then(data => {
-      //console.log(data);
-      let returnDetails: ReturnDetail[] = []
+    return dbServ.executeSql(retrieveStatement, [coReturn]).then(async data => {
+      const returnDetails: ReturnDetail[] = [];
+
       for (let i = 0; i < data.rows.length; i++) {
-        const item = data.rows.item(i);
-        let unitProduct: Unit = {} as Unit;
-        unitProduct.idUnit = data.rows.item(i).id_measure_unit;
-        unitProduct.coUnit = data.rows.item(i).coMeasureUnit;
-        unitProduct.naUnit = data.rows.item(i).naMeasureUnit;
-        unitProduct.quUnit = data.rows.item(i).qu_unit;
-        unitProduct.coEnterprise = data.rows.item(i).unit_co_enterprise;
-        unitProduct.idEnterprise = data.rows.item(i).unit_id_enterprise;
-        unitProduct.idProductUnit = data.rows.item(i).id_product_unit;
-        unitProduct.coProductUnit = data.rows.item(i).co_product_unit;
-        item.unit = unitProduct;
-        item.idUnit = data.rows.item(i).id_measure_unit;
-        item.productUnits = this.getUnitsByIdProductOrderByCoPrimaryUnit(dbServ, item.idProduct);
-        item.showDateModal = false;
-        returnDetails.push(item);
+        const row = data.rows.item(i);
+        const detail = await this.buildReturnDetailFromRow(dbServ, row);
+        returnDetails.push(detail);
       }
+
       return returnDetails;
     }).catch(e => {
-      console.log("[ReturnDatabaseService] Error al ejecutar getDetailsByCoReturn.");
+      console.log('[ReturnDatabaseService] Error al ejecutar getDetailsByCoReturn.');
       console.log(e);
       return [];
+    });
+  }
+
+  private async buildReturnDetailFromRow(dbServ: SQLiteObject, row: any): Promise<ReturnDetail> {
+    const savedUnit = this.buildSavedUnitFromDetailRow(row);
+    const idProduct = Number(this.getRowField(row, 'idProduct', 'id_product') ?? 0);
+    const loadedUnits = idProduct > 0
+      ? await this.loadUnitsByIdProductOrderByCoPrimaryUnit(dbServ, idProduct)
+      : [];
+    const productUnits = this.mergeProductUnits(loadedUnits, savedUnit);
+    const idUnit = Number(savedUnit.idUnit ?? 0);
+    const selectedUnit = productUnits.find(unit => this.isSameUnitId(unit.idUnit, idUnit))
+      ?? productUnits[0]
+      ?? savedUnit;
+
+    return {
+      coReturnDetail: String(this.getRowField(row, 'coReturnDetail', 'co_return_detail') ?? ''),
+      idReturn: this.getRowField(row, 'idReturn', 'id_return') ?? null,
+      coReturn: String(this.getRowField(row, 'coReturn', 'co_return') ?? ''),
+      idProduct,
+      coProduct: String(this.getRowField(row, 'coProduct', 'co_product') ?? ''),
+      naProduct: String(this.getRowField(row, 'naProduct', 'na_product') ?? ''),
+      quProduct: Number(this.getRowField(row, 'quProduct', 'qu_product') ?? 0),
+      coMeasureUnit: selectedUnit?.coUnit ?? '',
+      naMeasureUnit: selectedUnit?.naUnit ?? '',
+      idUnit: Number(selectedUnit?.idUnit ?? idUnit),
+      unit: selectedUnit,
+      productUnits,
+      validateProductUnits: [],
+      nuLote: String(this.getRowField(row, 'nuLote', 'nu_lote') ?? ''),
+      daDueDate: this.getRowField(row, 'daDueDate', 'da_duedate') ?? null,
+      coDocument: String(this.getRowField(row, 'coDocument', 'co_document') ?? ''),
+      idMotive: Number(this.getRowField(row, 'idMotive', 'id_motive') ?? 0),
+      showDateModal: false,
+    } as ReturnDetail;
+  }
+
+  private getRowField(row: Record<string, unknown>, ...keys: string[]): unknown {
+    for (const key of keys) {
+      const value = row?.[key];
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
+    }
+    return undefined;
+  }
+
+  private buildSavedUnitFromDetailRow(row: any): Unit {
+    return {
+      idUnit: Number(this.getRowField(row, 'id_measure_unit', 'idMeasureUnit', 'idUnit') ?? 0),
+      coUnit: String(this.getRowField(row, 'coMeasureUnit', 'co_measure_unit', 'coUnit') ?? ''),
+      naUnit: String(this.getRowField(row, 'naMeasureUnit', 'na_measure_unit', 'naUnit') ?? ''),
+      quUnit: Number(this.getRowField(row, 'qu_unit', 'quUnit') ?? 0),
+      coEnterprise: String(this.getRowField(row, 'unit_co_enterprise', 'unitCoEnterprise') ?? ''),
+      idEnterprise: Number(this.getRowField(row, 'unit_id_enterprise', 'unitIdEnterprise') ?? 0),
+      idProductUnit: Number(this.getRowField(row, 'id_product_unit', 'idProductUnit') ?? 0),
+      coProductUnit: String(this.getRowField(row, 'co_product_unit', 'coProductUnit') ?? ''),
+    } as Unit;
+  }
+
+  private hasSavedUnitData(savedUnit: Unit | undefined): boolean {
+    if (!savedUnit) {
+      return false;
+    }
+
+    return Number(savedUnit.idUnit ?? 0) > 0
+      || !!String(savedUnit.naUnit ?? '').trim()
+      || !!String(savedUnit.coUnit ?? '').trim();
+  }
+
+  private isSameUnitId(first: unknown, second: unknown): boolean {
+    return Number(first ?? 0) === Number(second ?? 0) && Number(first ?? 0) > 0;
+  }
+
+  private mergeProductUnits(loadedUnits: Unit[], savedUnit: Unit): Unit[] {
+    const merged = [...(loadedUnits ?? [])];
+
+    if (!this.hasSavedUnitData(savedUnit)) {
+      return merged;
+    }
+
+    const savedExists = merged.some(unit =>
+      this.isSameUnitId(unit.idUnit, savedUnit.idUnit)
+      || (!!savedUnit.coUnit && unit.coUnit === savedUnit.coUnit)
+    );
+
+    if (!savedExists) {
+      merged.unshift(savedUnit);
+    }
+
+    return merged.length > 0 ? merged : [savedUnit];
+  }
+
+  loadUnitsByIdProductOrderByCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number): Promise<Unit[]> {
+    return Promise.all([
+      this.getUnitByIdProductAndCoPrimaryUnit(dbServ, idProduct),
+      this.getUnitByIdProductAndNotCoPrimaryUnit(dbServ, idProduct),
+    ]).then(([primaryUnits, otherUnits]) => {
+      return [...(otherUnits ?? []), ...(primaryUnits ?? [])];
     });
   }
 
@@ -233,14 +321,14 @@ export class ReturnDatabaseService {
             detail.coProduct,
             detail.naProduct,
             detail.quProduct,
-            detail.unit?.idUnit,
-            detail.coMeasureUnit,
-            detail.naMeasureUnit,
-            detail.unit?.quUnit,
-            devolucion.coEnterprise,
-            devolucion.idEnterprise,
-            detail.unit?.idProductUnit,
-            detail.unit?.coProductUnit,
+            detail.unit?.idUnit ?? detail.idUnit,
+            detail.unit?.coUnit ?? detail.coMeasureUnit ?? '',
+            detail.unit?.naUnit ?? detail.naMeasureUnit ?? '',
+            detail.unit?.quUnit ?? 0,
+            detail.unit?.coEnterprise ?? devolucion.coEnterprise,
+            detail.unit?.idEnterprise ?? devolucion.idEnterprise,
+            detail.unit?.idProductUnit ?? 0,
+            detail.unit?.coProductUnit ?? '',
             this.cleanString(detail.nuLote),
             detail.daDueDate,
             this.cleanString(detail.coDocument),
@@ -308,18 +396,11 @@ export class ReturnDatabaseService {
     })
   }
 
-  getUnitsByIdProductOrderByCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
-    let unitsByProduct: Unit[] = [];
-    this.getUnitByIdProductAndCoPrimaryUnit(dbServ, idProduct).then(listPrimary => {
-      this.getUnitByIdProductAndNotCoPrimaryUnit(dbServ, idProduct).then(listOther => {
-        unitsByProduct.push(...listOther!);
-      });
-      unitsByProduct.push(...listPrimary!);
-    })
-    return unitsByProduct;
+  getUnitsByIdProductOrderByCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number): Promise<Unit[]> {
+    return this.loadUnitsByIdProductOrderByCoPrimaryUnit(dbServ, idProduct);
   }
 
-  getUnitByIdProductAndCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
+  getUnitByIdProductAndCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number): Promise<Unit[]> {
     var database = dbServ;
 
     var select = "select u.id_unit, u.co_unit, u.na_unit, u.id_enterprise, u.co_enterprise, pu.id_product_unit, pu.co_product_unit, pu.qu_unit  from units u join product_units pu on u.id_unit = pu.id_unit join products p on pu.id_product = p.id_product where pu.id_product = ? and u.co_unit = p.co_primary_unit"
@@ -339,12 +420,13 @@ export class ReturnDatabaseService {
       }
       return unitsByProduct;
     }).catch(e => {
-      console.log("[ProductService] Error al cargar getUnitByIdProductAndCoPrimaryUnit.");
+      console.log('[ReturnDatabaseService] Error al cargar getUnitByIdProductAndCoPrimaryUnit.');
       console.log(e);
-    })
+      return [] as Unit[];
+    });
   }
 
-  getUnitByIdProductAndNotCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
+  getUnitByIdProductAndNotCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number): Promise<Unit[]> {
     var database = dbServ;
 
     var select = "select u.id_unit, u.co_unit, u.na_unit, u.id_enterprise, u.co_enterprise, pu.id_product_unit, pu.co_product_unit, pu.qu_unit from units u join product_units pu on u.id_unit = pu.id_unit join products p on pu.id_product = p.id_product where pu.id_product = ? and u.co_unit != p.co_primary_unit"
@@ -364,9 +446,10 @@ export class ReturnDatabaseService {
       }
       return unitsByProduct;
     }).catch(e => {
-      console.log("[ProductService] Error al cargar getUnitByIdProductAndNotCoPrimaryUnit.");
+      console.log('[ReturnDatabaseService] Error al cargar getUnitByIdProductAndNotCoPrimaryUnit.');
       console.log(e);
-    })
+      return [] as Unit[];
+    });
   }
 
   // BUSCO LAS FACTURAS ASOCIADAS A UN CLIENTE
