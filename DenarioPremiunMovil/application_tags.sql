@@ -241,9 +241,10 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_MONTO_BASE_CONVERSION','CLI','CLIENTES','ESP','Monto Base Conversión'),
 	('CLI_DETAIL_MONTO_DESCUENTO','CLI','CLIENTES','ESP','Monto Descuento'),
 	('CLI_DETAIL_MONTO_DESCUENTO_CONVERSION','CLI','CLIENTES','ESP','Monto Descuento Conversión'),
-  ('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
-  ('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión'),
-  ('CLI_NEW_DETAIL_NOT_FOUND','CLI','CLIENTES','ESP','Aún no hay clientes potenciales');
+  	('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
+  	('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión'),
+  	('CLI_NEW_DETAIL_NOT_FOUND','CLI','CLIENTES','ESP','Aún no hay clientes potenciales'),
+  	('CLI_SEND_COORDENADA_MSG', 'CLI', 'CLIENTES', 'ESP','La coordenada será enviada');
 
 -- TAGS COBROS
 DELETE FROM public.application_tags WHERE co_module = 'COB';
