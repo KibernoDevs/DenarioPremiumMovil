@@ -38,13 +38,6 @@ export class DateServiceService {
       return new Date();
     }
 
-      // If value looks like ISO with time and no timezone, assume UTC
-      const isoNoZoneRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?$/;
-      if (isoNoZoneRegex.test(input)) {
-        const ts = Date.parse(input + 'Z');
-        if (!isNaN(ts)) return new Date(ts);
-      }
-
     // Detectamos formatos sin zona horaria explícita:
     // - "YYYY-MM-DD"
     // - "YYYY-MM-DD HH:mm"

@@ -1,23 +1,79 @@
 import { Injectable, inject } from '@angular/core';
-import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { Return } from 'src/app/modelos/tables/return';
 import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
 import { ProductService } from '../products/product.service';
 import { Unit } from 'src/app/modelos/tables/unit';
 import { Invoice } from 'src/app/modelos/tables/invoice';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
+import { DateServiceService } from '../dates/date-service.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReturnDatabaseService {
 
-  //dbServ = inject(SynchronizationDBService);
   productService = inject(ProductService);
+  private dateServ = inject(DateServiceService);
 
   public invoiceDetailUnits: Unit[] = [];
 
   constructor() { }
+
+  /**
+   * Antes de aplicar sync, conserva da_return local en devoluciones ya registradas en el dispositivo
+   * y normaliza las fechas entrantes del servidor a YYYY-MM-DD HH:mm:ss (hora local).
+   */
+  mergeSyncedReturnsWithLocalDates(dbServ: SQLiteObject, returns: Return[]): Promise<Return[]> {
+    if (!Array.isArray(returns) || returns.length === 0) {
+      return Promise.resolve(returns);
+    }
+
+    const coReturns = returns
+      .map(item => item?.coReturn)
+      .filter((coReturn): coReturn is string => !!coReturn?.trim());
+
+    if (coReturns.length === 0) {
+      return Promise.resolve(this.normalizeSyncedReturnDates(returns));
+    }
+
+    const placeholders = coReturns.map(() => '?').join(',');
+    const selectStatement = `SELECT co_return, da_return, st_delivery FROM returns WHERE co_return IN (${placeholders})`;
+
+    return dbServ.executeSql(selectStatement, coReturns).then(result => {
+      const localByCoReturn = new Map<string, { daReturn: string; stDelivery: number }>();
+
+      for (let i = 0; i < result.rows.length; i++) {
+        const row = result.rows.item(i);
+        localByCoReturn.set(String(row.co_return), {
+          daReturn: row.da_return ?? '',
+          stDelivery: Number(row.st_delivery ?? 0),
+        });
+      }
+
+      return returns.map(syncedReturn => {
+        const localReturn = localByCoReturn.get(syncedReturn.coReturn);
+        const localDaReturn = (localReturn?.daReturn ?? '').trim();
+
+        if (localReturn && localDaReturn.length > 0) {
+          syncedReturn.daReturn = this.dateServ.toDbDateTime(localReturn.daReturn);
+          return syncedReturn;
+        }
+
+        syncedReturn.daReturn = this.dateServ.toDbDateTime(syncedReturn.daReturn);
+        return syncedReturn;
+      });
+    }).catch(error => {
+      console.log('[ReturnDatabaseService] mergeSyncedReturnsWithLocalDates error', error);
+      return this.normalizeSyncedReturnDates(returns);
+    });
+  }
+
+  private normalizeSyncedReturnDates(returns: Return[]): Return[] {
+    return returns.map(syncedReturn => {
+      syncedReturn.daReturn = this.dateServ.toDbDateTime(syncedReturn.daReturn);
+      return syncedReturn;
+    });
+  }
 
   // BUSCO LA DEVOLUCION PASANDO EL CO_RETURN
   getReturn(dbServ: SQLiteObject, coReturn: string) {
