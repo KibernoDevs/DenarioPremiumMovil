@@ -7,13 +7,12 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
-import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ReturnDatabaseService } from 'src/app/services/returns/return-database.service';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { COLOR_AMARILLO, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 @Component({
   selector: 'devoluciones-header',
@@ -33,7 +32,6 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   router = inject(Router);
 
   adjuntoServ = inject(AdjuntoService);
-  config = inject(GlobalConfigService);
 
   adjuntoService = inject(AdjuntoService);
 
@@ -78,7 +76,6 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     this.returnLogic.setChange(false, false);
     this.subscriberShow = this.returnLogic.showButtons.subscribe((data: Boolean) => {
       this.showHeaderButtos = data;
-      this.adjuntoServ.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureReturn') == 'true', !data, COLOR_AMARILLO);
     });
 
     this.subscriberDisabled = this.returnLogic.returnValidToSave.subscribe((data: Boolean) => {
