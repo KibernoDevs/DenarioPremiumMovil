@@ -565,6 +565,6 @@
     "name": "failed_transactions",
     "table": "failedTransactions",
     "idName": "id_failed_transaction",
-    "sql": "CREATE TABLE IF NOT EXISTS failed_transactions(id_failed_transaction INTEGER, co_failed_transaction VARCHAR(30) PRIMARY KEY, co_transaction VARCHAR(40), type VARCHAR(30), error_code VARCHAR(10), error_message VARCHAR(255), transaction_object TEXT, da_failed TIMESTAMP, co_user TEXT NOT NULL, id_user INTEGER NOT NULL, co_enterprise TEXT NOT NULL, id_enterprise INTEGER NOT NULL);"
+    "sql": "CREATE TABLE IF NOT EXISTS failed_transactions(id_failed_transaction INTEGER PRIMARY KEY AUTOINCREMENT, co_transaction VARCHAR(40), type VARCHAR(30), error_code VARCHAR(10), error_message VARCHAR(255), transaction_object TEXT, da_failed TIMESTAMP);"
   }
 ]
