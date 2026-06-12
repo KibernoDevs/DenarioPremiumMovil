@@ -890,47 +890,124 @@ export class ProductService {
       .then(mapRowsWithCalculatedOpposite)
       .catch(handleSearchError);
   }
+  private buildProductDetailFromClause(): string {
+    return ' from products p' +
+      ' left join product_structures ps on p.id_product_structure = ps.id_product_structure' +
+      ' left join units u on p.co_primary_unit = u.co_unit and p.id_enterprise = u.id_enterprise';
+  }
+
+  private buildProductDetailStructureColumns(): string {
+    return 'COALESCE(ps.id_product_structure, p.id_product_structure, 0) as id_product_structure, ' +
+      'COALESCE(ps.co_product_structure, \'\') as co_product_structure, ' +
+      'COALESCE(ps.na_product_structure, \'\') as na_product_structure, ' +
+      'COALESCE(u.id_unit, 0) as id_unit, ' +
+      'COALESCE(u.co_unit, p.co_primary_unit, \'\') as co_unit, ' +
+      'COALESCE(u.na_unit, \'\') as na_unit';
+  }
+
+  private buildDefaultPriceListSubquery(column: 'nu_price' | 'co_currency'): string {
+    const defaultValue = column === 'nu_price' ? '0' : '\'\'';
+    return `COALESCE((select pl.${column} from price_lists pl left join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1), ${defaultValue}) as ${column}`;
+  }
+
+  private resolveProductDetailPrices(nuPrice: number | null | undefined, coCurrency: string | null | undefined): {
+    priceLocal: number;
+    priceHard: number | null;
+    coCurrencyLocal: string;
+    coCurrencyHard: string | null;
+  } {
+    const price = Number(nuPrice ?? 0);
+    const currency = (coCurrency ?? '').trim();
+
+    if (!currency) {
+      return {
+        priceLocal: price,
+        priceHard: price,
+        coCurrencyLocal: '',
+        coCurrencyHard: null,
+      };
+    }
+
+    return {
+      priceLocal: price,
+      priceHard: this.currencyService.isLocalCurrency(currency)
+        ? this.currencyService.toHardCurrency(price)
+        : this.currencyService.toLocalCurrency(price),
+      coCurrencyLocal: currency,
+      coCurrencyHard: this.currencyService.oppositeCoCurrency(currency),
+    };
+  }
+
+  private mapProductDetailRow(row: Record<string, unknown>): ProductDetail {
+    const prices = this.resolveProductDetailPrices(
+      row['nu_price'] as number | null | undefined,
+      row['co_currency'] as string | null | undefined
+    );
+
+    return {
+      idProduct: Number(row['id_product'] ?? 0),
+      coProduct: String(row['co_product'] ?? ''),
+      naProduct: String(row['na_product'] ?? ''),
+      idProductStructure: Number(row['id_product_structure'] ?? 0),
+      coProductStructure: String(row['co_product_structure'] ?? ''),
+      naProductStructure: String(row['na_product_structure'] ?? ''),
+      txDescription: String(row['tx_description'] ?? ''),
+      idUnit: Number(row['id_unit'] ?? 0),
+      coUnit: String(row['co_unit'] ?? ''),
+      naUnit: String(row['na_unit'] ?? ''),
+      points: Number(row['points'] ?? 0),
+      coEnterprise: String(row['co_enterprise'] ?? ''),
+      idEnterprise: Number(row['id_enterprise'] ?? 0),
+      nuTax: Number(row['nu_tax'] ?? 0),
+      priceLocal: prices.priceLocal,
+      priceHard: prices.priceHard,
+      coCurrencyHard: prices.coCurrencyHard,
+      coCurrencyLocal: prices.coCurrencyLocal,
+      conversion: this.currencyService.getLocalValue(),
+      stock: Number(row['qu_stock'] ?? 0),
+      txPacking: String(row['tx_packing'] ?? ''),
+      txDimension: String(row['tx_dimension'] ?? ''),
+    } as ProductDetail;
+  }
+
   getProductDetailByIdProduct(dbServ: SQLiteObject, idList: number, idProduct: number, coCurrency: string) {
     var database = dbServ;
     this.productDetail = {} as ProductDetail;
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, ps.id_product_structure, ps.co_product_structure, ps.na_product_structure, p.tx_description, p.tx_packing, p.tx_dimension, u.id_unit, u.co_unit, u.na_unit, p.points, p.nu_tax, " +
-        "(select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency = '" + coCurrency + "') as nu_price_default, " +
-        "(select pl.co_currency from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency = '" + coCurrency + "') as co_currency_default, " +
-        "(select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency != '" + coCurrency + "') as nu_price_opposite, " +
-        "(select pl.co_currency from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency != '" + coCurrency + "') as co_currency_opposite, " +
-        "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse asc limit 1) as qu_stock, p.co_enterprise, p.id_enterprise from products p join product_structures ps on p.id_product_structure = ps.id_product_structure join units u on p.co_primary_unit = u.co_unit and p.id_enterprise = u.id_enterprise where id_product = " + idProduct
+      var select = "select p.id_product, p.co_product, p.na_product, p.tx_description, p.tx_packing, p.tx_dimension, p.points, p.nu_tax, " +
+        this.buildProductDetailStructureColumns() + ", " +
+        "COALESCE((select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency = '" + coCurrency + "'), 0) as nu_price_default, " +
+        "COALESCE((select pl.co_currency from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency = '" + coCurrency + "'), '') as co_currency_default, " +
+        "COALESCE((select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency != '" + coCurrency + "'), 0) as nu_price_opposite, " +
+        "COALESCE((select pl.co_currency from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency != '" + coCurrency + "'), '') as co_currency_opposite, " +
+        "COALESCE((select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product), 0) as qu_stock, p.co_enterprise, p.id_enterprise" +
+        this.buildProductDetailFromClause() + " where p.id_product = " + idProduct
       return database.executeSql(select, []).then(pd => {
-        if (pd) {
+        if (pd && pd.rows.length > 0) {
+          const row = pd.rows.item(0);
           this.productDetail = new ProductDetail(
-            pd.rows.item(0).id_product,
-            pd.rows.item(0).co_product,
-            pd.rows.item(0).na_product,
-            pd.rows.item(0).id_product_structure,
-            pd.rows.item(0).co_product_structure,
-            pd.rows.item(0).na_product_structure,
-            pd.rows.item(0).tx_description,
-            pd.rows.item(0).tx_packing,
-            pd.rows.item(0).tx_dimension,
-            pd.rows.item(0).id_unit,
-            pd.rows.item(0).co_unit,
-            pd.rows.item(0).na_unit,
-            pd.rows.item(0).points,
-            pd.rows.item(0).nu_price_default, // Precio en la moneda de Lista de precio
-            pd.rows.item(0).co_currency_default, // moneda de Lista de precio
-            pd.rows.item(0).nu_price_opposite, // Precio en la monedaopuesta  de Lista de precio
-            pd.rows.item(0).co_currency_opposite, // moneda opuesta de Lista de precio
-            /*            pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
-                            this.currencyService.toHardCurrency(pd.rows.item(0).nu_price) :
-                            this.currencyService.toLocalCurrency(pd.rows.item(0).nu_price), // Precio en la moneda opuesta a la lista de precio
-                        pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
-                        this.currencyService.hardCurrency.coCurrency :
-                        this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio */
-            this.currencyService.getLocalValue(),  // TASA
-            pd.rows.item(0).qu_stock,
-            pd.rows.item(0).co_enterprise,
-            pd.rows.item(0).id_enterprise,
-            pd.rows.item(0).nu_tax
+            row.id_product,
+            row.co_product ?? '',
+            row.na_product ?? '',
+            row.id_product_structure ?? 0,
+            row.co_product_structure ?? '',
+            row.na_product_structure ?? '',
+            row.tx_description ?? '',
+            row.tx_packing ?? '',
+            row.tx_dimension ?? '',
+            row.id_unit ?? 0,
+            row.co_unit ?? '',
+            row.na_unit ?? '',
+            row.points ?? 0,
+            row.nu_price_default ?? 0,
+            row.co_currency_default ?? '',
+            row.nu_price_opposite ?? 0,
+            row.co_currency_opposite ?? '',
+            this.currencyService.getLocalValue(),
+            row.qu_stock ?? 0,
+            row.co_enterprise ?? '',
+            row.id_enterprise ?? 0,
+            row.nu_tax ?? 0
           )
           console.log(this.productDetail);
         }
@@ -940,36 +1017,15 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.nu_tax, p.tx_packing, p.tx_dimension, ps.id_product_structure, ps.co_product_structure, ps.na_product_structure, p.tx_description, u.id_unit, u.co_unit, u.na_unit, p.points, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
-        "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse asc limit 1) as qu_stock, p.co_enterprise, p.id_enterprise from products p join product_structures ps on p.id_product_structure = ps.id_product_structure join units u on p.co_primary_unit = u.co_unit and p.id_enterprise = u.id_enterprise where id_product = ?"
+      var select = "select p.id_product, p.co_product, p.na_product, p.nu_tax, p.tx_packing, p.tx_dimension, p.tx_description, p.points, " +
+        this.buildProductDetailStructureColumns() + ", " +
+        this.buildDefaultPriceListSubquery('nu_price') + ", " +
+        this.buildDefaultPriceListSubquery('co_currency') + ", " +
+        "COALESCE((select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product), 0) as qu_stock, p.co_enterprise, p.id_enterprise" +
+        this.buildProductDetailFromClause() + " where p.id_product = ?"
       return database.executeSql(select, [idProduct]).then(pd => {
-        if (pd) {
-          this.productDetail = {
-            idProduct: pd.rows.item(0).id_product,
-            coProduct: pd.rows.item(0).co_product,
-            naProduct: pd.rows.item(0).na_product,
-            idProductStructure: pd.rows.item(0).id_product_structure,
-            coProductStructure: pd.rows.item(0).co_product_structure,
-            naProductStructure: pd.rows.item(0).na_product_structure,
-            txDescription: pd.rows.item(0).tx_description,
-            idUnit: pd.rows.item(0).id_unit,
-            coUnit: pd.rows.item(0).co_unit,
-            naUnit: pd.rows.item(0).na_unit,
-            points: pd.rows.item(0).points,
-            coEnterprise: pd.rows.item(0).co_enterprise,
-            idEnterprise: pd.rows.item(0).id_enterprise,
-            nuTax: pd.rows.item(0).nu_tax,
-            priceLocal: pd.rows.item(0).nu_price,
-            priceHard: this.currencyService.isLocalCurrency(pd.rows.item(0).co_currency) ?
-              this.currencyService.toHardCurrency(pd.rows.item(0).nu_price) :
-              this.currencyService.toLocalCurrency(pd.rows.item(0).nu_price),
-            coCurrencyHard: this.currencyService.oppositeCoCurrency(pd.rows.item(0).co_currency),
-            coCurrencyLocal:  pd.rows.item(0).co_currency,
-            conversion: this.currencyService.getLocalValue(),
-            stock: pd.rows.item(0).qu_stock,
-            txPacking: pd.rows.item(0).tx_packing,
-            txDimension: pd.rows.item(0).tx_dimension
-          } as ProductDetail;
+        if (pd && pd.rows.length > 0) {
+          this.productDetail = this.mapProductDetailRow(pd.rows.item(0));
           console.log(this.productDetail);
           /*this.productDetail = new ProductDetail(
             pd.rows.item(0).id_product,
