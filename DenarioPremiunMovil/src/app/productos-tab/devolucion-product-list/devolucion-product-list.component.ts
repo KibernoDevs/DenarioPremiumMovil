@@ -54,65 +54,23 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.selectedDate = this.dateServ.onlyDateHoyISO();
+    /* this.newProductToReturn.markAllAsTouched(); */
     this.messageService.showLoading().then(() => {
-      this.getTags();
-      this.syncProductListFromService();
+      this.getTags();  //buscamos los tags
+      this.productList = this.returnLogic.productList;
       this.returnMotives = this.returnLogic.returnMotives;
       this.productListSub = this.productStructureService.productStructures.subscribe((data) => {
         this.showReturnDetail = !data;
       });
     });
 
+
     this.productListCartSub = this.returnLogic.productListCart.subscribe((data) => {
       this.productList = data;
-      this.hydrateProductListUnits();
     });
+
+    //console.log('Lista de devoluciones: ' + JSON.stringify(this.productList));
   }
-
-  private syncProductListFromService(): void {
-    this.productList = this.returnLogic.productList;
-    this.hydrateProductListUnits();
-  }
-
-  private hydrateProductListUnits(): void {
-    if (!Array.isArray(this.productList)) {
-      return;
-    }
-
-    for (const product of this.productList) {
-      const savedUnit = product.unit ?? this.buildUnitFromDetailFields(product);
-      if ((!Array.isArray(product.productUnits) || product.productUnits.length === 0) && this.hasUnitLabel(savedUnit)) {
-        product.productUnits = [savedUnit];
-      }
-
-      if (savedUnit && (!product.unit || !this.hasUnitLabel(product.unit))) {
-        product.unit = savedUnit;
-      }
-
-      product.idUnit = Number(product.idUnit ?? product.unit?.idUnit ?? 0);
-    }
-  }
-
-  private buildUnitFromDetailFields(product: ReturnDetail): Unit {
-    return {
-      idUnit: Number(product.idUnit ?? 0),
-      coUnit: product.coMeasureUnit ?? product.unit?.coUnit ?? '',
-      naUnit: product.naMeasureUnit ?? product.unit?.naUnit ?? '',
-      quUnit: Number(product.unit?.quUnit ?? 0),
-      idProductUnit: Number(product.unit?.idProductUnit ?? 0),
-      coProductUnit: product.unit?.coProductUnit ?? '',
-      coEnterprise: product.unit?.coEnterprise ?? '',
-      idEnterprise: Number(product.unit?.idEnterprise ?? 0),
-    } as Unit;
-  }
-
-  private hasUnitLabel(unit: Unit | undefined): boolean {
-    return !!String(unit?.naUnit ?? '').trim() || !!String(unit?.coUnit ?? '').trim() || Number(unit?.idUnit ?? 0) > 0;
-  }
-
-  compareUnitId = (first: number | string | null | undefined, second: number | string | null | undefined): boolean => {
-    return Number(first ?? 0) === Number(second ?? 0);
-  };
 
   getTags() {
     this.tags = this.returnLogic.tags;
@@ -120,8 +78,7 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.productListSub?.unsubscribe();
-    this.productListCartSub?.unsubscribe();
+    this.productListSub.unsubscribe();
   }
 
   removeProduct(index: number) {
@@ -195,9 +152,7 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
 
 
   changeProductUnit(index: number, idUnit: number) {
-    const normalizedId = Number(idUnit ?? 0);
-    this.productList[index].idUnit = normalizedId;
-    this.productList[index].unit = this.productList[index].productUnits.find(pu => Number(pu.idUnit) === normalizedId);
+    this.productList[index].unit = this.productList[index].productUnits.find(pu => pu.idUnit == idUnit);
     this.returnLogic.setChange(true, true);
   }
 

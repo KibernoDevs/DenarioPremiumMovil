@@ -1514,11 +1514,9 @@ export class SynchronizationDBService {
 
   }
   insertReturnBatch(arr: Return[]) {
-    return this.returnService.mergeSyncedReturnsWithLocalDates(this.database, arr).then(mergedReturns => {
-      return this.returnService.deleteReturnsBatch(this.database, mergedReturns).then(() => {
-        return this.returnService.saveReturnBatch(this.database, mergedReturns);
-      });
-    });
+    return this.returnService.deleteReturnsBatch(this.database, arr).then((r) => {
+      return this.returnService.saveReturnBatch(this.database, arr);
+    })
   }
 
   insertClientStockBatch(arr: ClientStocks[]) {

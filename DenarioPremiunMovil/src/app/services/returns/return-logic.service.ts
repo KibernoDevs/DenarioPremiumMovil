@@ -27,7 +27,6 @@ import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
 import { ItemListaDevoluciones } from 'src/app/devoluciones/item-lista-devoluciones';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
-import { COLOR_AMARILLO } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -44,7 +43,6 @@ export class ReturnLogicService {
   dateServ = inject(DateServiceService);
   enterpriseServ = inject(EnterpriseService);
   adjuntoService = inject(AdjuntoService);
-  globalConfig = inject(GlobalConfigService);
   selectorService = inject(ClienteSelectorService);
   historyTransaction = inject(HistoryTransaction);
 
@@ -278,37 +276,11 @@ export class ReturnLogicService {
       })
     } */
 
-  initNewReturnAttachments(): void {
-    this.setupReturnAttachments(false);
-  }
-
-  private setupReturnAttachments(viewOnly: boolean): void {
-    this.adjuntoService.setup(
-      this.dbServ.getDatabase(),
-      this.globalConfig.get('signatureReturn') === 'true',
-      viewOnly,
-      COLOR_AMARILLO
-    );
-  }
-
-  private loadReturnAttachments(): void {
-    this.setupReturnAttachments(this.returnSent);
-    this.adjuntoService.getSavedPhotos(
-      this.dbServ.getDatabase(),
-      this.newReturn.coReturn,
-      'devoluciones'
-    );
-  }
-
   findReturnSelected(coReturn: string) {
     console.log('returnLogicService: findReturn');
     let coords = this.newReturn.coordenada;
     //buscar la cabecera de devolucion
     this.findReturn(coReturn).then(() => {
-      this.enterpriseReturn = this.enterpriseServ.empresas.find((emp) => emp.idEnterprise === this.newReturn.idEnterprise)!;
-      this.returnSent = this.newReturn.stDelivery === null || this.newReturn.stDelivery === 1;
-      this.bloquearFactura = this.newReturn.stDelivery === null || this.newReturn.stDelivery === 1;
-      this.loadReturnAttachments();
       this.findReturnDetails(this.dbServ.getDatabase(), coReturn).then(() => {
         this.selectedReturn = true;
         if (this.userMustActivateGPS) {
@@ -316,6 +288,10 @@ export class ReturnLogicService {
         }
         this.returnSelected.next(true)
       });
+      this.adjuntoService.getSavedPhotos(this.dbServ.getDatabase(), this.newReturn.coReturn, 'devoluciones');
+      this.enterpriseReturn = this.enterpriseServ.empresas.find((emp) => emp.idEnterprise === this.newReturn.idEnterprise)!;
+      this.returnSent = this.newReturn.stDelivery === null || this.newReturn.stDelivery === 1;
+      this.bloquearFactura = this.newReturn.stDelivery === null || this.newReturn.stDelivery === 1;
       this.findInvoices().then();
       this.findInvoiceDetailUnits().then();
       this.setChange(false, true);
@@ -343,7 +319,6 @@ export class ReturnLogicService {
     this.productList = [];
     return this.returnDatabaseService.getDetailsByCoReturn(dbServ, coReturn).then((result) => {
       this.productList = result;
-      this.productListCart.next(this.productList);
     }).catch(e => {
       this.newReturn = {} as Return;
       console.log("[ReturnLogicService] Error al cargar findReturnDetails.");

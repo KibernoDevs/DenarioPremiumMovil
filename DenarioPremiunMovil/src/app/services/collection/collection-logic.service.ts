@@ -2801,7 +2801,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
 
-    const includeDocStateFilter = moduleType === '0' || moduleType === '4';
+    const includeDocStateFilter = moduleType === '0';
     const includeDocStateFilterRetenttion = moduleType === '2';
 
     if (moduleType === '0' || moduleType === '2' || moduleType === '4') {

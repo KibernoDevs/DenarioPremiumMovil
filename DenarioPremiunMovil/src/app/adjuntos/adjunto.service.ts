@@ -56,7 +56,6 @@ export class AdjuntoService {
 
   public AttachmentChanged = new Subject<any>();
   public AttachmentWeightExceeded = new Subject<any>();
-  public attachmentsLoaded = new Subject<void>();
 
   public config = inject(GlobalConfigService);
 
@@ -258,11 +257,10 @@ export class AdjuntoService {
     }
 
 
-    return dbServ.sqlBatch(batch).then(result => {
+    dbServ.sqlBatch(batch).then(result => {
       console.log(result);
     }).catch(error => {
       console.log(error);
-      throw error;
     });
 
   }
@@ -546,63 +544,79 @@ export class AdjuntoService {
     //Obtiene TODOS los adjuntos de un documento.
     //Usar para abrir documentos guardados o enviados
     this.moduleName = na_transaction;
-    const loadTasks: Promise<void>[] = [];
-
-    loadTasks.push(
-      this.getImagesByTransaction(dbServ, co_transaction, na_transaction).then(data => {
-        const imageTasks = data.map(item => {
-          return Filesystem.readFile({
+    this.getImagesByTransaction(dbServ, co_transaction, na_transaction).then(data => {
+      //console.log(data);
+      for (let i = 0; i < data.length; i++) {
+        var file: string;
+        var item = data[i];
+        try {
+          Filesystem.readFile({
             path: item.naImage,
             directory: Directory.External,
           }).then(f => {
-            const file = f.data as string;
-            const muyPesado = this.getFileWeight(file) > this.imageWeightLimit;
+            file = f.data as string;
+            var muyPesado = this.getFileWeight(file) > this.imageWeightLimit;
             if (muyPesado) {
               this.weightLimitExceeded = true;
             }
-            this.fotos.push(new Foto(item.naImage.split('.').pop() as string, file, item.naImage, muyPesado));
-          }).catch(error => console.log(error));
-        });
-        return Promise.all(imageTasks).then(() => undefined);
-      })
-    );
+            let foto = new Foto(item.naImage.split('.').pop() as string, file, item.naImage, muyPesado);
+            this.fotos.push(foto);
 
-    loadTasks.push(
-      this.getSignatureByTransaction(dbServ, co_transaction, na_transaction).then(sign => {
-        if (sign?.naImage) {
-          return Filesystem.readFile({
+
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
+    this.getSignatureByTransaction(dbServ, co_transaction, na_transaction).then(sign => {
+      //console.log(sign);
+      //var signData: string;
+      if (sign != undefined && sign.naImage != null && sign.naImage !== '')
+        try {
+          Filesystem.readFile({
             path: sign.naImage,
             directory: Directory.External,
           }).then(s => {
             this.firma = s.data as string;
-          }).catch(error => console.log(error));
-        }
-        return undefined;
-      })
-    );
+            //console.log('firma ='+ this.firma);
 
-    loadTasks.push(
-      this.getFileByTransaction(dbServ, co_transaction, na_transaction).then(adjuntos => {
-        const fileTasks = adjuntos.map(adjunto => {
-          const filename = adjunto.naFile;
-          if (this.viewOnly) {
-            this.files.push(new Archivo(this.getMIMEType(filename), '', filename));
-            return Promise.resolve();
-          }
-          return Filesystem.readFile({
+          })
+        } catch (error) {
+          console.log(error);
+        }
+    })
+    this.getFileByTransaction(dbServ, co_transaction, na_transaction).then(adjuntos => {
+      for (let i = 0; i < adjuntos.length; i++) {
+        //chequear el tipo MIME de archivo para enviarlo
+        var filename = adjuntos[i].naFile;
+        if(this.viewOnly){
+          //no hace falta cargar el archivo si solo se va a visualizar,
+          //  con el nombre es suficiente para mostrar el adjunto.
+          this.files.push(new Archivo(
+            this.getMIMEType(filename),
+            "",
+            filename
+          ));
+        }else{
+        try {
+          Filesystem.readFile({
             path: filename,
             directory: Directory.External,
           }).then(f => {
-            this.files.push(new Archivo(this.getMIMEType(filename), f.data as string, filename));
-          }).catch(error => console.log(error));
-        });
-        return Promise.all(fileTasks).then(() => undefined);
-      })
-    );
-
-    Promise.all(loadTasks).then(() => {
-      this.attachmentsLoaded.next();
-    });
+            this.files.push(new Archivo(
+              this.getMIMEType(filename),
+              f.data as string,
+              filename
+            ));
+          })
+        } catch (error) {
+          console.log(error);
+        }
+      }
+      console.log(this.files);
+    }
+    })
   }
 
   getMIMEType(filename: string) {

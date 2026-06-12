@@ -76,9 +76,8 @@
                     <!-- <div class="listado-enterprise-selector ion-text-center"> -->
                     <div class="listado-tps-selector">
                       <ion-select disabled="{{ this.returnLogic.returnSent }}" [(ngModel)]="product.idUnit"
-                        [compareWith]="compareUnitId"
                         (ionChange)="changeProductUnit(i, product.idUnit)" class="ion-text-center always-flip">
-                        <ion-select-option *ngFor="let pu of product.productUnits" [value]="pu.idUnit">{{ pu.naUnit || pu.coUnit
+                        <ion-select-option *ngFor="let pu of product.productUnits" [value]="pu.idUnit">{{ pu.naUnit
                           }}</ion-select-option>
                       </ion-select>
                     </div>

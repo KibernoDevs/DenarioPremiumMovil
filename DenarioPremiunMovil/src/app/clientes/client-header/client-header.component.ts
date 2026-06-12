@@ -190,7 +190,7 @@ export class ClientesHeaderComponent implements OnInit {
         this.messageService.alertModal(
           {
             header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
-            message: this.clientLogic.clientTags.get('CLI_SEND_COORDENADA_MSG')!,
+            message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
           }
         );
 

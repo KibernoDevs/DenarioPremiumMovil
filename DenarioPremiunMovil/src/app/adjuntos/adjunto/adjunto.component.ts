@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, inject, ViewChild, OnDestroy, } from '@angular/core';
+import { Component, OnInit, AfterViewInit, inject, ViewChild, } from '@angular/core';
 
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { AdjuntoService } from '../adjunto.service';
@@ -11,7 +11,6 @@ import { IonModal } from '@ionic/angular';
 import { register } from 'swiper/element/bundle';
 import { Swiper } from 'swiper/types';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { Subscription } from 'rxjs';
 
 
 
@@ -22,7 +21,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./adjunto.component.scss'],
   standalone: false
 })
-export class AdjuntoComponent implements OnInit, OnDestroy {
+export class AdjuntoComponent implements OnInit {
   enableCarousel: boolean = false;
   enableSignature: boolean = false;
 
@@ -47,7 +46,6 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
 
   @ViewChild(IonModal) eventModal!: IonModal;
 
-  private attachmentsLoadedSubscription?: Subscription;
 
   constructor(
 
@@ -55,20 +53,11 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.syncViewState();
-    this.attachmentsLoadedSubscription = this.service.attachmentsLoaded.subscribe(() => {
-      this.syncViewState();
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.attachmentsLoadedSubscription?.unsubscribe();
-  }
-
-  private syncViewState(): void {
     this.viewOnly = this.service.viewOnly;
     this.colorBoton = this.service.colorBoton;
     this.checkCarousel();
+
+
   }
 
   ngAfterViewInit() {
