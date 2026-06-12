@@ -98,6 +98,7 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
     this.devolucionComp = true;
     this.containerComp = false;
     this.returnLogic.returnSent = false;
+    this.returnLogic.initNewReturnAttachments();
     this.returnLogic.showHeaderButtons(true);
     
   }

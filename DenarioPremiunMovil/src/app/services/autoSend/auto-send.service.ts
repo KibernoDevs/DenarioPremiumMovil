@@ -472,10 +472,10 @@ export class AutoSendService implements OnInit {
     };
     try {
       const ret = await this.returnDatabaseService.getReturn(this.dbService.getDatabase(), coTransaction);
-      request.returns = ret;
+      request.returns = { ...ret, details: ret.details?.map(detail => ({ ...detail })) ?? [] };
       if (ret.stDelivery == DELIVERY_STATUS_TO_SEND) {
         request.returns.idReturn = null as any;
-        request.returns.daReturn = request.returns.daReturn.replace("T", " ");
+        request.returns.daReturn = request.returns.daReturn.replace('T', ' ');
         for (let i = 0; i < request.returns.details.length; i++) {
           request.returns.details[i].idReturn = null as any;
         }
