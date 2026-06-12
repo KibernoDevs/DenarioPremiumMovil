@@ -149,6 +149,11 @@ export class CollectionService {
   public disableSavedButton: boolean = true;
   public disableSendButton: boolean = true;
   public saveOrExitOpen = false;
+  /** Tras guardar o abrir desde lista: hay copia coherente en BD. */
+  public collectionPersistedBaseline = false;
+  /** Cambios locales desde el último guardado / apertura limpia. */
+  public collectionDirtySincePersist = false;
+  private collectionDirtyTrackingPaused = false;
   public alertMessageOpen: boolean = false;
   public alertMessageChangeCurrency: boolean = false;
   public alertMessageChangeDateRate: boolean = false;
@@ -445,6 +450,55 @@ export class CollectionService {
     console.log('Back-Service: ' + route);
     this.backRoute.next(route);
     // this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
+  }
+
+  pauseCollectionDirtyTracking(): void {
+    this.collectionDirtyTrackingPaused = true;
+  }
+
+  resumeCollectionDirtyTracking(): void {
+    this.collectionDirtyTrackingPaused = false;
+  }
+
+  markCollectionDirty(): void {
+    if (this.collectionDirtyTrackingPaused || this.recentOpenCollect) {
+      return;
+    }
+    this.collectionDirtySincePersist = true;
+  }
+
+  applyPersistSucceededBaseline(): void {
+    this.collectionDirtySincePersist = false;
+    this.collectionPersistedBaseline = true;
+  }
+
+  resetCollectionExitBaseline(): void {
+    this.collectionPersistedBaseline = false;
+    this.collectionDirtySincePersist = false;
+  }
+
+  markCollectionOpenedFromPersistedCopy(): void {
+    this.collectionPersistedBaseline = true;
+    this.collectionDirtySincePersist = false;
+  }
+
+  isCollectionReadOnlyForEdit(): boolean {
+    const stDelivery = Number(this.collection?.stDelivery ?? 0);
+    return stDelivery === COLLECT_STATUS_TO_SEND
+      || stDelivery === COLLECT_STATUS_SENT
+      || stDelivery === 6;
+  }
+
+  shouldPromptCollectionExitSaveOrDiscard(): boolean {
+    if (!this.cobroComponent || this.isCollectionReadOnlyForEdit()) {
+      return false;
+    }
+
+    if (!this.cobroValid && !this.collectValid) {
+      return false;
+    }
+
+    return !this.collectionPersistedBaseline || this.collectionDirtySincePersist;
   }
 
   loadPaymentMethods() {
@@ -1389,6 +1443,7 @@ export class CollectionService {
   }
 
   async validateToSend() {
+    this.markCollectionDirty();
     const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
     if (!isAlwaysPartialWithFixedMode && (this.alwaysPartialPayment || this.allPaymentPartial)) {

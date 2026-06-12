@@ -173,7 +173,13 @@ export class CobrosGeneralComponent implements OnInit {
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
       this.collectService.changeEnterprise = false;
+      this.finishOpenCollectDirtyTracking();
     });
+  }
+
+  private finishOpenCollectDirtyTracking(): void {
+    this.collectService.recentOpenCollect = false;
+    this.collectService.resumeCollectionDirtyTracking();
   }
 
   private initGeneralState() {
@@ -224,6 +230,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.initCollect = false;
       this.collectService.unlockTabs().then((resp) => {
         this.collectService.onCollectionValid(resp);
+        this.finishOpenCollectDirtyTracking();
       });
 
       if (this.collectService.enableDifferenceCodes) {
@@ -716,9 +723,7 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   setChangesMade(value: boolean) {
-    //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    /* this.collectService.onCollectionValidToSave(true);
-    this.collectService.onCollectionValidToSend(true); */
+    this.collectService.markCollectionDirty();
     this.collectService.validateToSend();
   }
 
