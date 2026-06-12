@@ -169,6 +169,7 @@ export class CobrosListComponent implements OnInit {
 
   openCollect(coCollection: string, index: number) {
     this.messageService.showLoading().then(() => {
+      this.collectService.pauseCollectionDirtyTracking();
       this.enterpriseServ.setup(this.synchronizationServices.getDatabase()).then(() => {
         this.collectService.enterpriseList = this.enterpriseServ.empresas;
         this.collectService.collection = {} as Collection;
@@ -274,6 +275,7 @@ export class CobrosListComponent implements OnInit {
               this.collectService.isOpenCollect = true;
               this.collectService.cobroListComponent = false;
               this.collectService.cobroComponent = true;
+              this.collectService.markCollectionOpenedFromPersistedCopy();
               this.messageService.hideLoading();
             })
           })
