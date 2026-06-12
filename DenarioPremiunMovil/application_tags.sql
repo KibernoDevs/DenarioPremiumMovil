@@ -575,6 +575,10 @@ INSERT INTO public.application_tags(
 	('PROD_INV_CAPTURE_PLACEHOLDER_CANTIDAD', 'PROD', 'PRODUCTOS', 'ESP', 'Ingrese cantidad'),
 	('PROD_INV_CAPTURE_LOTE', 'PROD', 'PRODUCTOS', 'ESP', 'Lote'),
 	('PROD_INV_CAPTURE_PLACEHOLDER_LOTE', 'PROD', 'PRODUCTOS', 'ESP', 'Ingrese lote'),
+	('PROD_PACKING_PROD', 'PROD', 'PRODUCTOS', 'ESP', 'Empaque producto'),
+	('PROD_PACKING_PROD', 'PROD', 'PRODUCTOS', 'ENG', 'Packing'),
+	('PROD_DIMENSION_PROD', 'PROD', 'PRODUCTOS', 'ESP', 'Dimensión producto'),
+	('PROD_DIMENSION_PROD', 'PROD', 'PRODUCTOS', 'ENG', 'Dimensions'),
 	('PROD_INV_CAPTURE_FECHA_VENCIMIENTO', 'PROD', 'PRODUCTOS', 'ESP', 'Fecha de vencimiento');
 
 -- DEVOLUCIONES

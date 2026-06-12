@@ -9,6 +9,8 @@ export class ProductDetail {
           obj['coProductStructure'],
           obj['naProductStructure'],
           obj['txDescription'],
+          obj['txPacking'],
+          obj['txDimension'],
           obj['idUnit'],          
           obj['coUnit'],          
           obj['naUnit'],          
@@ -21,7 +23,7 @@ export class ProductDetail {
           obj['stock'],
           obj['coEnterprise'],
           obj['idEnterprise'],
-        
+          obj['nuTax']
       );
   }
 
@@ -33,6 +35,8 @@ export class ProductDetail {
       public coProductStructure: string,      
       public naProductStructure: string,
       public txDescription: string,
+      public txPacking: string,
+      public txDimension: string,
       public idUnit: number,
       public coUnit: string,
       public naUnit: string,

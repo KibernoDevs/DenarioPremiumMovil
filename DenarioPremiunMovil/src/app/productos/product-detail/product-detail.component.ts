@@ -86,7 +86,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     this.loadProductImages();
 
     this.checkReorderPrices();
-    //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
+    console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
