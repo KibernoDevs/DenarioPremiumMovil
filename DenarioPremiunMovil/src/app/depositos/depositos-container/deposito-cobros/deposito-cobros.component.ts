@@ -27,7 +27,6 @@ export class DepositoCobrosComponent implements OnInit {
 
   selectCobro(cobroDetails: CollectDeposit, index: number) {
     this.depositService.markDepositDirty();
-    var indexDepositCollect = 0;
     if (cobroDetails.isSelected) {
       cobroDetails.inDepositCollect = true;
       this.depositService.onDepositValidToSend(true);
@@ -46,26 +45,20 @@ export class DepositoCobrosComponent implements OnInit {
         daCollection: cobroDetails.da_collection,
       });
 
-      indexDepositCollect = this.depositService.deposit.depositCollect.length - 1;
       this.depositService.deposit.nuValueLocal = cobroDetails.nu_value_local;
-      this.depositService.nuAmountDoc += cobroDetails.total_deposit;
-      this.depositService.nuAmountDocConversion += cobroDetails.total_deposit_conversion;
 
     } else {
       cobroDetails.inDepositCollect = false;
-      this.depositService.deposit.depositCollect.splice(indexDepositCollect, 1);
-      if (this.depositService.deposit.depositCollect.length == 0) {
+      const idx = this.depositService.deposit.depositCollect.findIndex(
+        dc => dc.coCollection === cobroDetails.co_collection
+      );
+      if (idx !== -1) {
+        this.depositService.deposit.depositCollect.splice(idx, 1);
+      }
+      if (this.depositService.deposit.depositCollect.length === 0) {
         this.depositService.onDepositValidToSend(false);
-        this.depositService.nuAmountDoc = 0;
-        this.depositService.nuAmountDocConversion = 0;
-      } else {
-        this.depositService.nuAmountDoc -= cobroDetails.total_deposit;
-        this.depositService.nuAmountDocConversion -= cobroDetails.total_deposit_conversion;
-        this.depositService.nuAmountDoc = Number(this.depositService.nuAmountDoc.toFixed(this.depositService.parteDecimal));
-        this.depositService.nuAmountDocConversion = Number(this.depositService.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
       }
     }
-
 
     this.depositService.totalizarDeposito();
 
