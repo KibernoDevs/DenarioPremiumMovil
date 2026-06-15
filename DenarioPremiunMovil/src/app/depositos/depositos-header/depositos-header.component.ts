@@ -244,6 +244,7 @@ export class DepositosHeaderComponent implements OnInit {
     }
     this.messageService.showLoading().then(() => {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
+      this.depositService.deposit.stDelivery = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
         this.depositService.applyPersistSucceededBaseline();

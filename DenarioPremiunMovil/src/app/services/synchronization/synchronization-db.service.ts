@@ -1528,9 +1528,13 @@ export class SynchronizationDBService {
   }
 
   insertDepositBatch(arr: Deposit[]) {
-    return this.depositService.deleteDepositsBatch(this.database, arr).then((r) => {
-      return this.depositService.saveDepositBatch(this.database, arr);
-    })
+    return this.depositService.mergeSyncedDepositsWithLocal(this.database, arr).then((merged) => {
+      return this.depositService.saveDepositBatch(this.database, merged);
+    });
+  }
+
+  deleteDepositRowsSafely(ids: number[]) {
+    return this.depositService.filterAndDeleteDepositsByServerIds(this.database, ids);
   }
 
   deleteDataTable(arr: number[], nameTable: string, nameId: string) {

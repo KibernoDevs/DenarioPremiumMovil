@@ -1436,8 +1436,13 @@ export class SynchronizationComponent implements OnInit {
   }
 
   handleDeletedRows(deletedRowsIds: any, tableName: string, idField: string) {
-    if (deletedRowsIds != null) {
-      this.synchronizationServices.deleteDataTable(deletedRowsIds, tableName, idField);
+    if (deletedRowsIds == null) {
+      return;
     }
+    if (tableName === 'deposits' && idField === 'id_deposit') {
+      this.synchronizationServices.deleteDepositRowsSafely(deletedRowsIds);
+      return;
+    }
+    this.synchronizationServices.deleteDataTable(deletedRowsIds, tableName, idField);
   }
 }
