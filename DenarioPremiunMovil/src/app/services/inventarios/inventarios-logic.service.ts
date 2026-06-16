@@ -476,7 +476,7 @@ export class InventariosLogicService {
           if(mapUnits != undefined){
             let unitUtil = mapUnits.get(idProductUnit);
             if(unitUtil != undefined){
-              unitUtil.previousStock = quStock;
+              unitUtil.previousStock += quStock;
             }
           }
         }
@@ -498,7 +498,7 @@ export class InventariosLogicService {
       if(mapUnits != undefined){
         let unitUtil = mapUnits.get(idProductUnit);
         if(unitUtil != undefined){
-          unitUtil.straightSwapStock = quStock;
+          unitUtil.straightSwapStock += quStock;
         }
       }
     }
@@ -517,7 +517,7 @@ export class InventariosLogicService {
         //como el return es por unidad y no por product unit, se busca la unidad dentro de las unidades del producto para asignar la devolución
         for(const [idProductUnit, unitUtil] of mapUnits){
           if(unitUtil.coUnit == coUnit){
-          unitUtil.returnedStock = quStock;
+          unitUtil.returnedStock += quStock;
           break;
         }
       }
