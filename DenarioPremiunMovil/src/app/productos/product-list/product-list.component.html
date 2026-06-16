@@ -24,11 +24,11 @@
             @if(unitByPriceList){
             @for(price of product.listPrices; track price.idList){
             <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ?
-              formatNumber(price.nuPrice) : 'N/A'
+              formatNumber(getUnitPriceListDisplayPrice(product, price.nuPrice, price.coUnit)) : 'N/A'
               }} {{ product.coCurrency }} </p>
             @if(showConversionInfo){
             <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ?
-              convertPrice(price.nuPrice, product.coCurrency) : 'N/A' }} {{ product.coCurrencyOpposite }} </p>
+              convertPrice(getUnitPriceListDisplayPrice(product, price.nuPrice, price.coUnit), price.coCurrency) : 'N/A' }} {{ product.coCurrencyOpposite }} </p>
             }
             }
             } @else{

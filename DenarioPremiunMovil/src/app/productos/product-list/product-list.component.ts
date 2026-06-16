@@ -279,6 +279,17 @@ export class ProductListComponent implements OnInit {
     return this.currencyService.convertFrom(price, coCurrency);
   }
 
+  /**
+   * Precio visual por unidad completa (precio base * quUnit) cuando unitByPriceList.
+   */
+  getUnitPriceListDisplayPrice(product: ProductUtil, basePrice: number, coUnit: string): number {
+    const unit = this.productService.catalogListaUnitInfo.find(
+      u => u.idProduct === product.idProduct && u.coUnit === coUnit
+    );
+    const factor = unit?.quUnit ?? 1;
+    return basePrice * factor;
+  }
+
   getPriceList(product: ProductUtil) {
     //[unitByPriceList] obtenemos el precio de la lista de  precios seleccionada para mostrarlo en la lista de productos, si es que la lista de precios esta activa y tiene un precio para ese producto.
           //llenamos la lista a mostrar en el producto.
