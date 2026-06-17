@@ -642,15 +642,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     product.idWarehouse = warehouse.idWarehouse;
     product.naWarehouse = warehouse.naWarehouse;
     product.coWarehouse = warehouse.coWarehouse;
-    if (stock) {
-      product.quStock = stock.quStock;
-      product.quStockAux = stock.quStock;
-    } else {
-      product.quStock = 0;
-      product.quStockAux = 0;
-    }
+    const quStockOriginal = stock ? stock.quStock : 0;
+    product.quStock = quStockOriginal;
+    product.quStockAux = quStockOriginal;
 
     this.onProductQuantityChange(product);
+
+    if (quStockOriginal > 0) {
+      product.quStock = quStockOriginal;
+    }
     this.orderServ.alCarrito(product);
 
   }
