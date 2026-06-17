@@ -138,8 +138,26 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private ensureDocumentsTableResizeObserver(): void {
+    if (this.documentsTableResizeObserver) return;
+    const panel = this.documentsTablePanel?.nativeElement;
+    if (!panel || typeof ResizeObserver === 'undefined') return;
+    let lastWidth = 0;
+    this.documentsTableResizeObserver = new ResizeObserver(entries => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      if (width > 0 && Math.abs(width - lastWidth) > 1) {
+        lastWidth = width;
+        this.invalidateDocumentsTableLayoutCache();
+        this.scheduleDocumentsTableLayoutSync(0, false);
+      }
+    });
+    this.documentsTableResizeObserver.observe(panel);
+  }
+
   public onClientSegmentChange(event: CustomEvent): void {
     if (event.detail?.value === 'docVentas') {
+      this.ensureDocumentsTableResizeObserver();
+      this.invalidateDocumentsTableLayoutCache();
       this.scheduleDocumentsTableLayoutSync();
     }
   }
@@ -369,12 +387,12 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     const viewportWidth = this.documentsTableScroll?.nativeElement?.clientWidth ?? bodyWrap.clientWidth;
     const layoutKey = this.buildDocumentsTableLayoutKey(headerCols.length, bodyRows.length, viewportWidth);
 
+    this.applyProvisionalDocumentsTableLayout(tablePanel, headerCols, bodyRows, viewportWidth);
+
     if (layoutKey === this.documentsTableLayoutKey) {
       this.completeDocumentsTableLayout();
       return true;
     }
-
-    this.applyProvisionalDocumentsTableLayout(tablePanel, headerCols, bodyRows, viewportWidth);
 
     const headerRows = Array.from(headerWrap.querySelectorAll('ion-row')) as HTMLElement[];
     const bodyRowElements = bodyRows as HTMLElement[];
