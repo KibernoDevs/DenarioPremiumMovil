@@ -1462,7 +1462,7 @@ export class CobrosGeneralComponent implements OnInit {
     const previousDetails = new Map<number, CollectionDetail>(
       this.collectService.collection.collectionDetails.map(detail => [detail.idDocument, detail])
     );
-    const selectedDocs = this.collectService.documentSalesView.filter(doc => doc.isSelected);
+    const selectedDocs = this.collectService.documentSales.filter(doc => doc.isSelected);
     this.collectService.collection.collectionDetails = [];
     selectedDocs.forEach(doc => {
       let nuAmountTotal = 0, nuAmountBalance = 0, nuAmountTotalConversion = 0, nuAmountBalanceConversion = 0;
@@ -1470,17 +1470,33 @@ export class CobrosGeneralComponent implements OnInit {
       const previousDetail = previousDetails.get(doc.idDocument);
 
       if (doc.coCurrency != this.collectService.collection.coCurrency) {
-        nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
-        nuAmountBalanceConversion = doc.nuBalance;
+        if (doc.inPaymentPartial) {
+          nuAmountBalance = doc.nuAmountPaid;
+          nuAmountBalanceConversion = this.collectService.convertirMonto(doc.nuAmountPaid, this.collectService.collection.nuValueLocal, doc.coCurrency);
+        } else {
+          nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+          nuAmountBalanceConversion = doc.nuBalance;
+        }
+
+
         nuAmountTotal = this.collectService.convertirMonto(doc.nuAmountTotal, this.collectService.collection.nuValueLocal, doc.coCurrency);
         nuAmountTotalConversion = doc.nuAmountTotal;
         nuBalanceOriginalConversion = doc.nuBalance;
         nuBalanceOriginal = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       } else {
-        nuAmountTotal = doc.nuAmountTotal;
-        nuAmountBalance = doc.nuBalance;
-        nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
-        nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+
+        if (doc.inPaymentPartial) {
+          nuAmountTotal = doc.nuAmountTotal;
+          nuAmountBalance = doc.nuAmountPaid;
+          nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+          nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+
+        } else {
+          nuAmountTotal = doc.nuAmountTotal;
+          nuAmountBalance = doc.nuBalance;
+          nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+          nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        }
         nuBalanceOriginal = doc.nuBalance;
         nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       }

@@ -161,6 +161,16 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     return this.currencyService.convertFrom(price, coCurrency);
   }
 
+  /**
+   * Precio visual por unidad completa (precio base * quUnit) cuando unitByPriceList.
+   */
+  getUnitPriceListDisplayPrice(basePrice: number, coUnit: string): number {
+    const unit = this.productService.catalogListaUnitInfo.find(
+      u => u.idProduct === this.pSeleccionado.idProduct && u.coUnit === coUnit
+    );
+    return basePrice * (unit?.quUnit ?? 1);
+  }
+
   detailShowsMinimumQty(idProduct: number): boolean {
     if (!this.productService.catalogHasProdMinMul(idProduct)) {
       return false;

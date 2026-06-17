@@ -408,6 +408,7 @@ INSERT INTO public.application_tags(
   ('COB_PARCIAL', 'COB', 'COBROS', 'ESP','Parcial'),
   ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento'),
   ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.'),
+  ('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Anticipo, debe agregar al menos un adjunto.'),
   ('COB_PAGO_MOVIL', 'COB', 'COBROS', 'ESP', 'Pago Móvil'),
   ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono'),
   ('COB_DESCUENTO', 'COB', 'COBROS', 'ESP', 'Monto descuento'),

@@ -291,15 +291,7 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendOrSave(sendOrSave: boolean) {
-    if (this.collectService.collection.coType == "2" && sendOrSave) {
-      //ES RETENCION, SE DEBE BUSCAR SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
-      //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
-      if (!this.adjuntoService.hasItems()) {
-        //NO HAY ADJUNTOS
-        this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
-        return;
-      }
-    }
+   
     if (this.collectService.collection.coType == "0" && sendOrSave) {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
@@ -338,6 +330,24 @@ export class CobrosHeaderComponent implements OnInit {
         }
       } catch (err) {
         console.error('CobrosHeader: error comprobando retenciones en collectionDetails', err);
+      }
+    }
+    
+    if (this.collectService.collection.coType == "1" && sendOrSave) {
+      if (this.collectService.requiredAnticipoAttachments) {
+        if (!this.adjuntoService.hasItems()) {
+          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS')!);
+          return;
+        }
+      }
+    }
+
+    if (this.collectService.collection.coType == "2" && sendOrSave) {
+      if (this.collectService.requiredRetentionAttachments) {
+        if (!this.adjuntoService.hasItems()) {
+          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
+          return;
+        }
       }
     }
 
