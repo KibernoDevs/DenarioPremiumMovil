@@ -657,6 +657,8 @@ export class PedidoComponent implements OnInit {
       this.daDispatchChanged = true;
     }
 
+    this.orderServ.productSummary();
+
     let orderDetails: OrderDetail[] = [];
     for (let i = 0; i < this.orderServ.carrito.length; i++) {
       const item = this.orderServ.carrito[i];
@@ -666,8 +668,6 @@ export class PedidoComponent implements OnInit {
         tieneDescuento = item.idDiscount == null ? true : false;
       } else
         tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
-
-      const lineAmountBase = this.orderServ.computeCartLineBaseAmount(item);
 
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
@@ -712,7 +712,7 @@ export class PedidoComponent implements OnInit {
         item.naProduct,
         item.idProduct,
         item.nuPrice,
-        lineAmountBase,
+        item.subtotal,
         (this.orderServ.validateWarehouses ? item.coWarehouse : ''), //si validWH =  false, se manda 'vacio'
         (this.orderServ.validateWarehouses ? item.idWarehouse : 0),
         0,
@@ -729,8 +729,7 @@ export class PedidoComponent implements OnInit {
           this.currencyServ.toHardCurrency(item.nuPrice) : this.currencyServ.toLocalCurrency(item.nuPrice),
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
           this.currencyServ.toHardCurrency(tieneDescuento ? item.nuAmountDiscount : 0) : this.currencyServ.toLocalCurrency(tieneDescuento ? item.nuAmountDiscount : 0),
-        this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
-          this.currencyServ.toHardCurrency(lineAmountBase) : this.currencyServ.toLocalCurrency(lineAmountBase),
+        item.subtotalConv,
         units,
         [discount],
 
