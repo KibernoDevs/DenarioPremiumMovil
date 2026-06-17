@@ -1011,7 +1011,8 @@ export class AutoSendService implements OnInit {
         "co_warehouse as coWarehouse, id_warehouse as idWarehouse, qu_suggested as quSuggested, co_enterprise as coEnterprise, " +
         "id_enterprise as idEnterprise, iva , nu_discount_total as nuDiscountTotal, co_discount as coDiscount, id_discount as idDiscount, " +
         "co_price_list as coPriceList, id_price_list as idPriceList, posicion , nu_price_base_conversion as nuPriceConversion, " +
-        "nu_discount_total_conversion  nuDiscountTotalConversion, nu_amount_total_conversion as nuAmountTotalConversion " +
+        "nu_discount_total_conversion  nuDiscountTotalConversion, nu_amount_total_conversion as nuAmountTotalConversion, " +
+        "nu_amount_tax as nuAmountTax " +
         "FROM order_details WHERE co_order = ? ";
 
       // para estos 2 debo usar un hack asqueroso donde agrego los coOrderDetail directo al query como strings.

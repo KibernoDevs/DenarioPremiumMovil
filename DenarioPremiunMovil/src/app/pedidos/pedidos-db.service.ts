@@ -402,8 +402,8 @@ export class PedidosDbService {
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
       "iva, nu_discount_total, co_discount, id_discount, co_price_list, id_price_list, posicion, nu_price_base_conversion, " +
-      "nu_discount_total_conversion, nu_amount_total_conversion) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_discount_total_conversion, nu_amount_total_conversion, nu_amount_tax) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
       "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested ) " +
@@ -432,7 +432,7 @@ export class PedidosDbService {
       queries.push([detailQuery, [item.idOrderDetail, item.coOrderDetail, item.coOrder, item.coProduct, item.naProduct, item.idProduct, item.nuPriceBase,
       item.nuAmountTotal, item.coWarehouse, item.idWarehouse, item.quSuggested, item.coEnterprise, item.idEnterprise, item.iva,
       item.nuDiscountTotal, item.coDiscount, item.idDiscount, item.coPriceList, item.idPriceList, item.posicion,
-      item.nuPriceBaseConversion, item.nuDiscountTotalConversion, item.nuAmountTotalConversion,]]);
+      item.nuPriceBaseConversion, item.nuDiscountTotalConversion, item.nuAmountTotalConversion, item.nuAmountTax,]]);
 
       //query de discount
       if (item.orderDetailDiscount && item.orderDetailDiscount[0].quDiscount != null) {
@@ -495,8 +495,8 @@ export class PedidosDbService {
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
       "iva, nu_discount_total, co_discount, id_discount, co_price_list, id_price_list, posicion, nu_price_base_conversion, " +
-      "nu_discount_total_conversion, nu_amount_total_conversion) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_discount_total_conversion, nu_amount_total_conversion, nu_amount_tax) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -506,7 +506,7 @@ export class PedidosDbService {
       orderDetail.idProduct, orderDetail.nuPriceBase, orderDetail.nuAmountTotal, orderDetail.coWarehouse, orderDetail.idWarehouse, orderDetail.quSuggested,
       orderDetail.coEnterprise, orderDetail.idEnterprise, orderDetail.iva, orderDetail.nuDiscountTotal, orderDetail.coDiscount, orderDetail.idDiscount,
       orderDetail.coPriceList, orderDetail.idPriceList, orderDetail.posicion, orderDetail.nuPriceBaseConversion, orderDetail.nuDiscountTotalConversion,
-      orderDetail.nuAmountTotalConversion]]);
+      orderDetail.nuAmountTotalConversion, orderDetail.nuAmountTax]]);
     }
 
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
@@ -951,6 +951,7 @@ export class PedidosDbService {
       nuPriceBaseConversion: detailDB.nu_price_base_conversion,
       nuDiscountTotalConversion: detailDB.nu_discount_total_conversion,
       nuAmountTotalConversion: detailDB.nu_amount_total_conversion,
+      nuAmountTax: detailDB.nu_amount_tax == null ? 0 : detailDB.nu_amount_tax,
       orderDetailUnit: [],
       orderDetailDiscount: []
     };

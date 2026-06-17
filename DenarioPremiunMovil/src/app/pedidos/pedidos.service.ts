@@ -1138,17 +1138,25 @@ export class PedidosService {
         item.discountedNuPrice = item.nuPrice;
       }
 
+      if (this.userCanSelectGlobalDiscount && this.dctoGlobal) {
+        const lineGlobalDc = curItem * (this.dctoGlobal / 100);
+        this.totalGlobalDc = this.totalGlobalDc + lineGlobalDc;
+        curItem = curItem - lineGlobalDc;
+      }
+
       this.finalPedido = this.finalPedido + curItem;
 
       //IVA
       iva = 0;
       ivaItem = 0;
+      item.nuAmountTax = 0;
       if (this.vatExemptProducts && item.nuTax != null) {
         item.iva = item.nuTax;
       }
       if (item.iva != null) {
         iva = item.iva;
         ivaItem = curItem * (iva / 100);
+        item.nuAmountTax = ivaItem;
         curItem = curItem + ivaItem;
         this.orderIVA += ivaItem;
         if (item.discountedNuPrice && item.discountedNuPrice > 0) {
@@ -1162,11 +1170,6 @@ export class PedidosService {
       }
       item.subtotal = curItem;
       this.totalPedido = this.totalPedido + curItem;
-
-      //dcto global
-      if (this.userCanSelectGlobalDiscount && this.dctoGlobal) {
-        item.subtotal = item.subtotal - (item.subtotal * (this.dctoGlobal / 100));
-      }
 
       //conversion
       if (this.currencyService.multimoneda) {
@@ -1217,13 +1220,6 @@ export class PedidosService {
       }
 
     }//fin for(carrito)
-
-    //descuento global
-    if (this.userCanSelectGlobalDiscount && this.dctoGlobal) {
-      this.totalGlobalDc = this.finalPedido * (this.dctoGlobal / 100);
-      this.finalPedido = this.finalPedido - this.totalGlobalDc;
-      this.totalPedido = this.totalPedido - (this.totalPedido * (this.dctoGlobal / 100));
-    }
 
     if (this.currencyService.multimoneda) {
       if (this.pedidoModificable) {
@@ -1856,6 +1852,7 @@ export class PedidosService {
             "nuPriceBaseConversion": item.oppositeNuPrice,
             "nuDiscountTotalConversion": 0,
             "nuAmountTotalConversion": 0,
+            "nuAmountTax": 0,
             "orderDetailUnit": detailUnits,
             "orderDetailDiscount": []
           }
