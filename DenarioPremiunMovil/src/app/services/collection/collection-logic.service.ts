@@ -237,6 +237,8 @@ export class CollectionService {
   public alwaysPartialPayment: boolean = false;
   public enablePartialPayment: boolean = false;
   public requiredCollectionAttachments: boolean = false;
+  public requiredAnticipoAttachments: boolean = false;
+  public requiredRetentionAttachments: boolean = false;
   private typeDocumentListLoaded: boolean = false;
   private codePhoneNumberListLoaded: boolean = false;
   public enabledManualRate: boolean = false;
@@ -407,6 +409,10 @@ export class CollectionService {
     this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
     const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
     this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
+    const requiredAnticipoAttachmentsValue = (this.globalConfig.get('requiredAnticipoAttachments') || '').trim();
+    this.requiredAnticipoAttachments = requiredAnticipoAttachmentsValue === '' ? true : requiredAnticipoAttachmentsValue === 'true' ? true : false;
+    const requiredRetentionAttachmentsValue = (this.globalConfig.get('requiredRetentionAttachments') || '').trim();
+    this.requiredRetentionAttachments = requiredRetentionAttachmentsValue === '' ? true : requiredRetentionAttachmentsValue === 'true' ? true : false;
     const enabledManualRateValue = (this.globalConfig.get('enabledManualRate') || '').trim();
     this.enabledManualRate = enabledManualRateValue === '' ? true : enabledManualRateValue === 'true' ? true : false;
 
