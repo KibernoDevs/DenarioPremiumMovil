@@ -502,7 +502,7 @@
     "name": "order_details",
     "table": "order_details",
     "idName": "id_order_detail",
-    "sql": "CREATE TABLE IF NOT EXISTS order_details( id_order_detail INTEGER, co_order_detail TEXT PRIMARY KEY, co_order TEXT NOT NULL, co_product TEXT, na_product TEXT, id_product INTEGER NOT NULL, nu_price_base DECIMAL(10,5), nu_amount_total DECIMAL(10,5), co_warehouse TEXT, id_warehouse INTEGER, qu_suggested DECIMAL(10,5), co_enterprise TEXT, id_enterprise INTEGER, iva DECIMAL(10,5), nu_discount_total DECIMAL(10,5), co_discount TEXT, id_discount INTEGER, co_price_list TEXT, id_price_list INTEGER, posicion INTEGER, nu_price_base_conversion DECIMAL(10,5), nu_discount_total_conversion DECIMAL(10,5), nu_amount_total_conversion DECIMAL(10,5), nu_amount_tax NUMERIC(29,4))"
+    "sql": "CREATE TABLE IF NOT EXISTS order_details( id_order_detail INTEGER, co_order_detail TEXT PRIMARY KEY, co_order TEXT NOT NULL, co_product TEXT, na_product TEXT, id_product INTEGER NOT NULL, nu_price_base DECIMAL(10,5), nu_amount_total DECIMAL(10,5), co_warehouse TEXT, id_warehouse INTEGER, qu_suggested DECIMAL(10,5), co_enterprise TEXT, id_enterprise INTEGER, iva DECIMAL(10,5), nu_discount_total DECIMAL(10,5), co_discount TEXT, id_discount INTEGER, co_price_list TEXT, id_price_list INTEGER, posicion INTEGER, nu_price_base_conversion DECIMAL(10,5), nu_discount_total_conversion DECIMAL(10,5), nu_amount_total_conversion DECIMAL(10,5));"
   },
   {
     "id": 991181,

@@ -1,6 +1,6 @@
 [
     {
-        "sql": "ALTER TABLE order_details ADD COLUMN IF NOT EXISTS nu_amount_tax NUMERIC(29,4);",
+        "sql": "ALTER TABLE order_details ADD COLUMN nu_amount_tax NUMERIC(29,4);",
         "description": "Se agrega la columna 'nu_amount_tax' a 'order_details' para almacenar el monto de impuesto del detalle."
     }
 ]
