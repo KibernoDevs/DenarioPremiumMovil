@@ -730,6 +730,7 @@ export class PedidoComponent implements OnInit {
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
           this.currencyServ.toHardCurrency(tieneDescuento ? item.nuAmountDiscount : 0) : this.currencyServ.toLocalCurrency(tieneDescuento ? item.nuAmountDiscount : 0),
         item.subtotalConv,
+        item.nuAmountTax ?? 0,
         units,
         [discount],
 

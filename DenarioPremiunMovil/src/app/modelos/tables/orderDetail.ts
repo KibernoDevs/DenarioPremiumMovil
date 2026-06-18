@@ -27,6 +27,7 @@ export class OrderDetail {
             obj['nuPriceBaseConversion'],
             obj['nuDiscountTotalConversion'],
             obj['nuAmountTotalConversion'],
+            obj['nuAmountTax'],
             obj['orderDetailUnit'],
             obj['orderDetailDiscount'],
 
@@ -56,6 +57,7 @@ export class OrderDetail {
          public nuPriceBaseConversion: number,
          public nuDiscountTotalConversion: number,
          public nuAmountTotalConversion: number,
+         public nuAmountTax: number,
 
          public orderDetailUnit: OrderDetailUnit[],
          public orderDetailDiscount: OrderDetailDiscount[],
