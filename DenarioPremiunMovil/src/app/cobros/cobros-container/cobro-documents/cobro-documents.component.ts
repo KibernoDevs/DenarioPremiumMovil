@@ -143,6 +143,11 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngAfterViewInit(): void {
+    this.ensureDocumentsTableResizeObserver();
+  }
+
+  public ensureDocumentsTableResizeObserver(): void {
+    if (this.documentsTableResizeObserver) return;
     const panel = this.documentsTablePanel?.nativeElement;
     if (!panel || typeof ResizeObserver === 'undefined') {
       return;
@@ -301,7 +306,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     return [bodyRows[0], bodyRows[middleIndex], bodyRows[bodyRows.length - 1]];
   }
 
-  private invalidateDocumentsTableLayoutCache(): void {
+  public invalidateDocumentsTableLayoutCache(): void {
     this.documentsTableLayoutKey = '';
   }
 
@@ -383,14 +388,15 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const viewportWidth = this.documentsTableScroll?.nativeElement?.clientWidth ?? bodyWrap.clientWidth;
+
+    this.applyProvisionalDocumentsTableLayout(tablePanel, headerCols, bodyRows, viewportWidth);
+
     const layoutKey = this.buildDocumentsTableLayoutKey(headerCols.length, bodyRows.length, viewportWidth);
 
     if (layoutKey === this.documentsTableLayoutKey) {
       this.completeDocumentsTableLayout();
       return true;
     }
-
-    this.applyProvisionalDocumentsTableLayout(tablePanel, headerCols, bodyRows, viewportWidth);
 
     const headerRows = Array.from(headerWrap.querySelectorAll('ion-row')) as HTMLElement[];
     const bodyRowElements = bodyRows as HTMLElement[];
@@ -465,7 +471,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
-  private scheduleDocumentsTableLayoutSync(retryCount = 0, markPending = true): void {
+  public scheduleDocumentsTableLayoutSync(retryCount = 0, markPending = true): void {
     if (markPending && retryCount === 0) {
       this.markDocumentsTableLayoutPending();
     }

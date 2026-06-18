@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
+import { CobrosDocumentComponent } from '../cobro-documents/cobro-documents.component';
 
 @Component({
   selector: 'app-cobro',
@@ -25,6 +26,8 @@ export class CobroComponent implements OnInit, OnDestroy {
   public segment = 'default';
   public documentsTabMounted = false;
   public fecha!: Date;
+
+  @ViewChild('cobroDocuments') cobroDocuments?: CobrosDocumentComponent;
 
   constructor() {
     // inicializamos en false (evita cambios inesperados)
@@ -63,6 +66,9 @@ export class CobroComponent implements OnInit, OnDestroy {
     const value = event.detail?.value as string;
     if (value === 'documentos') {
       this.documentsTabMounted = true;
+      this.cobroDocuments?.ensureDocumentsTableResizeObserver();
+      this.cobroDocuments?.invalidateDocumentsTableLayoutCache();
+      this.cobroDocuments?.scheduleDocumentsTableLayoutSync();
     }
     this.onChangeTab(value);
   }

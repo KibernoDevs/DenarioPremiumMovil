@@ -65,6 +65,6 @@
 
 @if (documentsTabMounted) {
     <div [hidden]="segment !== 'documentos'" class="cobro-tab-panel">
-        <app-cobro-documents></app-cobro-documents>
+        <app-cobro-documents #cobroDocuments></app-cobro-documents>
     </div>
 }
