@@ -412,6 +412,10 @@ export class PedidoComponent implements OnInit {
             var unitUtil = item.unitList.find((u) => u.idProductUnit == unit.idProductUnit)!;
             if (unitUtil != undefined) {
               unitUtil.quAmount = unit.quOrder;
+              if (this.orderServ.unitByPriceList && unit.coPriceList) {
+                unitUtil.coPriceList = unit.coPriceList;
+                unitUtil.idPriceList = unit.idPriceList;
+              }
               if (unitUtil.idUnit === item.idUnit) {
                 item.quAmount = unitUtil.quAmount;
               } else {
@@ -425,7 +429,8 @@ export class PedidoComponent implements OnInit {
               console.error("No se consiguio Unit: " + unit.idProductUnit);
             }
           }
-          //pricelist
+          //pricelist (nivel order_detail)
+          item.coPriceList = detail.coPriceList;
           item.idPriceList = detail.idPriceList;
           //iva
           item.iva = detail.iva;
@@ -672,6 +677,7 @@ export class PedidoComponent implements OnInit {
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
+        const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
         let u = new OrderDetailUnit(
           0,
           this.dateServ.generateCO((10 * i)) + 'U' + j.toString(),
@@ -683,6 +689,8 @@ export class PedidoComponent implements OnInit {
           empresa.idEnterprise,
           unit.coUnit,
           0,
+          unitPriceList.coPriceList,
+          unitPriceList.idPriceList,
         )
 
 

@@ -406,8 +406,8 @@ export class PedidosDbService {
       "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
-      "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?)";
+      "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested, co_price_list, id_price_list ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let dcQuery = "INSERT OR REPLACE INTO order_detail_discount ( id_order_detail_discount, co_order_detail_discount, " +
       "co_order_detail, id_order_detail, id_discount, qu_discount, nu_price_final, co_enterprise, id_enterprise ) " +
@@ -449,8 +449,8 @@ export class PedidosDbService {
         }
         //query de unidad
         queries.push([unitQuery, [unit.idOrderDetailUnit, unit.coOrderDetailUnit, unit.coOrderDetail, unit.coProductUnit,
-        unit.idProductUnit, unit.quOrder, unit.coEnterprise, unit.idEnterprise, unit.coUnit, unit.quSuggested,]]);
-
+        unit.idProductUnit, unit.quOrder, unit.coEnterprise, unit.idEnterprise, unit.coUnit, unit.quSuggested,
+        unit.coPriceList ?? null, unit.idPriceList ?? null]]);
       }
 
     }
@@ -514,15 +514,16 @@ export class PedidosDbService {
 
   saveOrderDetailUnitBatch(db: SQLiteObject, orderDetailUnits: OrderDetailUnit[]) {
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
-      "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?)";
+      "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested, co_price_list, id_price_list ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
     for (let o = 0; o < orderDetailUnits.length; o++) {
       const orderDetailUnit = orderDetailUnits[o];
       queries.push([unitQuery, [orderDetailUnit.idOrderDetailUnit, orderDetailUnit.coOrderDetailUnit, orderDetailUnit.coOrderDetail,
       orderDetailUnit.coProductUnit, orderDetailUnit.idProductUnit, orderDetailUnit.quOrder, orderDetailUnit.coEnterprise,
-      orderDetailUnit.idEnterprise, orderDetailUnit.coUnit, orderDetailUnit.quSuggested]]);
+      orderDetailUnit.idEnterprise, orderDetailUnit.coUnit, orderDetailUnit.quSuggested,
+      orderDetailUnit.coPriceList ?? null, orderDetailUnit.idPriceList ?? null]]);
     }
 
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
@@ -971,7 +972,9 @@ export class PedidosDbService {
       coEnterprise: unitDB.co_enterprise,
       idEnterprise: unitDB.id_enterprise,
       coUnit: unitDB.co_unit,
-      quSuggested: unitDB.qu_suggested
+      quSuggested: unitDB.qu_suggested,
+      coPriceList: unitDB.co_price_list,
+      idPriceList: unitDB.id_price_list,
 
     };
     return unit;
