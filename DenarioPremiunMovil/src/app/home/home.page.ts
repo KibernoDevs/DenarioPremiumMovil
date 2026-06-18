@@ -56,6 +56,8 @@ export class HomePage implements OnInit {
   public modulosTransportista!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
   public modulosCliente!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
   public modulosPromotor!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
+  public modulosCatalogo!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
+
   /* public modulos: any[] = []; */
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
@@ -94,8 +96,8 @@ export class HomePage implements OnInit {
       }
     }
 
-    this.esVendedor = !this.user.transportista && !this.user.cliente 
-    && !this.user.promotor && !this.user.soporte;
+    this.esVendedor = !this.user.transportista && !this.user.cliente
+      && !this.user.promotor && !this.user.soporte && !this.user.catalogo;
 
     this.autoSend.ngOnInit();
 
@@ -213,6 +215,11 @@ export class HomePage implements OnInit {
           const desiredOrder = [7, 2, 8, 10];
           this.modulosCliente.sort((a, b) => desiredOrder.indexOf(a.id) - desiredOrder.indexOf(b.id));
         }
+
+        if (this.user.catalogo) {
+          this.modulosCatalogo = this.modulos.filter(m => m.id === 7 || m.id === 10);
+        }
+
         if (this.user.transportista) {
           //Despachos, Clientes y Sincronizar
           this.modulosTransportista = this.modulos.filter(m => m.id === 0 || m.id === 8 || m.id === 10);
@@ -228,7 +235,7 @@ export class HomePage implements OnInit {
         }
         if (this.user.promotor) {
           //Visitas, Inventario Productos, Clientes y Sincronizar
-          this.modulosPromotor = this.modulos.filter(m => m.id === 0 || m.id === 1 ||  m.id === 7 || m.id === 8 ||m.id === 10);
+          this.modulosPromotor = this.modulos.filter(m => m.id === 0 || m.id === 1 || m.id === 7 || m.id === 8 || m.id === 10);
         }
       } catch (e) {
         this.user = {};

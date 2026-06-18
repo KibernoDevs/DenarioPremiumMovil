@@ -53,6 +53,30 @@
     }
 }
 
+.catalogo-modules {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100dvh - 260px);
+    padding: 0 1rem;
+}
+
+.catalogo-module-col {
+    display: flex;
+    justify-content: center;
+}
+
+.catalogo-module-link {
+    display: block;
+    width: 100%;
+    max-width: 160px;
+    margin: 0 auto;
+}
+
+.catalogo-module-icon {
+    width: 72% !important;
+}
+
 .home {
     .image-size {
         display: block;
