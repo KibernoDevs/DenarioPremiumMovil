@@ -805,44 +805,106 @@ export class PedidoComponent implements OnInit {
   onPricelistSelect() {
     this.orderServ.setChangesMade(true);
     if (this.orderServ.hasItems()) {
-      //si el pedido ya tiene cosas, hay que resetear
-      let buttonsRevertPricelist = [
-        {
-          text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
-          role: 'cancel',
-          handler: () => {
-            console.log('Alert canceled');
-            this.orderServ.setChangesMade(false);
-            this.orderServ.listaSeleccionada = this.listaAnterior;
-          },
-        },
-        {
-          text: this.orderServ.getTag("DENARIO_BOTON_ACEPTAR"),
-          role: 'confirm',
-          handler: () => {
-            console.log('Alert confirmed');
-            let pricelist = this.orderServ.listaSeleccionada;
-            this.reset();
-            this.orderServ.listaSeleccionada = pricelist;
-            this.listaAnterior = pricelist;
-            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == pricelist?.idList)
-            this.orderServ.productListToOrderUtil(this.productService.productList);
-          }
-        }
-      ]
-
-      this.message.alertCustomBtn({
-        header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
-        message: this.orderServ.getTag('PED_RESET_PRICELIST')
-      } as MessageAlert,
-        buttonsRevertPricelist);
+      this.confirmPriceListChange(this.orderServ.listaSeleccionada);
     } else {
-      //si no hay productos no hay peo, consolidamos el cambio.
       this.listaAnterior = this.orderServ.listaSeleccionada;
       this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == this.orderServ.listaSeleccionada?.idList)
       this.orderServ.productListToOrderUtil(this.productService.productList);
       this.orderServ.setChangesMade(true);
+    }
+  }
 
+  private confirmPriceListChange(targetList: List | undefined): void {
+    if (targetList == undefined) {
+      return;
+    }
+    this.orderServ.listaSeleccionada = targetList;
+    const buttonsRevertPricelist = [
+      {
+        text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
+        role: 'cancel',
+        handler: () => {
+          console.log('Alert canceled');
+          this.orderServ.setChangesMade(false);
+          this.orderServ.listaSeleccionada = this.listaAnterior;
+        },
+      },
+      {
+        text: this.orderServ.getTag("DENARIO_BOTON_ACEPTAR"),
+        role: 'confirm',
+        handler: () => {
+          console.log('Alert confirmed');
+          this.reset();
+          this.commitPriceListSelection(targetList);
+          this.orderServ.productListToOrderUtil(this.productService.productList);
+        }
+      }
+    ];
+
+    this.message.alertCustomBtn({
+      header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+      message: this.orderServ.getTag('PED_RESET_PRICELIST')
+    } as MessageAlert,
+      buttonsRevertPricelist);
+  }
+
+  private resolveBasePriceList(cliente: Client): List | undefined {
+    if (this.orderServ.desdeSugerencia) {
+      this.orderServ.desdeSugerencia = false;
+      return this.orderServ.datosPedidoSugerido.list;
+    }
+    if (this.orderServ.openOrder) {
+      const idPriceList = this.orderServ.order.orderDetails[0].idPriceList;
+      if (!idPriceList) {
+        console.error("El pedido no tiene pricelist asignada en los detalles");
+        return this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+      }
+      const pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList);
+      if (pl.length < 1) {
+        console.error("No se encontro pricelist del pedido");
+        if (this.orderServ.pedidoModificable) {
+          console.log("Buscando lista por cliente, para que el usuario pueda cambiarla");
+          return this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+        }
+        return undefined;
+      }
+      const idList = pl[0].idList;
+      return this.orderServ.listaList.find((list) => list.idList == idList);
+    }
+    return this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+  }
+
+  private commitPriceListSelection(list: List | undefined): void {
+    if (list != undefined) {
+      this.orderServ.listaSeleccionada = list;
+      this.listaAnterior = list;
+      this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list.idList);
+    } else if (this.orderServ.openOrder) {
+      this.orderServ.listaSeleccionada = { idList: 0 } as List;
+    }
+  }
+
+  private applyPriceListForClient(cliente: Client): void {
+    const fromSuggestion = this.orderServ.desdeSugerencia;
+    const baseList = this.resolveBasePriceList(cliente);
+    const finalList = fromSuggestion
+      ? baseList
+      : (this.orderServ.applyOrderTypePriceList(baseList) ?? baseList);
+    this.commitPriceListSelection(finalList);
+  }
+
+  private applyOrderTypePriceListChange(): void {
+    const baseList = this.orderServ.listaSeleccionada;
+    const newList = this.orderServ.applyOrderTypePriceList(baseList) ?? baseList;
+    if (newList?.idList === this.listaAnterior?.idList) {
+      return;
+    }
+    if (this.orderServ.hasItems()) {
+      this.confirmPriceListChange(newList);
+    } else {
+      this.commitPriceListSelection(newList);
+      this.orderServ.productListToOrderUtil(this.productService.productList);
+      this.orderServ.setChangesMade(true);
     }
   }
 
@@ -1060,6 +1122,7 @@ export class PedidoComponent implements OnInit {
         this.tipoOrdenAnterior = this.tipoOrden;
         this.tipoOrden = this.orderServ.tipoOrden;
         this.orderServ.syncOrderTypeIvaOnProducts();
+        this.applyOrderTypePriceListChange();
       }
     }
     this.onChange();
@@ -1282,7 +1345,7 @@ export class PedidoComponent implements OnInit {
               this.orderServ.syncOrderTypeIvaOnProducts();
             }
           }
-
+          this.applyPriceListForClient(cliente);
         })
       } else {
         this.listaOrderTypes = this.orderServ.listaOrderTypes;
@@ -1300,55 +1363,8 @@ export class PedidoComponent implements OnInit {
             this.orderServ.syncOrderTypeIvaOnProducts();
           }
         }
+        this.applyPriceListForClient(cliente);
       }
-
-
-      // Lista
-      let list: List | undefined;
-      if (this.orderServ.desdeSugerencia) {
-        //en la sugerencia ya tenemos una lista definida, asi que la usamos y listo, no hay que andar buscando ni nada raro
-        this.orderServ.desdeSugerencia = false;
-        list = this.orderServ.datosPedidoSugerido.list;
-      } else {
-        if (this.orderServ.openOrder) {
-          let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
-          if (!idPriceList) {
-            console.error("El pedido no tiene pricelist asignada en los detalles");
-            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-          } else {
-            let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-            if (pl.length < 1) {
-              console.error("No se encontro pricelist del pedido");
-              if (this.orderServ.pedidoModificable) {
-                console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
-                list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-              }
-            } else {
-              let idList = pl[0].idList;
-              list = this.orderServ.listaList.find((list) => list.idList == idList);
-            }
-            if (list) {
-              this.orderServ.listaSeleccionada = list!;
-              if (list.idList > 0) {
-                this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
-
-              }
-              this.listaAnterior = list!;
-            } else {
-              this.orderServ.listaSeleccionada = { idList: 0 } as List;
-            }
-          }
-        } else {
-          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-        }
-      }
-
-      if (list != undefined) {
-        this.orderServ.listaSeleccionada = list;
-        this.listaAnterior = list;
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
-      }
-
 
 
       //Payment Condition

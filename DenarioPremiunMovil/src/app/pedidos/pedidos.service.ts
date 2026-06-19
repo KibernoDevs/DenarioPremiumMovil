@@ -572,6 +572,30 @@ export class PedidosService {
     this.orderTypeIvaChanged$.next();
   }
 
+  resolvePriceListFromOrderType(fallbackList: List | undefined): List | undefined {
+    if (this.openOrder) {
+      return fallbackList;
+    }
+    const idList = this.tipoOrden?.idList;
+    if (idList == null) {
+      return fallbackList;
+    }
+    const matched = this.listaList.find(l => Number(l.idList) === Number(idList));
+    if (!matched) {
+      return fallbackList;
+    }
+    return matched;
+  }
+
+  applyOrderTypePriceList(fallbackList: List | undefined): List | undefined {
+    const resolved = this.resolvePriceListFromOrderType(fallbackList);
+    if (resolved != undefined && resolved.idList !== this.listaSeleccionada?.idList) {
+      this.listaSeleccionada = resolved;
+      this.listaPriceListFiltrada = this.listaPricelist.filter(pl => pl.idList === resolved.idList);
+    }
+    return resolved;
+  }
+
   private isDistinctItemsLimitConfigured(): boolean {
     const t = this.tipoOrden;
     if (!t || t.quItems <= 0) {
