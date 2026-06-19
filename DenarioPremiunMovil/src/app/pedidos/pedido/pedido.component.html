@@ -788,12 +788,14 @@
                               {{orderServ.monedaSeleccionada.coCurrency}} 
                             </ion-item>
                             }
+                            @if(orderServ.pedidoModificable){
                             <ion-item>
                               <ion-button color="danger" size="small" (click)="orderServ.removeFromCarrito(item)">
                                 <ion-icon slot="icon-only" name="trash"></ion-icon>
                                 <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
                               </ion-button>
                             </ion-item>
+                          }
                           </ion-list>
                         </div>
 
