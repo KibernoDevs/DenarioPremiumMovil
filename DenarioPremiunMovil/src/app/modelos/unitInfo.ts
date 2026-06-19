@@ -18,7 +18,8 @@ export class UnitInfo {
             obj['idEnterprise'],
             obj['naUnit'],
             obj['quAmount'],
-
+            obj['coPriceList'],
+            obj['idPriceList'],
         );
     }
 
@@ -33,6 +34,8 @@ export class UnitInfo {
         public coEnterprise: string,
         public idEnterprise: number,
         public naUnit: string,
-        public quAmount: number
+        public quAmount: number,
+        public coPriceList: string,
+        public idPriceList: number,
     ) { }
 }

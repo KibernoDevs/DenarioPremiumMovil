@@ -2,16 +2,18 @@ export class OrderDetailUnit {
 
     static OrderDetailUnitJSON(obj: OrderDetailUnit) {
         return new OrderDetailUnit(
-        obj['idOrderDetailUnit'],
-        obj['coOrderDetailUnit'],
-        obj['coOrderDetail'],
-        obj['coProductUnit'],
-        obj['idProductUnit'],
-        obj['quOrder'],
-        obj['coEnterprise'],
-        obj['idEnterprise'],
-        obj['coUnit'],
-        obj['quSuggested'],
+            obj['idOrderDetailUnit'],
+            obj['coOrderDetailUnit'],
+            obj['coOrderDetail'],
+            obj['coProductUnit'],
+            obj['idProductUnit'],
+            obj['quOrder'],
+            obj['coEnterprise'],
+            obj['idEnterprise'],
+            obj['coUnit'],
+            obj['quSuggested'],
+            obj['coPriceList'],
+            obj['idPriceList'],
         )
     }
 
@@ -26,6 +28,8 @@ export class OrderDetailUnit {
         public idEnterprise: number,
         public coUnit: string,
         public quSuggested: number,
+        public coPriceList: string,
+        public idPriceList: number,
     ) {
 
     }

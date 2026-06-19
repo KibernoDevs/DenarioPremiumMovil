@@ -137,18 +137,26 @@
     </ion-row>
     }
 
-    <!-- Catálogo: solo Productos y Sincronizar, centrados en pantalla -->
+    <!-- Catálogo: Productos, Sincronizar y Salir -->
     @if(user.catalogo){
-    <div class="catalogo-modules">
-      <ion-row class="ion-justify-content-center ion-align-items-center">
-        @for(modulo of modulosCatalogo; track modulo.id){
-        <ion-col size="6" size-sm="5" size-md="4" class="catalogo-module-col">
-          <a class="ion-text-center catalogo-module-link" expand="block" (click)="goToModule(modulo)">
-            <img alt="" class="image-size catalogo-module-icon" [src]="modulo.imgIcon" />
-            <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
-          </a>
+    <div class="catalogo-layout">
+      <div class="catalogo-modules">
+        <ion-row class="ion-justify-content-center ion-align-items-center">
+          @for(modulo of modulosCatalogo; track modulo.id){
+          <ion-col size="6" size-sm="5" size-md="4" class="catalogo-module-col">
+            <a class="ion-text-center catalogo-module-link" expand="block" (click)="goToModule(modulo)">
+              <img alt="" class="image-size catalogo-module-icon" [src]="modulo.imgIcon" />
+              <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
+            </a>
+          </ion-col>
+          }
+        </ion-row>
+      </div>
+      <ion-row class="catalogo-exit-row">
+        <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
+          <ion-button class="btnEnter ion-text-center" expand="block" fill="clear" color="tertiary" size="small"
+            routerLink="/login">Salir</ion-button>
         </ion-col>
-        }
       </ion-row>
     </div>
     }
@@ -156,7 +164,7 @@
 
   <ion-alert [isOpen]="isAlertOpen" header="Denario Premium" [message]="mensaje" [buttons]="alertButtons"
     (didDismiss)="setOpen(false)"></ion-alert>
-  <!-- <ion-button expand="block" routerLink="/login">Login</ion-button> -->
+  @if(!user.catalogo){
   <ion-grid>
     <ion-row>
       <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
@@ -165,6 +173,7 @@
       </ion-col>
     </ion-row>
   </ion-grid>
+  }
 
 
   <ion-footer class="footer footerhome ion-no-border">

@@ -1018,7 +1018,8 @@ export class AutoSendService implements OnInit {
       // para estos 2 debo usar un hack asqueroso donde agrego los coOrderDetail directo al query como strings.
       let queryUnits = "SELECT co_order_detail_unit  as coOrderDetailUnit, co_order_detail as coOrderDetail, " +
         "co_product_unit as coProductUnit, id_product_unit as idProductUnit, qu_order as quOrder, co_enterprise as coEnterprise, " +
-        "id_enterprise as idEnterprise, co_unit as coUnit, qu_suggested as quSuggested " +
+        "id_enterprise as idEnterprise, co_unit as coUnit, qu_suggested as quSuggested, " +
+        "co_price_list as coPriceList, id_price_list as idPriceList " +
         "FROM order_detail_units WHERE co_order_detail in (";
 
       let queryDiscounts = "SELECT co_order_detail_discount as coOrderDetailDiscount, " +

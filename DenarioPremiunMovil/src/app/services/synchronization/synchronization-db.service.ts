@@ -1196,21 +1196,24 @@ export class SynchronizationDBService {
 
   insertOrderTypeBatch(arr: OrderType[]) {
     let insertStatement = "INSERT OR REPLACE INTO order_types(" +
-      'id_order_type,co_order_type,na_order_type,default_value,co_enterprise,items_limit,qu_items,id_iva_list' +
+      'id_order_type,co_order_type,na_order_type,default_value,co_enterprise,items_limit,qu_items,id_iva_list,id_list,co_list' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?)'
 
     var statements = [];
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      const row = obj as OrderType & { id_iva_list?: number | null };
+      const row = obj as OrderType & { id_iva_list?: number | null; id_list?: number | null; co_list?: string | null };
       const idIvaListResolved = row.idIvaList ?? row.id_iva_list ?? null;
+      const idListResolved = row.idList ?? row.id_list ?? null;
+      const coListResolved = row.coList ?? row.co_list ?? null;
       const itemsLimitRaw = obj.itemsLimit as boolean | number | string | undefined;
       const itemsLimitFlag = itemsLimitRaw === true || itemsLimitRaw === 1 || itemsLimitRaw === '1';
       const defaultValRaw = obj.defaultValue as boolean | number | string | undefined;
       const defaultFlag = defaultValRaw === true || defaultValRaw === 1 || defaultValRaw === '1';
       statements.push([insertStatement, [obj.idOrderType, obj.coOrderType, obj.naOrderType,
-      defaultFlag ? 1 : 0, obj.coEnterprise, itemsLimitFlag ? 1 : 0, obj.quItems ?? 0, idIvaListResolved]]);
+      defaultFlag ? 1 : 0, obj.coEnterprise, itemsLimitFlag ? 1 : 0, obj.quItems ?? 0, idIvaListResolved,
+      idListResolved, coListResolved]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
