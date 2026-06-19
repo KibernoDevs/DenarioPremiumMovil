@@ -110,7 +110,7 @@ export class OrderUtil {
   //el total de productos en unidades. ej 1 docena + 1 unidad => totalunit = 13
   public totalEnUnidades: number,
   public nuTax: number,
-  public nuAmountTax?: number,
+  public nuAmountTax: number,
   public listaModalList: {list: List, pricelist: PriceList}[] = [],
   public nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [],
 

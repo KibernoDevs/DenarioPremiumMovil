@@ -718,6 +718,57 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
+  private getDocumentDetailDeductions(detail: {
+    nuAmountDiscount?: number;
+    nuAmountCollectDiscount?: number;
+    nuAmountRetention?: number;
+    nuAmountRetention2?: number;
+  } | null | undefined): number {
+    if (!detail) {
+      return 0;
+    }
+    return Number(detail.nuAmountDiscount ?? 0)
+      + Number(detail.nuAmountCollectDiscount ?? 0)
+      + Number(detail.nuAmountRetention ?? 0)
+      + Number(detail.nuAmountRetention2 ?? 0);
+  }
+
+  private resolveSavedDetailNuAmountPaid(
+    detail: {
+      nuAmountPaid?: number;
+      nuBalanceDoc?: number;
+      nuAmountDiscount?: number;
+      nuAmountCollectDiscount?: number;
+      nuAmountRetention?: number;
+      nuAmountRetention2?: number;
+    } | null | undefined,
+    backupBalance: number,
+  ): number {
+    if (!detail) {
+      return Number(backupBalance ?? 0);
+    }
+    const persistedPaid = Number(detail.nuAmountPaid);
+    if (Number.isFinite(persistedPaid)) {
+      return persistedPaid;
+    }
+    const balance = Number(detail.nuBalanceDoc ?? backupBalance ?? 0);
+    return balance - this.getDocumentDetailDeductions(detail);
+  }
+
+  private syncPersistedCollectDiscountTotals(positionCollecDetails: number): void {
+    if (!this.collectService.userCanSelectCollectDiscount) {
+      return;
+    }
+    const detail = this.collectService.collection.collectionDetails?.[positionCollecDetails];
+    if (!detail) {
+      return;
+    }
+    const total = Number(detail.nuAmountCollectDiscount ?? 0);
+    this.collectService.totalCollectDiscounts = total;
+    this.collectService.totalCollectDiscountsView = this.formatNumber(total);
+    this.collectService.totalCollectDiscountsSelected = Number(detail.nuCollectDiscount ?? 0);
+  }
+
   async calculateDocumentSaleOpen(index: number): Promise<boolean> {
     try {
       const cs = this.collectService;
@@ -763,8 +814,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           if (detail.inPaymentPartial) {
             nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
           } else {
-            const sumRet = nuAmountDiscount + Number(detail.nuAmountRetention ?? 0) + Number(detail.nuAmountRetention2 ?? 0);
-            nuAmountPaid = Number(detail.nuBalanceDoc ?? 0) - sumRet;
+            nuAmountPaid = this.resolveSavedDetailNuAmountPaid(detail, Number(backup.nuBalance ?? 0));
           }
 
           nuBalance = Number(detail.nuBalanceDoc ?? 0);
@@ -782,41 +832,38 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
         if (saved) {
           const detail = cs.collection.collectionDetails?.[pos];
-          const difFaltante = detail.nuAmountDiscount ?? 0;
-          const retention = detail.nuAmountRetention ?? 0;
-          const retention2 = detail.nuAmountRetention2 ?? 0;
-          /*  const sumRet = difFaltante + retention + retention2; */
-          const sumRet = 0;
           if (detail) {
             nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
             nuAmountRetention2 = Number(detail.nuAmountRetention2 ?? 0);
             daVoucher = detail.daVoucher ?? '';
             nuVaucherRetention = detail.nuVoucherRetention ?? '';
+            nuBalance = Number(detail.nuBalanceDoc ?? backup.nuBalance ?? 0);
 
             if (cs.isPaymentPartial) {
-              nuAmountPaid = Number(detail.nuAmountPaid - sumRet);
+              nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
             } else {
-              nuAmountPaid = Number(detail.nuBalanceDoc - sumRet);
+              nuAmountPaid = this.resolveSavedDetailNuAmountPaid(detail, Number(backup.nuBalance ?? 0));
             }
-
-            nuBalance = Number(detail.nuBalanceDoc - sumRet);
           } else {
-            nuBalance = Number(backup.nuBalance - sumRet);
+            nuBalance = Number(backup.nuBalance ?? 0);
             nuAmountPaid = nuBalance;
           }
         } else {
-          const sumRet = nuAmountDiscount +
-            Number(cs.documentSaleOpen?.nuAmountRetention ?? 0) +
-            Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+          const detail = cs.collection.collectionDetails?.[pos];
+          const sumRet = detail
+            ? this.getDocumentDetailDeductions(detail)
+            : nuAmountDiscount
+              + Number(cs.documentSaleOpen?.nuAmountRetention ?? 0)
+              + Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
 
-          nuAmountRetention = Number(cs.documentSaleOpen?.nuAmountRetention ?? 0);
-          nuAmountRetention2 = Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+          nuAmountRetention = Number(detail?.nuAmountRetention ?? cs.documentSaleOpen?.nuAmountRetention ?? 0);
+          nuAmountRetention2 = Number(detail?.nuAmountRetention2 ?? cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
 
           nuBalance = Number(backup.nuBalance ?? 0);
           nuAmountPaid = nuBalance - sumRet;
 
-          nuVaucherRetention = cs.documentSaleOpen?.nuVaucherRetention ?? '';
-          daVoucher = cs.documentSaleOpen?.daVoucher ?? '';
+          nuVaucherRetention = detail?.nuVoucherRetention ?? cs.documentSaleOpen?.nuVaucherRetention ?? '';
+          daVoucher = detail?.daVoucher ?? cs.documentSaleOpen?.daVoucher ?? '';
         }
       }
 
@@ -897,8 +944,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.indexDocumentSaleOpen = index;
     if (this.collectService.documentSales[index].isSelected) {
 
+      const positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails ?? index;
+
       // Mejor manejo: si es null o undefined asignar string vacío, si no asignar su valor
-      const detail = this.collectService.collection.collectionDetails[index];
+      const detail = this.collectService.collection.collectionDetails[positionCollecDetails];
       const comment = detail?.discountComment ?? '';
       const doc = this.collectService.documentSales[index];
       this.discountComment = comment;
@@ -920,9 +969,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       }
 
       if (this.collectService.userCanSelectCollectDiscount) {
-        if (this.collectService.collection.collectionDetails[index]?.collectionDetailDiscounts &&
-          this.collectService.collection.collectionDetails[index].collectionDetailDiscounts?.length > 0) {
-          const persistedDiscounts = this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!;
+        if (this.collectService.collection.collectionDetails[positionCollecDetails]?.collectionDetailDiscounts &&
+          this.collectService.collection.collectionDetails[positionCollecDetails].collectionDetailDiscounts?.length > 0) {
+          const persistedDiscounts = this.collectService.collection.collectionDetails[positionCollecDetails].collectionDetailDiscounts!;
           this.manualCollectDiscountAmount = this.getManualCollectDiscountFromDetails(persistedDiscounts);
           this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
           this.centsManualCollectDiscount = undefined;
@@ -931,7 +980,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
             .map(cdd => Number(cdd.idCollectDiscount))
             .filter(id => !Number.isNaN(id) && id > 0);
           this.collectService.selectedCollectDiscounts = selectedIds;
-          this.setCollectionDetailDiscounts(index, selectedIds);
+          this.setCollectionDetailDiscounts(positionCollecDetails, selectedIds);
         } else {
           this.manualCollectDiscountAmount = 0;
           this.manualCollectDiscountAmountBackup = 0;
@@ -942,6 +991,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       await this.calculateSaldo(index);
       await this.calculateDocumentSaleOpen(index);
+      this.syncPersistedCollectDiscountTotals(positionCollecDetails);
 
       // Asignar el valor de nuVaucherRetention y daVoucher después de crear documentSaleOpen
       if (voucherRetentionValue !== undefined) {
@@ -994,10 +1044,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
       } else {
         let nuAmountPaidNet;
-        if (this.collectService.collection.stDelivery == 3)
+        const usePersistedAmountPaid = this.collectService.collection.stDelivery == 3
+          || this.collectService.documentSaleOpen.isSave;
+        if (usePersistedAmountPaid) {
           nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0);
-        else
+        } else {
           nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
+        }
         try {
           this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);

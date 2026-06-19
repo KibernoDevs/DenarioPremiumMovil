@@ -52,15 +52,19 @@
           <ion-label>{{ orderServ.getTag("PED_TAB_GENERAL")}}</ion-label>
         </ion-segment-button>
 
-        <ion-segment-button value="pedido" [disabled]="lockSegments" *ngIf="!viewOnly">
+        @if(!viewOnly){
+        <ion-segment-button value="pedido" [disabled]="lockSegments">
           <ion-label>{{ orderServ.getTag("PED_TAB_PEDIDO")}}</ion-label>
         </ion-segment-button>
+        }
         <ion-segment-button value="total" [disabled]="lockSegments">
           <ion-label>{{ orderServ.getTag("PED_TAB_TOTAL")}}</ion-label>
         </ion-segment-button>
-        <ion-segment-button *ngIf="hideAdjunto" value="adjuntos" [disabled]="lockSegments">
+        @if(hideAdjunto){
+        <ion-segment-button value="adjuntos" [disabled]="lockSegments">
           <ion-label>{{ orderServ.getTag("PED_TAB_ADJUNTO")}}</ion-label>
         </ion-segment-button>
+        }
 
       </ion-segment>
     </div>
@@ -93,16 +97,21 @@
                     label-placement="floating" fill="outline" [disabled]="orderServ.openOrder"
                     value="{{ clienteTabLabel }}" id="clienteSelect" color="primary">
                   </ion-input>
-                  <ion-label *ngIf="clientRedLabel" color="danger">
+                  @if(clientRedLabel){
+                  <ion-label color="danger">
                     {{ orderServ.getTag('PED_CHECK_CLIENTE') }}
                   </ion-label>
-                  <a *ngIf="this.orderServ.cliente.idClient != null" (click)="modalInfoCliente(true)">{{
+                  }
+                  @if(this.orderServ.cliente.idClient != null){
+                  <a (click)="modalInfoCliente(true)">{{
                     orderServ.getTag("PED_INFO_CLIENTE")}}</a>
+                  }
                 </div>
               </ion-col>
 
 
-              <div *ngIf="hasClient">
+              @if(hasClient){
+              <div>
 
                 <!-- ### MONEDA ### -->
                 <ion-col size="12" size-sm="12" size-xs="12">
@@ -120,7 +129,8 @@
                 </ion-col>
 
                 <!-- ### TASA DE CAMBIO ### -->
-                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                @if(showConversion){
+                <ion-col size="12" size-sm="12" size-xs="12">
                   <div id="inputTasa">
                     <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'" label-placement="floating"
                       fill="outline" [value]="tasaCambio" id="tasa" color="primary" [readonly]="true"></ion-input>
@@ -128,6 +138,7 @@
 
                   </div>
                 </ion-col>
+                }
 
 
                 <!-- ### SUCURSAL ### -->
@@ -142,15 +153,18 @@
                         dir.txAddress
                         }}</ion-select-option>
                     </ion-select>
-                    <ion-label *ngIf="addressRedLabel" color="danger" class="campoObligatorio">
+                    @if(addressRedLabel){
+                    <ion-label color="danger" class="campoObligatorio">
                       {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
                     </ion-label>
+                    }
                   </div>
                 </ion-col>
 
 
                 <!-- ### TIPO DE PEDIDO ### -->
-                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.selectOrderType">
+                @if(orderServ.selectOrderType){
+                <ion-col size="12" size-sm="12" size-xs="12">
                   <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
                   <div class="listado-tps-selector ion-text-center" id="inputOrderType">
                     <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
@@ -162,9 +176,11 @@
                     </ion-select>
                   </div>
                 </ion-col>
+                }
 
                 <!-- ### CANAL DE DISTRIBUCION ### -->
-                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectChannel">
+                @if(orderServ.userCanSelectChannel){
+                <ion-col size="12" size-sm="12" size-xs="12">
                   <ion-label>{{ orderServ.getTag("PED_CANAL_DISTRIBUCION")}}:</ion-label>
                   <div class="listado-tps-selector ion-text-center" id="inputDistChannel">
                     <ion-select (ionChange)="onChange()" [(ngModel)]="distChannel" [disabled]="orderServ.openOrder"
@@ -175,6 +191,7 @@
                     </ion-select>
                   </div>
                 </ion-col>
+                }
 
 
                 <!-- ### LISTA DE PRECIOS ### -->
@@ -206,9 +223,11 @@
                       [ngClass]="{'inp-write': nuOrderRedLabel}" (ionChange)="onNuOrderChange()" color="primary"
                       (ionInput)="onNuOrderInput()" [disabled]="!orderServ.pedidoModificable"
                       [required]="orderServ.validateNuOrder"></ion-input>
-                    <ion-label *ngIf="nuOrderRedLabel" color="danger" class="campoObligatorio">
+                    @if(nuOrderRedLabel){
+                    <ion-label color="danger" class="campoObligatorio">
                       {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
                     </ion-label>
+                    }
                   </div>
                 </ion-col>
 
@@ -310,9 +329,12 @@
                 </ion-col>
 
               </div>
+              }
               <!-- SELECTOR CLIENTE -->
-              <app-cliente-selector #selectorCliente *ngIf="!viewOnly"
+              @if(!viewOnly){
+              <app-cliente-selector #selectorCliente
                 (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
+              }
 
             </div>
           </div>
@@ -333,19 +355,21 @@
               <div class="listado-product-structures pedidos">
                 @if(orderServ.order.stDelivery != DELIVERY_STATUS_SENT || orderServ.order.stDelivery ==
                 null){
-                <ion-col size="12" size-sm="12" size-xs="12" id="globalDiscount"
-                  *ngIf="orderServ.userCanSelectGlobalDiscount">
+                @if(orderServ.userCanSelectGlobalDiscount && orderServ.listaGlobalDiscount.length > 0){
+                <ion-col size="12" size-sm="12" size-xs="12" id="globalDiscount">
                   <ion-label>{{ orderServ.getTag('PED_GLOBAL_DC')}}:</ion-label>
                   <div class="listado-tps-selector ion-text-center">
                     <ion-select [okText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
                       [cancelText]="orderServ.getTag('DENARIO_BOTON_CANCELAR')" (ionCancel)="onGlobalDiscountCancel()"
-                      (ionChange)="onGlobalDiscountChange()" [(ngModel)]="orderServ.dctoGlobal">
+                      (ionChange)="onGlobalDiscountChange()" [(ngModel)]="orderServ.dctoGlobal"
+                      [compareWith]="globalDiscountCompare">
                       <ion-select-option *ngFor="let gdc of orderServ.listaGlobalDiscount"
                         [value]="gdc.globalDiscount">{{ gdc.txDescription }}</ion-select-option>
                     </ion-select>
                   </div>
 
                 </ion-col>
+                }
                 }
 
                 @if(orderServ.showCreditLimit && orderServ.order.stDelivery != DELIVERY_STATUS_SENT ||
@@ -362,7 +386,8 @@
                     {{orderServ.carrito.length}}</h3>
                 </div>
 
-                <div *ngIf="orderServ.totalUnit">
+                @if(orderServ.totalUnit){
+                <div>
                   <ion-accordion-group [multiple]="true">
                     <ion-accordion>
                       <ion-item slot="header" color="light">
@@ -381,19 +406,24 @@
                     </ion-accordion>
                   </ion-accordion-group>
                 </div>
+                }
 
                 <ion-grid>
                   <ion-row>
 
                     <ion-col size="12" size-sm="12" size-xs="12">
-                      <ion-item *ngIf="orderServ.showTotalProductUnit">
+                      @if(orderServ.showTotalProductUnit){
+                      <ion-item>
                         <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
                           {{orderServ.nameTotalProductUnit}}:</span>
                         {{formatNum(orderServ.countTotalProductUnit)}}
                       </ion-item>
-                      <div *ngIf="orderServ.codeTotalProductUnitMessageFlag" class="text-red">
+                      }
+                      @if(orderServ.codeTotalProductUnitMessageFlag){
+                      <div class="text-red">
                         {{ orderServ.getTag("PED_TOTAL_UNIDAD_NO_ENCONTRADA")}}
                       </div>
+                      }
                     </ion-col>
 
                     <ion-col size="12" size-sm="12" size-xs="12">
@@ -401,11 +431,13 @@
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
                       {{ formatNum(orderServ.totalBase) }}
                     </ion-col>
-                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                    @if(showConversion){
+                    <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
                         monedaOpuesta() }}:</span>
                       {{ formatNum(orderServ.totalBaseConv) }}
                     </ion-col>
+                    }
                     @if(orderServ.totalDctoXProducto > 0){
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_PRODUCT_DC")}} {{
@@ -437,7 +469,8 @@
                     }
                     }
 
-                    <div *ngIf="orderServ.userCanSelectIVA">
+                    @if(orderServ.orderIVA > 0 ){
+                    <div>
                       <ion-grid>
                         <ion-row>
                           <ion-col size="12" size-xs="12" class="paddingLefttotal">
@@ -446,31 +479,36 @@
                               orderServ.monedaSeleccionada.coCurrency }}:</span>
                             {{ formatNum(orderServ.orderIVA) }}
                           </ion-col>
-                          <ion-col size="12" size-xs="12" class="paddingLefttotal" *ngIf="showConversion">
+                          @if(showConversion){
+                          <ion-col size="12" size-xs="12" class="paddingLefttotal">
                             <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_IVA")}}
                               {{
                               monedaOpuesta() }}:</span>
                             {{ formatNum(orderServ.orderIVAConv) }}
                           </ion-col>
+                          }
                         </ion-row>
                       </ion-grid>
                     </div>
+                  }
 
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
                       {{ formatNum(orderServ.totalPedido) }}
                     </ion-col>
-                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                    @if(showConversion){
+                    <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
                         monedaOpuesta() }}:</span>
                       {{ formatNum(orderServ.totalPedidoConv) }}
                     </ion-col>
-                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                    <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
                       {{ tasaCambio }} {{ localCurrency.coCurrency }} = {{
                       formatNum(currencyServ.currencyRelation) }} {{ hardCurrency.coCurrency }}
                     </ion-col>
+                    }
                   </ion-row>
                 </ion-grid>
 
@@ -478,7 +516,8 @@
             </div>
 
             <!--### Total por producto ###-->
-            <ion-accordion-group *ngIf="!orderServ.groupByTotalByLines">
+            @if(!orderServ.groupByTotalByLines){
+            <ion-accordion-group>
               <ion-accordion *ngFor="let item of orderServ.carrito;  index as i">
                 <ion-item slot="header">
                   <!-- <ion-label> -->
@@ -515,6 +554,21 @@
                         </div>
                         }
 
+                      @if(item.nuAmountTax > 0){
+                       <div>
+                         <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+                         {{formatNum(item.nuAmountTax)}}
+                         {{orderServ.monedaSeleccionada.coCurrency}}
+                       </div>
+                       @if(showConversion){
+                        <div>
+                          <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+                          {{currencyServ.toOppositeCurrency( orderServ.monedaSeleccionada.coCurrency, item.nuAmountTax)}}
+                          {{item.oppositeCoCurrency}}
+                          </div>
+                       }
+                      }
+
                       </ion-col>
                       <ion-col size="12" size-xs="12">
                         <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
@@ -522,12 +576,14 @@
                         {{formatNum(item.subtotal)}}
 
                       </ion-col>
-                      <ion-col size="12" size-xs="12" *ngIf="showConversion">
+                      @if(showConversion){
+                      <ion-col size="12" size-xs="12">
                         <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
                           {{item.oppositeCoCurrency}}:</span>
                         {{formatNum(item.subtotalConv)}}
-
+                        
                       </ion-col>
+                      }
                     </ion-row>
                   </ion-grid>
                   <!-- </ion-label> -->
@@ -546,58 +602,70 @@
                         {{item.coCurrency}}:</span>
                       {{formatNum(item.nuPrice)}}
                     </ion-item>
-                    <ion-item *ngIf="showConversion">
+                    @if(showConversion){
+                    <ion-item>
                       <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
                         {{item.oppositeCoCurrency}}:</span>
                       {{formatNum(item.oppositeNuPrice)}}
                     </ion-item>
                     }
+                    }
 
-                    <ion-item *ngIf="orderServ.validateWarehouses">
+                    @if(orderServ.validateWarehouses){
+                    <ion-item>
                       <span class="titulosBold">{{ orderServ.getTag("PED_ALMACEN")}}:</span>
                       {{item.idWarehouse}} - {{item.naWarehouse}}
                     </ion-item>
+                    }
 
-                    <ion-item *ngIf="item.quDiscount > 0">
+                    @if(item.quDiscount > 0){
+                    <ion-item>
                       <span class="titulosBold">{{ orderServ.getTag("PED_DC")}}
                         {{formatNum(item.quDiscount)}}%: </span>
                       {{ formatNum(item.nuPrice*item.quDiscount/100) }}
                       {{orderServ.monedaSeleccionada.coCurrency}}
                     </ion-item>
-                    <ion-item *ngIf="item.quDiscount > 0">
+                    <ion-item>
                       <span class="titulosBold">{{orderServ.getTag("PED_MINUS_DC")}} </span>
                       {{formatNum(item.discountedNuPrice)}} {{
                       orderServ.monedaSeleccionada.coCurrency }}
                     </ion-item>
-                    <ion-item *ngIf="item.ivaProducto > 0">
+                    }
+                    @if(item.ivaProducto > 0){
+                    <ion-item>
                       <span class="titulosBold">{{orderServ.getTag("PED_IVA")}}
                         {{formatNum(item.iva)}}%: </span>
                       {{formatNum(item.ivaProducto)}}
                       {{orderServ.monedaSeleccionada.coCurrency}}
                     </ion-item>
-                    <ion-item *ngIf="item.ivaProducto > 0">
+                    <ion-item>
                       <span class="titulosBold"> {{orderServ.getTag("PED_PLUS_IVA")}}
                         {{formatNum(item.iva)}}%: </span>
                       {{formatNum(item.ivaProducto+item.discountedNuPrice)}}
                       {{orderServ.monedaSeleccionada.coCurrency}}
                     </ion-item>
-                    <ion-item *ngIf="orderServ.pedidoModificable">
+                    }
+                    @if(orderServ.pedidoModificable){
+                    <ion-item>
                       <ion-button color="danger" size="small" (click)="orderServ.removeFromCarrito(item)">
                         <ion-icon slot="icon-only" name="trash"></ion-icon>
                         <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
                       </ion-button>
                     </ion-item>
+                    }
                   </ion-list>
                 </div>
 
               </ion-accordion>
 
             </ion-accordion-group>
+            }
 
 
             <!-- ### Total por producto ###
              caso groupByTotalBylines -->
-            <ion-accordion-group *ngIf="orderServ.groupByTotalByLines">
+            @if(orderServ.groupByTotalByLines){
+            <ion-accordion-group>
               <ion-accordion-group>
                 <ion-accordion *ngFor="let struct of orderServ.carritoWithLines;  index as h">
                   <ion-item slot="header">
@@ -611,9 +679,11 @@
                       <div>{{ orderServ.getTag("PED_TAB_TOTAL")}}
                         {{orderServ.monedaSeleccionada.coCurrency}}:
                         {{formatNum(struct.total)}}</div>
-                      <div *ngIf="showConversion">{{
+                      @if(showConversion){
+                      <div>{{
                         orderServ.getTag("PED_TAB_TOTAL")}} {{monedaOpuesta()}}:
                         {{formatNum(struct.totalConversion)}}</div>
+                      }
                     </ion-label>
                   </ion-item>
                   <div slot="content">
@@ -632,25 +702,43 @@
                               orderServ.getTag("DENARIO_TAG_NOMBRE")}}:{{item.naProduct}}
 
                             </div>
-                            <div *ngIf="orderServ.validateWarehouses">
+                            @if(orderServ.validateWarehouses){
+                            <div>
 
                               {{ orderServ.getTag("PED_ALMACEN")}}: {{item.idWarehouse}} -
                               {{item.naWarehouse}}
 
                             </div>
+                            }
+                                       @if(item.nuAmountTax > 0){
+           <div>
+            <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+            {{formatNum(item.nuAmountTax)}}
+            {{orderServ.monedaSeleccionada.coCurrency}}
+           </div>
+           @if(showConversion){
+            <div>
+             <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+             {{formatNum(currencyServ.toOppositeCurrency( orderServ.monedaSeleccionada.coCurrency, item.nuAmountTax))}}
+             {{item.oppositeCoCurrency}}
+            </div>
+            }
+           }
                             <div>
 
                               {{ orderServ.getTag("PED_TAB_TOTAL")}} {{item.coCurrency}}:
                               {{formatNum(item.subtotal)}}
 
                             </div>
-                            <div *ngIf="showConversion">
+                            @if(showConversion){
+                            <div>
 
                               {{ orderServ.getTag("PED_TAB_TOTAL")}}
                               {{item.oppositeCoCurrency}}:
                               {{formatNum(item.subtotalConv)}}
 
                             </div>
+                            }
                           </ion-label>
                         </ion-item>
                         <div slot="content">
@@ -659,33 +747,55 @@
                               {{ orderServ.getTag("PED_PRECIO_LISTA")}}
                               {{item.coCurrency}}: {{formatNum(item.nuPrice)}}
                             </ion-item>
-                            <ion-item *ngIf="showConversion">
+                            @if(showConversion){
+                            <ion-item>
                               {{ orderServ.getTag("PED_PRECIO_LISTA")}}
                               {{item.oppositeCoCurrency}}:
                               {{formatNum(item.oppositeNuPrice)}}
                             </ion-item>
+                            }
                             <ion-item *ngFor="let unit of item.unitList">
-                              <div *ngIf="unit.quUnit > 0">
+                              @if(unit.quUnit > 0){
+                              <div>
                                 {{unit.naUnit}}: {{unit.quAmount}}
                               </div>
+                              }
                             </ion-item>
-                            <ion-item *ngIf="item.quDiscount > 0">
+                            @if(item.quDiscount > 0){
+                            <ion-item>
                               {{ orderServ.getTag("PED_DC")}}
                               {{formatNum(item.quDiscount)}}%:
                               {{formatNum(item.nuPrice*item.quDiscount/100)}}
                               {{orderServ.monedaSeleccionada.coCurrency}}
                             </ion-item>
-                            <ion-item *ngIf="item.quDiscount > 0">
+                            <ion-item>
                               {{orderServ.getTag("PED_MINUS_DC")}}
                               {{formatNum(item.discountedNuPrice)}} {{
                               orderServ.monedaSeleccionada.coCurrency }}
                             </ion-item>
+                            }
+                            @if(item.ivaProducto > 0){
+                            <ion-item>
+                              {{orderServ.getTag("PED_IVA")}}
+                              {{formatNum(item.iva)}}%:
+                              {{formatNum(item.ivaProducto)}}
+                              {{orderServ.monedaSeleccionada.coCurrency}}
+                            </ion-item>
+                            <ion-item>
+                              {{orderServ.getTag("PED_PLUS_IVA")}}
+                              {{formatNum(item.iva)}}%:
+                              {{formatNum(item.ivaProducto+item.discountedNuPrice)}}
+                              {{orderServ.monedaSeleccionada.coCurrency}} 
+                            </ion-item>
+                            }
+                            @if(orderServ.pedidoModificable){
                             <ion-item>
                               <ion-button color="danger" size="small" (click)="orderServ.removeFromCarrito(item)">
                                 <ion-icon slot="icon-only" name="trash"></ion-icon>
                                 <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
                               </ion-button>
                             </ion-item>
+                          }
                           </ion-list>
                         </div>
 
@@ -698,6 +808,7 @@
 
 
             </ion-accordion-group>
+            }
 
 
           </div>
@@ -799,7 +910,8 @@
                       }}
 
                     </ion-col>
-                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                    @if(showConversion){
+                    <ion-col size="12" size-sm="12" size-xs="12">
 
                       <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}} {{
                         currencyServ.oppositeCoCurrency(orderServ.cliente.coCurrency) }}:</span>
@@ -807,6 +919,7 @@
                       ,orderServ.cliente.nuCreditLimit))}}
 
                     </ion-col>
+                    }
                     <ion-col size="12" size-sm="12" size-xs="12">
 
                       <span class="titulosBold">{{

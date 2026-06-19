@@ -235,6 +235,7 @@ export class PedidosService {
   public multiCurrencyOrder!: boolean;
   public userMustActivateGPS!: boolean;
   public orderTypeByEnterprise!: boolean;
+  public pricelistByOrderType!: boolean;
   public checkAddressClient!: boolean;
   public signatureOrder!: boolean;
   public disableDaDispatch!: boolean;
@@ -341,7 +342,9 @@ export class PedidosService {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
     }
     if (this.userCanSelectGlobalDiscount) {
-      this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; });
+      catalogCritical.push(
+        this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; }),
+      );
     }
     if (this.userCanSelectChannel) {
       this.getOrderTypeProductStructure(idEnterprise).then(data => { this.orderTypeProductStructure = data; });
@@ -448,6 +451,7 @@ export class PedidosService {
     this.multiCurrencyOrder = this.config.get("multiCurrencyOrder").toLowerCase() === 'true';
     this.userMustActivateGPS = this.config.get("userMustActivateGPS").toLowerCase() === 'true';
     this.orderTypeByEnterprise = this.config.get("orderTypeByEnterprise").toLowerCase() === 'true';
+    this.pricelistByOrderType = this.config.get("pricelistByOrderType").toLowerCase() === 'true';
     this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
@@ -573,6 +577,9 @@ export class PedidosService {
   }
 
   resolvePriceListFromOrderType(fallbackList: List | undefined): List | undefined {
+    if (!this.pricelistByOrderType) {
+      return fallbackList;
+    }
     if (this.openOrder) {
       return fallbackList;
     }
@@ -979,8 +986,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
+          "nuAmountTax": 0,
           "listaModalList": listaModalList,
-          "nuPriceList": nuPriceList
+          "nuPriceList": nuPriceList,
 
         }
         orderUtils.push(ou);
@@ -1531,6 +1539,14 @@ export class PedidosService {
 
   getGlobalDiscounts() {
     return this.db.getGlobalDiscounts(this.database, this.getTag('PED_NO_DC'));
+  }
+
+  resolveSavedGlobalDiscount(nuDiscount: number | null | undefined): number {
+    const saved = Number(nuDiscount ?? 0);
+    const match = this.listaGlobalDiscount.find(
+      (g) => Number(g.globalDiscount) === saved,
+    );
+    return match ? Number(match.globalDiscount) : saved;
   }
 
   getPaymentConditions(idEnterprise: number) {
