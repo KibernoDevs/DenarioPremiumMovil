@@ -10,5 +10,13 @@
     {
         "sql": "ALTER TABLE order_detail_units ADD COLUMN id_price_list INTEGER;",
         "description": "Se agrega la columna 'id_price_list' a 'order_detail_units' para almacenar el id de la lista de precios."
+    },
+    {
+        "sql": "ALTER TABLE order_types ADD COLUMN id_list INTEGER;",
+        "description": "Se agrega la columna 'id_list' a 'order_types' para vincular el tipo de pedido con una lista de precios."
+    },
+    {
+        "sql": "ALTER TABLE order_types ADD COLUMN co_list TEXT;",
+        "description": "Se agrega la columna 'co_list' a 'order_types' para almacenar el código de la lista de precios."
     }
 ]
