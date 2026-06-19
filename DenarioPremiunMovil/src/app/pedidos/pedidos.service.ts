@@ -235,6 +235,7 @@ export class PedidosService {
   public multiCurrencyOrder!: boolean;
   public userMustActivateGPS!: boolean;
   public orderTypeByEnterprise!: boolean;
+  public pricelistByOrderType!: boolean;
   public checkAddressClient!: boolean;
   public signatureOrder!: boolean;
   public disableDaDispatch!: boolean;
@@ -448,6 +449,7 @@ export class PedidosService {
     this.multiCurrencyOrder = this.config.get("multiCurrencyOrder").toLowerCase() === 'true';
     this.userMustActivateGPS = this.config.get("userMustActivateGPS").toLowerCase() === 'true';
     this.orderTypeByEnterprise = this.config.get("orderTypeByEnterprise").toLowerCase() === 'true';
+    this.pricelistByOrderType = this.config.get("pricelistByOrderType").toLowerCase() === 'true';
     this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
@@ -573,6 +575,9 @@ export class PedidosService {
   }
 
   resolvePriceListFromOrderType(fallbackList: List | undefined): List | undefined {
+    if (!this.pricelistByOrderType) {
+      return fallbackList;
+    }
     if (this.openOrder) {
       return fallbackList;
     }
