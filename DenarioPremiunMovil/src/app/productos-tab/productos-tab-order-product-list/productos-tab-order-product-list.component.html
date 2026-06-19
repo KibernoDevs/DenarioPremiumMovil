@@ -83,9 +83,7 @@
             }
             }
             @if(orderServ.showStock){
-            <p>{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ?
-              quStock(product) :
-              0 }}</p>
+            <p>{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ getDisplayedRemainingStock(product) }}</p>
             }
 
 
@@ -112,7 +110,7 @@
                 <ion-input #quAmountInput type="number" [label]="orderServ.getTag('PED_CANTIDAD')+':'"
                   [(ngModel)]="product.quAmount" labelPlacement="floating" fill="outline"
                   [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'" [inputmode]=quInputMode
-                  (ionChange)="onProductQuantityChange(product)" (ionInput)="onProductQuantityInput(product)"
+                  (ionChange)="onProductQuantityChange(product)" (ionInput)="onProductQuantityInput(product, $event)"
                   [clearOnEdit]="true">
                 </ion-input>
               </ion-col>
@@ -326,9 +324,7 @@
                   }
                   @if(orderServ.showStock){
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{
-                    productoModal.quStock
-                    > 0 ? quStock(productoModal) :
-                    0 }}</p>}
+                    getDisplayedRemainingStock(productoModal) }}</p>}
 
                 </ion-col>
               </ion-row>
@@ -349,7 +345,7 @@
                       labelPlacement="floating" fill="outline"
                       [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'" [inputmode]=quInputMode
                       (ionChange)="onProductQuantityChange(productoModal)"
-                      (ionInput)="onProductQuantityInput(productoModal)" [clearOnEdit]="true"></ion-input>
+                      (ionInput)="onProductQuantityInput(productoModal, $event)" [clearOnEdit]="true"></ion-input>
                   </ion-col>
                   <!-- LISTA DE PRECIOS -->
                   <ion-col size="12" size-sm="12" size-xs="12">
