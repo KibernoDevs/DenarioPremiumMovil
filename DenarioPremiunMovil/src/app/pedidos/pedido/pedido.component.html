@@ -355,13 +355,14 @@
               <div class="listado-product-structures pedidos">
                 @if(orderServ.order.stDelivery != DELIVERY_STATUS_SENT || orderServ.order.stDelivery ==
                 null){
-                @if(orderServ.userCanSelectGlobalDiscount){
+                @if(orderServ.userCanSelectGlobalDiscount && orderServ.listaGlobalDiscount.length > 0){
                 <ion-col size="12" size-sm="12" size-xs="12" id="globalDiscount">
                   <ion-label>{{ orderServ.getTag('PED_GLOBAL_DC')}}:</ion-label>
                   <div class="listado-tps-selector ion-text-center">
                     <ion-select [okText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
                       [cancelText]="orderServ.getTag('DENARIO_BOTON_CANCELAR')" (ionCancel)="onGlobalDiscountCancel()"
-                      (ionChange)="onGlobalDiscountChange()" [(ngModel)]="orderServ.dctoGlobal">
+                      (ionChange)="onGlobalDiscountChange()" [(ngModel)]="orderServ.dctoGlobal"
+                      [compareWith]="globalDiscountCompare">
                       <ion-select-option *ngFor="let gdc of orderServ.listaGlobalDiscount"
                         [value]="gdc.globalDiscount">{{ gdc.txDescription }}</ion-select-option>
                     </ion-select>

@@ -193,12 +193,12 @@ export class PedidoComponent implements OnInit {
     }
 
     //setup empresas
-    this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
+    this.enterpriseServ.setup(this.dbServ.getDatabase()).then(async () => {
       this.listaEmpresa = this.enterpriseServ.empresas;
       if (this.orderServ.openOrder) {
         this.empresaSeleccionada = this.enterpriseServ.getEntepriseById(this.orderServ.order.idEnterprise);
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-        this.orderServ.setup();
+        await this.orderServ.setup();
         this.tipoOrden = this.orderServ.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
         this.inOrderReview = this.orderServ.order.inOrderReview;
         this.tipoOrdenAnterior = this.tipoOrden;
@@ -226,7 +226,7 @@ export class PedidoComponent implements OnInit {
         this.hideAdjunto = true;
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-        this.orderServ.setup();
+        await this.orderServ.setup();
         this.orderServ.dctoGlobal = 0;
         this.orderServ.order = this.createEmptyOrder(); //pedido vacio porque no puede ser null.
         this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
@@ -240,45 +240,44 @@ export class PedidoComponent implements OnInit {
 
 
       //setup monedas
-      this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
-        this.multimoneda = this.currencyServ.multimoneda;
-        this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
-        if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
-          this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
-        } else {
-          //probablemente no tienen el sistema nuevo.
-          this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
-        }
-        this.localCurrency = this.currencyServ.getLocalCurrency();
-        if (this.orderServ.openOrder) {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
-          if (this.orderServ.pedidoModificable) {
-            this.tasaCambio = this.currencyServ.getLocalValue();
-            this.nuValueLocal = Number.parseFloat(this.tasaCambio);
-          } else {
-            this.nuValueLocal = this.orderServ.order.nuValueLocal;
-            this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
-
-          }
-        } else {
-          //this.currencySelection();
-          //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
-          this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+      await this.currencyServ.setup(this.dbServ.getDatabase());
+      this.multimoneda = this.currencyServ.multimoneda;
+      this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
+      if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
+        this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
+      } else {
+        //probablemente no tienen el sistema nuevo.
+        this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
+      }
+      this.localCurrency = this.currencyServ.getLocalCurrency();
+      if (this.orderServ.openOrder) {
+        this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
+        if (this.orderServ.pedidoModificable) {
           this.tasaCambio = this.currencyServ.getLocalValue();
-        }
-        if (this.multimoneda) {
-          this.hardCurrency = this.currencyServ.getHardCurrency();
-        }
-
-
-        if (this.orderServ.openOrder) {
-          this.abrirPedido();
-
+          this.nuValueLocal = Number.parseFloat(this.tasaCambio);
         } else {
-          this.reset();
-          this.orderServ.coOrder = this.dateServ.generateCO(0);
+          this.nuValueLocal = this.orderServ.order.nuValueLocal;
+          this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
+
         }
-      })
+      } else {
+        //this.currencySelection();
+        //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+        this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+        this.tasaCambio = this.currencyServ.getLocalValue();
+      }
+      if (this.multimoneda) {
+        this.hardCurrency = this.currencyServ.getHardCurrency();
+      }
+
+
+      if (this.orderServ.openOrder) {
+        await this.abrirPedido();
+
+      } else {
+        this.reset();
+        this.orderServ.coOrder = this.dateServ.generateCO(0);
+      }
       //fin setup monedas
 
 
@@ -317,7 +316,7 @@ export class PedidoComponent implements OnInit {
     this.orderServ.productSummary();
   }
 
-  abrirPedido() {
+  async abrirPedido() {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
     //mini reset
     this.orderServ.carrito = [];
@@ -390,7 +389,7 @@ export class PedidoComponent implements OnInit {
       idPriceLists.push(detail.idPriceList);
     }
     if (this.orderServ.userCanSelectGlobalDiscount) {
-      this.orderServ.dctoGlobal = this.orderServ.order.nuDiscount;
+      await this.restoreSavedGlobalDiscount();
     }
 
     this.orderServ.getOrderUtilsbyIdProductAndPricelists(idProducts, idPriceLists).then(utils => {
@@ -1274,8 +1273,22 @@ export class PedidoComponent implements OnInit {
     return a && b ? a.idPaymentCondition === b.idPaymentCondition : a === b;
   }
 
+  globalDiscountCompare(a: number, b: number) {
+    return Number(a) === Number(b);
+  }
+
   currencyCompare(a: CurrencyEnterprise, b: CurrencyEnterprise) {
     return a && b ? a.idCurrency === b.idCurrency : a === b;
+  }
+
+  private async restoreSavedGlobalDiscount(): Promise<void> {
+    if (this.orderServ.listaGlobalDiscount.length === 0) {
+      this.orderServ.listaGlobalDiscount = await this.orderServ.getGlobalDiscounts();
+    }
+    this.orderServ.dctoGlobal = this.orderServ.resolveSavedGlobalDiscount(
+      this.orderServ.order.nuDiscount,
+    );
+    this.changeDetector.detectChanges();
   }
 
   setClientfromSelector(

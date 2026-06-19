@@ -754,16 +754,16 @@ export class PedidosDbService {
     return db.executeSql(query, []).then(data => {
       let list: GlobalDiscount[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i);
+        list.push(new GlobalDiscount(
+          row.idGlobalDiscount,
+          Number(row.globalDiscount),
+          row.txDescription,
+          row.defaultGlobalDiscount,
+        ));
       }
       //descuento por defecto de 0%
-      const noDC = {
-        idGlobalDiscount: 0,
-        globalDiscount: 0,
-        txDescription: noDiscount,
-        defaultGlobalDiscount: true
-      };
-      list.unshift(noDC);
+      list.unshift(new GlobalDiscount(0, 0, noDiscount, true));
       return list;
     });
   }
