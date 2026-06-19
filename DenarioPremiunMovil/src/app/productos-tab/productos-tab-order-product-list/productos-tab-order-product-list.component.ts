@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonAccordionGroup, IonInput } from '@ionic/angular';
 import { Subject, Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';

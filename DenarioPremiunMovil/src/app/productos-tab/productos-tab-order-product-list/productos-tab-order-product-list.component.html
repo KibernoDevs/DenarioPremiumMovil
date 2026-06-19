@@ -16,7 +16,7 @@
 
   <!--  Listado clickeable de productos  -->
 
-  <ion-content class="product-card cardProduct">
+  <div class="product-card cardProduct product-structure-scroll ion-content-scroll-host">
     @if(noProductsAlertShown){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
@@ -247,7 +247,7 @@
         loadingSpinner="bubbles"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-  </ion-content>
+  </div>
   <!-- modal de detalle de producto -->
   <ion-modal [isOpen]="detailModal" (didDismiss)="showDetailModal(false)">
     <ng-template>
