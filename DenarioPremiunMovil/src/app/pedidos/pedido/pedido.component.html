@@ -554,6 +554,21 @@
                         </div>
                         }
 
+                      @if(item.nuAmountTax > 0){
+                       <div>
+                         <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+                         {{formatNum(item.nuAmountTax)}}
+                         {{orderServ.monedaSeleccionada.coCurrency}}
+                       </div>
+                       @if(showConversion){
+                        <div>
+                          <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+                          {{currencyServ.toOppositeCurrency( orderServ.monedaSeleccionada.coCurrency, item.nuAmountTax)}}
+                          {{item.oppositeCoCurrency}}
+                          </div>
+                       }
+                      }
+
                       </ion-col>
                       <ion-col size="12" size-xs="12">
                         <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
@@ -566,7 +581,7 @@
                         <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
                           {{item.oppositeCoCurrency}}:</span>
                         {{formatNum(item.subtotalConv)}}
-
+                        
                       </ion-col>
                       }
                     </ion-row>
@@ -695,6 +710,20 @@
 
                             </div>
                             }
+                                       @if(item.nuAmountTax > 0){
+           <div>
+            <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+            {{formatNum(item.nuAmountTax)}}
+            {{orderServ.monedaSeleccionada.coCurrency}}
+           </div>
+           @if(showConversion){
+            <div>
+             <span class="titulosBold">{{ orderServ.getTag("PED_IVA")}} {{formatNum(item.iva)}}%:</span>
+             {{formatNum(currencyServ.toOppositeCurrency( orderServ.monedaSeleccionada.coCurrency, item.nuAmountTax))}}
+             {{item.oppositeCoCurrency}}
+            </div>
+            }
+           }
                             <div>
 
                               {{ orderServ.getTag("PED_TAB_TOTAL")}} {{item.coCurrency}}:

@@ -986,8 +986,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
+          "nuAmountTax": 0,
           "listaModalList": listaModalList,
-          "nuPriceList": nuPriceList
+          "nuPriceList": nuPriceList,
 
         }
         orderUtils.push(ou);
