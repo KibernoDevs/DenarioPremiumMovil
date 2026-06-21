@@ -634,6 +634,146 @@ export class DepositService {
     });
   }
 
+  /**
+   * Antes de aplicar sync: conserva cobros vinculados y estados locales de depósitos
+   * guardados o pendientes de envío que el servidor aún no refleja por completo.
+   */
+  mergeSyncedDepositsWithLocal(dbServ: SQLiteObject, deposits: Deposit[]): Promise<Deposit[]> {
+    if (!Array.isArray(deposits) || deposits.length === 0) {
+      return Promise.resolve(deposits);
+    }
+
+    const coDeposits = deposits
+      .map((item) => this.normalizeSyncedDeposit(item).coDeposit?.trim())
+      .filter((coDeposit): coDeposit is string => !!coDeposit);
+
+    if (coDeposits.length === 0) {
+      return Promise.resolve(deposits.map((item) => this.normalizeSyncedDeposit(item)));
+    }
+
+    const placeholders = coDeposits.map(() => '?').join(',');
+    const loadLocalDeposits = dbServ.executeSql(
+      `SELECT co_deposit, da_deposit, st_deposit, st_delivery, id_deposit
+       FROM deposits WHERE co_deposit IN (${placeholders})`,
+      coDeposits,
+    );
+    const loadLocalCollects = dbServ.executeSql(
+      `SELECT id_deposit_collect, co_deposit_collect, co_deposit, co_collection,
+              id_collection, co_document, nu_amount_total, nu_total_deposit
+       FROM deposit_collects WHERE co_deposit IN (${placeholders})`,
+      coDeposits,
+    );
+
+    return Promise.all([loadLocalDeposits, loadLocalCollects]).then(([depRes, colRes]) => {
+      const localDepositByCo = new Map<string, {
+        daDeposit: string;
+        stDeposit: number;
+        stDelivery: number;
+        idDeposit: number | null;
+      }>();
+
+      for (let i = 0; i < depRes.rows.length; i++) {
+        const row = depRes.rows.item(i);
+        localDepositByCo.set(String(row.co_deposit), {
+          daDeposit: row.da_deposit ?? '',
+          stDeposit: Number(row.st_deposit ?? 0),
+          stDelivery: Number(row.st_delivery ?? 0),
+          idDeposit: row.id_deposit ?? null,
+        });
+      }
+
+      const collectsByCo = new Map<string, DepositCollect[]>();
+      for (let i = 0; i < colRes.rows.length; i++) {
+        const row = colRes.rows.item(i);
+        const coDeposit = String(row.co_deposit);
+        const list = collectsByCo.get(coDeposit) ?? [];
+        list.push(this.mapLocalDepositCollectRow(row));
+        collectsByCo.set(coDeposit, list);
+      }
+
+      return deposits.map((raw) => {
+        const deposit = this.normalizeSyncedDeposit(raw);
+        const local = localDepositByCo.get(deposit.coDeposit);
+        const localCollects = collectsByCo.get(deposit.coDeposit) ?? [];
+
+        if (local) {
+          const localDaDeposit = (local.daDeposit ?? '').trim();
+          if (localDaDeposit.length > 0 && !(deposit.daDeposit ?? '').trim()) {
+            deposit.daDeposit = localDaDeposit;
+          }
+
+          const isLocalUnsynced =
+            local.stDeposit === this.DEPOSITO_STATUS_SAVED ||
+            local.stDeposit === this.DEPOSITO_STATUS_TO_SEND;
+          const serverHasNoId = deposit.idDeposit == null || Number(deposit.idDeposit) === 0;
+
+          if (isLocalUnsynced && serverHasNoId) {
+            deposit.stDeposit = local.stDeposit;
+            deposit.stDelivery = local.stDelivery;
+            if (local.idDeposit != null && Number(local.idDeposit) > 0) {
+              deposit.idDeposit = local.idDeposit;
+            }
+          }
+        }
+
+        if (!this.hasSyncCollectPayload(deposit) && localCollects.length > 0) {
+          deposit.depositCollect = localCollects;
+        }
+
+        return deposit;
+      });
+    }).catch((error) => {
+      console.log('[DepositService] mergeSyncedDepositsWithLocal error', error);
+      return deposits.map((item) => this.normalizeSyncedDeposit(item));
+    });
+  }
+
+  /** No borra depósitos que aún están en la cola de envío pendiente. */
+  filterAndDeleteDepositsByServerIds(dbServ: SQLiteObject, ids: number[]): Promise<void> {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return Promise.resolve();
+    }
+
+    const placeholders = ids.map(() => '?').join(',');
+    const selectSafeIds = `
+      SELECT d.id_deposit, d.co_deposit
+      FROM deposits d
+      WHERE d.id_deposit IN (${placeholders})
+        AND NOT EXISTS (
+          SELECT 1 FROM pending_transactions pt
+          WHERE pt.co_transaction = d.co_deposit AND pt.type = 'deposit'
+        )`;
+
+    return dbServ.executeSql(selectSafeIds, ids).then((result) => {
+      if (result.rows.length === 0) {
+        return;
+      }
+
+      const safeIds: number[] = [];
+      const safeCoDeposits: string[] = [];
+      for (let i = 0; i < result.rows.length; i++) {
+        const row = result.rows.item(i);
+        safeIds.push(Number(row.id_deposit));
+        safeCoDeposits.push(String(row.co_deposit));
+      }
+
+      const coPlaceholders = safeCoDeposits.map(() => '?').join(',');
+      const idPlaceholders = safeIds.map(() => '?').join(',');
+
+      return dbServ.executeSql(
+        `DELETE FROM deposit_collects WHERE co_deposit IN (${coPlaceholders})`,
+        safeCoDeposits,
+      ).then(() =>
+        dbServ.executeSql(
+          `DELETE FROM deposits WHERE id_deposit IN (${idPlaceholders})`,
+          safeIds,
+        ),
+      );
+    }).catch((error) => {
+      console.log('[DepositService] filterAndDeleteDepositsByServerIds error', error);
+    });
+  }
+
   async saveDepositBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
     this.database = dbServ;
 
@@ -661,6 +801,7 @@ export class DepositService {
 
     const insertDepositCollect = 'INSERT OR REPLACE INTO deposit_collects (' +
       'id_deposit_collect,' +
+      'co_deposit_collect,' +
       'co_deposit,' +
       'co_collection, ' +
       'id_collection, ' +
@@ -668,20 +809,17 @@ export class DepositService {
       'nu_amount_total, ' +
       'nu_total_deposit' +
       ') VALUES (' +
-      '?,?,?,?,?,?,?)';
+      '?,?,?,?,?,?,?,?)';
 
-    // Array para juntar todos los queries de todos los depósitos
-    let allQueries: any[] = [];
+    const deleteCollectsStatement = 'DELETE FROM deposit_collects WHERE co_deposit = ?';
+    const allQueries: [string, unknown[]][] = [];
 
-    // Procesa cada depósito secuencialmente para evitar condiciones de carrera
-    for (const deposit of deposits) {
+    for (const rawDeposit of deposits) {
+      const deposit = this.normalizeSyncedDeposit(rawDeposit);
       const nuPersist = this.resolveNuAmountDocConversionForPersist(deposit.nuAmountDocConversion);
       deposit.nuAmountDocConversion = nuPersist;
-      // Queries locales para este depósito
-      let queries: any[] = [];
 
-      // Insert principal
-      queries.push([insertDeposit, [
+      allQueries.push([insertDeposit, [
         deposit.idDeposit,
         deposit.coDeposit,
         deposit.daDeposit,
@@ -699,52 +837,140 @@ export class DepositService {
         nuPersist,
         deposit.nuValueLocal,
         deposit.idCurrency,
-        deposit.coordenada
+        deposit.coordenada,
       ]]);
 
-      // Si hay collectionIds, consulta y arma los queries de deposit_collects
-      if (Array.isArray(deposit.collectionIds) && deposit.collectionIds.length > 0) {
-        const placeholders = deposit.collectionIds.map(() => '?').join(',');
-        const selectCollections = `
-        SELECT c.co_collection as coCollection,
-               c.id_collection as idCollection,
-               c.nu_amount_total as nuAmountTotal,
-               c.nu_amount_final as nuAmountFinal,
-               cd.co_document as coDocument
-        FROM collections c
-        JOIN collection_details cd ON c.co_collection = cd.co_collection
-        WHERE c.id_collection IN (${placeholders})
-      `;
-        try {
-          const collectionsResult = await dbServ.executeSql(selectCollections, deposit.collectionIds);
-          for (let i = 0; i < collectionsResult.rows.length; i++) {
-            const row = collectionsResult.rows.item(i);
-            queries.push([insertDepositCollect, [
-              0,
-              deposit.coDeposit,
-              row.coCollection,
-              row.idCollection,
-              row.coDocument,
-              row.nuAmountTotal,
-              row.nuAmountFinal
-            ]]);
-          }
-        } catch (e) {
-          console.log('Error al consultar collections:', e);
+      const collects = await this.resolveDepositCollectsForPersist(dbServ, deposit);
+      if (collects.length > 0) {
+        allQueries.push([deleteCollectsStatement, [deposit.coDeposit]]);
+        for (const collect of collects) {
+          allQueries.push([insertDepositCollect, [
+            collect.idDepositCollect ?? 0,
+            collect.coDepositCollect || `${deposit.coDeposit}_${collect.coCollection}`,
+            deposit.coDeposit,
+            collect.coCollection,
+            collect.idCollection,
+            collect.coDocument,
+            collect.nuAmountTotal,
+            collect.nuTotalDeposit,
+          ]]);
         }
       }
-
-      // Agrega los queries de este depósito al array global
-      allQueries = allQueries.concat(queries);
     }
 
-    // Ejecuta el batch con todos los queries armados
     return dbServ.sqlBatch(allQueries).then(() => {
       return Promise.resolve(true);
-    }).catch(e => {
-      console.log("Error al ejecutar saveDepositBatch:", e);
+    }).catch((e) => {
+      console.log('Error al ejecutar saveDepositBatch:', e);
       return Promise.reject(e);
     });
+  }
+
+  private normalizeSyncedDeposit(raw: Deposit | Record<string, unknown>): Deposit {
+    const source = raw as Record<string, unknown>;
+    const hasCamelCase = typeof source['coDeposit'] === 'string';
+    const deposit = hasCamelCase
+      ? { ...(raw as Deposit) }
+      : Deposit.depositJson(raw as Deposit);
+
+    const rawCollects =
+      source['depositCollect'] ??
+      source['deposit_collect'] ??
+      source['depositCollects'] ??
+      [];
+
+    if (Array.isArray(rawCollects) && rawCollects.length > 0) {
+      deposit.depositCollect = rawCollects.map((item) => {
+        const collect = item as Record<string, unknown>;
+        return collect['coCollection']
+          ? (item as DepositCollect)
+          : DepositCollect.depositCollectJson(item as DepositCollect);
+      });
+    }
+
+    const rawCollectionIds = source['collectionIds'] ?? source['collection_ids'];
+    if (Array.isArray(rawCollectionIds)) {
+      deposit.collectionIds = rawCollectionIds as number[];
+    }
+
+    return deposit;
+  }
+
+  private hasSyncCollectPayload(deposit: Deposit): boolean {
+    return (
+      (Array.isArray(deposit.depositCollect) && deposit.depositCollect.length > 0) ||
+      (Array.isArray(deposit.collectionIds) && deposit.collectionIds.length > 0)
+    );
+  }
+
+  private mapLocalDepositCollectRow(row: Record<string, unknown>): DepositCollect {
+    return {
+      idDepositCollect: Number(row['id_deposit_collect'] ?? 0),
+      coDepositCollect: String(row['co_deposit_collect'] ?? ''),
+      coDeposit: String(row['co_deposit'] ?? ''),
+      coCollection: String(row['co_collection'] ?? ''),
+      idCollection: Number(row['id_collection'] ?? 0),
+      coDocument: String(row['co_document'] ?? ''),
+      nuAmountTotal: Number(row['nu_amount_total'] ?? 0),
+      nuTotalDeposit: Number(row['nu_total_deposit'] ?? 0),
+      st: 0,
+      isSave: true,
+      lbClient: '',
+      daCollection: '',
+    };
+  }
+
+  private async resolveDepositCollectsForPersist(
+    dbServ: SQLiteObject,
+    deposit: Deposit,
+  ): Promise<DepositCollect[]> {
+    if (Array.isArray(deposit.depositCollect) && deposit.depositCollect.length > 0) {
+      return deposit.depositCollect.map((collect) => ({
+        ...collect,
+        coDeposit: deposit.coDeposit,
+      }));
+    }
+
+    if (!Array.isArray(deposit.collectionIds) || deposit.collectionIds.length === 0) {
+      return [];
+    }
+
+    const placeholders = deposit.collectionIds.map(() => '?').join(',');
+    const selectCollections = `
+      SELECT c.co_collection as coCollection,
+             c.id_collection as idCollection,
+             c.nu_amount_total as nuAmountTotal,
+             c.nu_amount_final as nuAmountFinal,
+             cd.co_document as coDocument
+      FROM collections c
+      JOIN collection_details cd ON c.co_collection = cd.co_collection
+      WHERE c.id_collection IN (${placeholders})`;
+
+    try {
+      const collectionsResult = await dbServ.executeSql(selectCollections, deposit.collectionIds);
+      const collects: DepositCollect[] = [];
+      for (let i = 0; i < collectionsResult.rows.length; i++) {
+        const row = collectionsResult.rows.item(i);
+        collects.push({
+          idDepositCollect: 0,
+          coDepositCollect: `${deposit.coDeposit}_${row.coCollection}`,
+          coDeposit: deposit.coDeposit,
+          coCollection: row.coCollection,
+          idCollection: row.idCollection,
+          coDocument: row.coDocument,
+          nuAmountTotal: row.nuAmountTotal,
+          nuTotalDeposit: row.nuAmountFinal,
+          st: 0,
+          isSave: true,
+          lbClient: '',
+          daCollection: '',
+        });
+      }
+      return collects;
+    } catch (e) {
+      console.log('Error al consultar collections para deposit_collects:', e);
+      return [];
+    }
   }
 
   saveDeposit(dbServ: SQLiteObject, deposit: Deposit) {

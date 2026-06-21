@@ -296,6 +296,11 @@ export class SynchronizationComponent implements OnInit {
       this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasTransportista.includes(id));
     }
 
+    if (this.user.catalogo) {
+      const tablasCatalogo = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 53, 59, 60, 72, 74];
+      this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCatalogo.includes(id));
+    }
+
     this.recomputeProgressStep();
   }
 
@@ -766,9 +771,7 @@ export class SynchronizationComponent implements OnInit {
 
       // Filtra las tablas si el usuario es transportista
       if (this.user.transportista) {
-        // IDs de tablas que NO quieres sincronizar para transportista
-/*         const tablasTransportista = [1, 3, 5, 6, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
- */        const tablasTransportista = [1, 3, 5, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
+        const tablasTransportista = [1, 3, 5, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
         this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasTransportista.includes(id));
         this.N = Object.keys(this.tableKeyMap).length;
         this.PROGRESS = 1 / this.N;
@@ -779,6 +782,15 @@ export class SynchronizationComponent implements OnInit {
       if (this.user.cliente) {
         const tablasCliente = [1, 3, 5, 7, 8, 13, 15, 23, 25, 32, 34, 35, 37, 39, 42, 43, 44, 46, 50, 52, 53, 54, 55, 60, 61, 62, 63, 64, 69, 70, 71, 72, 72, 74, 81]; // ejemplo, ajusta según tu lógica
         this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCliente.includes(id));
+        this.N = Object.keys(this.tableKeyMap).length;
+        this.PROGRESS = 1 / this.N;
+        this.BUFF = 1 / this.N;
+      }
+
+      ///DEFINIR QUE TABLAS LLEVA EL ROL CATALOGO
+      if (this.user.catalogo) {
+        const tablasCatalogo = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 53, 59, 60, 72, 74]; // ejemplo, ajusta según tu lógica
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCatalogo.includes(id));
         this.N = Object.keys(this.tableKeyMap).length;
         this.PROGRESS = 1 / this.N;
         this.BUFF = 1 / this.N;
@@ -1450,8 +1462,13 @@ export class SynchronizationComponent implements OnInit {
   }
 
   handleDeletedRows(deletedRowsIds: any, tableName: string, idField: string) {
-    if (deletedRowsIds != null) {
-      this.synchronizationServices.deleteDataTable(deletedRowsIds, tableName, idField);
+    if (deletedRowsIds == null) {
+      return;
     }
+    if (tableName === 'deposits' && idField === 'id_deposit') {
+      this.synchronizationServices.deleteDepositRowsSafely(deletedRowsIds);
+      return;
+    }
+    this.synchronizationServices.deleteDataTable(deletedRowsIds, tableName, idField);
   }
 }

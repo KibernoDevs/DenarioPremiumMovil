@@ -44,6 +44,7 @@ import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProdu
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
 import { Share } from '@capacitor/share';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 
 @Component({
   selector: 'app-pedido',
@@ -130,6 +131,8 @@ export class PedidoComponent implements OnInit {
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
   parteDecimal = 2;
+  public DELIVERY_STATUS_NEW = DELIVERY_STATUS_NEW;
+  public DELIVERY_STATUS_SAVED = DELIVERY_STATUS_SAVED;
   public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;
 
   nuValueLocal = 0;
@@ -190,12 +193,12 @@ export class PedidoComponent implements OnInit {
     }
 
     //setup empresas
-    this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
+    this.enterpriseServ.setup(this.dbServ.getDatabase()).then(async () => {
       this.listaEmpresa = this.enterpriseServ.empresas;
       if (this.orderServ.openOrder) {
         this.empresaSeleccionada = this.enterpriseServ.getEntepriseById(this.orderServ.order.idEnterprise);
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-        this.orderServ.setup();
+        await this.orderServ.setup();
         this.tipoOrden = this.orderServ.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
         this.inOrderReview = this.orderServ.order.inOrderReview;
         this.tipoOrdenAnterior = this.tipoOrden;
@@ -223,7 +226,7 @@ export class PedidoComponent implements OnInit {
         this.hideAdjunto = true;
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-        this.orderServ.setup();
+        await this.orderServ.setup();
         this.orderServ.dctoGlobal = 0;
         this.orderServ.order = this.createEmptyOrder(); //pedido vacio porque no puede ser null.
         this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
@@ -237,45 +240,44 @@ export class PedidoComponent implements OnInit {
 
 
       //setup monedas
-      this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
-        this.multimoneda = this.currencyServ.multimoneda;
-        this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
-        if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
-          this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
-        } else {
-          //probablemente no tienen el sistema nuevo.
-          this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
-        }
-        this.localCurrency = this.currencyServ.getLocalCurrency();
-        if (this.orderServ.openOrder) {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
-          if (this.orderServ.pedidoModificable) {
-            this.tasaCambio = this.currencyServ.getLocalValue();
-            this.nuValueLocal = Number.parseFloat(this.tasaCambio);
-          } else {
-            this.nuValueLocal = this.orderServ.order.nuValueLocal;
-            this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
-
-          }
-        } else {
-          //this.currencySelection();
-          //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
-          this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+      await this.currencyServ.setup(this.dbServ.getDatabase());
+      this.multimoneda = this.currencyServ.multimoneda;
+      this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
+      if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
+        this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
+      } else {
+        //probablemente no tienen el sistema nuevo.
+        this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
+      }
+      this.localCurrency = this.currencyServ.getLocalCurrency();
+      if (this.orderServ.openOrder) {
+        this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
+        if (this.orderServ.pedidoModificable) {
           this.tasaCambio = this.currencyServ.getLocalValue();
-        }
-        if (this.multimoneda) {
-          this.hardCurrency = this.currencyServ.getHardCurrency();
-        }
-
-
-        if (this.orderServ.openOrder) {
-          this.abrirPedido();
-
+          this.nuValueLocal = Number.parseFloat(this.tasaCambio);
         } else {
-          this.reset();
-          this.orderServ.coOrder = this.dateServ.generateCO(0);
+          this.nuValueLocal = this.orderServ.order.nuValueLocal;
+          this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
+
         }
-      })
+      } else {
+        //this.currencySelection();
+        //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+        this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+        this.tasaCambio = this.currencyServ.getLocalValue();
+      }
+      if (this.multimoneda) {
+        this.hardCurrency = this.currencyServ.getHardCurrency();
+      }
+
+
+      if (this.orderServ.openOrder) {
+        await this.abrirPedido();
+
+      } else {
+        this.reset();
+        this.orderServ.coOrder = this.dateServ.generateCO(0);
+      }
       //fin setup monedas
 
 
@@ -314,7 +316,7 @@ export class PedidoComponent implements OnInit {
     this.orderServ.productSummary();
   }
 
-  abrirPedido() {
+  async abrirPedido() {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
     //mini reset
     this.orderServ.carrito = [];
@@ -387,7 +389,7 @@ export class PedidoComponent implements OnInit {
       idPriceLists.push(detail.idPriceList);
     }
     if (this.orderServ.userCanSelectGlobalDiscount) {
-      this.orderServ.dctoGlobal = this.orderServ.order.nuDiscount;
+      await this.restoreSavedGlobalDiscount();
     }
 
     this.orderServ.getOrderUtilsbyIdProductAndPricelists(idProducts, idPriceLists).then(utils => {
@@ -409,6 +411,10 @@ export class PedidoComponent implements OnInit {
             var unitUtil = item.unitList.find((u) => u.idProductUnit == unit.idProductUnit)!;
             if (unitUtil != undefined) {
               unitUtil.quAmount = unit.quOrder;
+              if (this.orderServ.unitByPriceList && unit.coPriceList) {
+                unitUtil.coPriceList = unit.coPriceList;
+                unitUtil.idPriceList = unit.idPriceList;
+              }
               if (unitUtil.idUnit === item.idUnit) {
                 item.quAmount = unitUtil.quAmount;
               } else {
@@ -422,7 +428,8 @@ export class PedidoComponent implements OnInit {
               console.error("No se consiguio Unit: " + unit.idProductUnit);
             }
           }
-          //pricelist
+          //pricelist (nivel order_detail)
+          item.coPriceList = detail.coPriceList;
           item.idPriceList = detail.idPriceList;
           //iva
           item.iva = detail.iva;
@@ -654,6 +661,8 @@ export class PedidoComponent implements OnInit {
       this.daDispatchChanged = true;
     }
 
+    this.orderServ.productSummary();
+
     let orderDetails: OrderDetail[] = [];
     for (let i = 0; i < this.orderServ.carrito.length; i++) {
       const item = this.orderServ.carrito[i];
@@ -664,11 +673,10 @@ export class PedidoComponent implements OnInit {
       } else
         tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
 
-      const lineAmountBase = this.orderServ.computeCartLineBaseAmount(item);
-
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
+        const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
         let u = new OrderDetailUnit(
           0,
           this.dateServ.generateCO((10 * i)) + 'U' + j.toString(),
@@ -680,6 +688,8 @@ export class PedidoComponent implements OnInit {
           empresa.idEnterprise,
           unit.coUnit,
           0,
+          unitPriceList.coPriceList,
+          unitPriceList.idPriceList,
         )
 
 
@@ -709,7 +719,7 @@ export class PedidoComponent implements OnInit {
         item.naProduct,
         item.idProduct,
         item.nuPrice,
-        lineAmountBase,
+        item.subtotal,
         (this.orderServ.validateWarehouses ? item.coWarehouse : ''), //si validWH =  false, se manda 'vacio'
         (this.orderServ.validateWarehouses ? item.idWarehouse : 0),
         0,
@@ -726,8 +736,8 @@ export class PedidoComponent implements OnInit {
           this.currencyServ.toHardCurrency(item.nuPrice) : this.currencyServ.toLocalCurrency(item.nuPrice),
         this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
           this.currencyServ.toHardCurrency(tieneDescuento ? item.nuAmountDiscount : 0) : this.currencyServ.toLocalCurrency(tieneDescuento ? item.nuAmountDiscount : 0),
-        this.monedaSeleccionada.idCurrency === this.localCurrency.idCurrency ?
-          this.currencyServ.toHardCurrency(lineAmountBase) : this.currencyServ.toLocalCurrency(lineAmountBase),
+        item.subtotalConv,
+        item.nuAmountTax ?? 0,
         units,
         [discount],
 
@@ -794,44 +804,106 @@ export class PedidoComponent implements OnInit {
   onPricelistSelect() {
     this.orderServ.setChangesMade(true);
     if (this.orderServ.hasItems()) {
-      //si el pedido ya tiene cosas, hay que resetear
-      let buttonsRevertPricelist = [
-        {
-          text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
-          role: 'cancel',
-          handler: () => {
-            console.log('Alert canceled');
-            this.orderServ.setChangesMade(false);
-            this.orderServ.listaSeleccionada = this.listaAnterior;
-          },
-        },
-        {
-          text: this.orderServ.getTag("DENARIO_BOTON_ACEPTAR"),
-          role: 'confirm',
-          handler: () => {
-            console.log('Alert confirmed');
-            let pricelist = this.orderServ.listaSeleccionada;
-            this.reset();
-            this.orderServ.listaSeleccionada = pricelist;
-            this.listaAnterior = pricelist;
-            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == pricelist?.idList)
-            this.orderServ.productListToOrderUtil(this.productService.productList);
-          }
-        }
-      ]
-
-      this.message.alertCustomBtn({
-        header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
-        message: this.orderServ.getTag('PED_RESET_PRICELIST')
-      } as MessageAlert,
-        buttonsRevertPricelist);
+      this.confirmPriceListChange(this.orderServ.listaSeleccionada);
     } else {
-      //si no hay productos no hay peo, consolidamos el cambio.
       this.listaAnterior = this.orderServ.listaSeleccionada;
       this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == this.orderServ.listaSeleccionada?.idList)
       this.orderServ.productListToOrderUtil(this.productService.productList);
       this.orderServ.setChangesMade(true);
+    }
+  }
 
+  private confirmPriceListChange(targetList: List | undefined): void {
+    if (targetList == undefined) {
+      return;
+    }
+    this.orderServ.listaSeleccionada = targetList;
+    const buttonsRevertPricelist = [
+      {
+        text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
+        role: 'cancel',
+        handler: () => {
+          console.log('Alert canceled');
+          this.orderServ.setChangesMade(false);
+          this.orderServ.listaSeleccionada = this.listaAnterior;
+        },
+      },
+      {
+        text: this.orderServ.getTag("DENARIO_BOTON_ACEPTAR"),
+        role: 'confirm',
+        handler: () => {
+          console.log('Alert confirmed');
+          this.reset();
+          this.commitPriceListSelection(targetList);
+          this.orderServ.productListToOrderUtil(this.productService.productList);
+        }
+      }
+    ];
+
+    this.message.alertCustomBtn({
+      header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+      message: this.orderServ.getTag('PED_RESET_PRICELIST')
+    } as MessageAlert,
+      buttonsRevertPricelist);
+  }
+
+  private resolveBasePriceList(cliente: Client): List | undefined {
+    if (this.orderServ.desdeSugerencia) {
+      this.orderServ.desdeSugerencia = false;
+      return this.orderServ.datosPedidoSugerido.list;
+    }
+    if (this.orderServ.openOrder) {
+      const idPriceList = this.orderServ.order.orderDetails[0].idPriceList;
+      if (!idPriceList) {
+        console.error("El pedido no tiene pricelist asignada en los detalles");
+        return this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+      }
+      const pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList);
+      if (pl.length < 1) {
+        console.error("No se encontro pricelist del pedido");
+        if (this.orderServ.pedidoModificable) {
+          console.log("Buscando lista por cliente, para que el usuario pueda cambiarla");
+          return this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+        }
+        return undefined;
+      }
+      const idList = pl[0].idList;
+      return this.orderServ.listaList.find((list) => list.idList == idList);
+    }
+    return this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+  }
+
+  private commitPriceListSelection(list: List | undefined): void {
+    if (list != undefined) {
+      this.orderServ.listaSeleccionada = list;
+      this.listaAnterior = list;
+      this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list.idList);
+    } else if (this.orderServ.openOrder) {
+      this.orderServ.listaSeleccionada = { idList: 0 } as List;
+    }
+  }
+
+  private applyPriceListForClient(cliente: Client): void {
+    const fromSuggestion = this.orderServ.desdeSugerencia;
+    const baseList = this.resolveBasePriceList(cliente);
+    const finalList = fromSuggestion
+      ? baseList
+      : (this.orderServ.applyOrderTypePriceList(baseList) ?? baseList);
+    this.commitPriceListSelection(finalList);
+  }
+
+  private applyOrderTypePriceListChange(): void {
+    const baseList = this.orderServ.listaSeleccionada;
+    const newList = this.orderServ.applyOrderTypePriceList(baseList) ?? baseList;
+    if (newList?.idList === this.listaAnterior?.idList) {
+      return;
+    }
+    if (this.orderServ.hasItems()) {
+      this.confirmPriceListChange(newList);
+    } else {
+      this.commitPriceListSelection(newList);
+      this.orderServ.productListToOrderUtil(this.productService.productList);
+      this.orderServ.setChangesMade(true);
     }
   }
 
@@ -986,11 +1058,12 @@ export class PedidoComponent implements OnInit {
             this.orderServ.tipoOrden = this.tipoOrden;
             this.reset();
             this.orderServ.empresaSeleccionada = empresa;
-            this.onEnterpriseSelect();
+            this.reapplyEnterpriseContextAfterReset();
             //this.orderServ.cliente = cliente;
-            this.setClientfromSelector(cliente);
+            this.setClientfromSelector(cliente, false, true);
             this.tipoOrden = this.orderServ.tipoOrden;
             this.tipoOrdenAnterior = this.tipoOrden;
+            this.orderServ.syncOrderTypeIvaOnProducts();
           }
         }
       ]
@@ -1027,10 +1100,11 @@ export class PedidoComponent implements OnInit {
               this.orderServ.tipoOrden = this.tipoOrden;
               this.reset();
               this.orderServ.empresaSeleccionada = empresa;
-              this.onEnterpriseSelect();
-              this.setClientfromSelector(cliente);
+              this.reapplyEnterpriseContextAfterReset();
+              this.setClientfromSelector(cliente, false, true);
               this.tipoOrden = this.orderServ.tipoOrden;
               this.tipoOrdenAnterior = this.tipoOrden;
+              this.orderServ.syncOrderTypeIvaOnProducts();
             },
           },
         ];
@@ -1046,6 +1120,8 @@ export class PedidoComponent implements OnInit {
         this.orderServ.tipoOrden = this.tipoOrden;
         this.tipoOrdenAnterior = this.tipoOrden;
         this.tipoOrden = this.orderServ.tipoOrden;
+        this.orderServ.syncOrderTypeIvaOnProducts();
+        this.applyOrderTypePriceListChange();
       }
     }
     this.onChange();
@@ -1108,6 +1184,13 @@ export class PedidoComponent implements OnInit {
       }
     }
   }
+  private reapplyEnterpriseContextAfterReset(): void {
+    this.empresaSeleccionada = this.orderServ.empresaSeleccionada;
+    this.orderServ.setup();
+    this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
+    this.segmentLock();
+  }
+
   onEnterpriseSelect() {
     if (this.orderServ.carrito.length > 0 || this.adjuntoService.hasItems() || this.orderServ.cliente.idClient) {
       // el pedido tiene cosas, asi que hay que resetear
@@ -1174,6 +1257,7 @@ export class PedidoComponent implements OnInit {
 
     this.tipoOrdenAnterior = this.tipoOrden;
     this.orderServ.tipoOrden = this.tipoOrden;
+    this.orderServ.syncOrderTypeIvaOnProducts();
 
   }
 
@@ -1189,11 +1273,29 @@ export class PedidoComponent implements OnInit {
     return a && b ? a.idPaymentCondition === b.idPaymentCondition : a === b;
   }
 
+  globalDiscountCompare(a: number, b: number) {
+    return Number(a) === Number(b);
+  }
+
   currencyCompare(a: CurrencyEnterprise, b: CurrencyEnterprise) {
     return a && b ? a.idCurrency === b.idCurrency : a === b;
   }
 
-  setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
+  private async restoreSavedGlobalDiscount(): Promise<void> {
+    if (this.orderServ.listaGlobalDiscount.length === 0) {
+      this.orderServ.listaGlobalDiscount = await this.orderServ.getGlobalDiscounts();
+    }
+    this.orderServ.dctoGlobal = this.orderServ.resolveSavedGlobalDiscount(
+      this.orderServ.order.nuDiscount,
+    );
+    this.changeDetector.detectChanges();
+  }
+
+  setClientfromSelector(
+    cliente: Client,
+    skipDebtValidation: boolean = false,
+    preserveOrderType: boolean = false,
+  ) {
     if (cliente) {
 
       if (!skipDebtValidation && !this.orderServ.openOrder
@@ -1217,7 +1319,7 @@ export class PedidoComponent implements OnInit {
               text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
               role: 'confirm',
               handler: () => {
-                this.setClientfromSelector(cliente, true);
+                this.setClientfromSelector(cliente, true, preserveOrderType);
               },
             }
           ]
@@ -1242,7 +1344,26 @@ export class PedidoComponent implements OnInit {
           this.listaDistributionChannel = this.orderServ.distributionChannels.filter((d) => data.find((c) => c.idDistributionChannel == d.idChannel));
           this.distChannel = this.listaDistributionChannel[0];
           this.listaOrderTypes = this.orderServ.listaOrderTypes.filter((o) => data.find((c) => c.idOrderType == o.idOrderType));
-          if (this.orderServ.orderTypeByEnterprise && !this.orderServ.openOrder) {
+          if (!preserveOrderType) {
+            if (this.orderServ.orderTypeByEnterprise && !this.orderServ.openOrder) {
+              this.selectOrderTypebyEnterprise();
+            } else {
+              if (this.orderServ.openOrder) {
+                this.tipoOrden = this.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
+              } else {
+                this.tipoOrden = this.listaOrderTypes[0];
+              }
+              this.tipoOrdenAnterior = this.tipoOrden;
+              this.orderServ.tipoOrden = this.tipoOrden;
+              this.orderServ.syncOrderTypeIvaOnProducts();
+            }
+          }
+          this.applyPriceListForClient(cliente);
+        })
+      } else {
+        this.listaOrderTypes = this.orderServ.listaOrderTypes;
+        if (!preserveOrderType) {
+          if (this.orderServ.orderTypeByEnterprise) {
             this.selectOrderTypebyEnterprise();
           } else {
             if (this.orderServ.openOrder) {
@@ -1251,72 +1372,12 @@ export class PedidoComponent implements OnInit {
               this.tipoOrden = this.listaOrderTypes[0];
             }
             this.tipoOrdenAnterior = this.tipoOrden;
-            this.orderServ.tipoOrden = this.tipoOrden;
+            this.orderServ.tipoOrden = this.tipoOrden; //para filtrar structures luego
+            this.orderServ.syncOrderTypeIvaOnProducts();
           }
-
-        })
-      } else {
-        this.listaOrderTypes = this.orderServ.listaOrderTypes;
-        if (this.orderServ.orderTypeByEnterprise) {
-          this.selectOrderTypebyEnterprise();
-        } else {
-          if (this.orderServ.openOrder) {
-            this.tipoOrden = this.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
-          } else {
-            this.tipoOrden = this.listaOrderTypes[0];
-          }
-          this.tipoOrdenAnterior = this.tipoOrden;
-          this.orderServ.tipoOrden = this.tipoOrden; //para filtrar structures luego
         }
+        this.applyPriceListForClient(cliente);
       }
-
-
-      // Lista
-      let list: List | undefined;
-      if (this.orderServ.desdeSugerencia) {
-        //en la sugerencia ya tenemos una lista definida, asi que la usamos y listo, no hay que andar buscando ni nada raro
-        this.orderServ.desdeSugerencia = false;
-        list = this.orderServ.datosPedidoSugerido.list;
-      } else {
-        if (this.orderServ.openOrder) {
-          let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
-          if (!idPriceList) {
-            console.error("El pedido no tiene pricelist asignada en los detalles");
-            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-          } else {
-            let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-            if (pl.length < 1) {
-              console.error("No se encontro pricelist del pedido");
-              if (this.orderServ.pedidoModificable) {
-                console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
-                list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-              }
-            } else {
-              let idList = pl[0].idList;
-              list = this.orderServ.listaList.find((list) => list.idList == idList);
-            }
-            if (list) {
-              this.orderServ.listaSeleccionada = list!;
-              if (list.idList > 0) {
-                this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
-
-              }
-              this.listaAnterior = list!;
-            } else {
-              this.orderServ.listaSeleccionada = { idList: 0 } as List;
-            }
-          }
-        } else {
-          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-        }
-      }
-
-      if (list != undefined) {
-        this.orderServ.listaSeleccionada = list;
-        this.listaAnterior = list;
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
-      }
-
 
 
       //Payment Condition
@@ -1440,12 +1501,15 @@ export class PedidoComponent implements OnInit {
 
   canExportOrderSummaryPdf(): boolean {
     const stDelivery = this.orderServ.order?.stDelivery;
-    return stDelivery == 1 || stDelivery === null;
+    return stDelivery === DELIVERY_STATUS_NEW
+      || stDelivery === DELIVERY_STATUS_SAVED
+      || stDelivery === DELIVERY_STATUS_SENT
+      || stDelivery === null;
   }
 
   async createOrderSummaryPdf() {
     if (!this.canExportOrderSummaryPdf()) {
-      this.message.transaccionMsjModalNB('Solo se puede generar el PDF cuando el pedido esta enviado.');
+      this.message.transaccionMsjModalNB('No se puede generar el PDF para este pedido en su estado actual.');
       return;
     }
 
@@ -1820,5 +1884,10 @@ export class PedidoComponent implements OnInit {
     //var days = 86400000; /* 1000 * 60 * 60 * 24; */
 
     return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
+  }
+
+  get clienteTabLabel(): string {
+    const cliente = this.orderServ.cliente;
+    return formatClientForTab(cliente?.naClient, cliente?.coClient, cliente?.lbClient);
   }
 }

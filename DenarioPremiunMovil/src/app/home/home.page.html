@@ -23,8 +23,8 @@
 
 
     <!-- Row para transportista: todos menos el id 10 -->
-     @if(user.transportista){
-    <ion-row >
+    @if(user.transportista){
+    <ion-row>
       @for(modulo of modulosTransportista; track modulo.id){
       <ion-col size="6">
         @if(modulo.id !== 10){
@@ -34,14 +34,14 @@
             <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
           </a>
         </ng-container>
-      }
+        }
       </ion-col>
-    }
+      }
     </ion-row>
-  
+
 
     <!-- Fila aparte, centrada, solo para el id 10 -->
-    <ion-row >
+    <ion-row>
       @for(modulo of modulosTransportista; track modulo.id){
       <ion-col size="6" offset="3">
         @if(modulo.id === 10){
@@ -51,14 +51,14 @@
             <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
           </a>
         </ng-container>
-      }
+        }
       </ion-col>
-    }
+      }
     </ion-row>
-  }
+    }
 
-       @if(user.promotor){
-    <ion-row >
+    @if(user.promotor){
+    <ion-row>
       @for(modulo of modulosPromotor; track modulo.id){
       <ion-col size="6">
         @if(modulo.id !== 10){
@@ -68,14 +68,14 @@
             <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
           </a>
         </ng-container>
-      }
+        }
       </ion-col>
-    }
+      }
     </ion-row>
-  
+
 
     <!-- Fila aparte, centrada, solo para el id 10 -->
-    <ion-row >
+    <ion-row>
       @for(modulo of modulosPromotor; track modulo.id){
       <ion-col size="6" offset="3">
         @if(modulo.id === 10){
@@ -85,17 +85,17 @@
             <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
           </a>
         </ng-container>
-      }
+        }
       </ion-col>
-    }
+      }
     </ion-row>
-  }
+    }
 
     <!-- Iconos en filas de 3 (no transportista y no cliente) -->
-     @if(esVendedor){
+    @if(esVendedor){
     <ion-row>
       @for(row of [0,3,6,9]; track row){
-      <ng-container >
+      <ng-container>
         @if(modulos[row]){
         <ion-col size="4">
           <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row])">
@@ -103,31 +103,31 @@
             <p class="nombreModulos" [ngStyle]="{'color': modulos[row].letterColor}">{{modulos[row].name}}</p>
           </a>
         </ion-col>
-      }
-      @if(modulos[row+1]){
-        <ion-col size="4" >
+        }
+        @if(modulos[row+1]){
+        <ion-col size="4">
           <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row+1])">
             <img alt="" class="image-size" [src]="modulos[row+1].imgIcon" />
             <p class="nombreModulos" [ngStyle]="{'color': modulos[row+1].letterColor}">{{modulos[row+1].name}}</p>
           </a>
         </ion-col>
-      }
-      @if(modulos[row+2]){
-        <ion-col size="4" >
+        }
+        @if(modulos[row+2]){
+        <ion-col size="4">
           <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row+2])">
             <img alt="" class="image-size" [src]="modulos[row+2].imgIcon" />
             <p class="nombreModulos" [ngStyle]="{'color': modulos[row+2].letterColor}">{{modulos[row+2].name}}</p>
           </a>
         </ion-col>
-      }
+        }
       </ng-container>
-    }
+      }
     </ion-row>
-  }
+    }
 
     <!-- Fila para cliente -->
-     @if(user.cliente){
-    <ion-row >
+    @if(user.cliente){
+    <ion-row>
       <ion-col size="6" *ngFor="let modulo of modulosCliente">
         <a class="ion-text-center" expand="block" (click)="goToModule(modulo)">
           <img alt="" class="image-size" [src]="modulo.imgIcon" />
@@ -135,17 +135,36 @@
         </a>
       </ion-col>
     </ion-row>
-  }
+    }
 
-
-
-
-
+    <!-- Catálogo: Productos, Sincronizar y Salir -->
+    @if(user.catalogo){
+    <div class="catalogo-layout">
+      <div class="catalogo-modules">
+        <ion-row class="ion-justify-content-center ion-align-items-center">
+          @for(modulo of modulosCatalogo; track modulo.id){
+          <ion-col size="6" size-sm="5" size-md="4" class="catalogo-module-col">
+            <a class="ion-text-center catalogo-module-link" expand="block" (click)="goToModule(modulo)">
+              <img alt="" class="image-size catalogo-module-icon" [src]="modulo.imgIcon" />
+              <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
+            </a>
+          </ion-col>
+          }
+        </ion-row>
+      </div>
+      <ion-row class="catalogo-exit-row">
+        <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
+          <ion-button class="btnEnter ion-text-center" expand="block" fill="clear" color="tertiary" size="small"
+            routerLink="/login">Salir</ion-button>
+        </ion-col>
+      </ion-row>
+    </div>
+    }
   </ion-grid>
 
   <ion-alert [isOpen]="isAlertOpen" header="Denario Premium" [message]="mensaje" [buttons]="alertButtons"
     (didDismiss)="setOpen(false)"></ion-alert>
-  <!-- <ion-button expand="block" routerLink="/login">Login</ion-button> -->
+  @if(!user.catalogo){
   <ion-grid>
     <ion-row>
       <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
@@ -154,6 +173,7 @@
       </ion-col>
     </ion-row>
   </ion-grid>
+  }
 
 
   <ion-footer class="footer footerhome ion-no-border">

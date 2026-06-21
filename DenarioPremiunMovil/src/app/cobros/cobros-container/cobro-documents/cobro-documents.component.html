@@ -30,6 +30,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
   </ion-label>
   <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.igtfSelected"
+    [compareWith]="compareIgtfOptions"
     (ionChange)="onChangeIgtf($event)" labelPlacement="stacked">
     @for (igtf of this.collectService.igtfList; track $index) {
     <ion-select-option [value]="igtf">{{igtf.naIgtf}} -
@@ -52,6 +53,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 }
 
 @if(filteredDocumentsView.length > 0){
+<div class="documents-view">
 <div class="saldo-legend">
   <button class="legend-item legend-button" id="legendBlueHint" type="button">
     <span class="legend-dot legend-blue" aria-hidden="true"></span>
@@ -69,7 +71,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
   </button>
 </div>
-}
+
 <ion-popover trigger="legendBlueHint" triggerAction="click">
   <ng-template>
     <div class="legend-popover">
@@ -94,11 +96,20 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
   </ng-template>
 </ion-popover>
 
-<!-- currencySelectDocument == MONEDA-->
-@if(filteredDocumentsView.length > 0){
-<ion-grid class="tablaInfoClientes tablaDocVentasGrip">
-  <!-- *ngIf="this.collectService.documentSalesBackup.length > 0  && this.collectService.currencySelectedDocument?.coCurrency == 'Moneda'"> -->
-  <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+<div class="documents-table-panel" #documentsTablePanel [class.documents-table-panel--ready]="documentsTableLayoutReady">
+  @if (!documentsTableLayoutReady) {
+  <div class="documents-table-skeleton" aria-hidden="true">
+    <div class="documents-table-skeleton__header"></div>
+    @for (row of documentsTableSkeletonRows; track row) {
+    <div class="documents-table-skeleton__row"></div>
+    }
+  </div>
+  }
+  <div class="documents-table-scroll" #documentsTableScroll>
+    <div class="documents-table-stack">
+      <div class="documents-table-header-wrap" #documentsHeaderScroll>
+        <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+          <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col class="titulosBold col borderSuperiorIzquierdo" size="2"></ion-col>
     }
@@ -180,9 +191,13 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     <ion-col size="6"
       class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_COMENTARIO')}}
     </ion-col>
-  </ion-row>
+        </ion-row>
+        </ion-grid>
+      </div>
+      <div class="documents-table-body-wrap" #documentsBodyWrap>
+        <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
   @for (documentSale of filteredDocumentsView; track documentSale.idDocument) {
-  <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+  <ion-row class="tabladocumentSalesVenta tablaDocVentas row" [class.documents-row-selected]="documentSale.isSelected">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
       <ion-button (click)="openDocumentSale(getSourceIndex(documentSale), $event)" size="small" disabled="{{!documentSale.isSelected}}">
@@ -319,7 +334,33 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     </ion-col>
   </ion-row>
   }
-</ion-grid>
+    </ion-grid>
+      </div>
+    </div>
+  </div>
+
+  @if(canShowDocumentPagination){
+  <nav class="document-pagination" aria-label="Paginacion de documentos">
+    <button type="button" class="document-pagination__btn" (click)="goToPreviousDocumentsPage()"
+      [disabled]="!canGoToPreviousDocumentsPage" aria-label="Pagina anterior">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </button>
+    <div class="document-pagination__summary">
+      <span class="document-pagination__page">
+        {{ this.collectService.documentSalesCurrentPage + 1 }} / {{ documentSalesTotalPages }}
+      </span>
+      <span class="document-pagination__range">
+        {{ documentSalesPageStart }}-{{ documentSalesPageEnd }} de {{ this.collectService.documentSalesTotalRows }}
+      </span>
+    </div>
+    <button type="button" class="document-pagination__btn" (click)="goToNextDocumentsPage()"
+      [disabled]="!canGoToNextDocumentsPage" aria-label="Pagina siguiente">
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </button>
+  </nav>
+  }
+</div>
+</div>
 }
 
 <!-- MODAL SI ES COBROS  O IGTF-->
@@ -548,9 +589,13 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                               <ion-label position="stacked">
                                 {{ this.collectService.collectionTags.get('COB_DESCUENTO') || 'Descuento manual' }}
                               </ion-label>
-                              <ion-input type="number" min="0" inputmode="decimal"
-                                [ngModel]="manualCollectDiscountAmount"
-                                (ngModelChange)="setManualCollectDiscountAmount($event)">
+                              <ion-input type="text" inputmode="numeric"
+                                [value]="displayManualCollectDiscount || formatFromCents(centsManualCollectDiscount)"
+                                (keydown)="onManualCollectDiscountKeyDown($event)"
+                                (focus)="onManualCollectDiscountFocus()"
+                                (blur)="onManualCollectDiscountBlur()"
+                                (paste)="onManualCollectDiscountPaste($event)"
+                                (input)="onManualCollectDiscountInput($event)">
                               </ion-input>
                             </ion-item>
                             <!-- <ion-item *ngFor="let d of this.collectService.collectDiscounts">

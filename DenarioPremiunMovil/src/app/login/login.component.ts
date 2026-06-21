@@ -64,10 +64,10 @@ export class LoginComponent implements OnInit {
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
   public currentYear: number = new Date().getFullYear();
 
+  private static readonly FALLBACK_VERSION = '6.6.17';
+
   async ngOnInit() {
-    /* App.getInfo().then(async (res) => { */
-    // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.6.14";
+    this.versionApp = await this.resolveAppVersion();
 
     if (localStorage.getItem("tokenExpired") === "true") {
       localStorage.removeItem("tokenExpired");
@@ -363,6 +363,15 @@ export class LoginComponent implements OnInit {
         localStorage.removeItem("password"); */
         localStorage.removeItem("recuerdame");
       }
+    }
+  }
+
+  private async resolveAppVersion(): Promise<string> {
+    try {
+      const info = await App.getInfo();
+      return info.version?.trim() || LoginComponent.FALLBACK_VERSION;
+    } catch {
+      return LoginComponent.FALLBACK_VERSION;
     }
   }
 

@@ -190,7 +190,7 @@ export class ClientesHeaderComponent implements OnInit {
         this.messageService.alertModal(
           {
             header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
-            message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
+            message: this.clientLogic.clientTags.get('CLI_SEND_COORDENADA_MSG')!,
           }
         );
 
@@ -239,8 +239,10 @@ export class ClientesHeaderComponent implements OnInit {
     } else if (this.clientLogic.clientDocumentSaleComponent) {
       this.clientLogic.showBackRoute('clientDocumentSaleComponent');
     } else if (this.clientLogic.clientPotentialClientComponent) {
+      this.clientLogic.setNombreModulo('CLI_NOMBRE_MODULO', 'Clientes');
       this.clientLogic.showBackRoute('clientPotentialClientComponent');
     } else if (this.clientLogic.clientNewPotentialClientComponent) {
+      this.clientLogic.setNombreModulo('CLI_NOMBRE_MODULO', 'Clientes');
       this.clientLogic.showBackRoute('clientNewPotentialClientComponent');
     } else if (this.clientLogic.clientLocationChanged) {
       this.clientLogic.saveOrExitOpen = true;

@@ -12,6 +12,7 @@ import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
+import { TextService } from 'src/app/services/text/text.service';
 
 @Component({
     selector: 'product-detail',
@@ -28,6 +29,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   imageServices = inject(ImageServicesService);
   globalConfig = inject(GlobalConfigService);
   currencyService = inject(CurrencyService);
+  textService = inject(TextService);
 
   @Input()
   productDetailTags = new Map<string, string>([]);
@@ -84,7 +86,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     this.loadProductImages();
 
     this.checkReorderPrices();
-    //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
+    console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -159,6 +161,16 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     return this.currencyService.convertFrom(price, coCurrency);
   }
 
+  /**
+   * Precio visual por unidad completa (precio base * quUnit) cuando unitByPriceList.
+   */
+  getUnitPriceListDisplayPrice(basePrice: number, coUnit: string): number {
+    const unit = this.productService.catalogListaUnitInfo.find(
+      u => u.idProduct === this.pSeleccionado.idProduct && u.coUnit === coUnit
+    );
+    return basePrice * (unit?.quUnit ?? 1);
+  }
+
   detailShowsMinimumQty(idProduct: number): boolean {
     if (!this.productService.catalogHasProdMinMul(idProduct)) {
       return false;
@@ -179,6 +191,10 @@ export class ProductDetailComponent implements OnInit, OnChanges {
 
   detailMulQty(idProduct: number): number {
     return this.productService.getCatalogProdMinMul(idProduct).quMultiple;
+  }
+
+  isNotNullOrEmpty(str: string | null | undefined): boolean {
+    return !this.textService.isNull(str);
   }
 
   /*  async getProductImages() {    

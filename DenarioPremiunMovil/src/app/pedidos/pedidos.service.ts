@@ -101,8 +101,9 @@ export class PedidosService {
   public listaPedidos: ItemListaPedido[] = [];
   public listaList: List[] = [];
   public listaInfoModalList: List[] = [];
-  public listaUnitPriceList: UnitPriceList [] = [];
+  public listaUnitPriceList: UnitPriceList[] = [];
   public ivaList: IvaList[] = [];
+  public orderTypeIvaChanged$ = new Subject<void>();
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
     naLine: String,
@@ -234,6 +235,7 @@ export class PedidosService {
   public multiCurrencyOrder!: boolean;
   public userMustActivateGPS!: boolean;
   public orderTypeByEnterprise!: boolean;
+  public pricelistByOrderType!: boolean;
   public checkAddressClient!: boolean;
   public signatureOrder!: boolean;
   public disableDaDispatch!: boolean;
@@ -333,14 +335,16 @@ export class PedidosService {
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
-    this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });    
+    this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
 
     if (this.validateWarehouses) {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
     }
     if (this.userCanSelectGlobalDiscount) {
-      this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; });
+      catalogCritical.push(
+        this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; }),
+      );
     }
     if (this.userCanSelectChannel) {
       this.getOrderTypeProductStructure(idEnterprise).then(data => { this.orderTypeProductStructure = data; });
@@ -354,15 +358,15 @@ export class PedidosService {
       });
     }
 
-    if(this.priceListInfoModal){
+    if (this.priceListInfoModal) {
       //para el modal de informacion de listas de precio
-      this.getListForInfoModal(idEnterprise).then(data => { 
-      this.listaInfoModalList = data;
-      let idLists = this.listaInfoModalList.map(l => l.idList);
-      this.getPricelists(idEnterprise, idLists).then(data => { 
-        this.listaInfoModalPricelist = data; 
-      }); 
-    });
+      this.getListForInfoModal(idEnterprise).then(data => {
+        this.listaInfoModalList = data;
+        let idLists = this.listaInfoModalList.map(l => l.idList);
+        this.getPricelists(idEnterprise, idLists).then(data => {
+          this.listaInfoModalPricelist = data;
+        });
+      });
     }
 
     return Promise.all(catalogCritical).then(() => undefined);
@@ -447,6 +451,7 @@ export class PedidosService {
     this.multiCurrencyOrder = this.config.get("multiCurrencyOrder").toLowerCase() === 'true';
     this.userMustActivateGPS = this.config.get("userMustActivateGPS").toLowerCase() === 'true';
     this.orderTypeByEnterprise = this.config.get("orderTypeByEnterprise").toLowerCase() === 'true';
+    this.pricelistByOrderType = this.config.get("pricelistByOrderType").toLowerCase() === 'true';
     this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
@@ -528,6 +533,76 @@ export class PedidosService {
   }
 
 
+  private resolveDefaultIvaPrice(): number {
+    if (!this.ivaList?.length) {
+      return 0;
+    }
+    const idIvaList = this.tipoOrden?.idIvaList;
+    if (idIvaList != null) {
+      const matched = this.ivaList.find(i => Number(i.idIvaList) === Number(idIvaList));
+      if (matched) {
+        return Number(matched.priceIva);
+      }
+    }
+    const defaultEntry = this.ivaList.find(i => {
+      const raw = i.defaultIVA as boolean | number | string | undefined;
+      return raw === true || raw === 1 || raw === '1';
+    });
+    if (defaultEntry) {
+      return Number(defaultEntry.priceIva);
+    }
+    return Number(this.ivaList[0]?.priceIva ?? 0);
+  }
+
+  private shouldApplyOrderTypeIva(): boolean {
+    return !this.vatExemptProducts && (!this.openOrder || this.pedidoModificable);
+  }
+
+  private applyOrderTypeIvaToProduct(item: OrderUtil): void {
+    item.iva = this.resolveDefaultIvaPrice();
+    const base = item.discountedNuPrice > 0 ? item.discountedNuPrice : item.nuPrice;
+    item.ivaProducto = base * (item.iva / 100);
+    item.taxedNuPrice = base + item.ivaProducto;
+  }
+
+  syncOrderTypeIvaOnProducts(): void {
+    if (!this.shouldApplyOrderTypeIva()) {
+      return;
+    }
+    for (const item of this.carrito) {
+      this.applyOrderTypeIvaToProduct(item);
+    }
+    this.productSummary();
+    this.orderTypeIvaChanged$.next();
+  }
+
+  resolvePriceListFromOrderType(fallbackList: List | undefined): List | undefined {
+    if (!this.pricelistByOrderType) {
+      return fallbackList;
+    }
+    if (this.openOrder) {
+      return fallbackList;
+    }
+    const idList = this.tipoOrden?.idList;
+    if (idList == null) {
+      return fallbackList;
+    }
+    const matched = this.listaList.find(l => Number(l.idList) === Number(idList));
+    if (!matched) {
+      return fallbackList;
+    }
+    return matched;
+  }
+
+  applyOrderTypePriceList(fallbackList: List | undefined): List | undefined {
+    const resolved = this.resolvePriceListFromOrderType(fallbackList);
+    if (resolved != undefined && resolved.idList !== this.listaSeleccionada?.idList) {
+      this.listaSeleccionada = resolved;
+      this.listaPriceListFiltrada = this.listaPricelist.filter(pl => pl.idList === resolved.idList);
+    }
+    return resolved;
+  }
+
   private isDistinctItemsLimitConfigured(): boolean {
     const t = this.tipoOrden;
     if (!t || t.quItems <= 0) {
@@ -538,7 +613,7 @@ export class PedidosService {
   }
 
   private notifyIfDistinctItemsLimitJustReached(distinctNewLineAdded: boolean): void {
-    if(!this.pedidoModificable){
+    if (!this.pedidoModificable) {
       // no debe salir si ya esta enviado.
       return;
     }
@@ -551,7 +626,7 @@ export class PedidosService {
     }
     this.message.transaccionMsjModalNB(
       this.getTag('PED_LIMITE_ITEMS_TOPE_ALCANZADO') +
-        `${this.carrito.length}/${t.quItems}.`,
+      `${this.carrito.length}/${t.quItems}.`,
     );
   }
 
@@ -638,8 +713,11 @@ export class PedidosService {
 
       const sub = this.carrito.filter(p => p.idProduct == item.idProduct);
       if (sub.length > 0) {
-        //si esta en el carrito, simplemente sustituimos
-        orderUtils.push(sub[0]);
+        const cartItem = sub[0];
+        if (this.shouldApplyOrderTypeIva()) {
+          this.applyOrderTypeIvaToProduct(cartItem);
+        }
+        orderUtils.push(cartItem);
       } else {
         const prod = this.listaProductos.find((p => p.idProduct == item.idProduct));
         if (prod == undefined) {
@@ -659,6 +737,9 @@ export class PedidosService {
           if (!unit) {
             unit = unitInfo[0];
             console.log('producto ' + item.naProduct + ' no tiene unidad primaria valida ' + prod.coPrimaryUnit);
+          }
+          if (this.unitByPriceList) {
+            this.applyUnitPriceListFields(item.idProduct, unitInfo);
           }
         };
         //LISTA DE PRECIOS
@@ -688,7 +769,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
-        var nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [];
+        var nuPriceList: { idList: number, naList: string, nuPrice: number, coUnit: string }[] = [];
         if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
@@ -715,17 +796,17 @@ export class PedidosService {
             continue;
           }
         }
-        let listaModalList: {list: List, pricelist: PriceList}[] = [];
-        if(this.priceListInfoModal && this.listaInfoModalPricelist.length > 0){
+        let listaModalList: { list: List, pricelist: PriceList }[] = [];
+        if (this.priceListInfoModal && this.listaInfoModalPricelist.length > 0) {
           let modalPl = this.listaInfoModalPricelist.filter(pl => pl.idProduct == item.idProduct);
           modalPl.forEach(pl => {
             let list = this.listaInfoModalList.filter(l => l.idList == pl.idList)[0];
-            if(list){
-              listaModalList.push({list: list, pricelist: pl});
+            if (list) {
+              listaModalList.push({ list: list, pricelist: pl });
             }
           });
         }
-        if(this.unitByPriceList){
+        if (this.unitByPriceList) {
           //llenamos la lista a mostrar en el producto.
           priceLists.forEach(pl => {
             let list = this.listaList.filter(l => l.idList == pl.idList)[0];
@@ -734,13 +815,13 @@ export class PedidosService {
             let naUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
             let coUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
 
-            if(list){
+            if (list) {
               nuPriceList.push({
-                                idList: list.idList, 
-                                naList: list.naList, 
-                                nuPrice: pl.nuPrice,
-                                coUnit: coUnit
-                              });
+                idList: list.idList,
+                naList: list.naList,
+                nuPrice: pl.nuPrice,
+                coUnit: coUnit
+              });
             }
           });
         }
@@ -753,9 +834,8 @@ export class PedidosService {
           ivaProducto = price * item.nuTax / 100;
           iva = item.nuTax;
         } else {
-          //viene de la lista de iva
-          iva = this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
-            ivaProducto = price * iva / 100;
+          iva = this.resolveDefaultIvaPrice();
+          ivaProducto = price * iva / 100;
         }
         //STOCK Y WAREHOUSES
         const stockList = this.listaStock.filter(s => s.idProduct == item.idProduct);
@@ -768,13 +848,13 @@ export class PedidosService {
         //si el usuario no puede cambiar el warehouse,
         //se queda con el del cliente aunque no tenga stock
         if (stock == null || stock == undefined) {
-          if(this.userCanChangeWarehouse){
+          if (this.userCanChangeWarehouse) {
             stock = stockList[0];
-          }else{
+          } else {
             console.log('stock del cliente no encontrado para producto ' + item.naProduct);
             continue;
           }
-          
+
         }
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
@@ -906,8 +986,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
+          "nuAmountTax": 0,
           "listaModalList": listaModalList,
-          "nuPriceList": nuPriceList
+          "nuPriceList": nuPriceList,
 
         }
         orderUtils.push(ou);
@@ -956,6 +1037,7 @@ export class PedidosService {
 
     for (let i = 0; i < this.carrito.length; i++) {
       const item = this.carrito[i];
+      this.syncUnitPriceListFields(item);
 
       //casos MINMULFAV
       if (this.productMinMul) {
@@ -1092,17 +1174,25 @@ export class PedidosService {
         item.discountedNuPrice = item.nuPrice;
       }
 
+      if (this.userCanSelectGlobalDiscount && this.dctoGlobal) {
+        const lineGlobalDc = curItem * (this.dctoGlobal / 100);
+        this.totalGlobalDc = this.totalGlobalDc + lineGlobalDc;
+        curItem = curItem - lineGlobalDc;
+      }
+
       this.finalPedido = this.finalPedido + curItem;
 
       //IVA
       iva = 0;
       ivaItem = 0;
+      item.nuAmountTax = 0;
       if (this.vatExemptProducts && item.nuTax != null) {
         item.iva = item.nuTax;
       }
       if (item.iva != null) {
         iva = item.iva;
         ivaItem = curItem * (iva / 100);
+        item.nuAmountTax = ivaItem;
         curItem = curItem + ivaItem;
         this.orderIVA += ivaItem;
         if (item.discountedNuPrice && item.discountedNuPrice > 0) {
@@ -1116,11 +1206,6 @@ export class PedidosService {
       }
       item.subtotal = curItem;
       this.totalPedido = this.totalPedido + curItem;
-
-      //dcto global
-      if (this.userCanSelectGlobalDiscount && this.dctoGlobal) {
-        item.subtotal = item.subtotal - (item.subtotal * (this.dctoGlobal / 100));
-      }
 
       //conversion
       if (this.currencyService.multimoneda) {
@@ -1171,13 +1256,6 @@ export class PedidosService {
       }
 
     }//fin for(carrito)
-
-    //descuento global
-    if (this.userCanSelectGlobalDiscount && this.dctoGlobal) {
-      this.totalGlobalDc = this.finalPedido * (this.dctoGlobal / 100);
-      this.finalPedido = this.finalPedido - this.totalGlobalDc;
-      this.totalPedido = this.totalPedido - (this.totalPedido * (this.dctoGlobal / 100));
-    }
 
     if (this.currencyService.multimoneda) {
       if (this.pedidoModificable) {
@@ -1312,6 +1390,66 @@ export class PedidosService {
       : this.conversionCurrency(plRow.nuPrice, plRow.coCurrency);
   }
 
+  /**
+   * Lista de precios por unidad (solo cuando unitByPriceList está activo).
+   */
+  private resolveUnitPriceListFields(
+    idProduct: number,
+    unit: UnitInfo,
+  ): { coPriceList: string; idPriceList: number } {
+    const upl = this.listaUnitPriceList.find(u => u.idUnit === unit.idUnit);
+    if (!upl) {
+      return { coPriceList: '', idPriceList: 0 };
+    }
+    const plRow = this.listaPricelist.find(
+      p => p.idProduct === idProduct && p.idList === upl.idList,
+    );
+    if (!plRow) {
+      return { coPriceList: '', idPriceList: 0 };
+    }
+    return { coPriceList: plRow.coPriceList, idPriceList: plRow.idPriceList };
+  }
+
+  /**
+   * coPriceList/idPriceList para order_detail_units.
+   * unitByPriceList=true → lista por unidad; false → hereda order_detail (item del carrito).
+   */
+  buildOrderDetailUnitPriceListFields(
+    item: OrderUtil,
+    unit: UnitInfo,
+  ): { coPriceList: string; idPriceList: number } {
+    if (this.unitByPriceList) {
+      return this.resolveUnitPriceListFields(item.idProduct, unit);
+    }
+    return {
+      coPriceList: item.coPriceList ?? '',
+      idPriceList: item.idPriceList ?? 0,
+    };
+  }
+
+  /** Sincroniza coPriceList/idPriceList en unitList antes de totalizar o persistir. */
+  syncUnitPriceListFields(item: OrderUtil): void {
+    if (!item.unitList?.length) {
+      return;
+    }
+    if (this.unitByPriceList) {
+      this.applyUnitPriceListFields(item.idProduct, item.unitList);
+      return;
+    }
+    for (const unit of item.unitList) {
+      unit.coPriceList = item.coPriceList ?? '';
+      unit.idPriceList = item.idPriceList ?? 0;
+    }
+  }
+
+  private applyUnitPriceListFields(idProduct: number, unitList: UnitInfo[]): void {
+    for (const unit of unitList) {
+      const fields = this.resolveUnitPriceListFields(idProduct, unit);
+      unit.coPriceList = fields.coPriceList;
+      unit.idPriceList = fields.idPriceList;
+    }
+  }
+
   conversionCurrency(price: number, coCurrency: string) {
     /*
      * Convierte los precios de los productos a la moneda del pedido para usar con
@@ -1401,6 +1539,14 @@ export class PedidosService {
 
   getGlobalDiscounts() {
     return this.db.getGlobalDiscounts(this.database, this.getTag('PED_NO_DC'));
+  }
+
+  resolveSavedGlobalDiscount(nuDiscount: number | null | undefined): number {
+    const saved = Number(nuDiscount ?? 0);
+    const match = this.listaGlobalDiscount.find(
+      (g) => Number(g.globalDiscount) === saved,
+    );
+    return match ? Number(match.globalDiscount) : saved;
   }
 
   getPaymentConditions(idEnterprise: number) {
@@ -1680,6 +1826,7 @@ export class PedidosService {
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
     this.listaSeleccionada = this.datosPedidoSugerido.list;
+    this.tipoOrden = this.listaOrderTypes[0];
 
     //buscamos los promedios de ese cliente:
     /*esto lo calculo en inventario-logic, para mostrarlo en el modal de totales de inventario
@@ -1691,161 +1838,163 @@ export class PedidosService {
       */
 
     const orderUtils = await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList);
-      let details: OrderDetail[] = [];
-      let pedido: Orders = {
-        "idOrder": 0,
-        "coOrder": coOrder,
-        "coClient": cliente.coClient,
-        "idClient": cliente.idClient,
-        "daOrder": this.dateService.hoyISOFullTime(),
-        "daCreated": this.dateService.hoyISOFullTime(),
-        "naResponsible": "",
-        "idUser": this.getIdUser(),
-        "idOrderCreator": this.getIdUser(),
-        "inOrderReview": false,
-        "nuAmountTotal": 0,
-        "nuAmountFinal": 0,
-        "coCurrency": this.monedaSeleccionada.coCurrency,
-        "daDispatch": this.dateService.hoyISO(),
-        "txComment": this.getTag('INV_PED_SUG'),
-        "nuPurchase": "",
-        "coEnterprise": this.empresaSeleccionada.coEnterprise,
-        "coUser": this.getCoUser(),
-        "coPaymentCondition": cliente.coPaymentCondition,
-        "idPaymentCondition": cliente.idPaymentCondition,
-        "idEnterprise": this.empresaSeleccionada.idEnterprise,
-        "coAddress": direccion.coAddress,
-        "idAddress": direccion.idAddress,
-        "nuAmountDiscount": 0,
-        "nuAmountTotalBase": 0,
-        "stOrder": VISIT_STATUS_SAVED,
-        "coordenada": this.coordenadas,
-        "nuDiscount": 0,
-        "idCurrency": this.monedaSeleccionada.idCurrency,
-        "idCurrencyConversion": this.currencyService.getOppositeCurrency(this.monedaSeleccionada.coCurrency).idCurrency,
-        "nuValueLocal": this.currencyService.localValue,
-        "nuAmountTotalConversion": 0,
-        "nuAmountFinalConversion": 0,
-        "procedencia": "Denario",
-        "nuAmountTotalBaseConversion": 0,
-        "nuAmountDiscountConversion": 0,
-        "idOrderType": this.listaOrderTypes[0].idOrderType,
-        "orderDetails": details,
-        "nuDetails": 0,
-        "nuAmountTotalProductDiscount": 0,
-        "nuAmountTotalProductDiscountConversion": 0,
-        "hasAttachments": false,
-        "nuAttachments": 0,
-        "idDistributionChannel": null,
-        "coDistributionChannel": null,
-        "idClientStock": null,
-        "coClientStock": null,
-        "stDelivery": DELIVERY_STATUS_NEW
-      }
+    let details: OrderDetail[] = [];
+    let pedido: Orders = {
+      "idOrder": 0,
+      "coOrder": coOrder,
+      "coClient": cliente.coClient,
+      "idClient": cliente.idClient,
+      "daOrder": this.dateService.hoyISOFullTime(),
+      "daCreated": this.dateService.hoyISOFullTime(),
+      "naResponsible": "",
+      "idUser": this.getIdUser(),
+      "idOrderCreator": this.getIdUser(),
+      "inOrderReview": false,
+      "nuAmountTotal": 0,
+      "nuAmountFinal": 0,
+      "coCurrency": this.monedaSeleccionada.coCurrency,
+      "daDispatch": this.dateService.hoyISO(),
+      "txComment": this.getTag('INV_PED_SUG'),
+      "nuPurchase": "",
+      "coEnterprise": this.empresaSeleccionada.coEnterprise,
+      "coUser": this.getCoUser(),
+      "coPaymentCondition": cliente.coPaymentCondition,
+      "idPaymentCondition": cliente.idPaymentCondition,
+      "idEnterprise": this.empresaSeleccionada.idEnterprise,
+      "coAddress": direccion.coAddress,
+      "idAddress": direccion.idAddress,
+      "nuAmountDiscount": 0,
+      "nuAmountTotalBase": 0,
+      "stOrder": VISIT_STATUS_SAVED,
+      "coordenada": this.coordenadas,
+      "nuDiscount": 0,
+      "idCurrency": this.monedaSeleccionada.idCurrency,
+      "idCurrencyConversion": this.currencyService.getOppositeCurrency(this.monedaSeleccionada.coCurrency).idCurrency,
+      "nuValueLocal": this.currencyService.localValue,
+      "nuAmountTotalConversion": 0,
+      "nuAmountFinalConversion": 0,
+      "procedencia": "Denario",
+      "nuAmountTotalBaseConversion": 0,
+      "nuAmountDiscountConversion": 0,
+      "idOrderType": this.listaOrderTypes[0].idOrderType,
+      "orderDetails": details,
+      "nuDetails": 0,
+      "nuAmountTotalProductDiscount": 0,
+      "nuAmountTotalProductDiscountConversion": 0,
+      "hasAttachments": false,
+      "nuAttachments": 0,
+      "idDistributionChannel": null,
+      "coDistributionChannel": null,
+      "idClientStock": null,
+      "coClientStock": null,
+      "stDelivery": DELIVERY_STATUS_NEW
+    }
 
-      for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {
-        let product = this.datosPedidoSugerido.productUtils[i];
-        let item = orderUtils.filter(x => x.idProduct == product.idProduct)[0];
-        let detailUnits: OrderDetailUnit[] = [];
-        let coOrderDetail = this.dateService.generateCO(i);
-        if ((item != undefined) && (item.nuPrice > 0)) {
-          for (let j = 0; j < item.unitList.length; j++) {
-            let unit = item.unitList[j];
-            let suggestedUnit = this.datosPedidoSugerido.productUtils[i].unitsSuggested.filter(u => u.coUnit == unit.coUnit)[0];
-            
-            let quOrder = suggestedUnit ? suggestedUnit.quUnitSuggested : 0;
-            if(quOrder == 0){
-              continue; //si no hay cantidad sugerida, no agregamos la unidad al pedido
-            }
-            let quSuggested = 0;
-            if (item.quMultiple > 1) {
-              //caso productMinMul
-              let n = quOrder % item.quMultiple;
-              if (quOrder < item.quMinimum) {
-                quOrder = item.quMinimum;
-              } else {
-                quSuggested = item.quMultiple - n + quOrder;
-              }
-            }
-            quSuggested = quOrder;
+    for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {
+      let product = this.datosPedidoSugerido.productUtils[i];
+      let item = orderUtils.filter(x => x.idProduct == product.idProduct)[0];
+      let detailUnits: OrderDetailUnit[] = [];
+      let coOrderDetail = this.dateService.generateCO(i);
+      if ((item != undefined) && (item.nuPrice > 0)) {
+        for (let j = 0; j < item.unitList.length; j++) {
+          let unit = item.unitList[j];
+          let suggestedUnit = this.datosPedidoSugerido.productUtils[i].unitsSuggested.filter(u => u.coUnit == unit.coUnit)[0];
 
-
-            let detailunit: OrderDetailUnit = {
-              "idOrderDetailUnit": 0,
-              "coOrderDetailUnit": this.dateService.generateCO((10 * i) + j),
-              "coOrderDetail": coOrderDetail,
-              "coProductUnit": unit.coProductUnit,
-              "idProductUnit": unit.idProductUnit,
-              "quOrder": quSuggested,
-              "coEnterprise": this.empresaSeleccionada.coEnterprise,
-              "idEnterprise": this.empresaSeleccionada.idEnterprise,
-              "coUnit": unit.coUnit,
-              "quSuggested": quSuggested
-            }
-
-            detailUnits.push(detailunit);
+          let quOrder = suggestedUnit ? suggestedUnit.quUnitSuggested : 0;
+          if (quOrder == 0) {
+            continue; //si no hay cantidad sugerida, no agregamos la unidad al pedido
           }
-          let detail: OrderDetail = {
-            "idOrderDetail": 0,
+          let quSuggested = 0;
+          if (item.quMultiple > 1) {
+            //caso productMinMul
+            let n = quOrder % item.quMultiple;
+            if (quOrder < item.quMinimum) {
+              quOrder = item.quMinimum;
+            } else {
+              quSuggested = item.quMultiple - n + quOrder;
+            }
+          }
+          quSuggested = quOrder;
+
+
+          let detailunit: OrderDetailUnit = {
+            "idOrderDetailUnit": 0,
+            "coOrderDetailUnit": this.dateService.generateCO((10 * i) + j),
             "coOrderDetail": coOrderDetail,
-            "coOrder": coOrder,
-            "coProduct": item.coProduct,
-            "naProduct": item.naProduct,
-            "idProduct": product.idProduct,
-            "nuPriceBase": item.nuPrice,
-            "nuAmountTotal": 0,
-            "coWarehouse": item.coWarehouse,
-            "idWarehouse": item.idWarehouse,
-            "quSuggested": 0,
+            "coProductUnit": unit.coProductUnit,
+            "idProductUnit": unit.idProductUnit,
+            "quOrder": quSuggested,
             "coEnterprise": this.empresaSeleccionada.coEnterprise,
             "idEnterprise": this.empresaSeleccionada.idEnterprise,
-            "iva": item.iva,
-            "nuDiscountTotal": 0,
-            "coDiscount": "",
-            "idDiscount": 0,
-            "coPriceList": item.coPriceList,
-            "idPriceList": item.idPriceList,
-            "posicion": i,
-            "nuPriceBaseConversion": item.oppositeNuPrice,
-            "nuDiscountTotalConversion": 0,
-            "nuAmountTotalConversion": 0,
-            "orderDetailUnit": detailUnits,
-            "orderDetailDiscount": []
+            "coUnit": unit.coUnit,
+            "quSuggested": quSuggested,
+            ...this.buildOrderDetailUnitPriceListFields(item, unit),
           }
-          details.push(detail);
-        } else {
-          errorMsgFlag = true;
+
+          detailUnits.push(detailunit);
         }
+        let detail: OrderDetail = {
+          "idOrderDetail": 0,
+          "coOrderDetail": coOrderDetail,
+          "coOrder": coOrder,
+          "coProduct": item.coProduct,
+          "naProduct": item.naProduct,
+          "idProduct": product.idProduct,
+          "nuPriceBase": item.nuPrice,
+          "nuAmountTotal": 0,
+          "coWarehouse": item.coWarehouse,
+          "idWarehouse": item.idWarehouse,
+          "quSuggested": 0,
+          "coEnterprise": this.empresaSeleccionada.coEnterprise,
+          "idEnterprise": this.empresaSeleccionada.idEnterprise,
+          "iva": item.iva,
+          "nuDiscountTotal": 0,
+          "coDiscount": "",
+          "idDiscount": 0,
+          "coPriceList": item.coPriceList,
+          "idPriceList": item.idPriceList,
+          "posicion": i,
+          "nuPriceBaseConversion": item.oppositeNuPrice,
+          "nuDiscountTotalConversion": 0,
+          "nuAmountTotalConversion": 0,
+          "nuAmountTax": 0,
+          "orderDetailUnit": detailUnits,
+          "orderDetailDiscount": []
+        }
+        details.push(detail);
+      } else {
+        errorMsgFlag = true;
       }
-      pedido.orderDetails = details;
-      pedido.nuDetails = details.length;
-      const idCsSuggest = this.datosPedidoSugerido.idClientStock;
-      const coCsSuggest = this.datosPedidoSugerido.coClientStock;
-      pedido.coClientStock = coCsSuggest ? coCsSuggest : null;
-      pedido.idClientStock =
-        idCsSuggest != null && typeof idCsSuggest === 'number' && idCsSuggest > 0 ? idCsSuggest : null;
+    }
+    pedido.orderDetails = details;
+    pedido.nuDetails = details.length;
+    const idCsSuggest = this.datosPedidoSugerido.idClientStock;
+    const coCsSuggest = this.datosPedidoSugerido.coClientStock;
+    pedido.coClientStock = coCsSuggest ? coCsSuggest : null;
+    pedido.idClientStock =
+      idCsSuggest != null && typeof idCsSuggest === 'number' && idCsSuggest > 0 ? idCsSuggest : null;
 
-      if (pedido.coClientStock) {
-        await this.database.executeSql(
-          'UPDATE client_stocks SET co_order = ?, id_order = ? WHERE co_client_stock = ?',
-          [pedido.coOrder, pedido.idOrder ?? 0, pedido.coClientStock],
-        ).catch(err => console.log('[sugerirPedido] vínculo inventario:', err));
-      }
+    if (pedido.coClientStock) {
+      await this.database.executeSql(
+        'UPDATE client_stocks SET co_order = ?, id_order = ? WHERE co_client_stock = ?',
+        [pedido.coOrder, pedido.idOrder ?? 0, pedido.coClientStock],
+      ).catch(err => console.log('[sugerirPedido] vínculo inventario:', err));
+    }
 
-      this.order = pedido;
-      //reseteamos al estado natural
-      //this.desdeSugerencia = false;
-      if (this.datosPedidoSugerido.enviar) {
-        //para enviarlo luego
-        this.coClientStockAEnviar = this.datosPedidoSugerido.coClientStock;
-        this.idClientStockAEnviar = this.datosPedidoSugerido.idClientStock;
-      }
-      this.datosPedidoSugerido = {} as SugerenciaPedido;
+    this.order = pedido;
+    //reseteamos al estado natural
+    //this.desdeSugerencia = false;
+    if (this.datosPedidoSugerido.enviar) {
+      //para enviarlo luego
+      this.coClientStockAEnviar = this.datosPedidoSugerido.coClientStock;
+      this.idClientStockAEnviar = this.datosPedidoSugerido.idClientStock;
+    }
+    this.datosPedidoSugerido = {} as SugerenciaPedido;
 
 
-      if (errorMsgFlag) {
-        this.message.transaccionMsjModalNB(this.getTag('PED_ERROR_SUGERIR'));
-      }
+    if (errorMsgFlag) {
+      this.message.transaccionMsjModalNB(this.getTag('PED_ERROR_SUGERIR'));
+    }
 
   }
 
@@ -1883,7 +2032,7 @@ export class PedidosService {
     }
   }
 
-  updateStocks(order: Orders){
+  updateStocks(order: Orders) {
     //actualiza los stocks de los productos del pedido, se usa para actualizar el stock luego de enviar un pedido
     let stocksToUpdate: Stock[] = [];
     for (let i = 0; i < order.orderDetails.length; i++) {
@@ -1893,12 +2042,12 @@ export class PedidosService {
         let stockToUpdate = this.listaStock.find(s => s.idWarehouse == detail.idWarehouse && s.idProduct == detail.idProduct && s.idEnterprise == detail.idEnterprise && s.coUnit == unit.coUnit);
         if (stockToUpdate) {
           let quStock = stockToUpdate.quStock - unit.quOrder;
-          if(quStock <= 0){
+          if (quStock <= 0) {
             quStock = 0;
           }
           stockToUpdate.quStock = quStock;
           stocksToUpdate.push(stockToUpdate);
-        }    
+        }
       }
     }
     return this.dbServ.insertStockBatch(stocksToUpdate);

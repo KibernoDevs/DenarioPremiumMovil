@@ -16,7 +16,7 @@
 
   <!--  Listado clickeable de productos  -->
 
-  <ion-content class="product-card cardProduct">
+  <div class="product-card cardProduct product-structure-scroll ion-content-scroll-host">
     @if(noProductsAlertShown){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
@@ -83,9 +83,7 @@
             }
             }
             @if(orderServ.showStock){
-            <p>{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ?
-              quStock(product) :
-              0 }}</p>
+            <p>{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ getDisplayedRemainingStock(product) }}</p>
             }
 
 
@@ -112,7 +110,7 @@
                 <ion-input #quAmountInput type="number" [label]="orderServ.getTag('PED_CANTIDAD')+':'"
                   [(ngModel)]="product.quAmount" labelPlacement="floating" fill="outline"
                   [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'" [inputmode]=quInputMode
-                  (ionChange)="onProductQuantityChange(product)" (ionInput)="onProductQuantityInput(product)"
+                  (ionChange)="onProductQuantityChange(product)" (ionInput)="onProductQuantityInput(product, $event)"
                   [clearOnEdit]="true">
                 </ion-input>
               </ion-col>
@@ -167,7 +165,7 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select [value]="product.iva" interface="popover" labelPlacement="stacked"
+                  <ion-select [value]="product.iva" [compareWith]="compareIvaPrice" interface="popover" labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                     (ionChange)="onSelectIVA($event, product)">
                     <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva
@@ -249,7 +247,7 @@
         loadingSpinner="bubbles"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-  </ion-content>
+  </div>
   <!-- modal de detalle de producto -->
   <ion-modal [isOpen]="detailModal" (didDismiss)="showDetailModal(false)">
     <ng-template>
@@ -326,9 +324,7 @@
                   }
                   @if(orderServ.showStock){
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{
-                    productoModal.quStock
-                    > 0 ? quStock(productoModal) :
-                    0 }}</p>}
+                    getDisplayedRemainingStock(productoModal) }}</p>}
 
                 </ion-col>
               </ion-row>
@@ -349,7 +345,7 @@
                       labelPlacement="floating" fill="outline"
                       [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'" [inputmode]=quInputMode
                       (ionChange)="onProductQuantityChange(productoModal)"
-                      (ionInput)="onProductQuantityInput(productoModal)" [clearOnEdit]="true"></ion-input>
+                      (ionInput)="onProductQuantityInput(productoModal, $event)" [clearOnEdit]="true"></ion-input>
                   </ion-col>
                   <!-- LISTA DE PRECIOS -->
                   <ion-col size="12" size-sm="12" size-xs="12">
@@ -396,7 +392,7 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
+                      <ion-select [value]="productoModal.iva" [compareWith]="compareIvaPrice" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                         (ionChange)="onSelectIVA($event, productoModal)">
                         <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva

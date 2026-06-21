@@ -1,6 +1,6 @@
 <ion-item-divider sticky>
     <div class="cobroComponent" sticky-below-view>
-        <ion-segment value="default" [(ngModel)]="segment" scrollable>
+        <ion-segment value="default" [(ngModel)]="segment" scrollable (ionChange)="onSegmentChange($event)">
             <ion-segment-button value="default" (click)="onChangeTab(segment)">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_GENERAL')}}</ion-label>
             </ion-segment-button>
@@ -37,15 +37,10 @@
         <app-cobro-general></app-cobro-general>
     </div>
 
-    <!-- Pestana documentos-->
-    <div *ngSwitchCase="'documentos'">
-        <app-cobro-documents></app-cobro-documents>
-    </div>
-
     <!-- Pestana Pagos-->
-    <ion-grid *ngSwitchCase="'pagos'">
+    <div *ngSwitchCase="'pagos'" class="cobro-tab-pagos">
         <app-cobro-pagos></app-cobro-pagos>
-    </ion-grid>
+    </div>
 
     <!-- Pestana Total -->
     <div *ngSwitchCase="'total'">
@@ -67,3 +62,9 @@
         </ng-template>
     </ion-modal>
 </div>
+
+@if (documentsTabMounted) {
+    <div [hidden]="segment !== 'documentos'" class="cobro-tab-panel">
+        <app-cobro-documents #cobroDocuments></app-cobro-documents>
+    </div>
+}

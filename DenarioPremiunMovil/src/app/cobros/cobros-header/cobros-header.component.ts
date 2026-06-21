@@ -89,6 +89,7 @@ export class CobrosHeaderComponent implements OnInit {
           this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
             console.log(response);
+            this.collectService.applyPersistSucceededBaseline();
             this.collectService.initCollect = true;
             this.collectService.disableSavedButton = true;
             this.collectService.disableSendButton = true;
@@ -113,6 +114,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.collectValid = false;
         this.collectService.collectionIsSave = false;
         this.collectService.newCollect = false;
+        this.collectService.resetCollectionExitBaseline();
         this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!
 
         this.collectService.showBackRoute('cobros');
@@ -164,7 +166,7 @@ export class CobrosHeaderComponent implements OnInit {
     });
 
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      //this.setChangesMade(true);
+      this.collectService.markCollectionDirty();
       this.collectService.validateToSend();
       this.collectService.disableSavedButton = this.collectService.disableSendButton;
     });
@@ -213,21 +215,30 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SAVED && this.collectService.collection.stDelivery != 6 && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SENT) {
-      this.collectService.saveOrExitOpen = true;
+    } else if (this.collectService.cobroComponent) {
+      if (this.collectService.shouldPromptCollectionExitSaveOrDiscard()) {
+        this.collectService.saveOrExitOpen = true;
+      } else {
+        this.exitCollectionWithoutSave();
+      }
     } else {
-      this.collectService.collectValid = false;
-      this.collectService.collectionIsSave = false;
-      this.collectService.coTypeModule = '0';
-      this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!;
-      this.collectService.isAnticipo = false;
-      this.collectService.isRetention = false;
-      this.collectService.hideDocuments = false;
-      this.collectService.hidePayments = false;
-      this.collectService.newCollect = false;
-      this.resetValues();
-      this.collectService.showBackRoute('cobros');
+      this.exitCollectionWithoutSave();
     }
+  }
+
+  private exitCollectionWithoutSave(): void {
+    this.collectService.collectValid = false;
+    this.collectService.collectionIsSave = false;
+    this.collectService.coTypeModule = '0';
+    this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!;
+    this.collectService.isAnticipo = false;
+    this.collectService.isRetention = false;
+    this.collectService.hideDocuments = false;
+    this.collectService.hidePayments = false;
+    this.collectService.newCollect = false;
+    this.collectService.resetCollectionExitBaseline();
+    this.resetValues();
+    this.collectService.showBackRoute('cobros');
   }
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
@@ -280,15 +291,7 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendOrSave(sendOrSave: boolean) {
-    if (this.collectService.collection.coType == "2" && sendOrSave) {
-      //ES RETENCION, SE DEBE BUSCAR SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
-      //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
-      if (!this.adjuntoService.hasItems()) {
-        //NO HAY ADJUNTOS
-        this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
-        return;
-      }
-    }
+   
     if (this.collectService.collection.coType == "0" && sendOrSave) {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
@@ -329,6 +332,24 @@ export class CobrosHeaderComponent implements OnInit {
         console.error('CobrosHeader: error comprobando retenciones en collectionDetails', err);
       }
     }
+    
+    if (this.collectService.collection.coType == "1" && sendOrSave) {
+      if (this.collectService.requiredAnticipoAttachments) {
+        if (!this.adjuntoService.hasItems()) {
+          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS')!);
+          return;
+        }
+      }
+    }
+
+    if (this.collectService.collection.coType == "2" && sendOrSave) {
+      if (this.collectService.requiredRetentionAttachments) {
+        if (!this.adjuntoService.hasItems()) {
+          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
+          return;
+        }
+      }
+    }
 
     this.collectService.collectionIsSave = true;
     this.messageService.showLoading().then(() => {
@@ -339,25 +360,28 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(response => {
           this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros").then(() => {
             console.log(response);
+            this.collectService.applyPersistSucceededBaseline();
             this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-            if (this.collectService.createAutomatedPrepaid) {
-              //DEBO CREAR EL ANTICIPO AUTOMATICO
-              this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
-                console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
-                this.collectService.createAutomatedPrepaid = false;
-                this.collectService.anticipoAutomatico = [];
-              });
-            }
+            this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
+              if (shouldCreatePrepaid) {
+                //DEBO CREAR EL ANTICIPO AUTOMATICO
+                this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
+                  console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
+                  this.collectService.createAutomatedPrepaid = false;
+                  this.collectService.anticipoAutomatico = [];
+                });
+              }
 
-            this.collectService.initCollect = true;
-            this.collectService.disableSavedButton = true;
-            this.collectService.disableSendButton = true;
-            this.collectService.showHeaderButtons = false;
-            this.collectService.cobroComponent = false;
-            this.collectService.cobrosComponent = true;
-            this.collectService.collectValid = false;
-            this.collectService.collectionIsSave = false;
-            this.messageService.hideLoading();
+              this.collectService.initCollect = true;
+              this.collectService.disableSavedButton = true;
+              this.collectService.disableSendButton = true;
+              this.collectService.showHeaderButtons = false;
+              this.collectService.cobroComponent = false;
+              this.collectService.cobrosComponent = true;
+              this.collectService.collectValid = false;
+              this.collectService.collectionIsSave = false;
+              this.messageService.hideLoading();
+            });
           })
 
 
@@ -369,6 +393,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
+          this.collectService.applyPersistSucceededBaseline();
           this.saveSendNewCollection(false, this.collectService.collection.coCollection);
           switch (this.collectService.collection.coType) {
             case "0": {

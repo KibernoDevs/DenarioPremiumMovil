@@ -169,6 +169,7 @@ export class CobrosListComponent implements OnInit {
 
   openCollect(coCollection: string, index: number) {
     this.messageService.showLoading().then(() => {
+      this.collectService.pauseCollectionDirtyTracking();
       this.enterpriseServ.setup(this.synchronizationServices.getDatabase()).then(() => {
         this.collectService.enterpriseList = this.enterpriseServ.empresas;
         this.collectService.collection = {} as Collection;
@@ -176,6 +177,10 @@ export class CobrosListComponent implements OnInit {
         this.collectService.documentSales = [] as DocumentSale[];
         this.collectService.documentSalesBackup = [] as DocumentSale[];
         this.collectService.mapDocumentsSales.clear();
+        this.collectService.createAutomatedPrepaid = false;
+        this.collectService.anticipoAutomatico = [];
+        this.collectService.montoTotalPagado = 0;
+        this.collectService.montoTotalPagar = 0;
         this.collectService.coTypeModule = this.collectService.collection.coType.toString();
         this.collectService.cobroValid = true;
 
@@ -234,7 +239,12 @@ export class CobrosListComponent implements OnInit {
           this.collectService.collection.coordenada = this.coordenada;
         }
 
-        this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
+        this.collectService.getCollection(this.synchronizationServices.getDatabase(), coCollection).then(persistedCollection => {
+          if (persistedCollection?.coCollection) {
+            this.collectService.mergePersistedCollectionIgtfFields(persistedCollection);
+          }
+
+          this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
           this.collectService.getCollectionDetailsDiscounts(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsDiscounts => {
 
@@ -265,9 +275,11 @@ export class CobrosListComponent implements OnInit {
               this.collectService.isOpenCollect = true;
               this.collectService.cobroListComponent = false;
               this.collectService.cobroComponent = true;
+              this.collectService.markCollectionOpenedFromPersistedCopy();
               this.messageService.hideLoading();
             })
           })
+        });
         });
       })
     });

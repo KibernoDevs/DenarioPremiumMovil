@@ -33,6 +33,7 @@ import { ClientLocationComponent } from 'src/app/clientes/client-container/clien
 import { SelectedClient } from 'src/app/modelos/selectedClient';
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 
 
 @Component({
@@ -137,7 +138,8 @@ export class VisitaComponent implements OnInit {
       this.disabledButtonViewRoute = true;
     } else
       this.disabledButtonViewRoute = true;
-    this.nombreCliente = client.lbClient;
+    this.nombreCliente = client.naClient || client.lbClient;
+    this.cliente.naClient = client.naClient || client.lbClient;
   });
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
@@ -376,18 +378,24 @@ export class VisitaComponent implements OnInit {
       //en este caso no se puede continuar si no hay coordenadas
       this.geoServ.getCurrentPosition().then(coords => {
         if (coords.length > 0) {
+          const fechaInicio = this.dateServ.hoyISOFullTime();
+          this.fechaVisita = fechaInicio;
+          this.fechaInitial = fechaInicio;
 
           this.segment = 'actividades';
+          this.setCoordinates(coords);
         } else {
           console.log("no hay coordenadas, locacion debe estar inactiva");
           this.initialLock = true;
           this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
           this.initVisitRedLabel = true;
         }
-        this.setCoordinates(coords);
       });
     } else {
       //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.
+      const fechaInicio = this.dateServ.hoyISOFullTime();
+      this.fechaVisita = fechaInicio;
+      this.fechaInitial = fechaInicio;
       this.initialLock = false;
       this.segment = 'actividades';
       this.geoServ.getCurrentPosition().then(coords => {
@@ -426,7 +434,8 @@ export class VisitaComponent implements OnInit {
         this.clienteAnterior = cliente;
         this.clientRedLabel = false;
       }
-      this.nombreCliente = cliente.lbClient;
+      this.nombreCliente = cliente.naClient || cliente.lbClient;
+      this.cliente.naClient = cliente.naClient || cliente.lbClient;
       this.setChangesMade(true);
 
       let idAddressClients: number;
@@ -573,6 +582,10 @@ export class VisitaComponent implements OnInit {
 
   getTag(tagName: string) {
     return this.visitServ.getTag(tagName)
+  }
+
+  get clienteTabLabel(): string {
+    return formatClientForTab(this.nombreCliente, this.cliente?.coClient);
   }
 
   resetEventSelect() {
@@ -753,7 +766,7 @@ export class VisitaComponent implements OnInit {
   }
 
   saveEvent() {
-    
+
   if (this.actividadSeleccionada) {
 
     let saveEvent = false;

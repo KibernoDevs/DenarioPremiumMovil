@@ -19,12 +19,12 @@
     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
       <div id="inputClient">
         <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_CLIENTE')}}:"
-          label-placement="floating" fill="outline" value="{{ this.inventariosLogicService.cliente.lbClient }}"
-          id="clienteSelect" color="primary" [disabled]="this.inventariosLogicService.inventarioSent"></ion-input>
+          label-placement="floating" fill="outline" value="{{ clienteTabLabel }}"
+          id="clienteSelect" color="primary" [disabled]="this.inventariosLogicService.inventarioSent || !canModifyClient()"></ion-input>
       </div>
     </ion-col>
     <!-- CLIENTE -->
-    @if (!this.inventariosLogicService.inventarioSent) {
+    @if (!this.inventariosLogicService.inventarioSent && canModifyClient()) {
     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
       <!-- debe ir en el ion-card para que el trigger funcione -->
       <app-cliente-selector #selectorCliente

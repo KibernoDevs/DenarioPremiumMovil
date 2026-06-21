@@ -79,13 +79,27 @@
 
 
           </ion-row>
+          @if(isNotNullOrEmpty(pSeleccionado.txDescription)){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_DESC_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.txDescription}}</ion-col>
-
-
           </ion-row>
+        }
+        @if(isNotNullOrEmpty(pSeleccionado.txDimension)){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4"
+              size-xs="4">{{this.productDetailTags.get('PROD_DIMENSION_PROD')}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.txDimension}}</ion-col>
+          </ion-row>
+        }
+        @if(isNotNullOrEmpty(pSeleccionado.txPacking)){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4"
+              size-xs="4">{{this.productDetailTags.get('PROD_PACKING_PROD')}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.txPacking}}</ion-col>
+          </ion-row>
+        }
           @if(this.productService.catalogDisplayProductPoints){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
@@ -98,14 +112,14 @@
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{price.naList}} -
               {{price.naUnit}}</ion-col>
-            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? formatNumber(price.nuPrice) : 'N/A' }} {{
+            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? formatNumber(getUnitPriceListDisplayPrice(price.nuPrice, price.coUnit)) : 'N/A' }} {{
               price.coCurrency }}</ion-col>
           </ion-row>
           @if(showConversionInfo){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{price.naList}} -
               {{price.naUnit}}</ion-col>
-            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? convertPrice(price.nuPrice, price.coCurrency) :
+            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? convertPrice(getUnitPriceListDisplayPrice(price.nuPrice, price.coUnit), price.coCurrency) :
               'N/A' }} {{ currencyService.oppositeCoCurrency(price.coCurrency) }}</ion-col>
           </ion-row>
           }

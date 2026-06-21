@@ -1,39 +1,28 @@
-<ion-row>
-  <div *ngIf="this.collectService.coTypeModule != '1'">
-    <ion-item-divider class="stickyTotal colorText" sticky>
-      <ion-row>
-        <ion-col size="12" class="titulosBold">
-          <ion-label>{{this.collectService.collectionTags.get('COB_MONTO_TOTAL')}}
-            {{this.collectService.collection.coCurrency}}:
-            {{this.currencyService.formatNumber(this.collectService.montoTotalPagar)}}
-          </ion-label>
-        </ion-col>
-        <ion-col size="12" class="titulosBold"
-          [ngStyle]="{color: this.collectService.collection.nuDifference >= 0 ? 'Blue' : 'Red' }">
-          {{this.collectService.collectionTags.get('COB_DIFERENCIA')}}
-          {{this.collectService.collection.coCurrency}}:
-          {{this.currencyService.formatNumber(this.collectService.collection.nuDifference)}}
-        </ion-col>
-      </ion-row>
-    </ion-item-divider>
+<div class="pagos-view">
+  <div class="pagos-sticky-header">
+    <div *ngIf="this.collectService.coTypeModule != '1'" class="pagos-sticky-totals colorText">
+      <div class="pagos-sticky-totals__row titulosBold">
+        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL')}}
+        {{this.collectService.collection.coCurrency}}:
+        {{this.currencyService.formatNumber(this.collectService.montoTotalPagar)}}
+      </div>
+      <div class="pagos-sticky-totals__row titulosBold"
+        [ngStyle]="{color: this.collectService.collection.nuDifference >= 0 ? 'Blue' : 'Red' }">
+        {{this.collectService.collectionTags.get('COB_DIFERENCIA')}}
+        {{this.collectService.collection.coCurrency}}:
+        {{this.currencyService.formatNumber(this.collectService.collection.nuDifference)}}
+      </div>
+    </div>
+
+    <div class="pagos-sticky-action">
+      <ion-button id="eventSelect" class="botonAddVerde" expand="block" (click)="setShowEventModal(true)"
+        [disabled]="this.collectService.disabledSelectCollectMethodDisabled">
+        Agregar método de pago
+        <!-- {{this.collectService.collectionTags.get('COB_ADD_METODO_PAGO')}} -->
+      </ion-button>
+    </div>
   </div>
-  <!-- BOTON PARA ABRIL MODAL METODOS DE PAGO-->
-  <ion-col size="6" size-sm="12" size-xs="12">
-    <ion-item>
-      <ion-grid>
-        <ion-row>
-          <ion-col size="6" size-sm="12" size-xs="12">
-            <ion-button id="eventSelect" class="botonAddVerde" expand="block" (click)="setShowEventModal(true)"
-              [disabled]="this.collectService.disabledSelectCollectMethodDisabled">
-              Agregar método de pago
-              <!-- {{this.collectService.collectionTags.get('COB_ADD_METODO_PAGO')}} -->
-            </ion-button>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
-    </ion-item>
-  </ion-col>
-  <!-- BOTON PARA ABRIL MODAL METODOS DE PAGO-->
+
   <!-- MODAL PARA LOS TIPOS DE PAGO-->
   <ion-modal [isOpen]="showEventModal" (didDismiss)="setShowEventModal(false)" id="eventModal" size="cover"
     class="listado-product-structures modalActividades" backdrop-dismiss="false">
@@ -73,7 +62,7 @@
   </ion-modal>
   <!-- MODAL PARA LOS TIPOS DE PAGO-->
 
-  <ion-col size="6" size-sm="12" size-xs="12" class="pagos-scroll">
+  <div class="pagos-scroll">
     <ion-accordion-group>
       <!-- EFECTIVO -->
       @for (efectivo of this.collectService.pagoEfectivo; track trackByIndex($index, efectivo); let ef = $index) {
@@ -209,38 +198,22 @@
 
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center">
-                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                    class="ion-text-center always-flip"
-                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoMovil[pm].posCollectionPayment]"
-                    (ionChange)="selectBankAccount(pm, 'pm')" interface="alert" labelPlacement="stacked">
-                    @for (bank of this.collectService.listBanks; track trackByIndex($index, bank)) {
-                    <ion-select-option [value]="bank">{{ bank.naBank }}
-                    </ion-select-option>
-                    }
-                  </ion-select>
-                </div>
-              </ion-item>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_EMISOR') || 'Banco emisor', this.collectService.listBanks, 'pm', pm, 'banks', 'bankAccountSelected', 'selectBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('pm', pm, 'bankAccountSelected') }}</ion-label>
+                </ion-item>
+              </div>
             </ion-col>
 
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center">
-                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                    class="ion-text-center always-flip"
-                    [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoMovil[pm].posCollectionPayment]"
-                    (ionChange)="selectListBankAccount(pm, 'pm')" interface="alert" labelPlacement="stacked">
-                    @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
-                    listBankAccount)) {
-                    <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
-                      {{listBankAccount.nuAccount}}
-                    </ion-select-option>
-                    }
-                  </ion-select>
-                </div>
-              </ion-item>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_RECEPTOR') || 'Banco receptor', this.collectService.listBankAccounts, 'pm', pm, 'accounts', 'clientBankAccountSelected', 'selectListBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('pm', pm, 'clientBankAccountSelected') }}</ion-label>
+                </ion-item>
+              </div>
             </ion-col>
 
             <ion-col size="6" size-sm="12" size-xs="12">
@@ -321,19 +294,12 @@
           <div class="ion-padding" slot="content">
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center">
-                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                    class="ion-text-center always-flip"
-                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoCheque[ch].posCollectionPayment] "
-                    (ionChange)="selectBankAccount(ch,'ch')" interface="alert" labelPlacement="stacked">
-                    @for (bank of this.collectService.listBanks; track trackByIndex($index, bank)) {
-                    <ion-select-option [value]="bank">{{ bank.naBank }}
-                    </ion-select-option>
-                    }
-                  </ion-select>
-                </div>
-              </ion-item>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_EMISOR') || 'Banco emisor', this.collectService.listBanks, 'ch', ch, 'banks', 'bankAccountSelected', 'selectBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('ch', ch, 'bankAccountSelected') }}</ion-label>
+                </ion-item>
+              </div>
             </ion-col>
             <!-- clientBankAccount -->
             <ion-col size="6" size-sm="12" size-xs="12" *ngIf="cheque.showNuevaCuenta">
@@ -445,24 +411,14 @@
             <ion-label> {{this.collectService.collectionTags.get('COB_DEPOSITO')}}</ion-label>
           </ion-item>
           <div class="ion-padding" slot="content">
-            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center">
-                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                    class="ion-text-center always-flip"
-                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoDeposito[de].posCollectionPayment] "
-                    (ionChange)="selectBankAccount(de, 'de')" interface="alert" labelPlacement="stacked">
-                    @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
-                    listBankAccount)) {
-                    <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
-                      {{listBankAccount.nuAccount}}
-                    </ion-select-option>
-                    }
-                  </ion-select>
-                </div>
-
-              </ion-item>
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_RECEPTOR') || 'Banco receptor', this.collectService.listBankAccounts, 'de', de, 'accounts', 'bankAccountSelected', 'selectBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('de', de, 'bankAccountSelected') }}</ion-label>
+                </ion-item>
+              </div>
             </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-item disabled="{{deposito.disabled}}">
@@ -541,21 +497,14 @@
           <div class="ion-padding" slot="content">
 
             <!-- clientBankAccount -->
-            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.clientBankAccount">
+            <ion-col size="6" size-sm="12" size-xs="12" *ngIf=  "this.collectService.clientBankAccount">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center">
-                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                    class="ion-text-center always-flip"
-                    [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
-                    (ionChange)="selectBankAccount(tr,'tr')" interface="alert" labelPlacement="stacked">
-                    @for (bank of this.collectService.clientBankAccounts; track trackByIndex($index, bank)) {
-                    <ion-select-option [value]="bank">{{ bank.naBank }} - {{bank.nuAccount}}
-                    </ion-select-option>
-                    }
-                  </ion-select>
-                </div>
-              </ion-item>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_EMISOR') || 'Banco emisor', this.collectService.clientBankAccounts, 'tr', tr, 'clientAccounts', 'clientBankAccountSelected', 'selectBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('tr', tr, 'clientBankAccountSelected') }}</ion-label>
+                </ion-item>
+              </div>
             </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12" *ngIf="transferencia.showNuevaCuenta">
               <ion-item disabled="{{transferencia.disabled}}">
@@ -567,22 +516,15 @@
             </ion-col>
             <!-- clientBankAccount -->
 
-            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
-            <ion-item>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
               <div class="listado-enterprise-selector ion-text-center">
-                <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                  class="ion-text-center always-flip"
-                  [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
-                  (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert" labelPlacement="stacked">
-                  @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
-                  listBankAccount)) {
-                  <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
-                    {{listBankAccount.nuAccount}}
-                  </ion-select-option>
-                  }
-                </ion-select>
+                <ion-item button detail="false" lines="none" class="bank-picker-trigger"
+                  (click)="openBankPicker(this.collectService.collectionTags.get('COB_BANCO_RECEPTOR') || 'Banco receptor', this.collectService.listBankAccounts, 'tr', tr, 'accounts', 'bankAccountSelected', 'selectListBankAccount')">
+                  <ion-label>{{ getSelectedBankDisplay('tr', tr, 'bankAccountSelected') }}</ion-label>
+                </ion-item>
               </div>
-            </ion-item>
+            </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-item disabled="{{transferencia.disabled}}">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_REFERENCIA')}}"
@@ -726,9 +668,55 @@
     </ion-accordion-group>
 
     <!-- <ion-button size="small" fill="outline" expand="block" (click)="imprimir()"></ion-button> -->
-  </ion-col>
-</ion-row>
+  </div>
+</div>
 <!-- <ion-button color="danger" (click)="print()"></ion-button> -->
+
+<ion-modal [isOpen]="bankPickerOpen" (didDismiss)="closeBankPicker()" id="bankPickerModal"
+  class="bank-picker-modal" backdrop-dismiss="true">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title class="bank-picker-title">{{ bankPickerTitle }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button class="bank-picker-close" (click)="closeBankPicker()">Cerrar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <div class="bank-picker-body">
+      <ion-item class="bank-search-item">
+        <ion-input label="Buscar banco" label-placement="floating" fill="outline" type="text" [clearInput]="true"
+          [value]="getBankSearchTerm(getActiveBankPickerKey())" (ionInput)="onBankPickerSearch($event.detail.value)">
+        </ion-input>
+      </ion-item>
+
+      <ng-container *ngIf="getActiveBankPickerOptions() as pickerOptions">
+        <div class="bank-picker-list-wrap">
+          <ion-list lines="full">
+            <ng-container *ngFor="let option of pickerOptions; trackBy: trackByIndex">
+              <ion-item button detail="false" (click)="selectBankPickerOption(option)">
+                <ion-label class="bank-picker-option-label">
+                  {{ option.naBank }}
+                  <ng-container *ngIf="option.nuAccount">
+                    - {{ option.nuAccount }}
+                  </ng-container>
+                </ion-label>
+              </ion-item>
+            </ng-container>
+          </ion-list>
+        </div>
+
+        <ng-container *ngIf="pickerOptions.length === 0">
+          <ion-item lines="none">
+            <ion-label class="ion-text-center ion-text-wrap bank-picker-empty-label">No hay resultados para la
+              busqueda.</ion-label>
+          </ion-item>
+        </ng-container>
+      </ng-container>
+    </div>
+  </ng-template>
+</ion-modal>
 
 
 <!-- alerta de envio-->

@@ -28,6 +28,7 @@ import { IonInput } from '@ionic/angular/directives/proxies';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { BancoReceptor } from 'src/app/modelos/bancoReceptor';
+import { formatClientForTab } from 'src/app/utils/client-display.util';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 
@@ -122,16 +123,13 @@ export class CobrosGeneralComponent implements OnInit {
     } else {
       this.subscriptions.push(
         this.clientSelectorService.ClientChanged.subscribe(client => {
+          this.clientSelectorService.checkClient = false;
           this.collectService.client = client;
           this.collectService.initCollect = true;
-          this.collectService.newClient = client;
           this.collectService.changeClient = true;
           this.collectService.onChangeClient = true;
-          this.collectService.client = this.collectService.newClient;
-          this.collectService.newClient = {} as Client;
-          this.setClientfromSelector(this.collectService.client);
-          this.collectService.cobroValid = false;
-          this.reset(client);
+          this.collectService.cobroValid = true;
+          void this.reset(client);
         }),
         this.adjuntoService.AttachmentChanged.subscribe(() => {
           this.setChangesMade(true);
@@ -142,7 +140,7 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  public setSendedCollection() {
+  public async setSendedCollection() {
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
 
     this.collectService.initLogicService();
@@ -160,20 +158,28 @@ export class CobrosGeneralComponent implements OnInit {
     this.rateSelected = this.collectService.collection.nuValueLocal;
 
     this.initializeCurrenciesAndRates();
-    this.collectService.loadPaymentMethods();
+    await this.collectService.loadPaymentMethods();
+
+    if (!this.collectService.igtfList?.length) {
+      await this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+    }
+    this.collectService.restoreCollectionIgtfFields();
+
     this.loadPayments();
+
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
-
-      if (!this.collectService.igtfList?.length)
-        this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
-
       this.collectService.changeEnterprise = false;
-
+      this.finishOpenCollectDirtyTracking();
     });
+  }
+
+  private finishOpenCollectDirtyTracking(): void {
+    this.collectService.recentOpenCollect = false;
+    this.collectService.resumeCollectionDirtyTracking();
   }
 
   private initGeneralState() {
@@ -197,7 +203,10 @@ export class CobrosGeneralComponent implements OnInit {
 
   private handleOpenCollect() {
     this.collectService.isOpenCollect = false;
+    this.collectService.newCollect = false;
     this.collectService.recentOpenCollect = true;
+    this.collectService.createAutomatedPrepaid = false;
+    this.collectService.anticipoAutomatico = [];
     //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
@@ -221,6 +230,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.initCollect = false;
       this.collectService.unlockTabs().then((resp) => {
         this.collectService.onCollectionValid(resp);
+        this.finishOpenCollectDirtyTracking();
       });
 
       if (this.collectService.enableDifferenceCodes) {
@@ -280,6 +290,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.collection.idClient = client.idClient;
     this.collectService.collection.coClient = client.coClient;
     this.collectService.collection.lbClient = client.lbClient;
+    this.collectService.collection.naClient = client.naClient || client.lbClient;
   }
 
   private updateSelectedEnterprise(idEnterprise: number) {
@@ -296,13 +307,6 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  private updateSelectedIgtf(price: number) {
-    const igtf = this.collectService.igtfList.find(i => i.price == price);
-    if (igtf) {
-      this.collectService.igtfSelected = igtf;
-    }
-  }
-
   private getAllDocumentsCurrency(): string {
     return this.collectService.currencyListDocument[0]?.coCurrency || 'Moneda';
   }
@@ -312,13 +316,26 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.documentCurrency = this.getAllDocumentsCurrency();
   }
 
+  private getDocumentSalesFirstPageOptions(): { limit: number; offset: number; includeSelected: boolean } {
+    const limit = this.collectService.DOCUMENT_SALES_PAGE_SIZE;
+    this.collectService.documentSalesPageSize = limit;
+    this.collectService.documentSalesCurrentPage = 0;
+
+    return {
+      limit,
+      offset: 0,
+      includeSelected: true
+    };
+  }
+
   private loadAllDocumentsSales(): Promise<void> {
     return this.collectService.getDocumentsSales(
       this.synchronizationServices.getDatabase(),
       this.collectService.collection.idClient,
       this.getAllDocumentsCurrency(),
       this.collectService.collection.coCollection,
-      this.collectService.collection.idEnterprise
+      this.collectService.collection.idEnterprise,
+      this.getDocumentSalesFirstPageOptions()
     ).then(() => {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
       if (this.collectService.historicPartialPayment) {
@@ -347,8 +364,10 @@ export class CobrosGeneralComponent implements OnInit {
 
         });
     this.initializeCurrenciesAndRates();
-    if (!this.collectService.igtfList?.length)
-      this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+    if (!this.collectService.igtfList?.length) {
+      await this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+    }
+    this.collectService.restoreCollectionIgtfFields();
     this.loadData();
   }
 
@@ -389,7 +408,8 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.collection.idClient,
           this.getAllDocumentsCurrency(),
           this.collectService.collection.coCollection,
-          this.collectService.collection.idEnterprise
+          this.collectService.collection.idEnterprise,
+          this.getDocumentSalesFirstPageOptions()
         ).then(() => {
           if (this.collectService.historicPartialPayment) {
             this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
@@ -398,13 +418,10 @@ export class CobrosGeneralComponent implements OnInit {
 
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
-        //this.collectService.disabledCurrency = true;
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
-          this.updateSelectedIgtf(this.collectService.collection.nuIgtf);
+          this.collectService.restoreCollectionIgtfFields();
+          this.loadData();
         });
-
-
-        this.loadData();
       });
     });
   }
@@ -582,6 +599,7 @@ export class CobrosGeneralComponent implements OnInit {
         }
       }
     }
+    this.collectService.restoreCollectionIgtfFields();
     this.collectService.calcularMontos("", 0);
     this.collectService.checkTiposPago();
     this.collectService.validateToSend();
@@ -674,11 +692,11 @@ export class CobrosGeneralComponent implements OnInit {
               }); */
           // }
 
-          if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0)
+          if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0) {
             this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
-
-
-
+          } else {
+            this.collectService.restoreCollectionIgtfFields();
+          }
         }
 
         this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
@@ -705,9 +723,7 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   setChangesMade(value: boolean) {
-    //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    /* this.collectService.onCollectionValidToSave(true);
-    this.collectService.onCollectionValidToSend(true); */
+    this.collectService.markCollectionDirty();
     this.collectService.validateToSend();
   }
 
@@ -820,7 +836,8 @@ export class CobrosGeneralComponent implements OnInit {
 
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
+              this.getDocumentSalesFirstPageOptions()).then(() => {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
@@ -851,29 +868,36 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   setClientfromSelector(client: Client) {
-    if (client != undefined) {
-      //SI ES LA PRIMERA VEZ
-      if (this.collectService.collection.idClient == 0 && client.idClient != this.collectService.collection.idClient) {
-        this.clientSelectorService.checkClient = true;
-        this.collectService.client = client;
-        this.collectService.cobroValid = true;
-        this.collectService.nameClient = client.lbClient;
-        this.collectService.collection.idClient = client.idClient;
-        this.collectService.collection.coClient = client.coClient;
-        this.collectService.collection.lbClient = client.lbClient;
-        this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
-        this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
-        this.collectService.collection.daCollection = this.dateCollect;
-        //this.collectService.currencySelected = client.coCurrency;
-
-        this.loadData();
-      } else {
-        //SE CAMBIO CLIENTE
-
-      }
-    } else {
+    if (client == undefined) {
       console.log("client vacio");
       this.collectService.nameClient = "";
+      return;
+    }
+
+    // Si ya está seleccionado el mismo cliente, no hacer nada.
+    if (client.idClient == this.collectService.collection.idClient) {
+      return;
+    }
+
+    // SI ES LA PRIMERA VEZ
+    if (this.collectService.collection.idClient == 0) {
+      this.clientSelectorService.checkClient = true;
+      this.collectService.client = client;
+      this.collectService.cobroValid = true;
+      this.collectService.nameClient = client.lbClient;
+      this.collectService.collection.idClient = client.idClient;
+      this.collectService.collection.coClient = client.coClient;
+      this.collectService.collection.lbClient = client.lbClient;
+      this.collectService.collection.naClient = client.naClient || client.lbClient;
+      this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
+      this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
+      this.collectService.collection.daCollection = this.dateCollect;
+      this.loadData();
+    } else {
+      // SE CAMBIO CLIENTE (incluye selección desde resultados del buscador)
+      this.clientSelectorService.checkClient = false;
+      this.collectService.cobroValid = true;
+      void this.reset(client);
     }
   }
 
@@ -1007,7 +1031,8 @@ export class CobrosGeneralComponent implements OnInit {
         this.resetDocumentCurrencyFilter();
 
         this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.getAllDocumentsCurrency(),
-          this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(response => {
+          this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
+          this.getDocumentSalesFirstPageOptions()).then(response => {
 
 
             if (this.collectService.historicPartialPayment) {
@@ -1195,7 +1220,7 @@ export class CobrosGeneralComponent implements OnInit {
     if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0 || this.collectService.nameClient != "") {
       this.collectService.alertMessageChangeEnterprise = true;
 
-      this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
+      this.collectService.mensaje = this.collectService.collectionTags.get('COB_RESET_ENTERPRISE_CONFIRMA')!;
     } else {
       this.collectService.cobroValid = false;
       this.collectService.changeClient = false;
@@ -1349,14 +1374,63 @@ export class CobrosGeneralComponent implements OnInit {
     }
 
     try {
+      const collectionDetails = Array.isArray(this.collectService.collection.collectionDetails)
+        ? this.collectService.collection.collectionDetails
+        : [];
+      const detailByDocumentId = new Map<number, CollectionDetail>(
+        collectionDetails.map(detail => [detail.idDocument, detail])
+      );
       const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
-      this.collectService.documentSales = deep.map(d => ({ ...d }));
-      this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
+      const deepWithPreservedFields = deep.map(documentSale => {
+        const detail = detailByDocumentId.get(documentSale.idDocument);
+        if (detail) {
+          this.preserveCollectionDetailFieldsInDocument(documentSale, detail);
+        }
+        return documentSale;
+      });
+
+      this.collectService.documentSales = deepWithPreservedFields.map(d => ({ ...d }));
+      this.collectService.documentSalesBackup = deepWithPreservedFields.map(d => ({ ...d }));
     } catch (e) {
-      this.collectService.documentSales = [...this.collectService.documentSalesView];
-      this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
+      const collectionDetails = Array.isArray(this.collectService.collection.collectionDetails)
+        ? this.collectService.collection.collectionDetails
+        : [];
+      const detailByDocumentId = new Map<number, CollectionDetail>(
+        collectionDetails.map(detail => [detail.idDocument, detail])
+      );
+      const shallowWithPreservedFields = this.collectService.documentSalesView.map(documentSale => {
+        const copy = { ...documentSale };
+        const detail = detailByDocumentId.get(copy.idDocument);
+        if (detail) {
+          this.preserveCollectionDetailFieldsInDocument(copy, detail);
+        }
+        return copy;
+      });
+
+      this.collectService.documentSales = [...shallowWithPreservedFields];
+      this.collectService.documentSalesBackup = [...shallowWithPreservedFields];
       console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
     }
+  }
+
+  private preserveCollectionDetailFieldsInDocument(documentSale: any, detail: CollectionDetail): void {
+    const fieldsToPreserve = [
+      'nuAmountPaid',
+      'nuAmountPaidConversion',
+      'inPaymentPartial',
+      'nuAmountRetention',
+      'nuAmountRetention2',
+      'nuAmountRetention2Conversion',
+      'nuAmountRetentionConversion',
+      'nuAmountRetentionIslrConversion',
+      'nuAmountRetentionIvaConversion',
+    ];
+
+    fieldsToPreserve.forEach(field => {
+      if (Object.prototype.hasOwnProperty.call(documentSale, field)) {
+        documentSale[field] = (detail as any)[field];
+      }
+    });
   }
 
   private syncPaymentConversionsForRateChange(): void {
@@ -1388,7 +1462,7 @@ export class CobrosGeneralComponent implements OnInit {
     const previousDetails = new Map<number, CollectionDetail>(
       this.collectService.collection.collectionDetails.map(detail => [detail.idDocument, detail])
     );
-    const selectedDocs = this.collectService.documentSalesView.filter(doc => doc.isSelected);
+    const selectedDocs = this.collectService.documentSales.filter(doc => doc.isSelected);
     this.collectService.collection.collectionDetails = [];
     selectedDocs.forEach(doc => {
       let nuAmountTotal = 0, nuAmountBalance = 0, nuAmountTotalConversion = 0, nuAmountBalanceConversion = 0;
@@ -1396,17 +1470,33 @@ export class CobrosGeneralComponent implements OnInit {
       const previousDetail = previousDetails.get(doc.idDocument);
 
       if (doc.coCurrency != this.collectService.collection.coCurrency) {
-        nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
-        nuAmountBalanceConversion = doc.nuBalance;
+        if (doc.inPaymentPartial) {
+          nuAmountBalance = doc.nuAmountPaid;
+          nuAmountBalanceConversion = this.collectService.convertirMonto(doc.nuAmountPaid, this.collectService.collection.nuValueLocal, doc.coCurrency);
+        } else {
+          nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+          nuAmountBalanceConversion = doc.nuBalance;
+        }
+
+
         nuAmountTotal = this.collectService.convertirMonto(doc.nuAmountTotal, this.collectService.collection.nuValueLocal, doc.coCurrency);
         nuAmountTotalConversion = doc.nuAmountTotal;
         nuBalanceOriginalConversion = doc.nuBalance;
         nuBalanceOriginal = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       } else {
-        nuAmountTotal = doc.nuAmountTotal;
-        nuAmountBalance = doc.nuBalance;
-        nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
-        nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+
+        if (doc.inPaymentPartial) {
+          nuAmountTotal = doc.nuAmountTotal;
+          nuAmountBalance = doc.nuAmountPaid;
+          nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+          nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+
+        } else {
+          nuAmountTotal = doc.nuAmountTotal;
+          nuAmountBalance = doc.nuBalance;
+          nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+          nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        }
         nuBalanceOriginal = doc.nuBalance;
         nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       }
@@ -1531,5 +1621,10 @@ export class CobrosGeneralComponent implements OnInit {
       return Math.max(...this.collectService.rateList);
     }
     return this.collectService.rateSelected || 0.01;
+  }
+
+  get clienteTabLabel(): string {
+    const collection = this.collectService.collection;
+    return formatClientForTab(collection?.naClient, collection?.coClient, collection?.lbClient);
   }
 }

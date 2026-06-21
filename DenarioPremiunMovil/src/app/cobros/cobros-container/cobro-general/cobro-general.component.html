@@ -16,13 +16,13 @@
     <ion-col size="6" size-sm="12" size-xs="12">
       <div id="inputClient">
         <ion-input label="{{this.collectService.collectionTags.get('COB_CLIENTE')}}:" label-placement="floating"
-          fill="outline" value="{{this.collectService.collection.lbClient}}" id="clienteSelect" color="primary"
+          fill="outline" value="{{ clienteTabLabel }}" id="clienteSelect" color="primary"
           [disabled]="this.collectService.disabledInputClient">
         </ion-input>
       </div>
     </ion-col>
 
-    @if (this.collectService.cobroValid) {
+    @if (this.collectService.collection.idClient > 0) {
     <ion-col size="6" size-sm="12" size-xs="12">
       <ion-col size="6" size-sm="12" size-xs="12">
         @if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_NEW ||

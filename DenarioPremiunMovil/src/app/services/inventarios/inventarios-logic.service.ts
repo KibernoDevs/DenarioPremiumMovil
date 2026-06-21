@@ -476,7 +476,7 @@ export class InventariosLogicService {
           if(mapUnits != undefined){
             let unitUtil = mapUnits.get(idProductUnit);
             if(unitUtil != undefined){
-              unitUtil.previousStock = quStock;
+              unitUtil.previousStock += quStock;
             }
           }
         }
@@ -498,7 +498,7 @@ export class InventariosLogicService {
       if(mapUnits != undefined){
         let unitUtil = mapUnits.get(idProductUnit);
         if(unitUtil != undefined){
-          unitUtil.straightSwapStock = quStock;
+          unitUtil.straightSwapStock += quStock;
         }
       }
     }
@@ -517,7 +517,7 @@ export class InventariosLogicService {
         //como el return es por unidad y no por product unit, se busca la unidad dentro de las unidades del producto para asignar la devolución
         for(const [idProductUnit, unitUtil] of mapUnits){
           if(unitUtil.coUnit == coUnit){
-          unitUtil.returnedStock = quStock;
+          unitUtil.returnedStock += quStock;
           break;
         }
       }
@@ -805,7 +805,7 @@ export class InventariosLogicService {
     try {
       await dbServ.sqlBatch(batch);
       console.log("SE GUARDO CLIENT_STOCKS");
-      await this.saveClientStocksDetails(dbServ, this.newClientStock.clientStockDetails);
+      await this.saveClientStocksDetails(dbServ,this.newClientStock.coClientStock, this.newClientStock.clientStockDetails);
     } catch (e) {
       console.log("ERROR GUARDAR CLIENT_STOCKS");
       console.log(e);
@@ -813,7 +813,7 @@ export class InventariosLogicService {
 
   }
 
-  saveClientStocksDetails(dbServ: SQLiteObject, clientStockDetails: ClientStocksDetail[]) {
+  saveClientStocksDetails(dbServ: SQLiteObject, coClientStock: string, clientStockDetails: ClientStocksDetail[]) {
     let insertStatement: string = "";
     var batch: any[] = [];
 
@@ -843,7 +843,7 @@ export class InventariosLogicService {
         [insertStatement,
           [
             clientStockDetails[i].idClientStockDetail, this.newClientStock.clientStockDetails[i].coClientStockDetail,
-            clientStockDetails[i].coClientStock, this.newClientStock.clientStockDetails[i].naProduct,
+            coClientStock, this.newClientStock.clientStockDetails[i].naProduct,
             clientStockDetails[i].coProduct, this.newClientStock.clientStockDetails[i].idProduct,
             clientStockDetails[i].coEnterprise, this.newClientStock.clientStockDetails[i].idEnterprise,
             clientStockDetails[i].posicion, this.newClientStock.clientStockDetails[i].isSave
@@ -1342,11 +1342,11 @@ getInvoicesDetailUnitsByIdProductUnit(dbServ: SQLiteObject, idProductUnits: numb
 }
 
 getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], coUnits: String[], idEnterprise: number, idClient: number, dateLastInventory: string) {
-let select = "select *  from return_details rd where id_return in "+
-"(SELECT r.id_return from returns r where r.id_type in "+
+let select = "select *  from return_details rd where co_return in "+
+"(SELECT r.co_return from returns r where r.id_type in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
-  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return > '"+dateLastInventory+"') "+
+  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return >= '"+dateLastInventory.substring(0, 10)+"') "+
 "and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN ('"+coUnits.join("','")+"')";
 
   return dbServ.executeSql(select, []).then(data => {

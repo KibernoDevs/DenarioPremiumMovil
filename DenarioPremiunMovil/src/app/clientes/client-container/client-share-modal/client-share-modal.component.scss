@@ -1,4 +1,61 @@
 /* keep it simple and table-friendly for html2canvas */
+:host {
+  display: block;
+  height: 100%;
+}
+
+.compartirDoc-header ion-toolbar {
+  --min-height: 56px;
+  --padding-start: 4px;
+  --padding-end: 4px;
+}
+
+.preview-header-btn {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  margin: 0;
+}
+
+.preview-header-btn--share {
+  color: var(--ion-color-success, #59b02d);
+}
+
+.compartirDoc-header .tituloCompartir {
+  padding-inline: 48px;
+  font-size: 1rem;
+}
+
+.share-preview {
+  padding: 8px 12px 16px;
+}
+
+.share-preview-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.tabla-info-cliente {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.tabla-info-cliente td {
+  padding: 6px 8px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tabla-info-cliente .titulosBold {
+  width: 38%;
+  font-weight: 600;
+}
+
+.tabla-info-cliente .email-cell {
+  word-break: break-word;
+}
+
 .tablaInfoClientes.tablaDocVentasGrip { width: 100%; overflow: visible; }
 .tabla-doc-ventas { width: 100%; border-collapse: collapse; font-family: inherit; font-size: 12px; }
 

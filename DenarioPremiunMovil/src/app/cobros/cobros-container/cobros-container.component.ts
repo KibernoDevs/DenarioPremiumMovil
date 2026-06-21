@@ -110,6 +110,7 @@ export class CobrosContainerComponent implements OnInit {
       this.collectService.isAnticipo = false;
       this.collectService.isRetention = false;
       this.collectService.collection = {} as Collection;
+      this.collectService.resetCollectionExitBaseline();
 
       if (this.collectService.userMustActivateGPS) {
         this.collectService.collection.coordenada = this.coordenada;

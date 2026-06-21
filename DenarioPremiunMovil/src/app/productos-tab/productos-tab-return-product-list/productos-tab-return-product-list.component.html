@@ -1,7 +1,7 @@
 <div class="listado-product-structures" *ngIf="showProductList">
 
   <!--  Listado clickeable de productos  -->
-  <ion-content class="product-card cardProduct">
+  <div class="product-card cardProduct product-structure-scroll ion-content-scroll-host">
     @if(noProductsAlertShown){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
@@ -31,6 +31,6 @@
      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
       <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
-  </ion-content>
+  </div>
 
 </div>

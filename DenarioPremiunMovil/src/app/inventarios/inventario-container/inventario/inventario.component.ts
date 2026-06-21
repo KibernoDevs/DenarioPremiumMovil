@@ -13,6 +13,7 @@ export class InventarioComponent implements OnInit {
   public inventariosLogicService = inject(InventariosLogicService);
 
   public segment: string = 'default';
+  public previousSegment: string = 'default';
   public stockValid: Boolean = false;
 
   constructor() { }
@@ -27,7 +28,10 @@ export class InventarioComponent implements OnInit {
   }
 
   onChangeTab(tab: string) {
-
+    if (this.previousSegment === 'inventario' && tab !== 'inventario') {
+      this.inventariosLogicService.showProductList = false;
+    }
+    this.previousSegment = this.segment;
     this.segment = tab;
   }
 

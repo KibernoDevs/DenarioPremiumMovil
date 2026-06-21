@@ -114,6 +114,8 @@ export class NewPotentialClientComponent implements OnInit {
 
   ngOnInit() {
     /* this.onChanges(); */
+    this.clientLogic.setNombreModulo('CLI_POT_LISTADO', 'Clientes');
+
     this.isMultiEnterprise = this.enterpriseServ.esMultiempresa()
     if (!this.isMultiEnterprise)
       this.newPotentialClient.get('idEnterprise')?.disable();

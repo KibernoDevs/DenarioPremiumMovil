@@ -94,6 +94,8 @@ export class ClientLogicService {
   public fromSelector = false; //flag que indica si estas abriendo el detalle de cliente desde selector o no.
   public nameModule: string = "";
   public segment = 'default';
+  public nombreModulo = 'Clientes';
+  public nombreModuloEsLargo: boolean = false;
 
   clientListPage = 0;
   clientListSearchMode = false;
@@ -175,6 +177,13 @@ export class ClientLogicService {
       this.localCurrency = this.currencyService.getLocalCurrency();
       this.hardCurrency = this.currencyService.getHardCurrency();
     })
+  }
+
+  setNombreModulo(tagKey: string, fallback: string = 'Clientes') {
+    const tagValue = this.clientTags.get(tagKey);
+    const moduleTitle = (tagValue && tagValue.trim().length > 0) ? tagValue.trim() : fallback;
+    this.nombreModulo = moduleTitle;
+    this.nombreModuloEsLargo = moduleTitle.length > 12;
   }
 
   getEnterprise() {

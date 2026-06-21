@@ -1,51 +1,53 @@
 <ion-header :translucent="false">
-    <ion-toolbar class="fondoVerde">
-<!--         <ion-title class="fondoVerde">
- -->            <ion-grid>
-                <ion-row>
-                    <ion-col size="1" size-sm="1" size-xs="2">
-                        <a (click)="goBack()">
-                            <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-                        </a>
-                    </ion-col>
-                    <ion-col size="9" size-sm="9" size-xs="6">
-                        <h1 class="tituloModulos">{{this.clientLogic.clientTags.get('CLI_NOMBRE_MODULO')}}</h1>
-                    </ion-col>
-                    <ion-col size="1" size-sm="1" size-xs="2" offset-sm="1" offset-xs="2" *ngIf="clientLogic.clienteNuevoBlancoImg">
-                        <img class="fechaAtras" alt="" src="../../../assets/images/clientesNuevoBlanco.svg" />
-                    </ion-col>
+  <ion-toolbar class="fondoVerde">
+    <!--         <ion-title class="fondoVerde">
+ --> <ion-grid>
+      <ion-row>
+        <ion-col size="1" size-sm="1" size-xs="2">
+          <a (click)="goBack()">
+            <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+          </a>
+        </ion-col>
+        <ion-col size="9" size-sm="9" size-xs="6" class="title-col">
+          <h1
+            class="tituloModulos"
+            [class.tituloModulosLargo]="clientLogic.nombreModuloEsLargo"
+          >{{ clientLogic.nombreModulo }}</h1>
+        </ion-col>
+        <ion-col size="1" size-sm="1" size-xs="2" offset-sm="1" offset-xs="2" *ngIf="clientLogic.clienteNuevoBlancoImg">
+          <img class="fechaAtras" alt="" src="../../../assets/images/clientesNuevoBlanco.svg" />
+        </ion-col>
 
-                    <ion-col size="1" size-sm="1" size-xs="2" *ngIf="clientLogic.saveSendPotentialClient">
-                        <ion-button class="imagenGuardar" (click)="saveSendNewPotentialCliente(true)"
-                            [disabled]="clientLogic.cannotSavePotentialClient" expand="block" fill="clear">
-                        </ion-button>
-                    </ion-col>
-                    <ion-col size="1" size-sm="1" size-xs="2" *ngIf="clientLogic.saveSendPotentialClient">
-                        <ion-button class="imagenEnviar" (click)="saveSendNewPotentialCliente(false)"
-                            [disabled]="clientLogic.cannotSendPotentialClient" expand="block" fill="clear">
+        <ion-col size="1" size-sm="1" size-xs="2" *ngIf="clientLogic.saveSendPotentialClient">
+          <ion-button class="imagenGuardar" (click)="saveSendNewPotentialCliente(true)"
+            [disabled]="clientLogic.cannotSavePotentialClient" expand="block" fill="clear">
+          </ion-button>
+        </ion-col>
+        <ion-col size="1" size-sm="1" size-xs="2" *ngIf="clientLogic.saveSendPotentialClient">
+          <ion-button class="imagenEnviar" (click)="saveSendNewPotentialCliente(false)"
+            [disabled]="clientLogic.cannotSendPotentialClient" expand="block" fill="clear">
 
-                        </ion-button>
-                    </ion-col>
+          </ion-button>
+        </ion-col>
 
-                    <ion-col size="1" size-sm="1" size-xs="2" offset-xs="2" *ngIf="clientLogic.clientLocationComponent">
-                        <ion-button class="imagenEnviar" (click)="saveSendLocationFunction()"
-                            [disabled]="clientLogic.cannotSendClientCoordinate" expand="block" fill="clear">
+        <ion-col size="1" size-sm="1" size-xs="2" offset-xs="2" *ngIf="clientLogic.clientLocationComponent">
+          <ion-button class="imagenEnviar" (click)="saveSendLocationFunction()"
+            [disabled]="clientLogic.cannotSendClientCoordinate" expand="block" fill="clear">
 
-                        </ion-button>
-                    </ion-col>
+          </ion-button>
+        </ion-col>
 
-                </ion-row>
-            </ion-grid>
-<!--         </ion-title>
- -->    </ion-toolbar>
+      </ion-row>
+    </ion-grid>
+    <!--         </ion-title>
+ --> </ion-toolbar>
 </ion-header>
 
 <!-- alerta de salvar o salir-->
 <ion-alert id="alertSaveOrExit" [isOpen]="clientLogic.saveOrExitOpen"
-    header="{{this.clientLogic.clientTags.get('CLI_DENARIO_HEADER')}}" [buttons]="buttonsSalvar"
-    (didDismiss)="setsaveOrExitOpen(false)"></ion-alert>
+  header="{{this.clientLogic.clientTags.get('CLI_DENARIO_HEADER')}}" [buttons]="buttonsSalvar"
+  (didDismiss)="setsaveOrExitOpen(false)"></ion-alert>
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="alertMessageOpen" header="{{this.clientLogic.clientTags.get('CLI_DENARIO_HEADER')}}"
-    message={{mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
-
+  message={{mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>

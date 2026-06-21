@@ -171,7 +171,7 @@ INSERT INTO public.application_tags(
 	('CLI_SALDO', 'CLI', 'CLIENTES', 'ESP','Saldo'),
 	('CLI_EMPRESA', 'CLI', 'CLIENTES', 'ESP','Empresa'),
 	('CLI_POT_NOMBRE_MODULO','CLI','CLIENTES','ESP','Clientes'),
-	('CLI_POT_LISTADO','CLI','CLIENTES','ESP','Listado Cliente Potencial'),
+	('CLI_POT_LISTADO','CLI','CLIENTES','ESP','Clientes Potenciales'),
 	('CLI_POT_CLIENTE','CLI','CLIENTES','ESP','Cliente'),
 	('CLI_POT_RIF','CLI','CLIENTES','ESP','RIF'),
 	('CLI_POT_REFERENCIA','CLI','CLIENTES','ESP','Nro. Ref'),
@@ -241,8 +241,10 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_MONTO_BASE_CONVERSION','CLI','CLIENTES','ESP','Monto Base Conversión'),
 	('CLI_DETAIL_MONTO_DESCUENTO','CLI','CLIENTES','ESP','Monto Descuento'),
 	('CLI_DETAIL_MONTO_DESCUENTO_CONVERSION','CLI','CLIENTES','ESP','Monto Descuento Conversión'),
-  ('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
-  ('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión');
+  	('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
+  	('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión'),
+  	('CLI_NEW_DETAIL_NOT_FOUND','CLI','CLIENTES','ESP','Aún no hay clientes potenciales'),
+  	('CLI_SEND_COORDENADA_MSG', 'CLI', 'CLIENTES', 'ESP','La coordenada será enviada');
 
 -- TAGS COBROS
 DELETE FROM public.application_tags WHERE co_module = 'COB';
@@ -406,11 +408,13 @@ INSERT INTO public.application_tags(
   ('COB_PARCIAL', 'COB', 'COBROS', 'ESP','Parcial'),
   ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento'),
   ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.'),
+  ('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Anticipo, debe agregar al menos un adjunto.'),
   ('COB_PAGO_MOVIL', 'COB', 'COBROS', 'ESP', 'Pago Móvil'),
   ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono'),
   ('COB_DESCUENTO', 'COB', 'COBROS', 'ESP', 'Monto descuento'),
   ('COB_IVA', 'COB', 'COBROS', 'ESP', 'Monto IVA'),
-  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total');
+  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total'),
+  ('COB_RESET_ENTERPRISE_CONFIRMA', 'COB', 'COBROS', 'ESP','Se ha detectado cambio del empresa por lo que deberá iniciar nuevamente la transacción.');
 
 
 
@@ -515,7 +519,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
   ('INV_ACTIVIDADES_EXHIBICION','INV','INVENTARIO','ESP','Exhibición'),
   ('INV_ACTIVIDADES_DEPOSITO','INV','INVENTARIO','ESP','Depósito'),
   ('INV_ACTIVIDADES_ACCION','INV','INVENTARIO','ESP','Acción');
-  
+
 
 
 -- PRODUCTOS
@@ -573,6 +577,10 @@ INSERT INTO public.application_tags(
 	('PROD_INV_CAPTURE_PLACEHOLDER_CANTIDAD', 'PROD', 'PRODUCTOS', 'ESP', 'Ingrese cantidad'),
 	('PROD_INV_CAPTURE_LOTE', 'PROD', 'PRODUCTOS', 'ESP', 'Lote'),
 	('PROD_INV_CAPTURE_PLACEHOLDER_LOTE', 'PROD', 'PRODUCTOS', 'ESP', 'Ingrese lote'),
+	('PROD_PACKING_PROD', 'PROD', 'PRODUCTOS', 'ESP', 'Empaque producto'),
+	('PROD_PACKING_PROD', 'PROD', 'PRODUCTOS', 'ENG', 'Packing'),
+	('PROD_DIMENSION_PROD', 'PROD', 'PRODUCTOS', 'ESP', 'Dimensión producto'),
+	('PROD_DIMENSION_PROD', 'PROD', 'PRODUCTOS', 'ENG', 'Dimensions'),
 	('PROD_INV_CAPTURE_FECHA_VENCIMIENTO', 'PROD', 'PRODUCTOS', 'ESP', 'Fecha de vencimiento');
 
 -- DEVOLUCIONES

@@ -1,10 +1,6 @@
 [
-  {
-    "sql": "CREATE TABLE IF NOT EXISTS collect_retentions (id_collect_retention INTEGER PRIMARY KEY, co_collect_retention VARCHAR(80), na_collect_retention VARCHAR(200), id_enterprise INTEGER);",
-    "description": "Se crea la tabla 'collect_retentions' para almacenar retenciones de cobro por empresa."
-  },
-  {
-    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_retentions(id_collection_detail_retention INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_retention INTEGER, co_collect_retention VARCHAR(80), nu_amount_retention NUMERIC(29,4), nu_amount_retention_conversion NUMERIC(29,4), co_collection VARCHAR(30), posicion INTEGER, co_document VARCHAR(30));",
-    "description": "Se crea la tabla 'collection_detail_retentions' para almacenar las retenciones seleccionadas por detalle de cobro."
-  }
+    {
+        "sql": "ALTER TABLE order_types ADD COLUMN id_iva_list INTEGER;",
+        "description": "Se agrega la columna 'id_iva_list' a 'order_types' para vincular el tipo de pedido con una lista de IVA."
+    }
 ]

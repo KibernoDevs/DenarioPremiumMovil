@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonAccordionGroup, IonInput } from '@ionic/angular';
 import { Subject, Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
@@ -104,6 +104,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       })
     );
 
+    this.subs.add(
+      this.orderServ.orderTypeIvaChanged$.subscribe(() => {
+        if (this.modoLista === 'carrito') {
+          this.cd.markForCheck();
+          return;
+        }
+        if (this.productList?.length) {
+          this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+        }
+        this.cd.markForCheck();
+      })
+    );
+
     this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
       this.searchText = value;
     });
@@ -204,6 +217,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.showProductList = showList;
       this.modoLista = 'carrito';
       this.orderUtilList = this.orderServ.carrito;
+      this.syncCartStockDisplay();
       this.warehouseList = this.orderServ.listaWarehouse;
       this.nameProductStructure = this.orderServ.getTag("PED_CARRITO")
       this.noProductsAlertShown = (this.orderUtilList.length == 0);
@@ -324,72 +338,136 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.subs.unsubscribe();
   }
 
-  onProductQuantityChange(prod: OrderUtil) {
-    let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if ((prod.discountList.length > 1)) {
-      this.autoDiscount(prod);
+  private parseQuantityInputValue(raw: string | number | null | undefined): number {
+    if (raw === '' || raw === null || raw === undefined) {
+      return 0;
     }
-    if (prod.quStock <= 0) {
-      if (this.orderServ.stock0) {
-        if (this.orderServ.validStock) {
-          //mostramos error, pero dejamos agregar al carrito
-          this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ALERTA_INVENTARIO"));
-        }
-        //no hay que chequear inventario
-        unit.quAmount = prod.quAmount;
-        this.orderServ.alCarrito(prod);
-        return;
-      } else {
-        if (prod.quStockAux == prod.quAmount) {
-          //se llevo la cantidad justa. no hay problema
-          unit.quAmount = prod.quAmount;
-          this.orderServ.alCarrito(prod);
-        } else {
-          this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
-          prod.quAmount = 0;
-        }
-
-      }
-    }
-
-    //hay que chequear inventario
-    if (this.orderServ.validStock) {
-      prod.quStock = prod.quStockAux - prod.quAmount;
-    }
-    if (this.orderServ.validStock && !this.orderServ.stock0 &&(prod.quAmount > prod.quStockAux)) {
-      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
-      prod.quAmount = 0;
-    } else {
-      unit.quAmount = prod.quAmount;
-      this.orderServ.alCarrito(prod);
-    }
-
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-  onProductQuantityInput(prod: OrderUtil) {
-    //igual que onProductQuantityChange, pero no mando al carrito
-    let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
+  private hasZeroWarehouseStock(prod: OrderUtil): boolean {
+    return prod.quStockAux <= 0;
+  }
+
+  /** Bloquea cantidad mayor al inventario solo cuando stock0=NO y validStock está activo. */
+  private shouldEnforceStockLimit(): boolean {
+    return this.orderServ.validStock && !this.orderServ.stock0;
+  }
+
+  /** stock0=SI: permite agregar productos aunque el almacén tenga inventario cero. */
+  private allowsOrderingWithoutStock(): boolean {
+    return this.orderServ.stock0;
+  }
+
+  private refreshRemainingStock(prod: OrderUtil, quantity?: number): void {
+    prod.quStock = this.computeRemainingStockBase(prod, quantity);
+  }
+
+  private computeRemainingStockBase(prod: OrderUtil, quantity?: number): number {
+    const amount = Number(quantity ?? prod.quAmount ?? 0);
+    return Math.max(0, prod.quStockAux - amount);
+  }
+
+  private formatStockByUnit(prod: OrderUtil, stockBaseUnits: number): string {
+    const unit = prod.unitList?.find(u => prod.idUnit === u.idUnit);
+    if (!unit?.quUnit) {
+      return String(stockBaseUnits);
+    }
+    if (this.orderServ.quUnitDecimals) {
+      return this.formatNum(stockBaseUnits / unit.quUnit);
+    }
+    return Math.floor(stockBaseUnits / unit.quUnit).toString();
+  }
+
+  /**
+   * Stock restante en cabecera. Con stock0 y almacén en cero muestra 0 pero permite pedir.
+   */
+  getDisplayedRemainingStock(prod: OrderUtil): string {
+    if (this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
+      return '0';
+    }
+    const remaining = this.computeRemainingStockBase(prod);
+    if (remaining <= 0) {
+      return '0';
+    }
+    return this.formatStockByUnit(prod, remaining);
+  }
+
+  private syncCartStockDisplay(): void {
+    this.orderServ.carrito.forEach((prod) => this.refreshRemainingStock(prod));
+    this.cd.detectChanges();
+  }
+
+  onProductQuantityChange(prod: OrderUtil) {
+    const quantity = Number(prod.quAmount ?? 0);
+    const unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
     if ((prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
-    if (this.orderServ.stock0 && prod.quStock == 0) {
-      //no hay que chequear inventario
-      unit.quAmount = prod.quAmount;
-      //this.orderServ.alCarrito(prod);
+
+    if (this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
+      if (this.orderServ.validStock) {
+        this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ALERTA_INVENTARIO"));
+      }
+      unit.quAmount = quantity;
+      this.orderServ.alCarrito(prod);
+      this.cd.detectChanges();
       return;
     }
-    //hay que chequear inventario
-    if (this.orderServ.validStock) {
-      prod.quStock = prod.quStockAux - prod.quAmount;
-    }
-    if (this.orderServ.validStock && !this.orderServ.stock0 && (prod.quAmount > prod.quStockAux)) {
+
+    this.refreshRemainingStock(prod, quantity);
+
+    if (this.shouldEnforceStockLimit() && quantity > prod.quStockAux) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
-    } else {
-      unit.quAmount = prod.quAmount;
-      //this.orderServ.alCarrito(prod);
+      unit.quAmount = 0;
+      this.refreshRemainingStock(prod, 0);
+      this.cd.detectChanges();
+      return;
     }
 
+    if (!this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod) && quantity > 0) {
+      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
+      prod.quAmount = 0;
+      unit.quAmount = 0;
+      this.refreshRemainingStock(prod, 0);
+      this.cd.detectChanges();
+      return;
+    }
+
+    unit.quAmount = quantity;
+    this.orderServ.alCarrito(prod);
+    this.cd.detectChanges();
+  }
+
+  onProductQuantityInput(prod: OrderUtil, event?: Event) {
+    const raw = (event as CustomEvent)?.detail?.value;
+    const quantity = this.parseQuantityInputValue(raw ?? prod.quAmount);
+    prod.quAmount = quantity;
+
+    const unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
+    if ((prod.discountList.length > 1)) {
+      this.autoDiscount(prod);
+    }
+
+    if (this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
+      unit.quAmount = quantity;
+      this.cd.detectChanges();
+      return;
+    }
+
+    this.refreshRemainingStock(prod, quantity);
+
+    if (this.shouldEnforceStockLimit() && quantity > prod.quStockAux) {
+      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
+      prod.quAmount = 0;
+      unit.quAmount = 0;
+      this.refreshRemainingStock(prod, 0);
+    } else {
+      unit.quAmount = quantity;
+    }
+    this.cd.detectChanges();
   }
 
   getDiscountName(discount: Discount) {
@@ -449,20 +527,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   }
 
   onSelectProductPed(i: number, prod: OrderUtil) {
-
-    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
+    if (!this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
-      //this.accordionGroup.value = undefined;
-    } else {
-      //const nativeEl = this.accordionGroup;
-      //autofoco al abrir el producto seleccionado
-      /*
-      if (this.accordionGroup.value !== prod.coProduct) {
-        setTimeout(() => {
-          this.quAmountInputs.toArray()[i].setFocus();
-        }, 150);
-      }
-      */
     }
   }
 
@@ -610,6 +676,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     return (o1 != null && o2 != null && Number(o1) === Number(o2));
   }
 
+  compareIvaPrice(a: number | string, b: number | string): boolean {
+    return Number(a) === Number(b);
+  }
+
   /*
   compareWarehouse = (o1: any, o2: any) => {
     if (o1 === o2) return true;
@@ -625,17 +695,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     product.idWarehouse = warehouse.idWarehouse;
     product.naWarehouse = warehouse.naWarehouse;
     product.coWarehouse = warehouse.coWarehouse;
-    if (stock) {
-      product.quStock = stock.quStock;
-      product.quStockAux = stock.quStock;
-    } else {
-      product.quStock = 0;
-      product.quStockAux = 0;
-    }
+    const quStockOriginal = stock ? stock.quStock : 0;
+    product.quStockAux = quStockOriginal;
 
+    this.refreshRemainingStock(product);
     this.onProductQuantityChange(product);
-    this.orderServ.alCarrito(product);
-
   }
 
   private isDistinctItemsLimitActive(): boolean {
@@ -681,7 +745,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (!prod.nuPrice) {
       return true;
     }
-    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
+    if (!this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
       if (!this.orderServ.userCanChangeWarehouse) {
@@ -707,12 +771,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   }
 
   quStock(prod: OrderUtil) {
-    let stock = prod.quStock;
-    let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if (this.orderServ.quUnitDecimals) {
-      return this.formatNum(stock / unit.quUnit);
-    }
-    return Math.floor(stock / unit.quUnit).toString();
+    return this.formatStockByUnit(prod, prod.quStock);
   }
 
 
