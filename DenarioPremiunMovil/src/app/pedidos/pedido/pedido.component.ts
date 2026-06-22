@@ -1496,6 +1496,14 @@ export class PedidoComponent implements OnInit {
     return this.currencyServ.formatNumber(input);
   }
 
+  formatQtyAmount(qty: number): string {
+    const amount = Number(qty ?? 0);
+    if (!this.orderServ.quUnitDecimals) {
+      return Math.floor(amount).toString();
+    }
+    return this.formatNum(amount);
+  }
+
   getSelectedUnitPricingRows(item: OrderUtil): SelectedUnitPricingRow[] {
     return this.orderServ.getSelectedUnitPricingRows(item);
   }
@@ -1543,7 +1551,7 @@ export class PedidoComponent implements OnInit {
 
           unitList.forEach(unit => {
             if (unit.quAmount > 0 || unit.quUnit > 0) {
-              qtyStrings.push(this.formatNum(Number(unit.quAmount ?? 0)));
+              qtyStrings.push(this.formatQtyAmount(Number(unit.quAmount ?? 0)));
               unitStrings.push(String(unit.naUnit ?? '').trim());
             }
           });
@@ -1554,7 +1562,7 @@ export class PedidoComponent implements OnInit {
 
           const primary = unitList.find(u => u.idUnit === item.idUnit);
           return {
-            qtyLines: this.formatNum(Number(item.quAmount ?? 0)),
+            qtyLines: this.formatQtyAmount(Number(item.quAmount ?? 0)),
             unitLines: String(primary?.naUnit ?? '').trim()
           };
         };
