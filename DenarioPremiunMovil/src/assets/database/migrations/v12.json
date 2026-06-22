@@ -1,0 +1,6 @@
+[
+    {
+        "sql": "CREATE TABLE IF NOT EXISTS collect_retentions (id_collect_retention INTEGER PRIMARY KEY, co_collect_retention VARCHAR(80), na_collect_retention VARCHAR(200), id_enterprise INTEGER);",
+        "description": "Se agrega la tabla 'collect_retentions' para almacenar las retenciones de cobranza."
+    }
+]

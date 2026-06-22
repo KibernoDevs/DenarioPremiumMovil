@@ -298,11 +298,9 @@ export class CobrosHeaderComponent implements OnInit {
       //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
       try {
         const details = this.collectService.collection?.collectionDetails;
-        const hasRetentions = Array.isArray(details) && details.some(d => {
-          const r1 = Number(d?.nuAmountRetention ?? 0);
-          const r2 = Number(d?.nuAmountRetention2 ?? 0);
-          return (r1 > 0) || (r2 > 0);
-        });
+        const hasRetentions = Array.isArray(details) && details.some(d =>
+          this.collectService.getDetailRetentionTotal(d) > 0
+        );
 
 
         //NUEVA VALIDACION, SI LA CONFIGURACION DE LA EMPRESA INDICA QUE LOS COBROS REQUIEREN ADJUNTOS, SE VALIDA QUE HAYA ADJUNTOS INDEPENDIENTEMENTE DE SI HAY RETENCIONES O NO

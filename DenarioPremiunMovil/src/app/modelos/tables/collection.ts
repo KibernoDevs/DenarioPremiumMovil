@@ -149,6 +149,7 @@ export class CollectionDetail {
       obj['missingRetention'],
       obj['nuAmountCollectDiscountConversion'],
       obj['collectionDetailDiscounts'],
+      obj['collectionDetailRetentions'],
     );
   }
 

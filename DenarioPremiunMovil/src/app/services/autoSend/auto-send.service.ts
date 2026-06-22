@@ -262,51 +262,26 @@ export class AutoSendService implements OnInit {
               })
 
             } else if (coType === 2) {
-              this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails.map(detail => ({
-                  ...detail,
-                  nuBalanceDoc: detail.nuBalanceDocOriginal,
-                  nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
-                }));
-                this.collectionService.getCollectionDetailsRetentions(this.dbService.getDatabase(), coTransaction).then((collectionDetailsRetentions) => {
-                  const retentions = collectionDetailsRetentions || [];
-                  for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
-                    const detail = request.collection!.collectionDetails[i] as any;
-                    detail.collectionDetailRetentions = retentions.filter(r => r.coDocument === detail.coDocument) ?? [];
-                  }
-                  request.collection!.collectionPayments = [];
+              this.collectionService.prepareCollectionDetailsForSend(
+                this.dbService.getDatabase(),
+                coTransaction
+              ).then((collectionDetails) => {
+                request.collection!.collectionDetails = collectionDetails;
+                request.collection!.collectionPayments = [];
+                resolve("ok");
+              });
+            } else {
+              this.collectionService.prepareCollectionDetailsForSend(
+                this.dbService.getDatabase(),
+                coTransaction,
+                { includeDiscounts: true }
+              ).then((collectionDetails) => {
+                request.collection!.collectionDetails = collectionDetails;
+                this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
+                  request.collection!.collectionPayments = collectionPayments;
                   resolve("ok");
                 });
-              })
-            } else {
-              this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails.map(detail => ({
-                  ...detail,
-                  nuBalanceDoc: detail.nuBalanceDocOriginal,
-                  nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
-                }));
-                this.collectionService.getCollectionDetailsDiscounts(this.dbService.getDatabase(), coTransaction).then((collectionDetailsDiscounts) => {
-                  const all = collectionDetailsDiscounts || [];
-                  const isDiscount = (x: any): x is any => x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined);
-                  const discounts = (all as any[]).filter(isDiscount);
-                  for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
-                    const detail = request.collection!.collectionDetails[i] as any;
-                    // Añadir/normalizar la propiedad donde se guardarán los descuentos del detalle
-                    detail.collectionDetailDiscounts = discounts.filter(d => d.coDocument === detail.coDocument) ?? [];
-                  }
-                  this.collectionService.getCollectionDetailsRetentions(this.dbService.getDatabase(), coTransaction).then((collectionDetailsRetentions) => {
-                    const retentions = collectionDetailsRetentions || [];
-                    for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
-                      const detail = request.collection!.collectionDetails[i] as any;
-                      detail.collectionDetailRetentions = retentions.filter(r => r.coDocument === detail.coDocument) ?? [];
-                    }
-                    this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
-                      request.collection!.collectionPayments = collectionPayments;
-                      resolve("ok");
-                    })
-                  });
-                });
-              })
+              });
             }
 
           })
@@ -351,6 +326,14 @@ export class AutoSendService implements OnInit {
             }
 
             if (send) {
+              const retentionLines = this.collectionService.countCollectionDetailRetentionsForSend(
+                request.collection?.collectionDetails
+              );
+              console.log('[AutoSendService] collection_detail_retentions en payload', {
+                coCollection: coTransaction,
+                coType,
+                retentionLines,
+              });
               this.sendTransaction(request, type, coTransaction);
             }
           });
@@ -624,30 +607,17 @@ export class AutoSendService implements OnInit {
       request.collection.collectionPayments = await this.collectionService.getCollectionPayments(db, coTransaction);
       request.collection.collectionDetails = [];
     } else if (coType === 2) {
-      const collectionDetails = await this.collectionService.getCollectionDetails(db, coTransaction);
-      request.collection.collectionDetails = collectionDetails.map(detail => ({
-        ...detail,
-        nuBalanceDoc: detail.nuBalanceDocOriginal,
-        nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
-      }));
+      request.collection.collectionDetails = await this.collectionService.prepareCollectionDetailsForSend(
+        db,
+        coTransaction
+      );
       request.collection.collectionPayments = [];
     } else {
-      const collectionDetails = await this.collectionService.getCollectionDetails(db, coTransaction);
-      request.collection.collectionDetails = collectionDetails.map(detail => ({
-        ...detail,
-        nuBalanceDoc: detail.nuBalanceDocOriginal,
-        nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
-      }));
-      const collectionDetailsDiscounts = await this.collectionService.getCollectionDetailsDiscounts(db, coTransaction);
-      const all = (collectionDetailsDiscounts || []) as any[];
-      const isDiscount = (x: any): boolean =>
-        Boolean(x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined));
-      const discounts = all.filter(isDiscount);
-      for (let i = 0; i < request.collection.collectionDetails.length; i++) {
-        const detail = request.collection.collectionDetails[i] as any;
-        detail.collectionDetailDiscounts =
-          discounts.filter((d: any) => d.coDocument === detail.coDocument) ?? [];
-      }
+      request.collection.collectionDetails = await this.collectionService.prepareCollectionDetailsForSend(
+        db,
+        coTransaction,
+        { includeDiscounts: true }
+      );
       request.collection.collectionPayments = await this.collectionService.getCollectionPayments(db, coTransaction);
     }
 
@@ -686,6 +656,16 @@ export class AutoSendService implements OnInit {
     if (!send) {
       return true;
     }
+
+    const retentionLines = this.collectionService.countCollectionDetailRetentionsForSend(
+      request.collection?.collectionDetails
+    );
+    console.log('[AutoSendService] collection_detail_retentions en payload', {
+      coCollection: coTransaction,
+      coType,
+      retentionLines,
+    });
+
     return await this.sendTransaction(request, "collect", coTransaction);
   }
 

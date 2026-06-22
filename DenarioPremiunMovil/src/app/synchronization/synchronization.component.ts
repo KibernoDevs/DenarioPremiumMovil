@@ -210,7 +210,7 @@ export class SynchronizationComponent implements OnInit {
     typeDocument: 'Tipo de Documento',
     codePhoneNumber: 'Código de Número Telefónico',
     unit_pricelist: 'Lista de Precio por Unidad',
-    collectRetention: 'Retenciones de Cobro',
+    collectRetention: 'Tipos de Retención',
   };
 
   constructor(
