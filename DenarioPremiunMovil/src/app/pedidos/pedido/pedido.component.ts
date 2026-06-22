@@ -677,6 +677,7 @@ export class PedidoComponent implements OnInit {
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
+        const unitBaseTotal = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
         let u = new OrderDetailUnit(
           0,
           this.dateServ.generateCO((10 * i)) + 'U' + j.toString(),
@@ -690,6 +691,8 @@ export class PedidoComponent implements OnInit {
           0,
           unitPriceList.coPriceList,
           unitPriceList.idPriceList,
+          unitBaseTotal.nuBaseTotal,
+          unitBaseTotal.nuBaseTotalConversion,
         )
 
 

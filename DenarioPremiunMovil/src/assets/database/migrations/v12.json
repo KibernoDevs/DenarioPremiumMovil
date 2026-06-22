@@ -6,5 +6,13 @@
     {
         "sql": "ALTER TABLE orders ADD COLUMN nu_amount_tax_conversion NUMERIC(29,4);",
         "description": "Se agrega la columna 'nu_amount_tax_conversion' a 'orders' para almacenar el monto de impuesto convertido del pedido."
+    },
+    {
+        "sql": "ALTER TABLE order_detail_units ADD COLUMN nu_base_total NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_base_total' a 'order_detail_units' para almacenar el total base de la unidad."
+    },
+    {
+        "sql": "ALTER TABLE order_detail_units ADD COLUMN nu_base_total_conversion NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_base_total_conversion' a 'order_detail_units' para almacenar el total base convertido de la unidad."
     }
 ]
