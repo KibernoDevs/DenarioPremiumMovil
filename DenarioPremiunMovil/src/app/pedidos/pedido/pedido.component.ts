@@ -783,6 +783,8 @@ export class PedidoComponent implements OnInit {
       procedencia: "Denario",
       nuAmountTotalBaseConversion: this.orderServ.totalBaseConv,
       nuAmountDiscountConversion: this.orderServ.totalDctoXProductoConv,
+      nuAmountTax: this.orderServ.orderIVA,
+      nuAmountTaxConversion: this.orderServ.orderIVAConv,
       idOrderType: this.tipoOrden.idOrderType,
       orderDetails: orderDetails,
       nuDetails: orderDetails.length,
@@ -1813,7 +1815,9 @@ export class PedidoComponent implements OnInit {
       coDistributionChannel: null,
       idClientStock: null,
       coClientStock: null,
-      stDelivery: DELIVERY_STATUS_NEW
+      stDelivery: DELIVERY_STATUS_NEW,
+      nuAmountTax: 0,
+      nuAmountTaxConversion: 0,
     } as Orders;
   }
   getNaPaymentCondition(coPaymentCondition: string) {

@@ -1,0 +1,10 @@
+[
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN nu_amount_tax NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_amount_tax' a 'orders' para almacenar el monto de impuesto del pedido."
+    },
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN nu_amount_tax_conversion NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_amount_tax_conversion' a 'orders' para almacenar el monto de impuesto convertido del pedido."
+    }
+]

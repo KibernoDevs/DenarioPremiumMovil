@@ -1003,7 +1003,7 @@ export class AutoSendService implements OnInit {
         "id_currency as idCurrency, id_currency_conversion as idCurrencyConversion, nu_value_local as nuValueLocal, " +
         "nu_amount_total_conversion as nuAmountTotalConversion, nu_amount_final_conversion as nuAmountFinalConversion, " +
         "procedencia , nu_amount_total_base_conversion as nuAmountTotalBaseConversion, " +
-        "nu_amount_discount_conversion nuAmountDiscountConversion, id_order_type as idOrderType, nu_attachments as nuAttachments, has_attachments as hasAttachments " +
+        "nu_amount_discount_conversion nuAmountDiscountConversion, nu_amount_tax as nuAmountTax, nu_amount_tax_conversion as nuAmountTaxConversion, id_order_type as idOrderType, nu_attachments as nuAttachments, has_attachments as hasAttachments " +
         "FROM orders WHERE co_order = ?";
 
       let queryDetails = "SELECT co_order_detail as coOrderDetail , co_order as coOrder , co_product as coProduct, " +

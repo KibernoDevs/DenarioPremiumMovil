@@ -1563,7 +1563,13 @@ export class PedidosService {
 
 
 
+  applyHeaderTaxAmounts(order: Orders): void {
+    order.nuAmountTax = this.orderIVA;
+    order.nuAmountTaxConversion = this.orderIVAConv;
+  }
+
   saveOrder(order: Orders) {
+    this.applyHeaderTaxAmounts(order);
 
     return this.db.saveOrder(this.database, order).then(result => {
       console.log("Pedido #" + order.coOrder + " Guardado!");
@@ -1887,7 +1893,9 @@ export class PedidosService {
       "coDistributionChannel": null,
       "idClientStock": null,
       "coClientStock": null,
-      "stDelivery": DELIVERY_STATUS_NEW
+      "stDelivery": DELIVERY_STATUS_NEW,
+      "nuAmountTax": 0,
+      "nuAmountTaxConversion": 0
     }
 
     for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {

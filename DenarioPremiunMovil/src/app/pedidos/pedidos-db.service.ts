@@ -397,10 +397,10 @@ export class PedidosDbService {
       "id_payment_condition, id_enterprise, co_address_client, id_address_client, nu_amount_discount, " +
       "nu_amount_total_base, st_order, coordenada, nu_discount, id_currency, id_currency_conversion, " +
       "nu_value_local, nu_amount_total_conversion, nu_amount_final_conversion, procedencia, " +
-      "nu_amount_total_base_conversion, nu_amount_discount_conversion, id_order_type, nu_attachments, has_attachments, " +
+      "nu_amount_total_base_conversion, nu_amount_discount_conversion, nu_amount_tax, nu_amount_tax_conversion, id_order_type, nu_attachments, has_attachments, " +
       "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel, " +
       "st_delivery, id_client_stock, co_client_stock) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
@@ -425,7 +425,7 @@ export class PedidosDbService {
     order.idPaymentCondition, order.idEnterprise, order.coAddress, order.idAddress, order.nuAmountDiscount,
     order.nuAmountTotalBase, order.stOrder, order.coordenada, order.nuDiscount, order.idCurrency, order.idCurrencyConversion,
     order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
-    order.nuAmountDiscountConversion, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
+    order.nuAmountDiscountConversion, order.nuAmountTax ?? null, order.nuAmountTaxConversion ?? null, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
     order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel, order.stDelivery,
     order.idClientStock ?? null, order.coClientStock ?? null]]);
 
@@ -471,10 +471,10 @@ export class PedidosDbService {
       "id_payment_condition, id_enterprise, co_address_client, id_address_client, nu_amount_discount, " +
       "nu_amount_total_base, st_order, coordenada, nu_discount, id_currency, id_currency_conversion, " +
       "nu_value_local, nu_amount_total_conversion, nu_amount_final_conversion, procedencia, " +
-      "nu_amount_total_base_conversion, nu_amount_discount_conversion, id_order_type, nu_attachments, has_attachments, " +
+      "nu_amount_total_base_conversion, nu_amount_discount_conversion, nu_amount_tax, nu_amount_tax_conversion, id_order_type, nu_attachments, has_attachments, " +
       "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel, " +
       "st_delivery, id_client_stock, co_client_stock) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -487,7 +487,7 @@ export class PedidosDbService {
       order.idPaymentCondition, order.idEnterprise, order.coAddress, order.idAddress, order.nuAmountDiscount,
       order.nuAmountTotalBase, order.stOrder, order.coordenada, order.nuDiscount, order.idCurrency, order.idCurrencyConversion,
       order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
-      order.nuAmountDiscountConversion, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
+      order.nuAmountDiscountConversion, order.nuAmountTax ?? null, order.nuAmountTaxConversion ?? null, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
       order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel, order.stDelivery,
       order.idClientStock ?? null, order.coClientStock ?? null]]);
     }
@@ -912,6 +912,8 @@ export class PedidosDbService {
       procedencia: orderDB.procedencia,
       nuAmountTotalBaseConversion: orderDB.nu_amount_total_base_conversion,
       nuAmountDiscountConversion: orderDB.nu_amount_discount_conversion,
+      nuAmountTax: orderDB.nu_amount_tax == null ? 0 : orderDB.nu_amount_tax,
+      nuAmountTaxConversion: orderDB.nu_amount_tax_conversion == null ? 0 : orderDB.nu_amount_tax_conversion,
       idOrderType: orderDB.id_order_type,
       nuAttachments: orderDB.nu_attachments,
       hasAttachments: orderDB.has_attachments,
