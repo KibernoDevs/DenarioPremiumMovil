@@ -995,10 +995,6 @@ export class CollectionService {
               if (this.collection.collectionDetails[j].inPaymentPartial === true) {
                 monto += this.collection.collectionDetails[pos].nuAmountPaid;
                 montoConversion += this.convertirMonto(this.collection.collectionDetails[pos].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-                montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                  this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                  this.collection.collectionDetails[pos].nuAmountRetention +
-                  this.collection.collectionDetails[pos].nuAmountRetention2;
               } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
                 monto += this.documentSalesBackup[i].nuBalance;
                 montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
