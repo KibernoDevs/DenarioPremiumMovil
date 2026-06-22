@@ -137,7 +137,7 @@
     </ion-row>
     }
 
-    <!-- Catálogo: Productos, Sincronizar y Salir -->
+    <!-- Catálogo: Productos y Sincronizar -->
     @if(user.catalogo){
     <div class="catalogo-layout">
       <div class="catalogo-modules">
@@ -152,19 +152,12 @@
           }
         </ion-row>
       </div>
-      <ion-row class="catalogo-exit-row">
-        <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
-          <ion-button class="btnEnter ion-text-center" expand="block" fill="clear" color="tertiary" size="small"
-            routerLink="/login">Salir</ion-button>
-        </ion-col>
-      </ion-row>
     </div>
     }
   </ion-grid>
 
   <ion-alert [isOpen]="isAlertOpen" header="Denario Premium" [message]="mensaje" [buttons]="alertButtons"
     (didDismiss)="setOpen(false)"></ion-alert>
-  @if(!user.catalogo){
   <ion-grid>
     <ion-row>
       <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
@@ -173,7 +166,6 @@
       </ion-col>
     </ion-row>
   </ion-grid>
-  }
 
 
   <ion-footer class="footer footerhome ion-no-border">
