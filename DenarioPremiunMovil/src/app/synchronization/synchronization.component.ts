@@ -295,7 +295,7 @@ export class SynchronizationComponent implements OnInit {
     }
 
     if (this.user.catalogo) {
-      const tablasCatalogo = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 53, 59, 60, 72, 74];
+      const tablasCatalogo = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74];
       this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCatalogo.includes(id));
     }
 
