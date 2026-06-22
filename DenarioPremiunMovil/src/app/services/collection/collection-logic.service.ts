@@ -173,6 +173,7 @@ export class CollectionService {
   public createAutomatedPrepaid: boolean = false;
   public addRetention: boolean = false;
   public documentsSaleComponent: boolean = false;
+  public documentsClientReloaded$ = new Subject<number>();
   public cobroComponent: boolean = false;
   public cobrosComponent: boolean = true;
   public cobrosDocumentComponent: boolean = true;
@@ -1960,9 +1961,7 @@ export class CollectionService {
 
     //this.enterpriseSelected = {} as Enterprise;
     this.listBankAccounts = [] as BankAccount[];
-    this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[];
-    this.mapDocumentsSales = new Map<number, DocumentSale>([]);
+    this.clearDocumentSalesState();
     this.tempSelectedCollectDiscounts = [] as CollectDiscounts[];
     this.prevSelectedCollectDiscounts = [] as CollectDiscounts[];
 
@@ -2721,6 +2720,17 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     })
   }
 
+  clearDocumentSalesState(): void {
+    this.documentSales = [] as DocumentSale[];
+    this.documentSalesBackup = [] as DocumentSale[];
+    this.documentSalesView = [] as DocumentSale[];
+    this.mapDocumentsSales.clear();
+    this.documentSalesPageIds.clear();
+    this.documentSalesTotalRows = 0;
+    this.documentSalesCurrentPage = 0;
+    this.documentsSaleComponent = false;
+  }
+
   async getDocumentsSales(
     dbServ: SQLiteObject,
     idClient: number,
@@ -2731,11 +2741,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   ): Promise<DocumentSale[] | void> {
 
     if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) return Promise.resolve();
-    this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[];
-    this.documentSalesView = [] as DocumentSale[];
-    this.mapDocumentsSales.clear();
-    this.documentSalesPageIds.clear();
+    this.clearDocumentSalesState();
 
     if (pagination) {
       this.documentSalesPageSize = pagination.limit;
@@ -2778,6 +2784,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         this.convertDocumentSales();
 
       this.getColorRowDocumentSale();
+      this.documentsClientReloaded$.next(idClient);
       return this.documentSales;
     } catch {
       return Promise.resolve(this.documentSales);

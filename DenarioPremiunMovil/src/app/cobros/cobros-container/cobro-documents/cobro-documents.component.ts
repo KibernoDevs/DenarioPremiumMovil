@@ -16,6 +16,8 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { IgtfList } from 'src/app/modelos/tables/igtfList';
 import { MessageService } from 'src/app/services/messageService/message.service';
+import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
+import { Subscription } from 'rxjs';
 
 
 @Component({
@@ -27,6 +29,7 @@ import { MessageService } from 'src/app/services/messageService/message.service'
 export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public collectService = inject(CollectionService);
+  public clientSelectorService = inject(ClienteSelectorService);
   public globalConfig = inject(GlobalConfigService);
   public currencyService = inject(CurrencyService);
   public dateServ = inject(DateServiceService);
@@ -104,6 +107,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private documentsTableLayoutKey = '';
   private documentsTableLayoutFrame = 0;
   private documentsTableResizeObserver?: ResizeObserver;
+  private lastLoadedClientId: number | null = null;
+  private clientChangedSub?: Subscription;
+  private documentReloadSub?: Subscription;
 
 
   public alertButtons = [
@@ -139,7 +145,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   ngOnInit() {
     this.fechaHoy = this.dateServ.onlyDateHoyISO();
     this.initializeDocumentCurrencyFilter();
-    // this.collectService.deepFreeze(this.collectService.documentSalesView);
+
+    this.clientChangedSub = this.clientSelectorService.ClientChanged.subscribe(() => {
+      this.lastLoadedClientId = null;
+      this.clearLocalDocumentsView();
+    });
+
+    this.documentReloadSub = this.collectService.documentsClientReloaded$.subscribe((idClient) => {
+      this.lastLoadedClientId = idClient;
+      this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+      this.cdr.detectChanges();
+    });
   }
 
   ngAfterViewInit(): void {
@@ -166,10 +182,40 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnDestroy(): void {
+    this.clientChangedSub?.unsubscribe();
+    this.documentReloadSub?.unsubscribe();
     this.documentsTableResizeObserver?.disconnect();
     if (this.documentsTableLayoutFrame) {
       cancelAnimationFrame(this.documentsTableLayoutFrame);
     }
+  }
+
+  private clearLocalDocumentsView(): void {
+    this.filteredDocumentsView = [];
+    this.documentsTableLayoutReady = false;
+    this.markDocumentsTableLayoutPending();
+    this.cdr.detectChanges();
+  }
+
+  async refreshDocumentsForCurrentClient(forceReload = false): Promise<void> {
+    const clientId = this.collectService.collection.idClient;
+    if (!clientId) {
+      this.clearLocalDocumentsView();
+      return;
+    }
+
+    if (!forceReload
+      && this.lastLoadedClientId === clientId
+      && this.filteredDocumentsView.length > 0) {
+      this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.clearLocalDocumentsView();
+    await this.loadDocumentsSalePage(0, clientId);
+    this.lastLoadedClientId = clientId;
+    this.cdr.detectChanges();
   }
 
 
