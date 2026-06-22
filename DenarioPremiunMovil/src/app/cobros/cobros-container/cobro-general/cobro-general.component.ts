@@ -847,6 +847,12 @@ export class CobrosGeneralComponent implements OnInit {
                     this.collectService.collection.idEnterprise
                   );
                 }
+                if (this.collectService.retencion) {
+                  this.collectService.getCollectRetentions(
+                    this.synchronizationServices.getDatabase(),
+                    this.collectService.collection.idEnterprise
+                  );
+                }
                 this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
 
               });

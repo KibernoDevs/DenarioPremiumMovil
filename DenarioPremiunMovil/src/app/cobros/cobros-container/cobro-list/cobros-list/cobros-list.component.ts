@@ -259,6 +259,16 @@ export class CobrosListComponent implements OnInit {
 
             }
 
+            this.collectService.getCollectionDetailsRetentions(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsRetentions => {
+              const retentions = collectionDetailsRetentions || [];
+              if (retentions.length > 0) {
+                for (const detail of this.collectService.collection.collectionDetails) {
+                  detail.collectionDetailRetentions = retentions.filter(
+                    r => r.coDocument === detail.coDocument
+                  ) ?? [];
+                }
+              }
+
             this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
               if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1) {
                 this.collectService.hideDocuments = true;
@@ -277,6 +287,7 @@ export class CobrosListComponent implements OnInit {
               this.collectService.cobroComponent = true;
               this.collectService.markCollectionOpenedFromPersistedCopy();
               this.messageService.hideLoading();
+            })
             })
           })
         });
