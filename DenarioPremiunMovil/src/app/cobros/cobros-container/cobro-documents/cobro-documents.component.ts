@@ -1546,6 +1546,18 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     return 0;
   }
 
+  private shouldSkipSendValidationOnPaymentRecalc(): boolean {
+    const cs = this.collectService;
+    if (!cs.isOpen) {
+      return false;
+    }
+    const openIndex = cs.indexDocumentSaleOpen;
+    if (openIndex < 0) {
+      return false;
+    }
+    return !cs.documentSales[openIndex]?.isSave;
+  }
+
   setAmountTotal() {
     const cs = this.collectService;
     const {
@@ -1795,7 +1807,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (cs.validNuRetention && doc.daVoucher === '') {
         this.disabledSaveButton = true;
       }
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
       return;
     }
@@ -1859,7 +1871,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       //cs.documentSalesBackup[index].nuBalance = amountPaid;
       cs.documentSalesBackup[index].nuAmountPaid = amountPaid;
 
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
       return;
     }
@@ -1888,7 +1900,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         }
         cs.documentSales[index].nuBalance = cs.amountPaid;
         this.disabledSaveButton = false;
-        cs.calculatePayment("", 0);
+        cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
         this.cdr.detectChanges();
         return;
       }
@@ -1927,13 +1939,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidDoc));
 
     if (!this.disabledSaveButton) {
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
     }
 
     if (cs.isChangePaymentPartial && !cs.isPaymentPartial) {
       this.disabledSaveButton = false;
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
     }
 
@@ -3115,18 +3127,22 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.documentSalesBackup = dsb;
 
       // recalcular documento abierto y totales
-      //await this.calculateSaldo(this.indexDocumentSaleOpen);
-      //await this.calculateDocumentSaleOpen(this.indexDocumentSaleOpen);
-      await Promise.resolve(this.collectService.calculatePayment("", 0));
+      const isDocumentSaved = this.collectService.documentSales[this.indexDocumentSaleOpen]?.isSave === true;
+      await Promise.resolve(this.collectService.calculatePayment("", 0, false, !isDocumentSaved));
+
+      if (!isDocumentSaved) {
+        this.collectService.onCollectionValidToSend(false);
+      }
 
       // actualizar UI
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
-      //const hasDiscountComment = typeof this.discountComment === 'string' && this.discountComment.trim().length > 0;
-      //if (hasDiscountComment) {
-      this.disabledSaveButton = false;
-      //}
+      if (this.hasSelectedOrManualCollectDiscounts()) {
+        this.disabledSaveButton = false;
+      } else {
+        this.validate();
+      }
 
       this.cdr.detectChanges();
     } catch (err) {

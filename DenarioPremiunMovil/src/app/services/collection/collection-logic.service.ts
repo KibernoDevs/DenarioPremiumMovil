@@ -923,7 +923,7 @@ export class CollectionService {
     }
   }
 
-  async calculatePayment(type: string, index: number, forceRecalc: boolean = false) {
+  async calculatePayment(type: string, index: number, forceRecalc: boolean = false, skipValidateToSend: boolean = false) {
 
     this.montoTotalPagar = 0;
     let monto = 0;
@@ -998,19 +998,20 @@ export class CollectionService {
               } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
                 monto += this.documentSalesBackup[i].nuBalance;
                 montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-                montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                  this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                  this.collection.collectionDetails[pos].nuAmountRetention +
-                  this.collection.collectionDetails[pos].nuAmountRetention2;
+                montoTotalDiscounts += this.getDetailDeductionsForTotals(
+                  this.collection.collectionDetails[pos],
+                  true
+                );
               }
             } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuBalance;
               let pos = this.documentSales[i].positionCollecDetails;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                this.documentSalesBackup[i].nuAmountRetention +
-                this.documentSalesBackup[i].nuAmountRetention2;
+              montoTotalDiscounts += this.getDetailDeductionsForTotals(
+                this.collection.collectionDetails[pos],
+                false,
+                this.documentSalesBackup[i]
+              );
             }
           }
           // No mutar nuAmountPaid por detalle durante recálculos de tasa.
@@ -1063,8 +1064,30 @@ export class CollectionService {
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
     this.collection.nuAmountTotalConversion = this.convertirMonto(this.collection.nuAmountTotal, 0, this.collection.coCurrency);
     this.syncCollectionIgtfFields();
-    this.resolveAutomatedPrepaid(type, index);
+    this.resolveAutomatedPrepaid(type, index, skipValidateToSend);
     return Promise.resolve(this.createAutomatedPrepaid);
+  }
+
+  private getDetailDeductionsForTotals(
+    detail: CollectionDetail | undefined,
+    isDocumentSaved: boolean,
+    documentBackup?: { nuAmountRetention?: number; nuAmountRetention2?: number },
+  ): number {
+    if (!detail) {
+      return 0;
+    }
+    const collectDiscount = isDocumentSaved ? Number(detail.nuAmountCollectDiscount ?? 0) : 0;
+    const retention = isDocumentSaved
+      ? Number(detail.nuAmountRetention ?? 0)
+      : Number(documentBackup?.nuAmountRetention ?? 0);
+    const retention2 = isDocumentSaved
+      ? Number(detail.nuAmountRetention2 ?? 0)
+      : Number(documentBackup?.nuAmountRetention2 ?? 0);
+    return Number(detail.nuAmountDiscount ?? 0) + collectDiscount + retention + retention2;
+  }
+
+  private hasSavedDocumentSales(): boolean {
+    return Array.isArray(this.documentSales) && this.documentSales.some(doc => doc?.isSave === true);
   }
 
   private syncMontosPagadosFromPayments(): void {
@@ -1166,7 +1189,7 @@ export class CollectionService {
     });
   }
 
-  private resolveAutomatedPrepaid(type: string, index: number): void {
+  private resolveAutomatedPrepaid(type: string, index: number, skipValidateToSend: boolean = false): void {
     this.createAutomatedPrepaid = false;
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
@@ -1180,7 +1203,9 @@ export class CollectionService {
     if (this.createAutomatedPrepaid) {
       this.setAutomatedPrepaid(type, index);
     }
-    this.validateToSend();
+    if (!skipValidateToSend) {
+      this.validateToSend();
+    }
   }
 
   checkTiposPago() {
@@ -1508,6 +1533,12 @@ export class CollectionService {
         this.onCollectionValidToSend(false);
         return;
       }
+
+      if (!this.hasSavedDocumentSales()) {
+        this.onCollectionValidToSend(false);
+        return;
+      }
+
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       let onlyPaymentPartial = 0;
       // Seguridad: normalizar array
