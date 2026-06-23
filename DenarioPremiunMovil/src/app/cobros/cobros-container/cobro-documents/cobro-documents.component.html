@@ -435,10 +435,9 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- TASA -->
 
                 <!-- IGTF-->
-                @if(this.collectService.igtfSelected.price > 0 && this.globalConfig.get('userCanSelectIGTF') === 'true'
-                ? true: false){
+                @if(showDocumentIgtfField()){
                 <ion-col>
-                  <ion-input label="IGTF {{this.collectService.currencyConversion.coCurrency}}"
+                  <ion-input label="IGTF {{getCurrencyConversionCode()}}"
                     label-placement="floating" fill="outline"
                     value="{{this.collectService.documentSaleOpen.igtfAmount}}" color="primary"
                     [(ngModel)]="this.collectService.documentSaleOpen.igtfAmount" [readonly]="true"></ion-input>

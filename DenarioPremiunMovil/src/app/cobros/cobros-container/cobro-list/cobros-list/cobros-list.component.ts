@@ -241,7 +241,7 @@ export class CobrosListComponent implements OnInit {
 
         this.collectService.getCollection(this.synchronizationServices.getDatabase(), coCollection).then(persistedCollection => {
           if (persistedCollection?.coCollection) {
-            this.collectService.mergePersistedCollectionIgtfFields(persistedCollection);
+            this.collectService.mergePersistedCollectionFinancialFields(persistedCollection);
           }
 
           this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {

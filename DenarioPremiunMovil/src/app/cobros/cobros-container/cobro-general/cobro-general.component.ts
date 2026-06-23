@@ -417,10 +417,9 @@ export class CobrosGeneralComponent implements OnInit {
             this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
           }
           this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-
-        });
-        this.updateSelectedCurrency(this.collectService.collection.idCurrency);
-        this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
+          this.updateSelectedCurrency(this.collectService.collection.idCurrency);
+          return this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+        }).then(() => {
           this.collectService.restoreCollectionIgtfFields();
           this.loadData();
         });
@@ -850,6 +849,9 @@ export class CobrosGeneralComponent implements OnInit {
                   );
                 }
                 this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+                if (this.collectService.coTypeModule === '0') {
+                  this.collectService.syncAddPaymentMethodDisabledState();
+                }
 
               });
           })
