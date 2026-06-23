@@ -205,6 +205,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.isOpenCollect = false;
     this.collectService.newCollect = false;
     this.collectService.recentOpenCollect = true;
+    this.collectService.skipDocumentReloadInLoadData = true;
     this.collectService.createAutomatedPrepaid = false;
     this.collectService.anticipoAutomatico = [];
     //this.collectService.disabledCurrency = true;
@@ -835,25 +836,47 @@ export class CobrosGeneralComponent implements OnInit {
               this.resetDocumentCurrencyFilter();
             }
 
+            if (this.collectService.skipDocumentReloadInLoadData) {
+              this.collectService.skipDocumentReloadInLoadData = false;
+              if (this.collectService.historicPartialPayment) {
+                this.collectService.findIsPaymentPartial(
+                  this.synchronizationServices.getDatabase(),
+                  this.collectService.collection.idClient,
+                );
+              }
+              if (this.collectService.userCanSelectCollectDiscount) {
+                this.collectService.getCollectDiscounts(
+                  this.synchronizationServices.getDatabase(),
+                  this.collectService.collection.idEnterprise,
+                );
+              }
+              this.collectService.findIsMissingRetention(
+                this.synchronizationServices.getDatabase(),
+                this.collectService.collection.idClient,
+              );
+              if (this.collectService.coTypeModule === '0') {
+                this.collectService.syncAddPaymentMethodDisabledState();
+              }
+            } else {
+              this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
+                this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
+                this.getDocumentSalesFirstPageOptions()).then(() => {
+                  if (this.collectService.historicPartialPayment) {
+                    this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+                  }
+                  if (this.collectService.userCanSelectCollectDiscount) {
+                    this.collectService.getCollectDiscounts(
+                      this.synchronizationServices.getDatabase(),
+                      this.collectService.collection.idEnterprise
+                    );
+                  }
+                  this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+                  if (this.collectService.coTypeModule === '0') {
+                    this.collectService.syncAddPaymentMethodDisabledState();
+                  }
 
-            this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
-              this.getDocumentSalesFirstPageOptions()).then(() => {
-                if (this.collectService.historicPartialPayment) {
-                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-                }
-                if (this.collectService.userCanSelectCollectDiscount) {
-                  this.collectService.getCollectDiscounts(
-                    this.synchronizationServices.getDatabase(),
-                    this.collectService.collection.idEnterprise
-                  );
-                }
-                this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-                if (this.collectService.coTypeModule === '0') {
-                  this.collectService.syncAddPaymentMethodDisabledState();
-                }
-
-              });
+                });
+            }
           })
 
           if (this.collectService.requiredComment) {

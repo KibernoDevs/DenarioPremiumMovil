@@ -906,16 +906,6 @@ export class CobroPagosComponent implements OnInit {
     if (change) {
       this.collectService.disableSendButton = false;
     }
-
-    this.collectService.collection.nuAmountFinal = 0;
-    this.collectService.collection.nuAmountTotal = 0;
-    for (var i = 0; i < this.collectService.collection.collectionPayments!.length; i++) {
-      this.collectService.collection.nuAmountFinal += this.collectService.collection.collectionPayments![i].nuAmountPartial;
-      this.collectService.collection.nuAmountTotal += this.collectService.collection.collectionPayments![i].nuAmountPartial;
-    }
-
-    this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-    this.collectService.collection.nuAmountTotal = this.collectService.collection.nuAmountTotal;
   }
 
   setNroTransanccion(nroTrans: string, index: number, type: string) {
