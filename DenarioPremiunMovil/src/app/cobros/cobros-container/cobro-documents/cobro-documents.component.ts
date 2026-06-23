@@ -1307,11 +1307,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.ensureNumber(this.collectService.documentSaleOpen, 'nuAmountRetention2');
       this.collectService.ensureNumber(this.collectService.documentSaleOpen, 'nuAmountTax');
 
-      if (this.collectService.multiCurrency) {
-        if (this.collectService.userCanSelectIGTF)
-          this.collectService.documentSaleOpen.igtfAmount
-            = this.Number(this.collectService.documentSaleOpen.nuBalance * (this.collectService.igtfSelected.price / 100));
-
+      if (this.collectService.shouldApplyIgtfToCollection()) {
+        this.collectService.documentSaleOpen.igtfAmount
+          = this.Number(this.collectService.documentSaleOpen.nuBalance * (this.collectService.igtfSelected.price / 100));
       }
       this.collectService.indexDocumentSaleOpen = index;
 

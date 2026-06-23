@@ -760,7 +760,9 @@ export class CollectionService {
 
     // Configurar conversiones/documentos si procede
     try {
-      if (this.multiCurrency) this.setCurrencyConversion();
+      if (this.multiCurrency || this.userCanSelectIGTF) {
+        this.setCurrencyConversion();
+      }
     } catch (err) {
       console.warn('[CollectionService] setCurrencyConversion failed', err);
     }
@@ -1022,15 +1024,15 @@ export class CollectionService {
         }
     }
 
-    if (this.userCanSelectIGTF
-      && this.collection.coCurrency == this.hardCurrency.coCurrency) {
+    if (this.shouldApplyIgtfToCollection()) {
       const igtfRate = this.normalizeIgtfPrice(this.igtfSelected?.price);
       this.montoIgtf = this.cleanFormattedNumber(this.currencyService.formatNumber(((monto * igtfRate) / 100)));
       this.montoIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
 
       if (this.separateIgtf) {
-        if (this.currencySelected.hardCurrency.toString() === "true")
-          this.montoIgtfLocal = (this.montoIgtf * this.collection.nuValueLocal);
+        if (this.currencyHard) {
+          this.montoIgtfLocal = this.montoIgtf * this.collection.nuValueLocal;
+        }
 
         this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       }
@@ -3505,6 +3507,29 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       })
   }
 
+  shouldShowIgtfControls(): boolean {
+    return this.userCanSelectIGTF
+      && String(this.collection?.coType ?? '') === '0';
+  }
+
+  shouldApplyIgtfToCollection(): boolean {
+    if (!this.shouldShowIgtfControls()) {
+      return false;
+    }
+
+    if (this.multiCurrency) {
+      return this.collection?.coCurrency === this.hardCurrency?.coCurrency;
+    }
+
+    return true;
+  }
+
+  shouldDisplayIgtfInTotals(): boolean {
+    return this.shouldApplyIgtfToCollection()
+      && this.normalizeIgtfPrice(this.igtfSelected?.price) > 0
+      && !this.separateIgtf;
+  }
+
   private normalizeIgtfPrice(value: unknown): number {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -3523,7 +3548,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   private restorePersistedIgtfDisplayAmounts(): void {
-    if (!this.userCanSelectIGTF || this.collection.coCurrency !== this.hardCurrency?.coCurrency) {
+    if (!this.shouldApplyIgtfToCollection()) {
       this.montoIgtf = 0;
       this.montoIgtfConversion = 0;
       return;
