@@ -960,21 +960,18 @@ export class CollectionService {
       || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress)
     );
 
-    const persistedAmountToPay = Number(this.collection.nuAmountPaid) > 0
-      ? Number(this.collection.nuAmountPaid)
-      : Number(this.collection.nuAmountFinal ?? 0);
+    const persistedAmountToPay = this.resolvePersistedAmountToPay();
+    const persistedAmountToPayConversion = this.resolvePersistedAmountToPayConversion();
 
     if (preserveAmountsWithoutRecalc && persistedAmountToPay > 0) {
-      const hasAmountPaidConversion = this.collection.nuAmountPaidConversion !== null
-        && this.collection.nuAmountPaidConversion !== undefined
-        && !isNaN(Number(this.collection.nuAmountPaidConversion));
-
       monto = persistedAmountToPay;
-      montoConversion = Number(this.collection.nuAmountPaid) > 0 && hasAmountPaidConversion
-        ? Number(this.collection.nuAmountPaidConversion)
-        : Number(this.collection.nuAmountFinalConversion ?? 0);
+      montoConversion = persistedAmountToPayConversion;
       this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(persistedAmountToPay));
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
+      this.collection.nuAmountFinal = persistedAmountToPay;
+      this.collection.nuAmountPaid = persistedAmountToPay;
+      this.collection.nuAmountFinalConversion = montoConversion;
+      this.collection.nuAmountPaidConversion = montoConversion;
       this.restoreCollectionIgtfFields();
       this.restorePersistedIgtfDisplayAmounts();
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
@@ -986,37 +983,54 @@ export class CollectionService {
       if (this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) {
         monto = Number(this.collection.nuAmountTotal ?? 0);
         montoConversion = Number(this.collection.nuAmountTotalConversion ?? 0);
-      } else
-        for (var j = 0; j < this.collection.collectionDetails.length; j++) {
-          for (var i = 0; i < this.documentSales.length; i++) {
-            //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
-            if (this.documentSales[i].isSave) {
-              let pos = this.documentSales[i].positionCollecDetails;
-              if (this.collection.collectionDetails[j].inPaymentPartial === true) {
-                monto += this.collection.collectionDetails[pos].nuAmountPaid;
-                montoConversion += this.convertirMonto(this.collection.collectionDetails[pos].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-                monto += this.documentSalesBackup[i].nuBalance;
-                montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-                montoTotalDiscounts += this.getDetailDeductionsForTotals(
-                  this.collection.collectionDetails[pos],
-                  true
-                );
-              }
-            } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-              monto += this.documentSalesBackup[i].nuBalance;
-              let pos = this.documentSales[i].positionCollecDetails;
-              montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += this.getDetailDeductionsForTotals(
-                this.collection.collectionDetails[pos],
-                false,
-                this.documentSalesBackup[i]
-              );
-            }
-          }
-          // No mutar nuAmountPaid por detalle durante recálculos de tasa.
-          // El IGTF se calcula y presenta a nivel de totales para evitar acumulaciones.
+      } else if (this.documentSales.length === 0 && this.isPersistedCollection()) {
+        for (const detail of this.collection.collectionDetails) {
+          const netAmount = this.resolveDetailNetAmountToPay(detail);
+          monto += netAmount;
+          montoConversion += this.convertirMonto(
+            netAmount,
+            this.collection.nuValueLocal,
+            this.collection.coCurrency,
+          );
         }
+      } else {
+        for (let i = 0; i < this.documentSales.length; i++) {
+          if (!this.documentSales[i].isSave && !this.documentSales[i].isSelected) {
+            continue;
+          }
+
+          const pos = this.documentSales[i].positionCollecDetails;
+          if (!Number.isInteger(pos) || pos < 0 || pos >= this.collection.collectionDetails.length) {
+            continue;
+          }
+
+          const detail = this.collection.collectionDetails[pos];
+          if (!detail || detail.idDocument !== this.documentSales[i].idDocument) {
+            continue;
+          }
+
+          if (detail.inPaymentPartial === true) {
+            monto += Number(detail.nuAmountPaid ?? 0);
+            montoConversion += this.convertirMonto(
+              Number(detail.nuAmountPaid ?? 0),
+              this.collection.nuValueLocal,
+              this.collection.coCurrency,
+            );
+          } else {
+            monto += this.documentSalesBackup[i].nuBalance;
+            montoConversion += this.convertirMonto(
+              this.documentSalesBackup[i].nuBalance,
+              this.collection.nuValueLocal,
+              this.collection.coCurrency,
+            );
+            montoTotalDiscounts += this.getDetailDeductionsForTotals(
+              detail,
+              this.documentSales[i].isSave === true,
+              this.documentSalesBackup[i],
+            );
+          }
+        }
+      }
     }
 
     if (this.userCanSelectIGTF
@@ -1066,6 +1080,89 @@ export class CollectionService {
     this.syncCollectionIgtfFields();
     this.resolveAutomatedPrepaid(type, index, skipValidateToSend);
     return Promise.resolve(this.createAutomatedPrepaid);
+  }
+
+  private resolveDetailNetAmountToPay(detail: CollectionDetail): number {
+    if (detail?.inPaymentPartial === true) {
+      return Number(detail.nuAmountPaid ?? 0);
+    }
+
+    const balance = Number(detail?.nuBalanceDoc ?? 0);
+    const deductions = this.getDetailDeductionsForTotals(detail, true);
+    const expectedNet = balance - deductions;
+    const persistedPaid = Number(detail?.nuAmountPaid ?? 0);
+
+    if (Number.isFinite(persistedPaid) && persistedPaid > 0) {
+      if (deductions > 0 && persistedPaid >= balance) {
+        return expectedNet;
+      }
+      return persistedPaid;
+    }
+
+    return expectedNet;
+  }
+
+  private resolvePersistedAmountToPay(): number {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    if (details.length > 0 && this.isPersistedCollection()) {
+      const netFromDetails = details.reduce(
+        (sum, detail) => sum + this.resolveDetailNetAmountToPay(detail),
+        0,
+      );
+      if (netFromDetails > 0) {
+        return netFromDetails;
+      }
+    }
+
+    const nuAmountFinal = Number(this.collection?.nuAmountFinal ?? 0);
+    if (nuAmountFinal > 0) {
+      return nuAmountFinal;
+    }
+
+    return Number(this.collection?.nuAmountPaid ?? 0);
+  }
+
+  private resolvePersistedAmountToPayConversion(): number {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    if (details.length > 0 && this.isPersistedCollection()) {
+      const netFromDetails = details.reduce((sum, detail) => {
+        if (detail?.inPaymentPartial === true) {
+          const partialConversion = Number(detail.nuAmountPaidConversion ?? 0);
+          if (partialConversion > 0) {
+            return sum + partialConversion;
+          }
+          return sum + this.convertirMonto(
+            Number(detail.nuAmountPaid ?? 0),
+            this.collection.nuValueLocal,
+            this.collection.coCurrency,
+          );
+        }
+
+        const netAmount = this.resolveDetailNetAmountToPay(detail);
+        return sum + this.convertirMonto(
+          netAmount,
+          this.collection.nuValueLocal,
+          this.collection.coCurrency,
+        );
+      }, 0);
+
+      if (netFromDetails > 0) {
+        return netFromDetails;
+      }
+    }
+
+    const nuAmountFinalConversion = Number(this.collection?.nuAmountFinalConversion ?? 0);
+    if (nuAmountFinalConversion > 0) {
+      return nuAmountFinalConversion;
+    }
+
+    return Number(this.collection?.nuAmountPaidConversion ?? 0);
   }
 
   private getDetailDeductionsForTotals(
@@ -1188,6 +1285,10 @@ export class CollectionService {
     const runtimeAmount = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
     if (runtimeAmount > 0) {
       return runtimeAmount;
+    }
+    const persistedAmount = this.resolvePersistedAmountToPay();
+    if (persistedAmount > 0) {
+      return persistedAmount;
     }
     return Number(this.collection.nuAmountFinal ?? this.collection.nuAmountPaid ?? 0);
   }
@@ -3550,21 +3651,31 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     this.collection.nuAmountIgtf = this.normalizeIgtfPrice(source.nuAmountIgtf);
     this.collection.nuAmountIgtfConversion = this.normalizeIgtfPrice(source.nuAmountIgtfConversion);
 
-    const listIndex = this.listCollect.findIndex(item => item.coCollection === source.coCollection);
-    if (listIndex >= 0) {
-      this.listCollect[listIndex].nuIgtf = this.collection.nuIgtf;
-      this.listCollect[listIndex].hasIGTF = this.collection.hasIGTF;
-      this.listCollect[listIndex].nuAmountIgtf = this.collection.nuAmountIgtf;
-      this.listCollect[listIndex].nuAmountIgtfConversion = this.collection.nuAmountIgtfConversion;
-    }
+    this.syncListCollectFinancialFields(this.collection, source.coCollection);
   }
 
-  updateListCollectIgtfFromCollection(collection: Collection): void {
-    if (!collection?.coCollection) {
+  mergePersistedCollectionFinancialFields(source: Collection): void {
+    if (!source?.coCollection || !this.collection) {
       return;
     }
 
-    const listIndex = this.listCollect.findIndex(item => item.coCollection === collection.coCollection);
+    this.mergePersistedCollectionIgtfFields(source);
+
+    this.collection.nuAmountFinal = Number(source.nuAmountFinal ?? this.collection.nuAmountFinal ?? 0);
+    this.collection.nuAmountFinalConversion = Number(source.nuAmountFinalConversion ?? this.collection.nuAmountFinalConversion ?? 0);
+    this.collection.nuAmountTotal = Number(source.nuAmountTotal ?? this.collection.nuAmountTotal ?? 0);
+    this.collection.nuAmountTotalConversion = Number(source.nuAmountTotalConversion ?? this.collection.nuAmountTotalConversion ?? 0);
+    this.collection.nuDifference = Number(source.nuDifference ?? this.collection.nuDifference ?? 0);
+    this.collection.nuDifferenceConversion = Number(source.nuDifferenceConversion ?? this.collection.nuDifferenceConversion ?? 0);
+    this.collection.nuAmountPaid = Number(source.nuAmountPaid ?? this.collection.nuAmountPaid ?? 0);
+    this.collection.nuAmountPaidConversion = Number(source.nuAmountPaidConversion ?? this.collection.nuAmountPaidConversion ?? 0);
+    this.collection.nuValueLocal = Number(source.nuValueLocal ?? this.collection.nuValueLocal ?? 0);
+
+    this.syncListCollectFinancialFields(this.collection, source.coCollection);
+  }
+
+  private syncListCollectFinancialFields(collection: Collection, coCollection: string): void {
+    const listIndex = this.listCollect.findIndex(item => item.coCollection === coCollection);
     if (listIndex < 0) {
       return;
     }
@@ -3573,6 +3684,23 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     this.listCollect[listIndex].hasIGTF = collection.hasIGTF;
     this.listCollect[listIndex].nuAmountIgtf = this.normalizeIgtfPrice(collection.nuAmountIgtf);
     this.listCollect[listIndex].nuAmountIgtfConversion = this.normalizeIgtfPrice(collection.nuAmountIgtfConversion);
+    this.listCollect[listIndex].nuAmountFinal = collection.nuAmountFinal;
+    this.listCollect[listIndex].nuAmountFinalConversion = collection.nuAmountFinalConversion;
+    this.listCollect[listIndex].nuAmountTotal = collection.nuAmountTotal;
+    this.listCollect[listIndex].nuAmountTotalConversion = collection.nuAmountTotalConversion;
+    this.listCollect[listIndex].nuDifference = collection.nuDifference;
+    this.listCollect[listIndex].nuDifferenceConversion = collection.nuDifferenceConversion;
+    this.listCollect[listIndex].nuAmountPaid = collection.nuAmountPaid;
+    this.listCollect[listIndex].nuAmountPaidConversion = collection.nuAmountPaidConversion;
+    this.listCollect[listIndex].nuValueLocal = collection.nuValueLocal;
+  }
+
+  updateListCollectIgtfFromCollection(collection: Collection): void {
+    if (!collection?.coCollection) {
+      return;
+    }
+
+    this.syncListCollectFinancialFields(collection, collection.coCollection);
   }
 
   private isPersistedCollection(): boolean {
@@ -4063,6 +4191,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
+      this.collection.nuAmountPaid = this.montoTotalPagar;
+      this.collection.nuAmountPaidConversion = this.convertirMonto(this.collection.nuAmountPaid, 0, this.collection.coCurrency);
 
 
       const details = this.collection?.collectionDetails ?? [];
