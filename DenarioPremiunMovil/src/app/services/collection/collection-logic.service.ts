@@ -1089,8 +1089,65 @@ export class CollectionService {
     return Number(detail.nuAmountDiscount ?? 0) + collectDiscount + retention + retention2;
   }
 
-  private hasSavedDocumentSales(): boolean {
-    return Array.isArray(this.documentSales) && this.documentSales.some(doc => doc?.isSave === true);
+  private hasValidDocumentSalesForSend(): boolean {
+    if (!Array.isArray(this.documentSales) || this.documentSales.length === 0) {
+      return false;
+    }
+
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    if (details.length === 0) {
+      return false;
+    }
+
+    return this.documentSales.some((doc, index) =>
+      this.isDocumentSaleReadyForSend(doc, index, details)
+    );
+  }
+
+  private isDocumentSaleReadyForSend(
+    doc: DocumentSale | undefined,
+    index: number,
+    details: CollectionDetail[],
+  ): boolean {
+    if (!doc?.isSelected) {
+      return false;
+    }
+
+    const pos = doc.positionCollecDetails;
+    if (!Number.isInteger(pos) || pos < 0 || pos >= details.length) {
+      return false;
+    }
+
+    const detail = details[pos];
+    if (!detail?.coDocument && !detail?.idDocument) {
+      return false;
+    }
+
+    if (doc.isSave === true) {
+      return true;
+    }
+
+    if (this.isOpen && this.indexDocumentSaleOpen === index) {
+      return false;
+    }
+
+    return !this.hasUnsavedCollectDiscountOnDetail(detail);
+  }
+
+  private hasUnsavedCollectDiscountOnDetail(detail: CollectionDetail): boolean {
+    if (Number(detail.nuAmountCollectDiscount ?? 0) <= 0) {
+      return false;
+    }
+
+    const hasCatalogDiscount = Number(detail.nuCollectDiscount ?? 0) > 0;
+    const hasDiscountFlag = detail.hasDiscount === true;
+    const hasDetailDiscounts = Array.isArray(detail.collectionDetailDiscounts)
+      && detail.collectionDetailDiscounts.length > 0;
+
+    return hasCatalogDiscount || hasDiscountFlag || hasDetailDiscounts;
   }
 
   private syncMontosPagadosFromPayments(): void {
@@ -1563,7 +1620,7 @@ export class CollectionService {
         return;
       }
 
-      if (!this.hasSavedDocumentSales()) {
+      if (!this.hasValidDocumentSalesForSend()) {
         this.onCollectionValidToSend(false);
         return;
       }
@@ -2240,6 +2297,7 @@ export class CollectionService {
       const originalBalance = detail.nuBalanceDocOriginal;
       const originalBalanceConversion = detail.nuBalanceDocOriginalConversion;
 
+      detail.inPaymentPartial = this.isPaymentPartial;
       detail.nuAmountPaid = this.amountPaid
       detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
       // nuBalanceDoc conserva el saldo original del documento; los descuentos de cobro
@@ -3039,12 +3097,22 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
-        detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
-        detail.nuAmountPaidConversion = doc.nuBalance;
+        if (!detail.isSave && detail.inPaymentPartial !== true) {
+          detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+          detail.nuAmountPaidConversion = doc.nuBalance;
+        }
       }
 
       this.documentSalesBackup[index].nuBalance = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
-      this.documentSalesBackup[index].nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+      if (!detail.isSave && detail.inPaymentPartial !== true) {
+        this.documentSalesBackup[index].nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+      } else if (detail.isSave) {
+        const savedAmountPaid = Number(detail.nuAmountPaid ?? 0);
+        if (savedAmountPaid > 0) {
+          this.documentSalesBackup[index].nuAmountPaid = savedAmountPaid;
+          this.documentSales[index].nuAmountPaid = savedAmountPaid;
+        }
+      }
       this.documentSalesBackup[index].nuAmountRetention = detail.nuAmountRetention;
       this.documentSalesBackup[index].nuAmountRetention2 = detail.nuAmountRetention2;
       this.documentSalesBackup[index].nuValueLocal = detail.nuValueLocal;

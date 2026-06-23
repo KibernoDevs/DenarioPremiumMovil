@@ -793,12 +793,180 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (!detail) {
       return Number(backupBalance ?? 0);
     }
+    const balance = Number(detail.nuBalanceDoc ?? backupBalance ?? 0);
+    const deductions = this.getDocumentDetailDeductions(detail);
+    const expectedNet = balance - deductions;
+
     const persistedPaid = Number(detail.nuAmountPaid);
-    if (Number.isFinite(persistedPaid)) {
+    if (Number.isFinite(persistedPaid) && persistedPaid > 0) {
+      if (deductions > 0 && persistedPaid >= balance) {
+        return expectedNet;
+      }
       return persistedPaid;
     }
-    const balance = Number(detail.nuBalanceDoc ?? backupBalance ?? 0);
-    return balance - this.getDocumentDetailDeductions(detail);
+    return expectedNet;
+  }
+
+  private resolveSavedFullPaymentAmountForOpen(
+    index: number,
+    positionCollecDetails?: number,
+  ): number {
+    const pos = positionCollecDetails
+      ?? this.collectService.documentSaleOpen?.positionCollecDetails
+      ?? this.collectService.documentSales[index]?.positionCollecDetails;
+    const detail = Number.isInteger(pos)
+      ? this.collectService.collection.collectionDetails?.[pos as number]
+      : undefined;
+    const doc = this.collectService.documentSales[index];
+    const backup = this.collectService.documentSalesBackup[index];
+    const balance = Number(detail?.nuBalanceDoc ?? backup?.nuBalance ?? 0);
+    const deductions = this.getDocumentDetailDeductions(detail);
+    const expectedNet = balance - deductions;
+
+    const fromDoc = Number(doc?.nuAmountPaid ?? 0);
+    if (doc?.isSave && fromDoc > 0 && (deductions === 0 || fromDoc < balance)) {
+      return fromDoc;
+    }
+
+    const fromBackup = Number(backup?.nuAmountPaid ?? 0);
+    if (backup?.isSave && fromBackup > 0 && (deductions === 0 || fromBackup < balance)) {
+      return fromBackup;
+    }
+
+    const fromCurrent = Number(this.collectService.amountPaid ?? 0);
+    if (fromCurrent > 0 && (deductions === 0 || fromCurrent < balance)) {
+      return fromCurrent;
+    }
+
+    return this.resolveSavedDetailNuAmountPaid(detail, Number(backup?.nuBalance ?? 0));
+  }
+
+  private syncPersistedFullPaymentAmount(index: number): void {
+    if (this.collectService.isPaymentPartial) {
+      return;
+    }
+    const netAmount = this.resolveSavedFullPaymentAmountForOpen(index);
+    if (!(netAmount > 0)) {
+      return;
+    }
+    const factor = this.centsFactor();
+    this.collectService.amountPaid = netAmount;
+    if (this.collectService.documentSaleOpen) {
+      this.collectService.documentSaleOpen.nuAmountPaid = netAmount;
+    }
+    this.collectService.documentSales[index].nuAmountPaid = netAmount;
+    this.collectService.documentSalesBackup[index].nuAmountPaid = netAmount;
+    this.centsAmountPaid = Math.round(netAmount * factor);
+    this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+  }
+
+  private resolveDocumentPaymentPartialFlag(
+    detail?: { inPaymentPartial?: boolean | string | null },
+    doc?: { inPaymentPartial?: boolean | string | null },
+  ): boolean {
+    if (detail != null) {
+      return detail.inPaymentPartial === true
+        || String(detail.inPaymentPartial ?? '').toLowerCase() === 'true';
+    }
+    return doc?.inPaymentPartial === true
+      || String(doc?.inPaymentPartial ?? '').toLowerCase() === 'true';
+  }
+
+  private syncDocumentPaymentPartialState(
+    index: number,
+    positionCollecDetails: number,
+    isPaymentPartial: boolean,
+  ): void {
+    this.collectService.isPaymentPartial = isPaymentPartial;
+    this.collectService.documentSales[index].inPaymentPartial = isPaymentPartial;
+    this.collectService.documentSalesBackup[index].inPaymentPartial = isPaymentPartial;
+    if (this.collectService.documentSalesView[index]) {
+      this.collectService.documentSalesView[index].inPaymentPartial = isPaymentPartial;
+    }
+    const detail = this.collectService.collection.collectionDetails?.[positionCollecDetails];
+    if (detail) {
+      detail.inPaymentPartial = isPaymentPartial;
+    }
+    if (this.collectService.documentSaleOpen) {
+      this.collectService.documentSaleOpen.inPaymentPartial = isPaymentPartial;
+    }
+  }
+
+  private resolvePartialPaymentAmountForOpen(index: number, positionCollecDetails?: number): number {
+    const pos = positionCollecDetails
+      ?? this.collectService.documentSaleOpen?.positionCollecDetails
+      ?? this.collectService.documentSales[index]?.positionCollecDetails;
+    const detail = Number.isInteger(pos)
+      ? this.collectService.collection.collectionDetails?.[pos as number]
+      : undefined;
+    const doc = this.collectService.documentSales[index];
+    const backup = this.collectService.documentSalesBackup[index];
+    const isPartialPersisted = this.resolveDocumentPaymentPartialFlag(detail, doc);
+
+    if (!isPartialPersisted) {
+      return 0;
+    }
+
+    const docBalance = Number(
+      detail?.nuBalanceDoc ?? backup?.nuBalance ?? doc?.nuBalance ?? 0,
+    );
+    const isPartialAmount = (amount: number): boolean =>
+      amount > 0 && (docBalance <= 0 || amount < docBalance);
+
+    const fromValue = Number(this.valuePartialPayment ?? 0);
+    if (isPartialAmount(fromValue)) {
+      return fromValue;
+    }
+
+    const fromDocSaved = Number(doc?.nuAmountPaid ?? 0);
+    if (doc?.isSave && isPartialAmount(fromDocSaved)) {
+      return fromDocSaved;
+    }
+
+    const fromBackupSaved = Number(backup?.nuAmountPaid ?? 0);
+    if (backup?.isSave && isPartialAmount(fromBackupSaved)) {
+      return fromBackupSaved;
+    }
+
+    const fromCents = (this.centsAmountPaid ?? 0) / this.centsFactor();
+    if (isPartialAmount(fromCents)) {
+      return fromCents;
+    }
+
+    const fromCurrent = Number(this.collectService.amountPaid ?? 0);
+    if (isPartialAmount(fromCurrent)) {
+      return fromCurrent;
+    }
+
+    const fromDetail = Number(detail?.nuAmountPaid ?? 0);
+    if (
+      (detail?.isSave === true || this.collectService.collection.stDelivery === 3)
+      && isPartialAmount(fromDetail)
+    ) {
+      return fromDetail;
+    }
+
+    return 0;
+  }
+
+  private syncPersistedPartialPaymentAmount(index: number): void {
+    if (!this.collectService.isPaymentPartial) {
+      return;
+    }
+    const partialAmount = this.resolvePartialPaymentAmountForOpen(index);
+    if (!(partialAmount > 0)) {
+      return;
+    }
+    const factor = this.centsFactor();
+    this.valuePartialPayment = partialAmount;
+    this.collectService.amountPaid = partialAmount;
+    if (this.collectService.documentSaleOpen) {
+      this.collectService.documentSaleOpen.nuAmountPaid = partialAmount;
+    }
+    this.collectService.documentSales[index].nuAmountPaid = partialAmount;
+    this.collectService.documentSalesBackup[index].nuAmountPaid = partialAmount;
+    this.centsAmountPaid = Math.round(partialAmount * factor);
+    this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
   }
 
   private syncPersistedCollectDiscountTotals(positionCollecDetails: number): void {
@@ -829,8 +997,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       const backup = backupOrig ? JSON.parse(JSON.stringify(backupOrig)) : null;
       const positionCollecDetails = doc?.positionCollecDetails ?? 0;
       const difFaltate = cs.collection.collectionDetails?.[positionCollecDetails]?.nuAmountDiscount ?? 0;
+      const detailAtPos = cs.collection.collectionDetails?.[positionCollecDetails];
 
-      cs.isPaymentPartial = !!doc?.inPaymentPartial;
+      cs.isPaymentPartial = this.resolveDocumentPaymentPartialFlag(detailAtPos, doc);
 
       if (!doc || !backup) {
         console.warn('calculateDocumentSaleOpen: documento o backup no encontrados, index=', index);
@@ -857,10 +1026,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
           nuAmountRetention2 = Number(detail.nuAmountRetention2 ?? 0);
 
-          if (detail.inPaymentPartial) {
-            nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
+          if (cs.isPaymentPartial) {
+            nuAmountPaid = this.resolvePartialPaymentAmountForOpen(index, pos);
           } else {
-            nuAmountPaid = this.resolveSavedDetailNuAmountPaid(detail, Number(backup.nuBalance ?? 0));
+            nuAmountPaid = this.resolveSavedFullPaymentAmountForOpen(index, pos);
           }
 
           nuBalance = Number(detail.nuBalanceDoc ?? 0);
@@ -886,9 +1055,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
             nuBalance = Number(detail.nuBalanceDoc ?? backup.nuBalance ?? 0);
 
             if (cs.isPaymentPartial) {
-              nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
+              nuAmountPaid = this.resolvePartialPaymentAmountForOpen(index, pos);
             } else {
-              nuAmountPaid = this.resolveSavedDetailNuAmountPaid(detail, Number(backup.nuBalance ?? 0));
+              nuAmountPaid = this.resolveSavedFullPaymentAmountForOpen(index, pos);
             }
           } else {
             nuBalance = Number(backup.nuBalance ?? 0);
@@ -906,7 +1075,11 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           nuAmountRetention2 = Number(detail?.nuAmountRetention2 ?? cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
 
           nuBalance = Number(backup.nuBalance ?? 0);
-          nuAmountPaid = nuBalance - sumRet;
+          if (cs.isPaymentPartial) {
+            nuAmountPaid = this.resolvePartialPaymentAmountForOpen(index, pos);
+          } else {
+            nuAmountPaid = nuBalance - sumRet;
+          }
 
           nuVaucherRetention = detail?.nuVoucherRetention ?? cs.documentSaleOpen?.nuVaucherRetention ?? '';
           daVoucher = detail?.daVoucher ?? cs.documentSaleOpen?.daVoucher ?? '';
@@ -975,7 +1148,11 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       this.displayRetention = this.formatNumber(Number(this.displayRetention));
       this.displayRetention2 = this.formatNumber(Number(this.displayRetention2));
-      this.displayAmountPaid = this.formatNumber(Number(this.displayAmountPaid));
+      if (cs.isPaymentPartial) {
+        this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+      } else {
+        this.displayAmountPaid = this.formatNumber(nuAmountPaid);
+      }
       return true;
     } catch (err) {
       console.error('calculateDocumentSaleOpen error:', err);
@@ -998,20 +1175,39 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       const doc = this.collectService.documentSales[index];
       this.discountComment = comment;
 
+      const openDetail = this.collectService.collection.collectionDetails[positionCollecDetails];
+      this.collectService.missingRetentionValue = openDetail?.missingRetention === true;
 
       this.disabledSaveButton = true;
       this.collectService.documentSaleOpen = new DocumentSale;
       let voucherRetentionValue = "";
       let daVoucherValue = "";
       if (this.collectService.documentSales[index].isSave) {
-        const positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails;
-        this.collectService.isPaymentPartial = this.collectService.collection.collectionDetails[positionCollecDetails].inPaymentPartial;
-        this.collectService.nuBalance = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc;
-        voucherRetentionValue = this.collectService.collection.collectionDetails[positionCollecDetails].nuVoucherRetention;
-        daVoucherValue = this.collectService.collection.collectionDetails[positionCollecDetails].daVoucher!;
-        this.valuePartialPayment = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid;
+        const savedDetailPos = this.collectService.documentSales[index].positionCollecDetails;
+        const savedDetail = this.collectService.collection.collectionDetails[savedDetailPos];
+        const isPaymentPartial = this.resolveDocumentPaymentPartialFlag(
+          savedDetail,
+          this.collectService.documentSales[index],
+        );
+        this.syncDocumentPaymentPartialState(index, savedDetailPos, isPaymentPartial);
+        this.collectService.nuBalance = savedDetail.nuBalanceDoc;
+        voucherRetentionValue = savedDetail.nuVoucherRetention;
+        daVoucherValue = savedDetail.daVoucher!;
+        const docBalance = Number(savedDetail.nuBalanceDoc ?? this.collectService.documentSales[index].nuBalance ?? 0);
+        const savedPartialFromDoc = Number(this.collectService.documentSales[index]?.nuAmountPaid ?? 0);
+        const savedPartialFromDetail = Number(savedDetail.nuAmountPaid ?? 0);
+        if (isPaymentPartial && savedPartialFromDoc > 0 && savedPartialFromDoc < docBalance) {
+          this.valuePartialPayment = savedPartialFromDoc;
+        } else if (isPaymentPartial && savedPartialFromDetail > 0 && savedPartialFromDetail < docBalance) {
+          this.valuePartialPayment = savedPartialFromDetail;
+        } else {
+          this.valuePartialPayment = 0;
+        }
       } else {
         this.collectService.nuBalance = this.collectService.documentSales[index].nuBalance;
+        const defaultPartial = this.collectService.alwaysPartialPayment;
+        this.syncDocumentPaymentPartialState(index, positionCollecDetails, defaultPartial);
+        this.valuePartialPayment = 0;
       }
 
       if (this.collectService.userCanSelectCollectDiscount) {
@@ -1060,7 +1256,11 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.collectService.documentSaleOpen.inPaymentPartial = detail.inPaymentPartial;
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
           this.collectService.nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
-          this.collectService.isPaymentPartial = detail.inPaymentPartial;
+          this.collectService.isPaymentPartial = this.resolveDocumentPaymentPartialFlag(
+            detail,
+            this.collectService.documentSales[index],
+          );
+          this.collectService.missingRetentionValue = detail.missingRetention === true;
 
         } else {
           this.collectService.nuBalance = this.collectService.documentSaleOpen.nuBalance;
@@ -1071,32 +1271,28 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.collectService.documentSaleOpen.daVoucher != "")
         this.collectService.validateDaVoucher = true
       if (this.collectService.coTypeModule == '0') {
-        this.collectService.documentSaleOpen.isSave == true ? this.collectService.amountPaid = this.collectService.documentSaleOpen.nuAmountPaid : this.collectService.amountPaid = this.collectService.documentSaleOpen.nuBalance;
-        console.log(this.collectService.documentSaleOpen.isSave);
-        console.log(this.collectService.amountPaid, "AMOUNT PAID AL ABRIR");
-        console.log(this.collectService.documentSaleOpen.nuAmountPaid, "DOCUMENTO ABIERTO");
-        console.log(this.collectService.documentSaleOpen.nuBalance, "DOCUMENTO ABIERTO");
+        if (this.collectService.isPaymentPartial) {
+          this.syncPersistedPartialPaymentAmount(index);
+        } else if (this.collectService.documentSaleOpen.isSave === true) {
+          this.syncPersistedFullPaymentAmount(index);
+        } else {
+          this.collectService.amountPaid = this.collectService.documentSaleOpen.nuBalance;
+        }
       } else
         this.collectService.amountPaidRetention =
           this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber((this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2)));
 
       // <-- ADD: inicializar displayAmountPaid para que el input muestre el valor al abrir
 
-      const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
-        this.collectService.documentSaleOpen.nuAmountRetention2;
-
       if (this.collectService.isPaymentPartial) {
-        this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
-        this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+        this.syncPersistedPartialPaymentAmount(index);
+      } else if (this.collectService.documentSaleOpen.isSave === true) {
+        this.syncPersistedFullPaymentAmount(index);
       } else {
         let nuAmountPaidNet;
-        const usePersistedAmountPaid = this.collectService.collection.stDelivery == 3
-          || this.collectService.documentSaleOpen.isSave;
-        if (usePersistedAmountPaid) {
-          nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0);
-        } else {
-          nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
-        }
+        const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+          this.collectService.documentSaleOpen.nuAmountRetention2;
+        nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
         try {
           this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
@@ -1125,11 +1321,18 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           d => d.coDocument == this.collectService.documentSaleOpen.coDocument
         );
         if (i !== -1) {
-          /* this.collectService.isPaymentPartial =
-            this.collectService.collection.collectionDetails[i].inPaymentPartial.toString() == "true"; */
-
-          this.collectService.isPaymentPartial = this.collectService.documentSaleOpen.inPaymentPartial.toString() == "true";
+          const detailAtPos = this.collectService.collection.collectionDetails[i];
+          const isPaymentPartial = this.resolveDocumentPaymentPartialFlag(
+            detailAtPos,
+            this.collectService.documentSales[index],
+          );
+          this.syncDocumentPaymentPartialState(index, i, isPaymentPartial);
           this.collectService.documentSaleOpen.positionCollecDetails = i;
+          if (isPaymentPartial) {
+            this.syncPersistedPartialPaymentAmount(index);
+          } else if (this.collectService.documentSaleOpen.isSave === true) {
+            this.syncPersistedFullPaymentAmount(index);
+          }
         }
       } else
         this.collectService.isPaymentPartial = this.collectService.alwaysPartialPayment;
@@ -1147,11 +1350,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     else
       this.collectService.validNuRetention = true;
 
-    if (this.collectService.documentSaleOpen.missingRetention || this.collectService.alwaysPartialPayment) {
-      let event = { target: { checked: true } };
-      this.partialPay(event)
+    const isReopeningSavedPartial = this.collectService.documentSaleOpen?.isSave === true
+      && this.collectService.isPaymentPartial;
+
+    if (this.collectService.alwaysPartialPayment && !isReopeningSavedPartial) {
+      this.partialPay({ target: { checked: true } });
+    } else if (isReopeningSavedPartial) {
+      this.syncPersistedPartialPaymentAmount(index);
     }
-    console.log(this.collectService.amountPaid, "AMOUNT PAID AL ABRIR")
   }
 
   checkCollectDiscount() {
@@ -1333,7 +1539,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     let missingRetention = false;
     if (this.collectService.coTypeModule != "2") {
       const open = this.collectService.documentSaleOpen;
-      inPaymentPartial = this.collectService.alwaysPartialPayment || !!open?.inPaymentPartial;
+      inPaymentPartial = this.collectService.alwaysPartialPayment;
       missingRetention = this.collectService.alwaysRetention || !!open?.missingRetention;
     }
 
@@ -1397,6 +1603,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.disabledSaveButton)
         this.disabledSaveButton = false;
 
+      this.flushPartialPaymentBeforeSave();
+      this.flushFullPaymentBeforeSave();
+
       // Actualiza los datos de documentSales y collectionDetails con el helper
       this.collectService.copyDocumentSaleOpenToSalesAndDetails();
 
@@ -1412,13 +1621,19 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.collectService.coTypeModule != "2") {
         //ES COBRO O IGTF
         if (this.collectService.isPaymentPartial) {
-          if (this.collectService.documentSaleOpen.nuAmountPaid > 0) {
+          const partialAmount = this.resolvePartialPaymentAmount();
+          if (partialAmount > 0) {
             const idx = this.collectService.documentSaleOpen.positionCollecDetails;
             const detail = this.collectService.collection.collectionDetails[idx];
             if (detail) {
-              detail.nuAmountPaid = this.valuePartialPayment;
+              this.valuePartialPayment = partialAmount;
+              this.collectService.amountPaid = partialAmount;
+              this.collectService.documentSaleOpen.nuAmountPaid = partialAmount;
+              this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountPaid = partialAmount;
+              this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuAmountPaid = partialAmount;
+              detail.nuAmountPaid = partialAmount;
               detail.nuAmountPaidConversion = this.collectService.convertirMonto(
-                this.valuePartialPayment,
+                partialAmount,
                 this.collectService.collection.nuValueLocal,
                 this.collectService.documentSaleOpen.coCurrency
               );
@@ -1483,6 +1698,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.disabledSaveButton)
       this.disabledSaveButton = false;
 
+    this.flushPartialPaymentBeforeSave();
+    this.flushFullPaymentBeforeSave();
+
     // Usa el helper para actualizar documentSales y collectionDetails
     this.collectService.copyDocumentSaleOpenToSalesAndDetails();
 
@@ -1496,15 +1714,20 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.collectService.coTypeModule != "2") {
       //ES COBRO O IGTF
       if (this.collectService.isPaymentPartial) {
-        if (this.collectService.documentSaleOpen.nuAmountPaid > 0) {
+        const partialAmount = this.resolvePartialPaymentAmount();
+        if (partialAmount > 0) {
           const idx = this.collectService.documentSaleOpen.positionCollecDetails;
-          const open = this.collectService.documentSaleOpen;
           const detail = this.collectService.collection.collectionDetails[idx];
           if (detail) {
-            detail.nuAmountPaid = open.nuAmountPaid;
-            if (!this.collectService.isPaymentPartial && this.collectService.multiCurrency) {
-              detail.nuAmountPaidConversion = open.nuAmountPaid;
-            }
+            this.valuePartialPayment = partialAmount;
+            this.collectService.amountPaid = partialAmount;
+            this.collectService.documentSaleOpen.nuAmountPaid = partialAmount;
+            detail.nuAmountPaid = partialAmount;
+            detail.nuAmountPaidConversion = this.collectService.convertirMonto(
+              partialAmount,
+              this.collectService.collection.nuValueLocal,
+              this.collectService.documentSaleOpen.coCurrency
+            );
           }
           validate = true;
         } else {
@@ -1530,6 +1753,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private resolvePartialPaymentAmount(): number {
+    const fromCents = (this.centsAmountPaid ?? 0) / this.centsFactor();
+    if (fromCents > 0) {
+      return fromCents;
+    }
     const fromValue = Number(this.valuePartialPayment ?? 0);
     if (fromValue > 0) {
       return fromValue;
@@ -1543,6 +1770,63 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       return Number(this.collectService.documentSales[index]?.nuAmountPaid ?? 0);
     }
     return 0;
+  }
+
+  private flushFullPaymentBeforeSave(): void {
+    if (this.collectService.isPaymentPartial || this.collectService.coTypeModule === '2') {
+      return;
+    }
+    const cs = this.collectService;
+    const index = cs.indexDocumentSaleOpen;
+    const pos = cs.documentSaleOpen?.positionCollecDetails;
+    const detail = Number.isInteger(pos)
+      ? cs.collection.collectionDetails?.[pos as number]
+      : undefined;
+    const backup = index >= 0 ? cs.documentSalesBackup[index] : undefined;
+    const balance = Number(
+      detail?.nuBalanceDoc ?? backup?.nuBalance ?? cs.documentSaleOpen?.nuBalance ?? 0,
+    );
+    const retentions = Number(cs.documentSaleOpen?.nuAmountRetention ?? 0)
+      + Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+    const difFaltante = Number(detail?.nuAmountDiscount ?? 0);
+    const collectDiscount = Number(detail?.nuAmountCollectDiscount ?? 0);
+    const netAmount = balance - retentions - difFaltante - collectDiscount;
+    const currentAmount = Number(cs.amountPaid ?? 0);
+    const amountToSave = currentAmount > 0 && currentAmount <= balance
+      ? currentAmount
+      : netAmount;
+
+    cs.amountPaid = amountToSave;
+    if (cs.documentSaleOpen) {
+      cs.documentSaleOpen.nuAmountPaid = amountToSave;
+    }
+    if (index >= 0) {
+      cs.documentSales[index].nuAmountPaid = amountToSave;
+      cs.documentSalesBackup[index].nuAmountPaid = amountToSave;
+    }
+    if (detail) {
+      detail.nuAmountPaid = amountToSave;
+      detail.nuAmountPaidConversion = cs.convertirMonto(
+        amountToSave,
+        cs.collection.nuValueLocal,
+        cs.documentSaleOpen?.coCurrency ?? cs.collection.coCurrency,
+      );
+    }
+  }
+
+  private flushPartialPaymentBeforeSave(): void {
+    if (!this.collectService.isPaymentPartial) {
+      return;
+    }
+    const partialAmount = this.resolvePartialPaymentAmount();
+    if (!(partialAmount > 0)) {
+      return;
+    }
+    this.valuePartialPayment = partialAmount;
+    this.collectService.amountPaid = partialAmount;
+    if (this.collectService.documentSaleOpen) {
+      this.collectService.documentSaleOpen.nuAmountPaid = partialAmount;
+    }
   }
 
   private shouldSkipSendValidationOnPaymentRecalc(): boolean {
@@ -1654,10 +1938,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.collectService.missingRetentionValue = event.target.checked;
     this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.missingRetention = event.target.checked;
-    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = event.target.checked;
-    this.collectService.isPaymentPartial = event.target.checked;
-    this.collectService.isChangePaymentPartial = true;
-    this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = event.target.checked;
     this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].missingRetention = event.target.checked;
 
     if (event.target.checked) {
@@ -1672,7 +1952,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuVaucherRetention = "";
       this.disabledSaveButton = false;
     }
-    this.partialPay(event);
   }
 
   partialPay(event: any) {
@@ -1680,17 +1959,31 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.collectService.isChangePaymentPartialPersistence = true;
     this.collectService.isPaymentPartial = event.target.checked;
     const factor = this.centsFactor();
+    const index = this.collectService.indexDocumentSaleOpen;
     if (event.target.checked) {
-      //if (!this.collectService.documentSaleOpen.isSave)
-      this.collectService.amountPaid = 0;
+      const pos = this.collectService.documentSaleOpen?.positionCollecDetails;
+      const detail = Number.isInteger(pos)
+        ? this.collectService.collection.collectionDetails?.[pos as number]
+        : undefined;
+      const persistedPartial = detail?.isSave === true
+        ? this.resolvePartialPaymentAmountForOpen(index, pos)
+        : 0;
+      this.collectService.amountPaid = persistedPartial > 0 ? persistedPartial : 0;
+      if (persistedPartial > 0) {
+        this.valuePartialPayment = persistedPartial;
+      }
 
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
-      if (this.collectService.collection.stDelivery != 3)
+      if (this.collectService.collection.stDelivery != 3) {
         this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = true;
+      }
 
-      this.disabledSaveButton = true;
+      this.disabledSaveButton = !(this.collectService.amountPaid > 0);
       this.collectService.isChangePaymentPartial = false;
+      if (index >= 0 && Number.isInteger(pos)) {
+        this.syncDocumentPaymentPartialState(index, pos as number, true);
+      }
 
       if (!this.hasShownPartialPayMessage && this.collectService.totalHistoricPartialPayment > 0 && this.collectService.coTypeModule == "0") {
         if (this.collectService.historicPartialPayment &&
