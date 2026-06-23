@@ -15,8 +15,10 @@
     </div>
 
     <div class="pagos-sticky-action">
-      <ion-button id="eventSelect" class="botonAddVerde" expand="block" (click)="setShowEventModal(true)"
-        [disabled]="this.collectService.disabledSelectCollectMethodDisabled">
+      <ion-button id="eventSelect" class="botonAddVerde pagos-add-method-btn" expand="block"
+        (click)="setShowEventModal(true)"
+        [disabled]="isAddPaymentMethodDisabled()"
+        [class.pagos-add-method-btn--inactive]="isAddPaymentMethodDisabled()">
         Agregar método de pago
         <!-- {{this.collectService.collectionTags.get('COB_ADD_METODO_PAGO')}} -->
       </ion-button>

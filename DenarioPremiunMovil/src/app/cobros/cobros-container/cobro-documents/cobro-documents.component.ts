@@ -1209,7 +1209,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.documentSalesBackup[indexDocumentSale].isSelected = true;
       this.collectService.documentSalesView[indexDocumentSale].isSelected = true;
       this.collectService.haveDocumentSale = true;
-      this.collectService.disabledSelectCollectMethodDisabled = false;
 
       if (this.collectService.alwaysPartialPayment) {
         this.collectService.documentSales[indexDocumentSale].inPaymentPartial = true;

@@ -946,6 +946,9 @@ export class CollectionService {
       this.montoTotalPagadoConversion = 0;
       this.onCollectionValidToSend(false);
       this.onCollectionValidToSave(true);
+      if (this.coTypeModule === '0') {
+        this.syncAddPaymentMethodDisabledState();
+      }
       return;
     }
 
@@ -1202,6 +1205,8 @@ export class CollectionService {
     this.checkTiposPago();
     if (this.createAutomatedPrepaid) {
       this.setAutomatedPrepaid(type, index);
+    } else if (this.coTypeModule === '0') {
+      this.syncAddPaymentMethodDisabledState();
     }
     if (!skipValidateToSend) {
       this.validateToSend();
@@ -1263,6 +1268,30 @@ export class CollectionService {
         }
       }
     }
+  }
+
+  syncAddPaymentMethodDisabledState(): void {
+    if (this.coTypeModule !== '0') {
+      return;
+    }
+
+    if (this.createAutomatedPrepaid) {
+      return;
+    }
+
+    if (!this.collection?.collectionDetails?.length) {
+      this.disabledSelectCollectMethodDisabled = true;
+      return;
+    }
+
+    const difference = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(this.collection.nuDifference ?? 0)
+    );
+    this.disabledSelectCollectMethodDisabled = difference >= 0;
+  }
+
+  isAddPaymentMethodDisabled(): boolean {
+    return this.disabledSelectCollectMethodDisabled;
   }
 
   setAutomatedPrepaid(type: string, index: number) {
@@ -1459,8 +1488,8 @@ export class CollectionService {
           this.alertMessageOpen = true;
         }
         this.onCollectionValidToSend(true);
-      } else if (this.disabledSelectCollectMethodDisabled && this.collection.collectionDetails.length > 0) {
-        this.disabledSelectCollectMethodDisabled = false;
+      } else if (this.collection.collectionDetails.length > 0) {
+        this.syncAddPaymentMethodDisabledState();
       }
       if (this.recentOpenCollect)
         this.recentOpenCollect = false;
