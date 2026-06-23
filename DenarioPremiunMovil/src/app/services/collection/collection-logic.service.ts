@@ -175,6 +175,7 @@ export class CollectionService {
   public createAutomatedPrepaid: boolean = false;
   public addRetention: boolean = false;
   public documentsSaleComponent: boolean = false;
+  public documentsClientReloaded$ = new Subject<number>();
   public cobroComponent: boolean = false;
   public cobrosComponent: boolean = true;
   public cobrosDocumentComponent: boolean = true;
@@ -924,7 +925,7 @@ export class CollectionService {
     }
   }
 
-  async calculatePayment(type: string, index: number, forceRecalc: boolean = false) {
+  async calculatePayment(type: string, index: number, forceRecalc: boolean = false, skipValidateToSend: boolean = false) {
 
     this.montoTotalPagar = 0;
     let monto = 0;
@@ -996,26 +997,23 @@ export class CollectionService {
               if (this.collection.collectionDetails[j].inPaymentPartial === true) {
                 monto += this.collection.collectionDetails[pos].nuAmountPaid;
                 montoConversion += this.convertirMonto(this.collection.collectionDetails[pos].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-                montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                  this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                  this.collection.collectionDetails[pos].nuAmountRetention +
-                  this.collection.collectionDetails[pos].nuAmountRetention2;
               } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
                 monto += this.documentSalesBackup[i].nuBalance;
                 montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-                montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                  this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                  this.collection.collectionDetails[pos].nuAmountRetention +
-                  this.collection.collectionDetails[pos].nuAmountRetention2;
+                montoTotalDiscounts += this.getDetailDeductionsForTotals(
+                  this.collection.collectionDetails[pos],
+                  true
+                );
               }
             } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuBalance;
               let pos = this.documentSales[i].positionCollecDetails;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                this.documentSalesBackup[i].nuAmountRetention +
-                this.documentSalesBackup[i].nuAmountRetention2;
+              montoTotalDiscounts += this.getDetailDeductionsForTotals(
+                this.collection.collectionDetails[pos],
+                false,
+                this.documentSalesBackup[i]
+              );
             }
           }
           // No mutar nuAmountPaid por detalle durante recálculos de tasa.
@@ -1068,8 +1066,30 @@ export class CollectionService {
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
     this.collection.nuAmountTotalConversion = this.convertirMonto(this.collection.nuAmountTotal, 0, this.collection.coCurrency);
     this.syncCollectionIgtfFields();
-    this.resolveAutomatedPrepaid(type, index);
+    this.resolveAutomatedPrepaid(type, index, skipValidateToSend);
     return Promise.resolve(this.createAutomatedPrepaid);
+  }
+
+  private getDetailDeductionsForTotals(
+    detail: CollectionDetail | undefined,
+    isDocumentSaved: boolean,
+    documentBackup?: { nuAmountRetention?: number; nuAmountRetention2?: number },
+  ): number {
+    if (!detail) {
+      return 0;
+    }
+    const collectDiscount = isDocumentSaved ? Number(detail.nuAmountCollectDiscount ?? 0) : 0;
+    const retention = isDocumentSaved
+      ? Number(detail.nuAmountRetention ?? 0)
+      : Number(documentBackup?.nuAmountRetention ?? 0);
+    const retention2 = isDocumentSaved
+      ? Number(detail.nuAmountRetention2 ?? 0)
+      : Number(documentBackup?.nuAmountRetention2 ?? 0);
+    return Number(detail.nuAmountDiscount ?? 0) + collectDiscount + retention + retention2;
+  }
+
+  private hasSavedDocumentSales(): boolean {
+    return Array.isArray(this.documentSales) && this.documentSales.some(doc => doc?.isSave === true);
   }
 
   private syncMontosPagadosFromPayments(): void {
@@ -1171,7 +1191,7 @@ export class CollectionService {
     });
   }
 
-  private resolveAutomatedPrepaid(type: string, index: number): void {
+  private resolveAutomatedPrepaid(type: string, index: number, skipValidateToSend: boolean = false): void {
     this.createAutomatedPrepaid = false;
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
@@ -1185,7 +1205,9 @@ export class CollectionService {
     if (this.createAutomatedPrepaid) {
       this.setAutomatedPrepaid(type, index);
     }
-    this.validateToSend();
+    if (!skipValidateToSend) {
+      this.validateToSend();
+    }
   }
 
   checkTiposPago() {
@@ -1513,6 +1535,12 @@ export class CollectionService {
         this.onCollectionValidToSend(false);
         return;
       }
+
+      if (!this.hasSavedDocumentSales()) {
+        this.onCollectionValidToSend(false);
+        return;
+      }
+
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       let onlyPaymentPartial = 0;
       // Seguridad: normalizar array
@@ -1962,9 +1990,7 @@ export class CollectionService {
 
     //this.enterpriseSelected = {} as Enterprise;
     this.listBankAccounts = [] as BankAccount[];
-    this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[];
-    this.mapDocumentsSales = new Map<number, DocumentSale>([]);
+    this.clearDocumentSalesState();
     this.tempSelectedCollectDiscounts = [] as CollectDiscounts[];
     this.prevSelectedCollectDiscounts = [] as CollectDiscounts[];
 
@@ -2839,6 +2865,17 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     })
   }
 
+  clearDocumentSalesState(): void {
+    this.documentSales = [] as DocumentSale[];
+    this.documentSalesBackup = [] as DocumentSale[];
+    this.documentSalesView = [] as DocumentSale[];
+    this.mapDocumentsSales.clear();
+    this.documentSalesPageIds.clear();
+    this.documentSalesTotalRows = 0;
+    this.documentSalesCurrentPage = 0;
+    this.documentsSaleComponent = false;
+  }
+
   async getDocumentsSales(
     dbServ: SQLiteObject,
     idClient: number,
@@ -2849,11 +2886,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   ): Promise<DocumentSale[] | void> {
 
     if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) return Promise.resolve();
-    this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[];
-    this.documentSalesView = [] as DocumentSale[];
-    this.mapDocumentsSales.clear();
-    this.documentSalesPageIds.clear();
+    this.clearDocumentSalesState();
 
     if (pagination) {
       this.documentSalesPageSize = pagination.limit;
@@ -2896,6 +2929,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         this.convertDocumentSales();
 
       this.getColorRowDocumentSale();
+      this.documentsClientReloaded$.next(idClient);
       return this.documentSales;
     } catch {
       return Promise.resolve(this.documentSales);

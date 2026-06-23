@@ -346,6 +346,8 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   async reset(client: Client) {
+    await this.resetValues();
+    this.resetDocumentCurrencyFilter();
     this.clientSelectorService.checkClient = true;
     this.collectService.initCollect = false;
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;

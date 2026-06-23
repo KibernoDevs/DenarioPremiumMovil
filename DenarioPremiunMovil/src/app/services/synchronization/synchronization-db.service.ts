@@ -115,7 +115,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 11;
+  private CURRENT_DB_VERSION: number = 12;
 
   constructor(
     private navController: NavController,

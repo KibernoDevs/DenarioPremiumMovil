@@ -677,6 +677,7 @@ export class PedidoComponent implements OnInit {
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
+        const unitBaseTotal = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
         let u = new OrderDetailUnit(
           0,
           this.dateServ.generateCO((10 * i)) + 'U' + j.toString(),
@@ -690,6 +691,8 @@ export class PedidoComponent implements OnInit {
           0,
           unitPriceList.coPriceList,
           unitPriceList.idPriceList,
+          unitBaseTotal.nuBaseTotal,
+          unitBaseTotal.nuBaseTotalConversion,
         )
 
 
@@ -783,6 +786,8 @@ export class PedidoComponent implements OnInit {
       procedencia: "Denario",
       nuAmountTotalBaseConversion: this.orderServ.totalBaseConv,
       nuAmountDiscountConversion: this.orderServ.totalDctoXProductoConv,
+      nuAmountTax: this.orderServ.orderIVA,
+      nuAmountTaxConversion: this.orderServ.orderIVAConv,
       idOrderType: this.tipoOrden.idOrderType,
       orderDetails: orderDetails,
       nuDetails: orderDetails.length,
@@ -1491,6 +1496,14 @@ export class PedidoComponent implements OnInit {
     return this.currencyServ.formatNumber(input);
   }
 
+  formatQtyAmount(qty: number): string {
+    const amount = Number(qty ?? 0);
+    if (!this.orderServ.quUnitDecimals) {
+      return Math.floor(amount).toString();
+    }
+    return this.formatNum(amount);
+  }
+
   getSelectedUnitPricingRows(item: OrderUtil): SelectedUnitPricingRow[] {
     return this.orderServ.getSelectedUnitPricingRows(item);
   }
@@ -1538,7 +1551,7 @@ export class PedidoComponent implements OnInit {
 
           unitList.forEach(unit => {
             if (unit.quAmount > 0 || unit.quUnit > 0) {
-              qtyStrings.push(this.formatNum(Number(unit.quAmount ?? 0)));
+              qtyStrings.push(this.formatQtyAmount(Number(unit.quAmount ?? 0)));
               unitStrings.push(String(unit.naUnit ?? '').trim());
             }
           });
@@ -1549,7 +1562,7 @@ export class PedidoComponent implements OnInit {
 
           const primary = unitList.find(u => u.idUnit === item.idUnit);
           return {
-            qtyLines: this.formatNum(Number(item.quAmount ?? 0)),
+            qtyLines: this.formatQtyAmount(Number(item.quAmount ?? 0)),
             unitLines: String(primary?.naUnit ?? '').trim()
           };
         };
@@ -1813,7 +1826,9 @@ export class PedidoComponent implements OnInit {
       coDistributionChannel: null,
       idClientStock: null,
       coClientStock: null,
-      stDelivery: DELIVERY_STATUS_NEW
+      stDelivery: DELIVERY_STATUS_NEW,
+      nuAmountTax: 0,
+      nuAmountTaxConversion: 0,
     } as Orders;
   }
   getNaPaymentCondition(coPaymentCondition: string) {

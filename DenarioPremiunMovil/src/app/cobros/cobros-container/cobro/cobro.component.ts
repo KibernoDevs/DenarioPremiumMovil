@@ -66,6 +66,7 @@ export class CobroComponent implements OnInit, OnDestroy {
     const value = event.detail?.value as string;
     if (value === 'documentos') {
       this.documentsTabMounted = true;
+      void this.cobroDocuments?.refreshDocumentsForCurrentClient();
       this.cobroDocuments?.ensureDocumentsTableResizeObserver();
       this.cobroDocuments?.invalidateDocumentsTableLayoutCache();
       this.cobroDocuments?.scheduleDocumentsTableLayoutSync();

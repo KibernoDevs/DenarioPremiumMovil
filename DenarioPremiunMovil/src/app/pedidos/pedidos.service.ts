@@ -1427,6 +1427,39 @@ export class PedidosService {
     };
   }
 
+  /**
+   * nuBaseTotal/nuBaseTotalConversion para order_detail_units.
+   * Usa computeUnitBaseTotal con la misma lógica de conversión que productSummary.
+   */
+  buildOrderDetailUnitBaseTotalFields(
+    item: OrderUtil,
+    unit: UnitInfo,
+    quAmountOverride?: number,
+  ): { nuBaseTotal: number; nuBaseTotalConversion: number } {
+    const unitForCalc = quAmountOverride != null
+      ? { ...unit, quAmount: quAmountOverride }
+      : unit;
+    const nuBaseTotal = this.computeUnitBaseTotal(item, unitForCalc);
+    let nuBaseTotalConversion = 0;
+    if (this.currencyService.multimoneda) {
+      if (this.pedidoModificable) {
+        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+          nuBaseTotalConversion = this.currencyService.toLocalCurrency(nuBaseTotal);
+        } else {
+          nuBaseTotalConversion = this.currencyService.toHardCurrency(nuBaseTotal);
+        }
+      } else {
+        const nuValueLocal = this.order.nuValueLocal;
+        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+          nuBaseTotalConversion = this.currencyService.toLocalCurrencyByNuValueLocal(nuBaseTotal, nuValueLocal);
+        } else {
+          nuBaseTotalConversion = this.currencyService.toHardCurrencyByNuValueLocal(nuBaseTotal, nuValueLocal);
+        }
+      }
+    }
+    return { nuBaseTotal, nuBaseTotalConversion };
+  }
+
   /** Sincroniza coPriceList/idPriceList en unitList antes de totalizar o persistir. */
   syncUnitPriceListFields(item: OrderUtil): void {
     if (!item.unitList?.length) {
@@ -1563,7 +1596,13 @@ export class PedidosService {
 
 
 
+  applyHeaderTaxAmounts(order: Orders): void {
+    order.nuAmountTax = this.orderIVA;
+    order.nuAmountTaxConversion = this.orderIVAConv;
+  }
+
   saveOrder(order: Orders) {
+    this.applyHeaderTaxAmounts(order);
 
     return this.db.saveOrder(this.database, order).then(result => {
       console.log("Pedido #" + order.coOrder + " Guardado!");
@@ -1887,7 +1926,9 @@ export class PedidosService {
       "coDistributionChannel": null,
       "idClientStock": null,
       "coClientStock": null,
-      "stDelivery": DELIVERY_STATUS_NEW
+      "stDelivery": DELIVERY_STATUS_NEW,
+      "nuAmountTax": 0,
+      "nuAmountTaxConversion": 0
     }
 
     for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {
@@ -1929,6 +1970,7 @@ export class PedidosService {
             "coUnit": unit.coUnit,
             "quSuggested": quSuggested,
             ...this.buildOrderDetailUnitPriceListFields(item, unit),
+            ...this.buildOrderDetailUnitBaseTotalFields(item, unit, quSuggested),
           }
 
           detailUnits.push(detailunit);

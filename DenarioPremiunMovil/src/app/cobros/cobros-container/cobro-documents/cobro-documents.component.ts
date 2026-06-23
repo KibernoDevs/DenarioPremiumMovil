@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
-import { CollectionDetailDiscounts, CollectionDetailRetentions, CollectionPayment } from 'src/app/modelos/tables/collection';
+import { CollectionDetailDiscounts, CollectionPayment } from 'src/app/modelos/tables/collection';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
@@ -14,9 +14,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
-import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 import { IgtfList } from 'src/app/modelos/tables/igtfList';
 import { MessageService } from 'src/app/services/messageService/message.service';
+import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
+import { Subscription } from 'rxjs';
 
 
 @Component({
@@ -28,6 +29,7 @@ import { MessageService } from 'src/app/services/messageService/message.service'
 export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public collectService = inject(CollectionService);
+  public clientSelectorService = inject(ClienteSelectorService);
   public globalConfig = inject(GlobalConfigService);
   public currencyService = inject(CurrencyService);
   public dateServ = inject(DateServiceService);
@@ -79,16 +81,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   // When true, discount checkboxes should be disabled in the template
   public disableDiscountCheckboxes: boolean = false;
 
-  public selectedCollectRetentionId: number | undefined;
-  private documentRetentionLines: Array<{
-    idCollectRetention: number;
-    coCollectRetention: string;
-    nuAmountRetention: number;
-  }> = [];
-  private detailCollectRetentionsPos = 0;
-  private collectRetentionCentsMap = new Map<number, number>();
-  private collectRetentionKeyInFlightMap = new Map<number, boolean>();
-
   public mensaje: string = '';
   public saldo: string = "";
   public saldoConversion: string = "";
@@ -115,6 +107,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private documentsTableLayoutKey = '';
   private documentsTableLayoutFrame = 0;
   private documentsTableResizeObserver?: ResizeObserver;
+  private lastLoadedClientId: number | null = null;
+  private clientChangedSub?: Subscription;
+  private documentReloadSub?: Subscription;
 
 
   public alertButtons = [
@@ -150,7 +145,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   ngOnInit() {
     this.fechaHoy = this.dateServ.onlyDateHoyISO();
     this.initializeDocumentCurrencyFilter();
-    // this.collectService.deepFreeze(this.collectService.documentSalesView);
+
+    this.clientChangedSub = this.clientSelectorService.ClientChanged.subscribe(() => {
+      this.lastLoadedClientId = null;
+      this.clearLocalDocumentsView();
+    });
+
+    this.documentReloadSub = this.collectService.documentsClientReloaded$.subscribe((idClient) => {
+      this.lastLoadedClientId = idClient;
+      this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+      this.cdr.detectChanges();
+    });
   }
 
   ngAfterViewInit(): void {
@@ -177,10 +182,40 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnDestroy(): void {
+    this.clientChangedSub?.unsubscribe();
+    this.documentReloadSub?.unsubscribe();
     this.documentsTableResizeObserver?.disconnect();
     if (this.documentsTableLayoutFrame) {
       cancelAnimationFrame(this.documentsTableLayoutFrame);
     }
+  }
+
+  private clearLocalDocumentsView(): void {
+    this.filteredDocumentsView = [];
+    this.documentsTableLayoutReady = false;
+    this.markDocumentsTableLayoutPending();
+    this.cdr.detectChanges();
+  }
+
+  async refreshDocumentsForCurrentClient(forceReload = false): Promise<void> {
+    const clientId = this.collectService.collection.idClient;
+    if (!clientId) {
+      this.clearLocalDocumentsView();
+      return;
+    }
+
+    if (!forceReload
+      && this.lastLoadedClientId === clientId
+      && this.filteredDocumentsView.length > 0) {
+      this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.clearLocalDocumentsView();
+    await this.loadDocumentsSalePage(0, clientId);
+    this.lastLoadedClientId = clientId;
+    this.cdr.detectChanges();
   }
 
 
@@ -734,15 +769,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     nuAmountCollectDiscount?: number;
     nuAmountRetention?: number;
     nuAmountRetention2?: number;
-    collectionDetailRetentions?: CollectionDetailRetentions[];
   } | null | undefined): number {
     if (!detail) {
       return 0;
     }
-    const retentionTotal = this.collectService.getDetailRetentionTotal(detail as any);
     return Number(detail.nuAmountDiscount ?? 0)
       + Number(detail.nuAmountCollectDiscount ?? 0)
-      + retentionTotal;
+      + Number(detail.nuAmountRetention ?? 0)
+      + Number(detail.nuAmountRetention2 ?? 0);
   }
 
   private resolveSavedDetailNuAmountPaid(
@@ -967,8 +1001,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       this.disabledSaveButton = true;
       this.collectService.documentSaleOpen = new DocumentSale;
-      this.centsRetention = undefined;
-      this.centsRetention2 = undefined;
       let voucherRetentionValue = "";
       let daVoucherValue = "";
       if (this.collectService.documentSales[index].isSave) {
@@ -1007,18 +1039,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       await this.calculateDocumentSaleOpen(index);
       this.syncPersistedCollectDiscountTotals(positionCollecDetails);
 
-      if (this.collectService.retencion) {
-        await this.ensureCollectRetentionsCatalog();
-        this.hydrateDocumentRetentionLines(positionCollecDetails);
-      }
-
       // Asignar el valor de nuVaucherRetention y daVoucher después de crear documentSaleOpen
       if (voucherRetentionValue !== undefined) {
         this.collectService.documentSaleOpen.nuVaucherRetention = voucherRetentionValue;
       }
-      if (daVoucherValue !== undefined && daVoucherValue !== null && String(daVoucherValue).trim() !== '') {
-        this.daVoucher = String(daVoucherValue).split('T')[0];
-        this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
+      if (daVoucherValue !== undefined) {
+        this.collectService.documentSaleOpen.daVoucher = daVoucherValue;
       }
 
       if (this.collectService.collection.stDelivery == 3) {
@@ -1030,9 +1056,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.collectService.documentSaleOpen.nuAmountRetention = detail.nuAmountRetention;
           this.collectService.documentSaleOpen.nuAmountRetention2 = detail.nuAmountRetention2;
           this.collectService.documentSaleOpen.daVoucher = detail.daVoucher == null ? "" : detail.daVoucher;
-          this.daVoucher = this.collectService.documentSaleOpen.daVoucher
-            ? String(this.collectService.documentSaleOpen.daVoucher).split('T')[0]
-            : '';
           this.collectService.documentSaleOpen.nuVaucherRetention = detail.nuVoucherRetention;
           this.collectService.documentSaleOpen.inPaymentPartial = detail.inPaymentPartial;
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
@@ -1045,12 +1068,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       }
 
-      if (this.usesLegacyRetentionInputs()) {
-        this.syncLegacyRetentionDisplays();
-      }
-
-      this.syncDaVoucherValidation();
-
+      if (this.collectService.documentSaleOpen.daVoucher != "")
+        this.collectService.validateDaVoucher = true
       if (this.collectService.coTypeModule == '0') {
         this.collectService.documentSaleOpen.isSave == true ? this.collectService.amountPaid = this.collectService.documentSaleOpen.nuAmountPaid : this.collectService.amountPaid = this.collectService.documentSaleOpen.nuBalance;
         console.log(this.collectService.documentSaleOpen.isSave);
@@ -1063,7 +1082,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       // <-- ADD: inicializar displayAmountPaid para que el input muestre el valor al abrir
 
-      const sumRetentions = this.getDocumentRetentionTotal();
+      const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+        this.collectService.documentSaleOpen.nuAmountRetention2;
 
       if (this.collectService.isPaymentPartial) {
         this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
@@ -1378,6 +1398,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.disabledSaveButton)
         this.disabledSaveButton = false;
 
+      // Actualiza los datos de documentSales y collectionDetails con el helper
+      this.collectService.copyDocumentSaleOpenToSalesAndDetails();
+
       if (this.collectService.coTypeModule == '2') {
         this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaidRetention));
         this.collectService.documentSaleOpen.nuAmountPaid = this.collectService.amountPaidRetention;
@@ -1392,15 +1415,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         if (this.collectService.isPaymentPartial) {
           if (this.collectService.documentSaleOpen.nuAmountPaid > 0) {
             const idx = this.collectService.documentSaleOpen.positionCollecDetails;
-            const open = this.collectService.documentSaleOpen;
             const detail = this.collectService.collection.collectionDetails[idx];
-            const retentionTotal = this.collectService.getDetailRetentionTotal(detail);
-            const discount = detail.nuAmountDiscount + retentionTotal;
             if (detail) {
-              detail.nuAmountPaid = this.valuePartialPayment - discount;
-              if (!this.collectService.isPaymentPartial && this.collectService.multiCurrency) {
-                detail.nuAmountPaidConversion = this.valuePartialPayment - discount;
-              }
+              detail.nuAmountPaid = this.valuePartialPayment;
+              detail.nuAmountPaidConversion = this.collectService.convertirMonto(
+                this.valuePartialPayment,
+                this.collectService.collection.nuValueLocal,
+                this.collectService.documentSaleOpen.coCurrency
+              );
             }
             validate = true;
           } else {
@@ -1419,12 +1441,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           (hasSelectedDiscounts || this.hasManualCollectDiscount())) {
           this.setCollectionDetailDiscounts(this.collectService.documentSaleOpen.positionCollecDetails!, this.collectService.selectedCollectDiscounts);
         }
-        if (this.collectService.retencion && !this.collectService.missingRetentionValue) {
-          this.setCollectionDetailRetentions(this.collectService.documentSaleOpen.positionCollecDetails!);
-        }
-        this.collectService.copyDocumentSaleOpenToSalesAndDetails();
         this.collectService.calculatePayment("", 0, true);
-        this.clearDocumentRetentionState();
         this.cdr.detectChanges();
         console.log("GUARDAR")
         this.collectService.isOpen = false;
@@ -1513,6 +1530,34 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.collectService.validNuRetention = false;
   }
 
+  private resolvePartialPaymentAmount(): number {
+    const fromValue = Number(this.valuePartialPayment ?? 0);
+    if (fromValue > 0) {
+      return fromValue;
+    }
+    const fromCurrent = Number(this.collectService.amountPaid ?? 0);
+    if (fromCurrent > 0) {
+      return fromCurrent;
+    }
+    const index = this.collectService.indexDocumentSaleOpen;
+    if (index >= 0) {
+      return Number(this.collectService.documentSales[index]?.nuAmountPaid ?? 0);
+    }
+    return 0;
+  }
+
+  private shouldSkipSendValidationOnPaymentRecalc(): boolean {
+    const cs = this.collectService;
+    if (!cs.isOpen) {
+      return false;
+    }
+    const openIndex = cs.indexDocumentSaleOpen;
+    if (openIndex < 0) {
+      return false;
+    }
+    return !cs.documentSales[openIndex]?.isSave;
+  }
+
   setAmountTotal() {
     const cs = this.collectService;
     const {
@@ -1535,8 +1580,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       originalBalance = Number(cs.documentSaleOpen?.nuBalance ?? 0);
     }
 
-    const nuAmountRetention = this.getDocumentRetentionTotal();
-    const nuAmountRetention2 = 0;
+    const nuAmountRetention = cs.documentSaleOpen.nuAmountRetention ?? 0;
+    const nuAmountRetention2 = cs.documentSaleOpen.nuAmountRetention2 ?? 0;
     let amountPaidRetention = 0;
     let amountPaidConversion = 0;
     // difFaltante = descuento actual aplicado en detalle (valor fijo, no acumulativo)
@@ -1554,26 +1599,37 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       cs.amountPaid = sumRetentions;
 
       cs.documentSaleOpen.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidRetention));
-      cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
+      cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidDoc));
       cs.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
       cs.amountPaidRetention = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidRetention));
 
     } else {
       if (cs.isPaymentPartial) {
-        let amount = documentSale.isSave ? documentSale.nuAmountPaid : this.valuePartialPayment;
-        cs.amountPaid = amount - sumRetentions;
+        const partialAmount = this.resolvePartialPaymentAmount();
+        cs.amountPaid = partialAmount;
+        cs.documentSaleOpen.nuAmountPaid = partialAmount;
+        cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(
+          this.currencyService.formatNumber(partialAmount)
+        );
       } else {
         // usar siempre originalBalance para calcular el nuevo monto al aplicar descuento/retenciones
         cs.amountPaid = originalBalance - sumRetentions;
+        cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(
+          this.currencyService.formatNumber(cs.amountPaid)
+        );
       }
 
-      cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
       cs.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
       this.collectService.documentSaleOpen.igtfAmount = cs.amountPaid * (igtfSelected.price / 100);
 
     }
 
-    this.syncAmountPaidDisplay(cs.amountPaid);
+
+
+
+
+    this.centsAmountPaid = Math.round((cs.amountPaid ?? 0) * this.centsFactor());
+    this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
     let amountPaidAux = cs.amountPaid;
     let nuAmountRetentionAux = nuAmountRetention;
@@ -1724,9 +1780,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private isEmptyOrZeroRetention(): boolean {
-    if (this.documentRetentionLines.length > 0) {
-      return this.documentRetentionLines.every(line => this.isNullOrZero(line.nuAmountRetention));
-    }
     const { nuAmountRetention, nuAmountRetention2 } = this.collectService.documentSaleOpen;
     return this.isNullOrZero(nuAmountRetention) && this.isNullOrZero(nuAmountRetention2);
   }
@@ -1754,7 +1807,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (cs.validNuRetention && doc.daVoucher === '') {
         this.disabledSaveButton = true;
       }
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
       return;
     }
@@ -1818,7 +1871,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       //cs.documentSalesBackup[index].nuBalance = amountPaid;
       cs.documentSalesBackup[index].nuAmountPaid = amountPaid;
 
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
       return;
     }
@@ -1847,7 +1900,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         }
         cs.documentSales[index].nuBalance = cs.amountPaid;
         this.disabledSaveButton = false;
-        cs.calculatePayment("", 0);
+        cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
         this.cdr.detectChanges();
         return;
       }
@@ -1883,16 +1936,16 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     cs.amountPaymentPartial = 0;
     doc.nuBalance = docOriginal.nuBalance - (difFaltante + cs.amountPaymentPartial + doc.nuAmountRetention + doc.nuAmountRetention2);
     doc.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
-    cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
+    cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidDoc));
 
     if (!this.disabledSaveButton) {
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
     }
 
     if (cs.isChangePaymentPartial && !cs.isPaymentPartial) {
       this.disabledSaveButton = false;
-      cs.calculatePayment("", 0);
+      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
     }
 
@@ -1909,25 +1962,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   imprimir() {
     console.log(this.collectService.collection)
-  }
-
-  public shouldShowRetentionLengthHint(): boolean {
-    if (this.collectService.sizeRetention <= 0 || this.collectService.validNuRetention) {
-      return false;
-    }
-    const voucher = this.collectService.documentSaleOpen?.nuVaucherRetention;
-    return voucher != null && String(voucher).trim().length > 0;
-  }
-
-  public shouldShowDaVoucherRequiredHint(): boolean {
-    const voucher = this.collectService.documentSaleOpen?.nuVaucherRetention;
-    const hasVoucher = voucher != null && String(voucher).trim().length > 0;
-    return hasVoucher && !this.collectService.validateDaVoucher;
-  }
-
-  private syncDaVoucherValidation(): void {
-    const daVoucher = this.collectService.documentSaleOpen?.daVoucher;
-    this.collectService.validateDaVoucher = daVoucher != null && String(daVoucher).trim().length > 0;
   }
 
   //[a-zA-Z ]
@@ -2019,17 +2053,15 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (this.collectService.validNuRetention && this.isEmptyOrZeroRetention()) {
       this.disabledSaveButton = true;
-      this.syncDaVoucherValidation();
-      this.cdr.detectChanges();
       return;
     }
 
-    this.syncDaVoucherValidation();
-    if (this.collectService.validNuRetention && !this.collectService.validateDaVoucher) {
+    if (this.collectService.validNuRetention && this.collectService.documentSaleOpen.daVoucher == "") {
+      this.collectService.validateDaVoucher = false;
       this.disabledSaveButton = true;
     }
 
-    this.cdr.detectChanges();
+
   }
 
 
@@ -2055,25 +2087,21 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
-  setDaVoucher(event?: CustomEvent) {
-    const rawValue = event?.detail?.value ?? this.daVoucher;
-    if (rawValue != null && String(rawValue).trim() !== '') {
-      this.daVoucher = String(rawValue).split('T')[0];
-      this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
-    }
-    this.syncDaVoucherValidation();
+  setDaVoucher() {
+    console.log(this.daVoucher);
+    this.collectService.validateDaVoucher = true;
+    this.daVoucher = this.daVoucher.split("T")[0];
+    this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
     if (this.collectService.validNuRetention) {
       if (!this.collectService.retencion) {
         this.disabledSaveButton = false;
-      } else if (this.isEmptyOrZeroRetention()) {
+      } else if (this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2 == 0) {
         this.disabledSaveButton = true;
-      } else {
+      } else
         this.disabledSaveButton = false;
-      }
-    } else {
+
+    } else
       this.disabledSaveButton = false;
-    }
-    this.cdr.detectChanges();
   }
 
   openPartialPayment(coDocument: string) {
@@ -2094,16 +2122,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   formatNumber(num: number) {
     return this.currencyService.formatNumber(num);
-  }
-
-  private syncAmountPaidDisplay(amount: number): void {
-    const normalized = Number(amount ?? 0);
-    const factor = this.centsFactor();
-    this.centsAmountPaid = Math.round(normalized * factor);
-    this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
-    this.collectService.amountPaidDoc = this.currencyService.cleanFormattedNumber(
-      this.currencyService.formatNumber(normalized)
-    );
   }
 
   formatMultiLineAmounts(text: string | null | undefined): string {
@@ -3046,20 +3064,27 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       const totalDiscounts = calculatedDiscounts.reduce((acc, d) => acc + Number(d.nuCollectDiscount ?? 0), 0);
       let discounts = this.collectService.documentSaleOpen.nuAmountRetention
         + this.collectService.documentSaleOpen.nuAmountRetention2
-        + this.collectService.collection.collectionDetails[idxDetail].nuAmountDiscount
+        + this.collectService.collection.collectionDetails[idxDetail].nuAmountDiscount;
       const newBalance = runningBalance - discounts;
+      const isPartialPayment = this.collectService.isPaymentPartial;
+      const amountToApply = isPartialPayment
+        ? this.resolvePartialPaymentAmount()
+        : newBalance;
 
       // Reflejar de inmediato el nuevo monto a pagar (nuBalance conserva el saldo original;
       // calculatePayment resta nuAmountCollectDiscount sobre backup.nuBalance)
-      this.collectService.amountPaid = newBalance;
+      this.collectService.amountPaid = amountToApply;
       if (this.collectService.documentSaleOpen) {
-        this.collectService.documentSaleOpen.nuAmountPaid = newBalance;
+        this.collectService.documentSaleOpen.nuAmountPaid = amountToApply;
+      }
+      if (isPartialPayment) {
+        this.valuePartialPayment = amountToApply;
       }
 
       // Actualizar visual de monto a pagar en caliente
-      this.centsAmountPaid = Math.round((newBalance ?? 0) * factor);
+      this.centsAmountPaid = Math.round((amountToApply ?? 0) * factor);
       try {
-        this.displayAmountPaid = this.currencyService.formatNumber(newBalance);
+        this.displayAmountPaid = this.currencyService.formatNumber(amountToApply);
       } catch {
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
       }
@@ -3081,7 +3106,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           nuAmountCollectDiscountConversion: this.collectService.convertirMonto(discountTotal, this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
           nuCollectDiscount: totalDiscounts,
           hasDiscount: discountTotal > 0,
-          nuAmountPaid: newBalance
+          nuAmountPaid: amountToApply
         };
         const clonedDetails = [...this.collectService.collection.collectionDetails];
         clonedDetails[idxDetail as number] = updated;
@@ -3091,29 +3116,33 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       // sincronizar arrays de documentos (no mutar nuBalance: calculatePayment lo usa como saldo base)
       const ds = [...this.collectService.documentSales];
       if (ds[this.indexDocumentSaleOpen]) {
-        ds[this.indexDocumentSaleOpen] = { ...ds[this.indexDocumentSaleOpen], nuAmountPaid: newBalance };
+        ds[this.indexDocumentSaleOpen] = { ...ds[this.indexDocumentSaleOpen], nuAmountPaid: amountToApply };
       }
       this.collectService.documentSales = ds;
 
       const dsb = [...this.collectService.documentSalesBackup];
       if (dsb[this.indexDocumentSaleOpen]) {
-        dsb[this.indexDocumentSaleOpen] = { ...dsb[this.indexDocumentSaleOpen], nuAmountPaid: newBalance };
+        dsb[this.indexDocumentSaleOpen] = { ...dsb[this.indexDocumentSaleOpen], nuAmountPaid: amountToApply };
       }
       this.collectService.documentSalesBackup = dsb;
 
       // recalcular documento abierto y totales
-      //await this.calculateSaldo(this.indexDocumentSaleOpen);
-      //await this.calculateDocumentSaleOpen(this.indexDocumentSaleOpen);
-      await Promise.resolve(this.collectService.calculatePayment("", 0));
+      const isDocumentSaved = this.collectService.documentSales[this.indexDocumentSaleOpen]?.isSave === true;
+      await Promise.resolve(this.collectService.calculatePayment("", 0, false, !isDocumentSaved));
+
+      if (!isDocumentSaved) {
+        this.collectService.onCollectionValidToSend(false);
+      }
 
       // actualizar UI
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
-      //const hasDiscountComment = typeof this.discountComment === 'string' && this.discountComment.trim().length > 0;
-      //if (hasDiscountComment) {
-      this.disabledSaveButton = false;
-      //}
+      if (this.hasSelectedOrManualCollectDiscounts()) {
+        this.disabledSaveButton = false;
+      } else {
+        this.validate();
+      }
 
       this.cdr.detectChanges();
     } catch (err) {
@@ -3343,312 +3372,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
     this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
     //this.disabledSaveButton = false;
-  }
-
-  public hasCollectRetentions(): boolean {
-    return this.collectService.retencion && this.collectService.collectRetentions.length > 0;
-  }
-
-  public usesLegacyRetentionInputs(): boolean {
-    return this.collectService.retencion && !this.hasCollectRetentions();
-  }
-
-  private async ensureCollectRetentionsCatalog(): Promise<void> {
-    if (!this.collectService.retencion || this.collectService.collectRetentions.length > 0) {
-      return;
-    }
-    const idEnterprise = this.collectService.collection?.idEnterprise;
-    if (!idEnterprise) {
-      return;
-    }
-    try {
-      await this.collectService.getCollectRetentions(
-        this.synchronizationServices.getDatabase(),
-        idEnterprise
-      );
-    } catch (err) {
-      console.warn('ensureCollectRetentionsCatalog error:', err);
-    }
-  }
-
-  private syncLegacyRetentionDisplays(): void {
-    const factor = this.centsFactor();
-    const iva = Number(this.collectService.documentSaleOpen?.nuAmountRetention ?? 0);
-    const islr = Number(this.collectService.documentSaleOpen?.nuAmountRetention2 ?? 0);
-    this.centsRetention = Math.round(iva * factor) || 0;
-    this.centsRetention2 = Math.round(islr * factor) || 0;
-    this.displayRetention = iva > 0 ? this.formatNumber(iva) : this.formatFromCents(0);
-    this.displayRetention2 = islr > 0 ? this.formatNumber(islr) : this.formatFromCents(0);
-  }
-
-  public hasAvailableCollectRetentions(): boolean {
-    return this.getAvailableCollectRetentions().length > 0;
-  }
-
-  public getAvailableCollectRetentions(): CollectRetentions[] {
-    const selectedIds = new Set(this.documentRetentionLines.map(line => line.idCollectRetention));
-    return this.collectService.collectRetentions.filter(
-      retention => !selectedIds.has(retention.idCollectRetention)
-    );
-  }
-
-  public getSelectedCollectRetentions(): Array<{
-    idCollectRetention: number;
-    coCollectRetention: string;
-    nuAmountRetention: number;
-  }> {
-    return this.documentRetentionLines;
-  }
-
-  public onCollectRetentionSelectionChange(event: CustomEvent): void {
-    const rawValue = event?.detail?.value ?? this.selectedCollectRetentionId;
-    const idCollectRetention = Number(rawValue);
-    if (!Number.isFinite(idCollectRetention) || idCollectRetention <= 0) {
-      return;
-    }
-    const retention = this.collectService.collectRetentions.find(
-      item => item.idCollectRetention === idCollectRetention
-    );
-    if (!retention) {
-      return;
-    }
-    this.documentRetentionLines.push({
-      idCollectRetention: retention.idCollectRetention,
-      coCollectRetention: retention.coCollectRetention,
-      nuAmountRetention: 0,
-    });
-    this.collectRetentionCentsMap.set(idCollectRetention, 0);
-    this.selectedCollectRetentionId = undefined;
-    this.syncOpenRetentionFromLines();
-    this.setAmountTotal();
-    this.validate();
-  }
-
-  public removeCollectRetention(idCollectRetention: number): void {
-    this.documentRetentionLines = this.documentRetentionLines.filter(
-      line => line.idCollectRetention !== idCollectRetention
-    );
-    this.collectRetentionCentsMap.delete(idCollectRetention);
-    this.collectRetentionKeyInFlightMap.delete(idCollectRetention);
-    this.syncOpenRetentionFromLines();
-    this.setAmountTotal();
-    this.validate();
-  }
-
-  public getCollectRetentionName(coCollectRetention: string): string {
-    const retention = this.collectService.collectRetentions.find(
-      item => item.coCollectRetention === coCollectRetention
-    );
-    return retention?.naCollectRetention ?? coCollectRetention;
-  }
-
-  public getRetentionInputId(idCollectRetention: number): string {
-    return `collect-retention-${idCollectRetention}`;
-  }
-
-  public getCollectRetentionCents(idCollectRetention: number): number {
-    return this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
-  }
-
-  public onCollectRetentionKeyDown(idCollectRetention: number, ev: KeyboardEvent): void {
-    const key = ev.key;
-    if (key >= '0' && key <= '9') {
-      ev.preventDefault();
-      this.collectRetentionKeyInFlightMap.set(idCollectRetention, true);
-      const MAX_CENTS = 999999999;
-      const digit = Number(key);
-      const current = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
-      this.collectRetentionCentsMap.set(
-        idCollectRetention,
-        Math.min(MAX_CENTS, current * 10 + digit)
-      );
-      this.updateCollectRetentionLineAmount(idCollectRetention);
-      setTimeout(() => this.collectRetentionKeyInFlightMap.set(idCollectRetention, false), 0);
-      return;
-    }
-    if (key === 'Backspace') {
-      ev.preventDefault();
-      this.collectRetentionKeyInFlightMap.set(idCollectRetention, true);
-      const current = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
-      this.collectRetentionCentsMap.set(idCollectRetention, Math.trunc(current / 10));
-      this.updateCollectRetentionLineAmount(idCollectRetention);
-      setTimeout(() => this.collectRetentionKeyInFlightMap.set(idCollectRetention, false), 0);
-      return;
-    }
-    if (key === 'Delete') {
-      ev.preventDefault();
-      this.collectRetentionKeyInFlightMap.set(idCollectRetention, true);
-      this.collectRetentionCentsMap.set(idCollectRetention, 0);
-      this.updateCollectRetentionLineAmount(idCollectRetention);
-      setTimeout(() => this.collectRetentionKeyInFlightMap.set(idCollectRetention, false), 0);
-    }
-  }
-
-  public onCollectRetentionFocus(idCollectRetention: number): void {
-    if ((this.collectRetentionCentsMap.get(idCollectRetention) ?? 0) === 0) {
-      this.collectRetentionCentsMap.set(idCollectRetention, 0);
-    }
-  }
-
-  public onCollectRetentionBlur(idCollectRetention: number): void {
-    this.updateCollectRetentionLineAmount(idCollectRetention, true);
-  }
-
-  public onCollectRetentionInput(idCollectRetention: number, ev: Event): void {
-    if (this.collectRetentionKeyInFlightMap.get(idCollectRetention)) {
-      this.collectRetentionKeyInFlightMap.set(idCollectRetention, false);
-      return;
-    }
-    const input = ev.target as HTMLInputElement | null;
-    const raw = String(input?.value ?? '');
-    const MAX_CENTS = 999999999;
-    if (raw.length === 0) {
-      this.collectRetentionCentsMap.set(idCollectRetention, Math.trunc((this.collectRetentionCentsMap.get(idCollectRetention) ?? 0) / 10));
-    } else if (/^\d$/.test(raw)) {
-      const digit = Number(raw);
-      const current = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
-      this.collectRetentionCentsMap.set(idCollectRetention, Math.min(MAX_CENTS, current * 10 + digit));
-    } else {
-      this.collectRetentionCentsMap.set(idCollectRetention, this.parsePastedToCents(raw));
-    }
-    this.updateCollectRetentionLineAmount(idCollectRetention);
-  }
-
-  private updateCollectRetentionLineAmount(idCollectRetention: number, fromBlur = false): void {
-    const cents = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
-    const amount = fromBlur
-      ? Math.max(0, cents / this.centsFactor())
-      : Math.max(0, cents / this.centsFactor());
-    const line = this.documentRetentionLines.find(item => item.idCollectRetention === idCollectRetention);
-    if (line) {
-      line.nuAmountRetention = amount;
-    }
-    this.syncOpenRetentionFromLines();
-    this.setAmountTotal();
-    this.validate();
-  }
-
-  private getDocumentRetentionTotal(): number {
-    if (this.documentRetentionLines.length > 0) {
-      return this.documentRetentionLines.reduce(
-        (sum, line) => sum + Number(line.nuAmountRetention ?? 0),
-        0
-      );
-    }
-    return Number(this.collectService.documentSaleOpen?.nuAmountRetention ?? 0)
-      + Number(this.collectService.documentSaleOpen?.nuAmountRetention2 ?? 0);
-  }
-
-  private syncOpenRetentionFromLines(): void {
-    const total = this.getDocumentRetentionTotal();
-    this.collectService.documentSaleOpen.nuAmountRetention = total;
-    this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
-  }
-
-  private hydrateDocumentRetentionLines(positionCollecDetails: number): void {
-    this.clearDocumentRetentionState();
-    const detail = this.collectService.collection.collectionDetails?.[positionCollecDetails];
-    if (!detail) {
-      return;
-    }
-
-    const persisted = detail.collectionDetailRetentions ?? [];
-    if (persisted.length > 0) {
-      this.documentRetentionLines = persisted.map(item => ({
-        idCollectRetention: Number(item.idCollectRetention),
-        coCollectRetention: item.coCollectRetention,
-        nuAmountRetention: Number(item.nuAmountRetention ?? 0),
-      }));
-      this.documentRetentionLines.forEach(line => {
-        const factor = this.centsFactor();
-        this.collectRetentionCentsMap.set(
-          line.idCollectRetention,
-          Math.round(Number(line.nuAmountRetention ?? 0) * factor)
-        );
-      });
-      this.syncOpenRetentionFromLines();
-      return;
-    }
-
-    const legacyIva = Number(detail.nuAmountRetention ?? 0);
-    const legacyIslr = Number(detail.nuAmountRetention2 ?? 0);
-    if (legacyIva > 0 || legacyIslr > 0) {
-      const catalog = this.collectService.collectRetentions;
-      if (legacyIva > 0 && catalog[0]) {
-        this.documentRetentionLines.push({
-          idCollectRetention: catalog[0].idCollectRetention,
-          coCollectRetention: catalog[0].coCollectRetention,
-          nuAmountRetention: legacyIva,
-        });
-      }
-      if (legacyIslr > 0 && catalog[1]) {
-        this.documentRetentionLines.push({
-          idCollectRetention: catalog[1].idCollectRetention,
-          coCollectRetention: catalog[1].coCollectRetention,
-          nuAmountRetention: legacyIslr,
-        });
-      }
-      this.documentRetentionLines.forEach(line => {
-        const factor = this.centsFactor();
-        this.collectRetentionCentsMap.set(
-          line.idCollectRetention,
-          Math.round(Number(line.nuAmountRetention ?? 0) * factor)
-        );
-      });
-      this.syncOpenRetentionFromLines();
-    }
-  }
-
-  private setCollectionDetailRetentions(index: number): void {
-    const detail = this.collectService.collection.collectionDetails[index];
-    if (!detail) {
-      return;
-    }
-
-    this.detailCollectRetentionsPos = 0;
-    detail.collectionDetailRetentions = [] as CollectionDetailRetentions[];
-    const coCollection = detail.coCollection ?? this.collectService.collection.coCollection;
-    const coDocument = detail.coDocument ?? this.collectService.documentSaleOpen.coDocument;
-
-    this.documentRetentionLines.forEach(line => {
-      const amount = Number(line.nuAmountRetention ?? 0);
-      if (amount <= 0) {
-        return;
-      }
-      const retentionLine = this.collectService.normalizeCollectionDetailRetentionLine(
-        {
-          idCollectionDetailRetention: null,
-          idCollectionDetail: index,
-          coCollection: coCollection,
-          coDocument: coDocument,
-          idCollectRetention: line.idCollectRetention,
-          coCollectRetention: line.coCollectRetention,
-          nuAmountRetention: amount,
-          nuAmountRetentionConversion: this.collectService.convertirMonto(
-            amount,
-            this.collectService.collection.nuValueLocal,
-            this.collectService.documentSaleOpen.coCurrency
-          ),
-          posicion: this.detailCollectRetentionsPos + 1,
-        },
-        coCollection,
-        coDocument,
-        index,
-        this.detailCollectRetentionsPos
-      );
-      detail.collectionDetailRetentions!.push(retentionLine);
-      this.detailCollectRetentionsPos++;
-    });
-
-    this.syncOpenRetentionFromLines();
-  }
-
-  private clearDocumentRetentionState(): void {
-    this.documentRetentionLines = [];
-    this.collectRetentionCentsMap.clear();
-    this.collectRetentionKeyInFlightMap.clear();
-    this.selectedCollectRetentionId = undefined;
-    this.detailCollectRetentionsPos = 0;
   }
 
 

@@ -14,6 +14,8 @@ export class OrderDetailUnit {
             obj['quSuggested'],
             obj['coPriceList'],
             obj['idPriceList'],
+            obj['nuBaseTotal'],
+            obj['nuBaseTotalConversion'],
         )
     }
 
@@ -30,6 +32,8 @@ export class OrderDetailUnit {
         public quSuggested: number,
         public coPriceList: string,
         public idPriceList: number,
+        public nuBaseTotal: number,
+        public nuBaseTotalConversion: number,
     ) {
 
     }

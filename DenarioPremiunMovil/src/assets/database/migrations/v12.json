@@ -1,6 +1,24 @@
 [
     {
+
         "sql": "CREATE TABLE IF NOT EXISTS collect_retentions (id_collect_retention INTEGER PRIMARY KEY, co_collect_retention VARCHAR(80), na_collect_retention VARCHAR(200), id_enterprise INTEGER);",
         "description": "Se agrega la tabla 'collect_retentions' para almacenar las retenciones de cobranza."
+    },
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN nu_amount_tax NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_amount_tax' a 'orders' para almacenar el monto de impuesto del pedido."
+    },
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN nu_amount_tax_conversion NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_amount_tax_conversion' a 'orders' para almacenar el monto de impuesto convertido del pedido."
+    },
+    {
+        "sql": "ALTER TABLE order_detail_units ADD COLUMN nu_base_total NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_base_total' a 'order_detail_units' para almacenar el total base de la unidad."
+    },
+    {
+        "sql": "ALTER TABLE order_detail_units ADD COLUMN nu_base_total_conversion NUMERIC(29,4);",
+        "description": "Se agrega la columna 'nu_base_total_conversion' a 'order_detail_units' para almacenar el total base convertido de la unidad."
     }
 ]
+
