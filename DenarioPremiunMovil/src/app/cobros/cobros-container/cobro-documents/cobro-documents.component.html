@@ -839,7 +839,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                   </ion-label>
                 </ion-col>
                 <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
-                  <ion-toggle [enableOnOffLabels]="true" checked="{{this.collectService.isPaymentPartial}}"
+                  <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.isPaymentPartial"
                     (ionChange)="partialPay($event)">
                   </ion-toggle>
                 </ion-col>
