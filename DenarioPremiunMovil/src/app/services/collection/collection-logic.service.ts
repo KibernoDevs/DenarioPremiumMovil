@@ -3068,15 +3068,21 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
-        if (detail.inPaymentPartial !== true) {
+        if (!detail.isSave && detail.inPaymentPartial !== true) {
           detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
           detail.nuAmountPaidConversion = doc.nuBalance;
         }
       }
 
       this.documentSalesBackup[index].nuBalance = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
-      if (detail.inPaymentPartial !== true) {
+      if (!detail.isSave && detail.inPaymentPartial !== true) {
         this.documentSalesBackup[index].nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+      } else if (detail.isSave) {
+        const savedAmountPaid = Number(detail.nuAmountPaid ?? 0);
+        if (savedAmountPaid > 0) {
+          this.documentSalesBackup[index].nuAmountPaid = savedAmountPaid;
+          this.documentSales[index].nuAmountPaid = savedAmountPaid;
+        }
       }
       this.documentSalesBackup[index].nuAmountRetention = detail.nuAmountRetention;
       this.documentSalesBackup[index].nuAmountRetention2 = detail.nuAmountRetention2;
