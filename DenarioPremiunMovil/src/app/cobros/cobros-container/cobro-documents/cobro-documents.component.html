@@ -23,8 +23,7 @@
 <!-- LABEL PARA MOSTRAR MONEDA DEL DOCUMENTO-->
 
 @if(this.collectService.documentsSaleComponent){
-@if(this.collectService.userCanSelectIGTF && this.collectService.collection.coType == '0' &&
-this.collectService.currencySelected.hardCurrency.toString() == 'true'){
+@if(this.collectService.shouldShowIgtfControls()){
 <ion-item>
   <ion-label>
     {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
@@ -41,8 +40,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 </ion-item>
 }
 <!-- LABEL PARA EL PAGO DEL IGTF SEPARADO O NO -->
-@if(this.collectService.userCanSelectIGTF && this.collectService.collection.coType == '0' &&
-this.collectService.currencySelected.hardCurrency.toString() == 'true'){
+@if(this.collectService.shouldShowIgtfControls()){
 <ion-item>
   <ion-toggle [enableOnOffLabels]="true" labelPlacement="start" checked="{{this.collectService.separateIgtf}}"
     [disabled]="this.collectService.disableCheckIGTF" [(ngModel)]="this.collectService.separateIgtf"
@@ -435,9 +433,12 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- TASA -->
 
                 <!-- IGTF-->
-                @if(showDocumentIgtfField()){
+                @if(this.collectService.shouldApplyIgtfToCollection()
+                && this.collectService.igtfSelected.price > 0){
                 <ion-col>
-                  <ion-input label="IGTF {{getCurrencyConversionCode()}}"
+                  <ion-input label="IGTF {{this.collectService.multiCurrency
+                    ? this.collectService.currencyConversion.coCurrency
+                    : this.collectService.collection.coCurrency}}"
                     label-placement="floating" fill="outline"
                     value="{{this.collectService.documentSaleOpen.igtfAmount}}" color="primary"
                     [(ngModel)]="this.collectService.documentSaleOpen.igtfAmount" [readonly]="true"></ion-input>

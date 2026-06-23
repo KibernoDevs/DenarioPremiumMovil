@@ -8,7 +8,7 @@
     <!--         <ion-grid [fixed]="true"> -->
     <ion-grid [fixed]="true">
       <!-- IGTF -->
-      @if (this.collectService.userCanSelectIGTF && this.collectService.currencyHard && this.collectService.coTypeModule != '4' && this.collectService.igtfSelected.price > 0  && !this.collectService.separateIgtf) {
+      @if (this.collectService.shouldDisplayIgtfInTotals() && this.collectService.coTypeModule != '4') {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
           {{this.collectService.collection.coCurrency}}</ion-col>
@@ -16,7 +16,7 @@
       </ion-row>
       }
 
-      @if (this.collectService.showConversion && this.collectService.userCanSelectIGTF && this.collectService.currencyHard && this.collectService.coTypeModule != '4' && this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf) {
+      @if (this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.shouldDisplayIgtfInTotals() && this.collectService.coTypeModule != '4') {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
           {{this.collectService.currencyConversion.coCurrency}}</ion-col>
@@ -126,7 +126,7 @@
           {{this.collectService.collectionTags.get('COB_ISLR_RETENTION')}}
         </ion-col>
         }
-        @if (this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf) {
+        @if (this.collectService.shouldDisplayIgtfInTotals()) {
         <ion-col class="titulosBold col" size="4">
           {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
         </ion-col>
@@ -157,7 +157,7 @@
           {{this.currencyService.formatNumber(collectionDetails.nuAmountRetention2)}}
         </ion-col>
         }
-        @if (this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf) {
+        @if (this.collectService.shouldDisplayIgtfInTotals()) {
         <ion-col class="ion-text-center col" size="4">
           {{this.currencyService.formatNumber(this.collectService.montoIgtf)}}
         </ion-col>
