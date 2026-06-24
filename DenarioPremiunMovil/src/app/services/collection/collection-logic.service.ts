@@ -4036,6 +4036,48 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     return { netAfterDeductions, igtfBase, igtfAmount, amountToPay };
   }
 
+  resolveCollectionDetailBackup(
+    detail: CollectionDetail,
+  ): { nuBalance?: number } | undefined {
+    if (!detail || !Array.isArray(this.documentSales)) {
+      return undefined;
+    }
+
+    const index = this.documentSales.findIndex(doc =>
+      (detail.idDocument != null && doc.idDocument === detail.idDocument)
+      || (detail.coDocument && doc.coDocument === detail.coDocument),
+    );
+
+    return index >= 0 ? this.documentSalesBackup[index] : undefined;
+  }
+
+  resolveCollectionDetailPaymentDisplay(detail: CollectionDetail): {
+    igtfAmount: number;
+    amountToPay: number;
+  } {
+    if (detail?.inPaymentPartial === true) {
+      return {
+        igtfAmount: 0,
+        amountToPay: Number(detail.nuAmountPaid ?? 0),
+      };
+    }
+
+    const backup = this.resolveCollectionDetailBackup(detail);
+    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
+    const payment = this.resolveDocumentPaymentAmount({
+      grossBalance: gross,
+      nuAmountDiscount: detail.nuAmountDiscount,
+      nuAmountCollectDiscount: detail.nuAmountCollectDiscount,
+      nuAmountRetention: detail.nuAmountRetention,
+      nuAmountRetention2: detail.nuAmountRetention2,
+    });
+
+    return {
+      igtfAmount: this.shouldDisplayIgtfInTotals() ? payment.igtfAmount : 0,
+      amountToPay: payment.amountToPay,
+    };
+  }
+
   resolveAmountToPayWithIgtfFromBase(netAfterDeductions: number, igtfBase: number): number {
     const net = Math.max(0, Number(netAfterDeductions) || 0);
     if (!this.shouldIncludeIgtfInAmountToPay()) {
