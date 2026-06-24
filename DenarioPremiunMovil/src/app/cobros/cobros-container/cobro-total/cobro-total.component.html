@@ -141,6 +141,7 @@
       </ion-row>
 
       @for (collectionDetails of this.collectService.collection.collectionDetails; track $index; let i = $index) {
+      @let detailPayment = this.collectService.resolveCollectionDetailPaymentDisplay(collectionDetails);
       <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
         <ion-col class="ion-text-center col borderInferiorIzquierdo" size="4">{{collectionDetails.coTypeDoc}}</ion-col>
         <ion-col class="ion-text-center col" size="7">
@@ -159,7 +160,7 @@
         }
         @if (this.collectService.shouldDisplayIgtfInTotals()) {
         <ion-col class="ion-text-center col" size="4">
-          {{this.currencyService.formatNumber(this.collectService.montoIgtf)}}
+          {{this.currencyService.formatNumber(detailPayment.igtfAmount)}}
         </ion-col>
         }
         @if(this.collectService.userCanSelectCollectDiscount){
@@ -168,7 +169,7 @@
         </ion-col>
         }
         <ion-col class="ion-text-center col borderInferiorDerecho" size="4">
-          {{this.currencyService.formatNumber(collectionDetails.nuAmountPaid)}}</ion-col>
+          {{this.currencyService.formatNumber(detailPayment.amountToPay)}}</ion-col>
       </ion-row>
       }
     </ion-grid>

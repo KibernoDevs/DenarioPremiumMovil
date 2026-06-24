@@ -5,7 +5,7 @@
 }
 
 <!-- LABEL PARA MOSTRAR MONEDA DEL DOCUMENTO-->
-@if(this.collectService.multiCurrency){
+@if(this.collectService.multiCurrency && this.collectService.multiCurrencyCollection){
 <ion-item>
   <ion-label>
     {{this.collectService.collectionTags.get('COB_MONEDA')}}
@@ -440,8 +440,8 @@
                     ? this.collectService.currencyConversion.coCurrency
                     : this.collectService.collection.coCurrency}}"
                     label-placement="floating" fill="outline"
-                    value="{{this.collectService.documentSaleOpen.igtfAmount}}" color="primary"
-                    [(ngModel)]="this.collectService.documentSaleOpen.igtfAmount" [readonly]="true"></ion-input>
+                    [value]="formatDocumentIgtfAmount()" color="primary"
+                    [readonly]="true"></ion-input>
                 </ion-col>
                 }
                 <!-- IGTF -->
