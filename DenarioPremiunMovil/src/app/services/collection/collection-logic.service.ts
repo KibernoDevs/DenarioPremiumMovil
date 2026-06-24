@@ -115,6 +115,7 @@ export class CollectionService {
   public bankAccountSelected!: BankAccount[];
   public clientBankAccountSelected!: BankAccount[];
   public paymentPartials: PaymentPartials[] = [];
+  private paymentPartialLoadSeq = 0;
   public itemListaCobros: ItemListaCobros[] = [];
   public coDocumentToUpdate: string[] = [];
   public listTransactionStatusCollections: TransactionStatuses[] = [];
@@ -3697,57 +3698,86 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
 
-  getPaymentPartialByDocument(dbServ: SQLiteObject, coDocument: string) {
+  resetPaymentPartialsForDocument(coDocument: string): number {
+    this.paymentPartialLoadSeq += 1;
+    this.paymentPartials = [];
+    this.coDocumentPaymentPartial = coDocument;
+    return this.paymentPartialLoadSeq;
+  }
 
-    let selectStatement = "SELECT " +
-      "co.co_currency, " +
-      "co.da_collection, " +
-      "co.id_collection, " +
-      "co.st_collection, " +
-      "co.st_delivery, " +
-      "code.co_document, " +
-      "code.nu_balance_doc, " +
-      "SUM(copa.nu_amount_partial) AS nu_amount_paid, " +
-      "GROUP_CONCAT(" +
-      "copa.co_payment_method || ': ' || " +
-      "CASE WHEN copa.nu_payment_doc IS NULL OR copa.nu_payment_doc = '' THEN 'No Ref' ELSE copa.nu_payment_doc END, " +
-      "'\n'" +
-      ") AS payment_refs, " +
-      "GROUP_CONCAT(" +
-      "copa.nu_amount_partial, " +
-      "'\n'" +
-      ") AS payment_details " +
-      "FROM collections co " +
-      "JOIN collection_details code  ON co.co_collection = code.co_collection " +
-      "JOIN collection_payments copa ON co.co_collection = copa.co_collection " +
-      "WHERE code.co_document = ? AND code.in_payment_partial = 'true' " +
-      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
+  isPaymentPartialLoadCurrent(requestId: number): boolean {
+    return requestId === this.paymentPartialLoadSeq;
+  }
 
-    return dbServ.executeSql(selectStatement, [coDocument]).then(data => {
-      //return dbServ.executeSql(selectStatement, [this.mapDocumentsSales.get(idDocument)!.coDocument]).then(data => {
-      if (data.rows.length > 0) {
-        this.coDocumentPaymentPartial = data.rows.item(0).co_document;
-        this.paymentPartials = [] as PaymentPartials[];
-        var status = ["No Status", "Guardado", "Por Enviar", "Enviado"]
-        for (var i = 0; i < data.rows.length; i++) {
-          let item = this.itemListaCobros.find(item => item.id_collection == data.rows.item(i).id_collection);
-          this.paymentPartials.push({
-            idCollection: data.rows.item(i).id_collection,
-            daCollection: data.rows.item(i).da_collection,
-            coCurrency: data.rows.item(i).co_currency,
-            nuAmountPaid: data.rows.item(i).nu_amount_paid,
-            nuBalanceDoc: data.rows.item(i).nu_balance_doc,
-            coPaymentMethod: '',
-            paymentRefs: data.rows.item(i).payment_refs,
-            paymentDetails: data.rows.item(i).payment_details,
-            stCollection: data.rows.item(i).st_collection,
-            stDelivery: data.rows.item(i).st_delivery,
-            nuPaymentDoc: '',
-            naStatus: item?.na_status!
-          })
-        }
+  loadPaymentPartialsForDocument(
+    dbServ: SQLiteObject,
+    coDocument: string,
+    requestId: number,
+  ): Promise<PaymentPartials[]> {
+    return this.getPaymentPartialByDocument(dbServ, coDocument).then(rows => {
+      if (!this.isPaymentPartialLoadCurrent(requestId)) {
+        return [];
       }
-    })
+      return rows;
+    });
+  }
+
+  getPaymentPartialByDocument(dbServ: SQLiteObject, coDocument: string): Promise<PaymentPartials[]> {
+    this.paymentPartials = [];
+    this.coDocumentPaymentPartial = coDocument;
+
+    const selectStatement = 'SELECT ' +
+      'co.co_currency, ' +
+      'co.da_collection, ' +
+      'co.id_collection, ' +
+      'co.st_collection, ' +
+      'co.st_delivery, ' +
+      'code.co_document, ' +
+      'code.nu_balance_doc, ' +
+      'code.nu_amount_paid AS nu_amount_paid, ' +
+      'GROUP_CONCAT(' +
+      'copa.co_payment_method || \': \' || ' +
+      'CASE WHEN copa.nu_payment_doc IS NULL OR copa.nu_payment_doc = \'\' THEN \'No Ref\' ELSE copa.nu_payment_doc END, ' +
+      '\'\n\'' +
+      ') AS payment_refs, ' +
+      'GROUP_CONCAT(' +
+      'copa.nu_amount_partial, ' +
+      '\'\n\'' +
+      ') AS payment_details ' +
+      'FROM collections co ' +
+      'JOIN collection_details code ON co.co_collection = code.co_collection ' +
+      'JOIN collection_payments copa ON co.co_collection = copa.co_collection ' +
+      'WHERE code.co_document = ? AND code.in_payment_partial = \'true\' ' +
+      'GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_collection, ' +
+      'co.st_delivery, code.co_document, code.nu_balance_doc, code.nu_amount_paid';
+
+    return dbServ.executeSql(selectStatement, [coDocument]).then(async data => {
+      const rows: PaymentPartials[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        const row = data.rows.item(i);
+        const statusRow = await this.historyTransaction
+          .getStatusTransaction(dbServ, 3, row.id_collection);
+        const naStatus = typeof statusRow === 'string'
+          ? statusRow
+          : (statusRow?.na_status ?? '');
+        rows.push({
+          idCollection: row.id_collection,
+          daCollection: row.da_collection,
+          coCurrency: row.co_currency,
+          nuAmountPaid: row.nu_amount_paid,
+          nuBalanceDoc: row.nu_balance_doc,
+          coPaymentMethod: '',
+          paymentRefs: row.payment_refs ?? '',
+          paymentDetails: row.payment_details ?? '',
+          stCollection: row.st_collection,
+          stDelivery: row.st_delivery,
+          nuPaymentDoc: '',
+          naStatus,
+        });
+      }
+      this.paymentPartials = rows;
+      return rows;
+    });
   }
 
   getIgtfList(dbServ: SQLiteObject) {

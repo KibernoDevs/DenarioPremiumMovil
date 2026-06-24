@@ -2487,13 +2487,23 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   openPartialPayment(coDocument: string) {
+    const requestId = this.collectService.resetPaymentPartialsForDocument(coDocument);
+    this.collectService.openPaymentPartial = false;
+
     this.messageService.showLoading().then(() => {
-      this.collectService.findCollect(this.synchronizationServices.getDatabase()).then(resp => {
-        this.collectService.getPaymentPartialByDocument(this.synchronizationServices.getDatabase(), coDocument).then(resp => {
-          this.messageService.hideLoading();
+      this.collectService
+        .loadPaymentPartialsForDocument(
+          this.synchronizationServices.getDatabase(),
+          coDocument,
+          requestId,
+        )
+        .finally(() => this.messageService.hideLoading())
+        .then(() => {
+          if (!this.collectService.isPaymentPartialLoadCurrent(requestId)) {
+            return;
+          }
           this.collectService.openPaymentPartial = true;
-        })
-      })
+        });
     });
   }
 

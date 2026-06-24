@@ -1264,7 +1264,14 @@
               </ion-col>
             </ion-row>
 
-            @for (paymentPartials of this.collectService.paymentPartials; track $index; let i = $index) {
+            @if (this.collectService.paymentPartials.length === 0) {
+            <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+              <ion-col size="12" class="ion-text-center col">
+                No hay pagos parciales registrados para este documento.
+              </ion-col>
+            </ion-row>
+            }
+            @for (paymentPartials of this.collectService.paymentPartials; track paymentPartials.idCollection) {
             <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
               <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo">
                 {{paymentPartials.idCollection}}
