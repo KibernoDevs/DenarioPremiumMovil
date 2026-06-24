@@ -854,9 +854,7 @@ export class CobrosGeneralComponent implements OnInit {
                 this.synchronizationServices.getDatabase(),
                 this.collectService.collection.idClient,
               );
-              if (this.collectService.coTypeModule === '0') {
-                this.collectService.syncAddPaymentMethodDisabledState();
-              }
+              this.collectService.syncAddPaymentMethodDisabledState();
             } else {
               this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
                 this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
@@ -871,9 +869,7 @@ export class CobrosGeneralComponent implements OnInit {
                     );
                   }
                   this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-                  if (this.collectService.coTypeModule === '0') {
-                    this.collectService.syncAddPaymentMethodDisabledState();
-                  }
+                  this.collectService.syncAddPaymentMethodDisabledState();
 
                 });
             }

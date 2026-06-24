@@ -977,9 +977,7 @@ export class CollectionService {
       this.montoTotalPagadoConversion = 0;
       this.onCollectionValidToSend(false);
       this.onCollectionValidToSave(true);
-      if (this.coTypeModule === '0') {
-        this.syncAddPaymentMethodDisabledState();
-      }
+      this.syncAddPaymentMethodDisabledState();
       return;
     }
 
@@ -1019,9 +1017,7 @@ export class CollectionService {
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
       this.resolveAutomatedPrepaid(type, index);
-      if (this.coTypeModule === '0') {
-        this.syncAddPaymentMethodDisabledState();
-      }
+      this.syncAddPaymentMethodDisabledState();
       return Promise.resolve(this.createAutomatedPrepaid);
     } else {
       if (this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) {
@@ -1686,7 +1682,7 @@ export class CollectionService {
     this.checkTiposPago();
     if (this.createAutomatedPrepaid) {
       this.setAutomatedPrepaid(type, index);
-    } else if (this.coTypeModule === '0') {
+    } else {
       this.syncAddPaymentMethodDisabledState();
     }
     if (!skipValidateToSend) {
@@ -1751,8 +1747,12 @@ export class CollectionService {
     }
   }
 
+  private isAddPaymentMethodDifferenceGuardEnabled(): boolean {
+    return this.coTypeModule === '0' || this.coTypeModule === '3';
+  }
+
   syncAddPaymentMethodDisabledState(): void {
-    if (this.coTypeModule !== '0') {
+    if (!this.isAddPaymentMethodDifferenceGuardEnabled()) {
       return;
     }
 
@@ -1969,13 +1969,13 @@ export class CollectionService {
           this.alertMessageOpen = true;
         }
         this.onCollectionValidToSend(true);
-      } else if (this.collection.collectionDetails.length > 0) {
-        this.syncAddPaymentMethodDisabledState();
       }
       if (this.recentOpenCollect)
         this.recentOpenCollect = false;
     }
-
+    if (this.collection.collectionDetails.length > 0) {
+      this.syncAddPaymentMethodDisabledState();
+    }
 
     return Promise.resolve(true);
   }
@@ -2508,7 +2508,7 @@ export class CollectionService {
       ? this.currencyListDocument[0]
       : {} as Currencies;
 
-    if (this.coTypeModule == '0')
+    if (this.isAddPaymentMethodDifferenceGuardEnabled())
       this.disabledSelectCollectMethodDisabled = true;
     else
       this.disabledSelectCollectMethodDisabled = false;
