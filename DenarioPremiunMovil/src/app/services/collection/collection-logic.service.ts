@@ -3528,6 +3528,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     return doc;
   }
 
+  private resolveAmountInCollectionCurrency(amount: number, documentCurrency: string): number {
+    if (documentCurrency === this.collection.coCurrency) {
+      return amount;
+    }
+    return this.convertirMonto(amount, this.collection.nuValueLocal, documentCurrency);
+  }
+
   private applyExistingSelection(index: number, doc: DocumentSale, backup: DocumentSale) {
     for (let cd = 0; cd < this.collection.collectionDetails.length; cd++) {
       const detail = this.collection.collectionDetails[cd];
@@ -3543,17 +3550,17 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
 
       if (this.collection.stDelivery != 3) {
-        detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+        detail.nuBalanceDoc = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
         if (!detail.isSave && detail.inPaymentPartial !== true) {
-          detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+          detail.nuAmountPaid = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
           detail.nuAmountPaidConversion = doc.nuBalance;
         }
       }
 
-      this.documentSalesBackup[index].nuBalance = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+      this.documentSalesBackup[index].nuBalance = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
       if (!detail.isSave && detail.inPaymentPartial !== true) {
-        this.documentSalesBackup[index].nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
+        this.documentSalesBackup[index].nuAmountPaid = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
       } else if (detail.isSave) {
         const netAmountPaid = this.resolveDetailNetAmountToPay(
           detail,
