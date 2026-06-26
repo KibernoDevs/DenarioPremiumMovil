@@ -973,12 +973,18 @@ export class CollectionService {
     } */
 
     if (this.collection.collectionDetails.length == 0) {
+      if (this.coTypeModule === '1') {
+        this.syncAnticipoTotalsFromPaidAmounts(skipValidateToSend);
+        this.syncAddPaymentMethodDisabledState();
+        return Promise.resolve(false);
+      }
+
       this.montoTotalPagado = 0;
       this.montoTotalPagadoConversion = 0;
       this.onCollectionValidToSend(false);
       this.onCollectionValidToSave(true);
       this.syncAddPaymentMethodDisabledState();
-      return;
+      return Promise.resolve(false);
     }
 
     if (Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
@@ -1601,6 +1607,32 @@ export class CollectionService {
     }
 
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
+  }
+
+  private syncAnticipoTotalsFromPaidAmounts(skipValidateToSend: boolean = false): void {
+    const paid = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(this.montoTotalPagado ?? 0),
+    );
+    const paidConversion = this.montoTotalPagadoConversion ?? this.convertirMonto(
+      paid,
+      0,
+      this.collection.coCurrency,
+    );
+
+    this.montoTotalPagar = paid;
+    this.montoTotalPagarConversion = paidConversion;
+    this.collection.nuAmountTotal = paid;
+    this.collection.nuAmountTotalConversion = paidConversion;
+    this.collection.nuAmountPaid = paid;
+    this.collection.nuAmountPaidConversion = paidConversion;
+    this.collection.nuAmountFinal = paid;
+    this.collection.nuAmountFinalConversion = paidConversion;
+    this.collection.nuDifference = 0;
+    this.collection.nuDifferenceConversion = 0;
+
+    if (!skipValidateToSend) {
+      void this.validateToSend();
+    }
   }
 
   private getAmountToPayForPrepaidCheck(): number {
