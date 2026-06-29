@@ -1032,12 +1032,15 @@ export class CollectionService {
       } else if (this.documentSales.length === 0 && this.isPersistedCollection()) {
         for (const detail of this.collection.collectionDetails) {
           if (detail?.inPaymentPartial === true) {
-            monto += Number(detail.nuAmountPaid ?? 0);
+            // Fix IGTF pago parcial: acumular capital + IGTF sobre el abono (ruta persistida sin documentSales).
+            const partialAmount = Number(detail.nuAmountPaid ?? 0);
+            monto += partialAmount;
             montoConversion += this.convertirMonto(
-              Number(detail.nuAmountPaid ?? 0),
+              partialAmount,
               this.collection.nuValueLocal,
               this.collection.coCurrency,
             );
+            igtfSum += this.resolvePartialPaymentIgtfAmount(detail);
             continue;
           }
           const netAmount = this.resolveDetailNetAmountToPay(detail);
@@ -1068,12 +1071,15 @@ export class CollectionService {
           }
 
           if (detail.inPaymentPartial === true) {
-            monto += Number(detail.nuAmountPaid ?? 0);
+            // Fix IGTF pago parcial: sumar igtfSum además del capital parcial (antes solo sumaba monto).
+            const partialAmount = Number(detail.nuAmountPaid ?? 0);
+            monto += partialAmount;
             montoConversion += this.convertirMonto(
-              Number(detail.nuAmountPaid ?? 0),
+              partialAmount,
               this.collection.nuValueLocal,
               this.collection.coCurrency,
             );
+            igtfSum += this.resolvePartialPaymentIgtfAmount(detail);
           } else {
             const netAmount = this.resolveDocumentNetAmountForCalculation(
               i,
@@ -1264,7 +1270,13 @@ export class CollectionService {
         }
 
         const detail = this.collection.collectionDetails[pos];
-        if (!detail || detail.idDocument !== this.documentSales[i].idDocument || detail.inPaymentPartial === true) {
+        if (!detail || detail.idDocument !== this.documentSales[i].idDocument) {
+          continue;
+        }
+
+        // Fix IGTF pago parcial: incluir abonos parciales en el acumulador al reabrir cobro persistido.
+        if (detail.inPaymentPartial === true) {
+          igtfFromDocuments += this.resolvePartialPaymentIgtfAmount(detail);
           continue;
         }
 
@@ -1287,8 +1299,9 @@ export class CollectionService {
 
     if (details.length > 0 && this.isPersistedCollection()) {
       return details.reduce((sum, detail) => {
+        // Fix IGTF pago parcial: no omitir parciales en reduce de collectionDetails persistidos.
         if (detail?.inPaymentPartial === true) {
-          return sum;
+          return sum + this.resolvePartialPaymentIgtfAmount(detail);
         }
         const gross = this.resolveDetailGrossBalanceForTotals(detail);
         const igtfBase = this.getDocumentIgtfBase(detail, gross);
@@ -4065,6 +4078,14 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     return this.cleanFormattedNumber(this.currencyService.formatNumber((base * rate) / 100));
   }
 
+  /**
+   * IGTF en pago parcial: el abono (`nuAmountPaid`) es capital neto; el impuesto se calcula
+   * aparte con la misma tasa IGTF que en pago completo (simétrico a igtfSum en calculatePayment).
+   */
+  private resolvePartialPaymentIgtfAmount(detail: CollectionDetail | null | undefined): number {
+    return this.resolveDocumentIgtfAmount(Number(detail?.nuAmountPaid ?? 0));
+  }
+
   getDocumentIgtfBase(
     detail: { nuAmountDiscount?: number; nuAmountCollectDiscount?: number } | null | undefined,
     grossBalance: number,
@@ -4125,9 +4146,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     amountToPay: number;
   } {
     if (detail?.inPaymentPartial === true) {
+      // Fix IGTF pago parcial: columna IGTF en grilla Total (antes hardcodeado a 0).
+      const partialAmount = Number(detail.nuAmountPaid ?? 0);
       return {
-        igtfAmount: 0,
-        amountToPay: Number(detail.nuAmountPaid ?? 0),
+        igtfAmount: this.shouldDisplayIgtfInTotals()
+          ? this.resolveDocumentIgtfAmount(partialAmount)
+          : 0,
+        amountToPay: partialAmount,
       };
     }
 
