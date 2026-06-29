@@ -5,7 +5,7 @@
 }
 
 <!-- LABEL PARA MOSTRAR MONEDA DEL DOCUMENTO-->
-@if(this.collectService.multiCurrency){
+@if(this.collectService.multiCurrency && this.collectService.multiCurrencyCollection){
 <ion-item>
   <ion-label>
     {{this.collectService.collectionTags.get('COB_MONEDA')}}
@@ -23,8 +23,7 @@
 <!-- LABEL PARA MOSTRAR MONEDA DEL DOCUMENTO-->
 
 @if(this.collectService.documentsSaleComponent){
-@if(this.collectService.userCanSelectIGTF && this.collectService.collection.coType == '0' &&
-this.collectService.currencySelected.hardCurrency.toString() == 'true'){
+@if(this.collectService.shouldShowIgtfControls()){
 <ion-item>
   <ion-label>
     {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
@@ -41,8 +40,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 </ion-item>
 }
 <!-- LABEL PARA EL PAGO DEL IGTF SEPARADO O NO -->
-@if(this.collectService.userCanSelectIGTF && this.collectService.collection.coType == '0' &&
-this.collectService.currencySelected.hardCurrency.toString() == 'true'){
+@if(this.collectService.shouldShowIgtfControls()){
 <ion-item>
   <ion-toggle [enableOnOffLabels]="true" labelPlacement="start" checked="{{this.collectService.separateIgtf}}"
     [disabled]="this.collectService.disableCheckIGTF" [(ngModel)]="this.collectService.separateIgtf"
@@ -435,13 +433,15 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- TASA -->
 
                 <!-- IGTF-->
-                @if(this.collectService.igtfSelected.price > 0 && this.globalConfig.get('userCanSelectIGTF') === 'true'
-                ? true: false){
+                @if(this.collectService.shouldApplyIgtfToCollection()
+                && this.collectService.igtfSelected.price > 0){
                 <ion-col>
-                  <ion-input label="IGTF {{this.collectService.currencyConversion.coCurrency}}"
+                  <ion-input label="IGTF {{this.collectService.multiCurrency
+                    ? this.collectService.currencyConversion.coCurrency
+                    : this.collectService.collection.coCurrency}}"
                     label-placement="floating" fill="outline"
-                    value="{{this.collectService.documentSaleOpen.igtfAmount}}" color="primary"
-                    [(ngModel)]="this.collectService.documentSaleOpen.igtfAmount" [readonly]="true"></ion-input>
+                    [value]="formatDocumentIgtfAmount()" color="primary"
+                    [readonly]="true"></ion-input>
                 </ion-col>
                 }
                 <!-- IGTF -->
@@ -872,7 +872,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                   </ion-label>
                 </ion-col>
                 <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
-                  <ion-toggle [enableOnOffLabels]="true" checked="{{this.collectService.isPaymentPartial}}"
+                  <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.isPaymentPartial"
                     (ionChange)="partialPay($event)">
                   </ion-toggle>
                 </ion-col>
@@ -1333,7 +1333,14 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
               </ion-col>
             </ion-row>
 
-            @for (paymentPartials of this.collectService.paymentPartials; track $index; let i = $index) {
+            @if (this.collectService.paymentPartials.length === 0) {
+            <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+              <ion-col size="12" class="ion-text-center col">
+                No hay pagos parciales registrados para este documento.
+              </ion-col>
+            </ion-row>
+            }
+            @for (paymentPartials of this.collectService.paymentPartials; track paymentPartials.idCollection) {
             <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
               <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo">
                 {{paymentPartials.idCollection}}

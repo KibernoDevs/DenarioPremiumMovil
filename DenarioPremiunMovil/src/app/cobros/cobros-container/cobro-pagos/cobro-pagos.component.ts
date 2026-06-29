@@ -253,6 +253,10 @@ export class CobroPagosComponent implements OnInit {
   }
 
   addTipoPago(type: string) {
+    if (this.collectService.isAddPaymentMethodDisabled()) {
+      return;
+    }
+
     this.collectService.lengthMethodPaid++;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length] = new CollectionPayment;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coCollection = this.collectService.collection.coCollection;
@@ -383,8 +387,6 @@ export class CobroPagosComponent implements OnInit {
 
   deleteTipoPago(index: number, type: string) {
     this.collectService.messageSended = false;
-    if (this.collectService.disabledSelectCollectMethodDisabled)
-      this.collectService.disabledSelectCollectMethodDisabled = false;
 
     this.collectService.lengthMethodPaid--;
     this.collectService.anticipoAutomatico = [];
@@ -904,16 +906,6 @@ export class CobroPagosComponent implements OnInit {
     if (change) {
       this.collectService.disableSendButton = false;
     }
-
-    this.collectService.collection.nuAmountFinal = 0;
-    this.collectService.collection.nuAmountTotal = 0;
-    for (var i = 0; i < this.collectService.collection.collectionPayments!.length; i++) {
-      this.collectService.collection.nuAmountFinal += this.collectService.collection.collectionPayments![i].nuAmountPartial;
-      this.collectService.collection.nuAmountTotal += this.collectService.collection.collectionPayments![i].nuAmountPartial;
-    }
-
-    this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-    this.collectService.collection.nuAmountTotal = this.collectService.collection.nuAmountTotal;
   }
 
   setNroTransanccion(nroTrans: string, index: number, type: string) {
@@ -1078,11 +1070,20 @@ export class CobroPagosComponent implements OnInit {
   }
 
   addCollectMethod(e: any) {
+    if (this.collectService.isAddPaymentMethodDisabled()) {
+      return;
+    }
+
     this.showEventModal = true;
     this.addTipoPago(e.target.value.type);
   }
 
   onAceptarTiposPago() {
+    if (this.collectService.isAddPaymentMethodDisabled()) {
+      this.setShowEventModal(false);
+      return;
+    }
+
     // Obtiene todos los tipos de pago seleccionados
     const seleccionados = this.collectService.tiposPago.filter(tp => tp.selected);
     // Llama a addCollectMethod por cada tipo seleccionado
@@ -1388,11 +1389,19 @@ export class CobroPagosComponent implements OnInit {
   }
 
   setShowEventModal(value: boolean) {
+    if (value && this.collectService.isAddPaymentMethodDisabled()) {
+      return;
+    }
+
     this.showEventModal = value;
     // Si se está abriendo el modal, limpiar selección
     if (value) {
       this.collectService.tiposPago.forEach(tp => tp.selected = false);
     }
+  }
+
+  isAddPaymentMethodDisabled(): boolean {
+    return this.collectService.isAddPaymentMethodDisabled();
   }
 
   getSelectedTipoPago() {
