@@ -352,7 +352,12 @@ export class CobrosHeaderComponent implements OnInit {
     }
 
     this.collectService.collectionIsSave = true;
-    this.messageService.showLoading().then(() => {
+    this.messageService.showLoading().then(async () => {
+      if (this.collectService.collection.coType === '1') {
+        await this.collectService.calcularMontos('', 0);
+        this.collectService.syncAnticipoTotalsBeforePersist();
+      }
+
       if (sendOrSave) {
         //envio
         this.collectService.collection.stDelivery = 2;

@@ -974,6 +974,7 @@ export class CollectionService {
 
     if (this.collection.collectionDetails.length == 0) {
       if (this.coTypeModule === '1') {
+        this.syncMontosPagadosFromPayments();
         this.syncAnticipoTotalsFromPaidAmounts(skipValidateToSend);
         this.syncAddPaymentMethodDisabledState();
         return Promise.resolve(false);
@@ -1607,6 +1608,45 @@ export class CollectionService {
     }
 
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
+  }
+
+  private isAnticipoCollection(collection?: Collection): boolean {
+    const coType = String(collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '');
+    return coType === '1';
+  }
+
+  private resolveAnticipoPaidSumFromCollectionPayments(): number {
+    const payments = Array.isArray(this.collection?.collectionPayments)
+      ? this.collection.collectionPayments
+      : [];
+    return payments.reduce(
+      (sum, payment) => sum + Number(payment?.nuAmountPartial ?? 0),
+      0,
+    );
+  }
+
+  syncAnticipoTotalsBeforePersist(): void {
+    if (!this.isAnticipoCollection()) {
+      return;
+    }
+
+    this.syncMontosPagadosFromPayments();
+
+    if (Number(this.montoTotalPagado ?? 0) <= 0) {
+      const paidFromPayments = this.resolveAnticipoPaidSumFromCollectionPayments();
+      if (paidFromPayments > 0) {
+        this.montoTotalPagado = this.cleanFormattedNumber(
+          this.currencyService.formatNumber(paidFromPayments),
+        );
+        this.montoTotalPagadoConversion = this.convertirMonto(
+          this.montoTotalPagado,
+          0,
+          this.collection.coCurrency,
+        );
+      }
+    }
+
+    this.syncAnticipoTotalsFromPaidAmounts(true);
   }
 
   private syncAnticipoTotalsFromPaidAmounts(skipValidateToSend: boolean = false): void {
@@ -4833,10 +4873,22 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         this.createDocumentSaleIGTF(dbServ, collection);
       }
 
-      this.collection.nuAmountFinal = this.montoTotalPagar;
-      this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
-      this.collection.nuAmountPaid = this.montoTotalPagar;
-      this.collection.nuAmountPaidConversion = this.convertirMonto(this.collection.nuAmountPaid, 0, this.collection.coCurrency);
+      if (this.isAnticipoCollection(collection)) {
+        this.syncAnticipoTotalsBeforePersist();
+      } else {
+        this.collection.nuAmountFinal = this.montoTotalPagar;
+        this.collection.nuAmountFinalConversion = this.convertirMonto(
+          this.collection.nuAmountFinal,
+          0,
+          this.collection.coCurrency,
+        );
+        this.collection.nuAmountPaid = this.montoTotalPagar;
+        this.collection.nuAmountPaidConversion = this.convertirMonto(
+          this.collection.nuAmountPaid,
+          0,
+          this.collection.coCurrency,
+        );
+      }
 
 
       const details = this.collection?.collectionDetails ?? [];
