@@ -4186,13 +4186,18 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     amountToPay: number;
   } {
     if (detail?.inPaymentPartial === true) {
-      // Fix IGTF pago parcial: columna IGTF en grilla Total (antes hardcodeado a 0).
       const partialAmount = Number(detail.nuAmountPaid ?? 0);
+      const igtfAmount = this.shouldDisplayIgtfInTotals()
+        ? this.resolveDocumentIgtfAmount(partialAmount)
+        : 0;
+      const amountToPay = this.shouldIncludeIgtfInAmountToPay()
+        ? this.cleanFormattedNumber(
+            this.currencyService.formatNumber(partialAmount + igtfAmount),
+          )
+        : partialAmount;
       return {
-        igtfAmount: this.shouldDisplayIgtfInTotals()
-          ? this.resolveDocumentIgtfAmount(partialAmount)
-          : 0,
-        amountToPay: partialAmount,
+        igtfAmount,
+        amountToPay,
       };
     }
 
