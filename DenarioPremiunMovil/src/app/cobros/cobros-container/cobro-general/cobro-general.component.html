@@ -24,6 +24,7 @@
 
     @if (this.collectService.collection.idClient > 0) {
     <ion-col size="6" size-sm="12" size-xs="12">
+      @if (this.collectService.multiCurrencyCollection) {
       <ion-col size="6" size-sm="12" size-xs="12">
         @if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_NEW ||
         this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED) {
@@ -59,6 +60,7 @@
         }
 
       </ion-col>
+      }
 
       @if(enabledManualRate){
       <ion-col size="6" size-sm="12" size-xs="12">
