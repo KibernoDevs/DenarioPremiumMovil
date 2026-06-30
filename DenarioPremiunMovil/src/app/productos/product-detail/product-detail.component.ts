@@ -56,9 +56,9 @@ export class ProductDetailComponent implements OnInit, OnChanges {
 
   constructor() { }
 
-  ngOnInit() {
+  async ngOnInit() {
     /* this.getProductImages(); */
-    this.productService.syncOrderPresentationFromPedidos(this.pedidosService);
+    await this.productService.syncOrderPresentationFromPedidos(this.pedidosService);
     this.multiCurrency = this.globalConfig.get("multiCurrency") == "true";
     this.conversionByPriceList = this.globalConfig.get("conversionByPriceList").toLowerCase() === "true";
     this.currencyModuleEnabled = this.globalConfig.get("currencyModule").toLowerCase() === "true";

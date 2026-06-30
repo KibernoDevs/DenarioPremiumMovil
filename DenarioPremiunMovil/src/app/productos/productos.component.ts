@@ -66,8 +66,7 @@ export class ProductosComponent {
         this.productService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.orderService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.productService.multiempresa = this.enterpriseService.esMultiempresa();
-        await this.orderService.setup();
-        this.productService.syncOrderPresentationFromPedidos(this.orderService);
+        await this.productService.syncOrderPresentationFromPedidos(this.orderService);
       });
       this.currencyService.setup(this.db.getDatabase());
 
@@ -96,8 +95,7 @@ export class ProductosComponent {
     this.empresaSeleccionada = psUtil.enterprise;
     this.productService.empresaSeleccionada = this.empresaSeleccionada;
     this.orderService.empresaSeleccionada = this.empresaSeleccionada;
-    await this.orderService.setup();
-    this.productService.syncOrderPresentationFromPedidos(this.orderService);
+    await this.productService.syncOrderPresentationFromPedidos(this.orderService);
     this.psSelected = true;
     this.showProducts = true;
     this.showProductStructures = false;
