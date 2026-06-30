@@ -2801,6 +2801,118 @@ export class CollectionService {
     };
   }
 
+  private resolveDetailDocumentCurrency(
+    detail: CollectionDetail,
+    open?: DocumentSale
+  ): string {
+    return open?.coCurrency ?? detail.coOriginal ?? this.collection.coCurrency;
+  }
+
+  private resolveDynamicRetentionIvaIslrTotals(
+    lines: CollectionDetailRetentions[]
+  ): {
+    ivaAmount: number;
+    islrAmount: number;
+    ivaConversion: number;
+    islrConversion: number;
+  } {
+    let ivaAmount = 0;
+    let islrAmount = 0;
+    let ivaConversion = 0;
+    let islrConversion = 0;
+
+    for (const line of lines) {
+      const amount = Number(line.nuAmountRetention ?? 0);
+      const conversion = Number(line.nuAmountRetentionConversion ?? 0);
+      const catalogIndex = this.collectRetentions.findIndex(
+        item => item.idCollectRetention === line.idCollectRetention
+      );
+
+      if (catalogIndex === 1) {
+        islrAmount += amount;
+        islrConversion += conversion;
+        continue;
+      }
+
+      ivaAmount += amount;
+      ivaConversion += conversion;
+    }
+
+    return { ivaAmount, islrAmount, ivaConversion, islrConversion };
+  }
+
+  public syncDetailRetentionAmountsAndConversions(
+    detail: CollectionDetail,
+    open?: DocumentSale
+  ): void {
+    if (!detail) {
+      return;
+    }
+
+    const documentCurrency = this.resolveDetailDocumentCurrency(detail, open);
+    const rate = this.collection.nuValueLocal;
+    const dynamicLines = detail.collectionDetailRetentions ?? [];
+
+    if (dynamicLines.length > 0) {
+      detail.collectionDetailRetentions = dynamicLines.map((line, lineIndex) => {
+        const amount = Number(line.nuAmountRetention ?? 0);
+        const conversion = amount > 0
+          ? this.convertirMonto(amount, rate, documentCurrency)
+          : 0;
+
+        return this.normalizeCollectionDetailRetentionLine(
+          {
+            ...line,
+            nuAmountRetention: amount,
+            nuAmountRetentionConversion: conversion,
+          },
+          detail.coCollection,
+          detail.coDocument,
+          detail.idCollectionDetail ?? 0,
+          lineIndex
+        );
+      });
+
+      const total = this.getDetailRetentionTotal(detail);
+      const totalConversion = detail.collectionDetailRetentions.reduce(
+        (sum, line) => sum + Number(line.nuAmountRetentionConversion ?? 0),
+        0
+      );
+      const { ivaAmount, islrAmount, ivaConversion, islrConversion } =
+        this.resolveDynamicRetentionIvaIslrTotals(detail.collectionDetailRetentions);
+
+      detail.nuAmountRetention = total;
+      detail.nuAmountRetention2 = islrAmount;
+      detail.nuAmountRetentionConversion = totalConversion;
+      detail.nuAmountRetention2Conversion = islrConversion;
+      detail.nuAmountRetentionIvaConversion = ivaConversion;
+      detail.nuAmountRetentionIslrConversion = islrConversion;
+
+      if (open) {
+        open.nuAmountRetention = total;
+        open.nuAmountRetention2 = islrAmount;
+      }
+      return;
+    }
+
+    const ivaAmount = Number(open?.nuAmountRetention ?? detail.nuAmountRetention ?? 0);
+    const islrAmount = Number(open?.nuAmountRetention2 ?? detail.nuAmountRetention2 ?? 0);
+    const ivaConversion = this.convertirMonto(ivaAmount, rate, documentCurrency);
+    const islrConversion = this.convertirMonto(islrAmount, rate, documentCurrency);
+
+    detail.nuAmountRetention = ivaAmount;
+    detail.nuAmountRetention2 = islrAmount;
+    detail.nuAmountRetentionIvaConversion = ivaConversion;
+    detail.nuAmountRetentionIslrConversion = islrConversion;
+    detail.nuAmountRetentionConversion = ivaConversion;
+    detail.nuAmountRetention2Conversion = islrConversion;
+
+    if (open) {
+      open.nuAmountRetention = ivaAmount;
+      open.nuAmountRetention2 = islrAmount;
+    }
+  }
+
   attachCollectionDetailRetentionsToDetails(
     details: CollectionDetail[],
     retentions: CollectionDetailRetentions[],
@@ -2879,50 +2991,26 @@ export class CollectionService {
     const open = this.documentSaleOpen;
     const idx = this.indexDocumentSaleOpen;
     const detailIdx = open.positionCollecDetails;
-
-    // Copia a documentSales
-    this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
-    this.documentSales[idx].isSave = true;
-    this.documentSalesBackup[idx].inPaymentPartial = this.isPaymentPartial;
-    this.documentSalesBackup[idx].isSave = true;
-    this.documentSales[idx].nuAmountPaid = this.amountPaid;
-    this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
-    this.documentSales[idx].nuAmountRetention = open.nuAmountRetention;
-    this.documentSalesBackup[idx].nuAmountRetention = open.nuAmountRetention;
-    this.documentSales[idx].nuAmountRetention2 = open.nuAmountRetention2;
-    this.documentSalesBackup[idx].nuAmountRetention2 = open.nuAmountRetention2;
-    //this.documentSales[idx].nuAmountBase = this.amountPaid;
-    //this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
-    /* this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
-    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount; */
-
-    // Copia a collectionDetails
     const detail = this.collection.collectionDetails[detailIdx];
+
     if (detail) {
-      // Preservar los saldos originales para no mutarlos durante las actualizaciones
       const originalBalance = detail.nuBalanceDocOriginal;
       const originalBalanceConversion = detail.nuBalanceDocOriginalConversion;
 
       detail.inPaymentPartial = this.isPaymentPartial;
-      detail.nuAmountPaid = this.amountPaid
-      detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-      // nuBalanceDoc conserva el saldo original del documento; los descuentos de cobro
-      // se aplican vía nuAmountCollectDiscount en calculatePayment
-      detail.daVoucher = open.daVoucher;
-      detail.nuAmountDiscountConversion = this.convertirMonto(detail.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
-      const retentionTotal = detail.collectionDetailRetentions?.length
-        ? this.getDetailRetentionTotal(detail)
-        : Number(open.nuAmountRetention ?? 0) + Number(open.nuAmountRetention2 ?? 0);
-      detail.nuAmountRetention = retentionTotal;
-      detail.nuAmountRetentionConversion = this.convertirMonto(
-        retentionTotal,
+      detail.nuAmountPaid = this.amountPaid;
+      detail.nuAmountPaidConversion = this.convertirMonto(
+        this.amountPaid,
         this.collection.nuValueLocal,
         this.collection.coCurrency
       );
-      detail.nuAmountRetention2 = 0;
-      detail.nuAmountRetention2Conversion = 0;
-      open.nuAmountRetention = retentionTotal;
-      open.nuAmountRetention2 = 0;
+      detail.daVoucher = open.daVoucher;
+      detail.nuAmountDiscountConversion = this.convertirMonto(
+        detail.nuAmountDiscount,
+        this.collection.nuValueLocal,
+        this.collection.coCurrency
+      );
+      this.syncDetailRetentionAmountsAndConversions(detail, open);
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
       detail.isSave = true;
@@ -2953,12 +3041,20 @@ export class CollectionService {
         open.igtfAmount = 0;
       }
 
-      // Restablecer explícitamente los montos originales para garantizar que no se alteren
       detail.nuBalanceDocOriginal = originalBalance;
       detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
-
-      // ...otros campos...
     }
+
+    this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
+    this.documentSales[idx].isSave = true;
+    this.documentSalesBackup[idx].inPaymentPartial = this.isPaymentPartial;
+    this.documentSalesBackup[idx].isSave = true;
+    this.documentSales[idx].nuAmountPaid = this.amountPaid;
+    this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
+    this.documentSales[idx].nuAmountRetention = open.nuAmountRetention;
+    this.documentSalesBackup[idx].nuAmountRetention = open.nuAmountRetention;
+    this.documentSales[idx].nuAmountRetention2 = open.nuAmountRetention2;
+    this.documentSalesBackup[idx].nuAmountRetention2 = open.nuAmountRetention2;
   }
 
   updateRateTiposPago() {
@@ -5713,6 +5809,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); `;
 
     for (var i = 0; i < collectionDetail.length; i++) {
+      this.syncDetailRetentionAmountsAndConversions(collectionDetail[i]);
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
         0,
         collectionDetail[i].coCollection,
@@ -5815,6 +5912,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
     for (var i = 0; i < collectionDetail.length; i++) {
       const detail = collectionDetail[i];
+      this.syncDetailRetentionAmountsAndConversions(detail);
+
       if (!detail?.collectionDetailRetentions?.length) {
         continue;
       }

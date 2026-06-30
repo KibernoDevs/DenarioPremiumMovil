@@ -1933,6 +1933,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.flushPartialPaymentBeforeSave();
     this.flushFullPaymentBeforeSave();
 
+    const detailIdx = this.collectService.documentSaleOpen.positionCollecDetails;
+    if (this.collectService.retencion && !this.collectService.missingRetentionValue) {
+      this.setCollectionDetailRetentions(detailIdx!);
+    } else if (detailIdx != null && detailIdx >= 0) {
+      const detail = this.collectService.collection.collectionDetails[detailIdx];
+      this.collectService.syncDetailRetentionAmountsAndConversions(
+        detail,
+        this.collectService.documentSaleOpen
+      );
+    }
+
     // Usa el helper para actualizar documentSales y collectionDetails
     this.collectService.copyDocumentSaleOpenToSalesAndDetails();
 
@@ -4363,7 +4374,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.detailCollectRetentionsPos++;
     });
 
-    this.syncOpenRetentionFromLines();
+    this.collectService.syncDetailRetentionAmountsAndConversions(
+      detail,
+      this.collectService.documentSaleOpen
+    );
   }
 
   private clearDocumentRetentionState(): void {
