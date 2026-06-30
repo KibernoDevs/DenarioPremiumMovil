@@ -1,7 +1,9 @@
 <div class="clientStock-list">
-  <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
-    placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')}}..."
-    (ionInput)="handleInput($event)"></ion-searchbar>
+  <div class="sticky-searchbar">
+    <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
+      placeholder="{{inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')}}..."
+      (ionInput)="handleInput($event)"></ion-searchbar>
+  </div>
   <div class="clientStock-card">
     <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">

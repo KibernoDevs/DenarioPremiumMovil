@@ -3,7 +3,8 @@
   <div class="client-card">
     <div class="sticky-searchbar">
     <div class="search-input-wrap">
-        <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="Clientes..."
+        <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
+          placeholder="{{clientLogic.clientTags.get('CLI_PLACEHOLDER')}}"
         #searchInput [(ngModel)]="searchText" (keydown.enter)="onSearchEnter($event)">
         <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
             <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
