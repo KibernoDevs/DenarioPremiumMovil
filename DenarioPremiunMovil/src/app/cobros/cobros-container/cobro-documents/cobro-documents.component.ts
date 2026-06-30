@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
-import { CollectionDetailDiscounts, CollectionPayment } from 'src/app/modelos/tables/collection';
+import { CollectionDetailDiscounts, CollectionDetailRetentions, CollectionPayment } from 'src/app/modelos/tables/collection';
+import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
@@ -80,6 +81,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public disabledCollectDiscountButton: boolean = false;
   // When true, discount checkboxes should be disabled in the template
   public disableDiscountCheckboxes: boolean = false;
+
+  public selectedCollectRetentionId: number | undefined;
+  private documentRetentionLines: Array<{
+    idCollectRetention: number;
+    coCollectRetention: string;
+    nuAmountRetention: number;
+  }> = [];
+  private detailCollectRetentionsPos = 0;
+  private collectRetentionCentsMap = new Map<number, number>();
+  private collectRetentionDisplayMap = new Map<number, string>();
+  private collectRetentionKeyInFlightMap = new Map<number, boolean>();
 
   public mensaje: string = '';
   public saldo: string = "";
@@ -1480,12 +1492,18 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       await this.calculateDocumentSaleOpen(index);
       this.syncPersistedCollectDiscountTotals(positionCollecDetails);
 
+      if (this.collectService.retencion) {
+        await this.ensureCollectRetentionsCatalog();
+        this.hydrateDocumentRetentionLines(positionCollecDetails);
+      }
+
       // Asignar el valor de nuVaucherRetention y daVoucher después de crear documentSaleOpen
       if (voucherRetentionValue !== undefined) {
         this.collectService.documentSaleOpen.nuVaucherRetention = voucherRetentionValue;
       }
-      if (daVoucherValue !== undefined) {
-        this.collectService.documentSaleOpen.daVoucher = daVoucherValue;
+      if (daVoucherValue !== undefined && daVoucherValue !== null && String(daVoucherValue).trim() !== '') {
+        this.daVoucher = String(daVoucherValue).split('T')[0];
+        this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
       }
 
       if (this.collectService.collection.stDelivery == 3) {
@@ -1497,6 +1515,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.collectService.documentSaleOpen.nuAmountRetention = detail.nuAmountRetention;
           this.collectService.documentSaleOpen.nuAmountRetention2 = detail.nuAmountRetention2;
           this.collectService.documentSaleOpen.daVoucher = detail.daVoucher == null ? "" : detail.daVoucher;
+          this.daVoucher = this.collectService.documentSaleOpen.daVoucher
+            ? String(this.collectService.documentSaleOpen.daVoucher).split('T')[0]
+            : '';
           this.collectService.documentSaleOpen.nuVaucherRetention = detail.nuVoucherRetention;
           this.collectService.documentSaleOpen.inPaymentPartial = detail.inPaymentPartial;
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
@@ -1861,7 +1882,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           (hasSelectedDiscounts || this.hasManualCollectDiscount())) {
           this.setCollectionDetailDiscounts(this.collectService.documentSaleOpen.positionCollecDetails!, this.collectService.selectedCollectDiscounts);
         }
+        if (this.collectService.retencion && !this.collectService.missingRetentionValue) {
+          this.setCollectionDetailRetentions(this.collectService.documentSaleOpen.positionCollecDetails!);
+        }
+        this.collectService.copyDocumentSaleOpenToSalesAndDetails();
         this.collectService.calculatePayment("", 0, true);
+        this.clearDocumentRetentionState();
         this.cdr.detectChanges();
         console.log("GUARDAR")
         this.collectService.isOpen = false;
@@ -2279,6 +2305,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private isEmptyOrZeroRetention(): boolean {
+    if (this.documentRetentionLines.length > 0) {
+      return this.documentRetentionLines.every(line => this.isNullOrZero(line.nuAmountRetention));
+    }
     const { nuAmountRetention, nuAmountRetention2 } = this.collectService.documentSaleOpen;
     return this.isNullOrZero(nuAmountRetention) && this.isNullOrZero(nuAmountRetention2);
   }
@@ -2457,6 +2486,25 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     console.log(this.collectService.collection)
   }
 
+  public shouldShowRetentionLengthHint(): boolean {
+    if (this.collectService.sizeRetention <= 0 || this.collectService.validNuRetention) {
+      return false;
+    }
+    const voucher = this.collectService.documentSaleOpen?.nuVaucherRetention;
+    return voucher != null && String(voucher).trim().length > 0;
+  }
+
+  public shouldShowDaVoucherRequiredHint(): boolean {
+    const voucher = this.collectService.documentSaleOpen?.nuVaucherRetention;
+    const hasVoucher = voucher != null && String(voucher).trim().length > 0;
+    return hasVoucher && !this.collectService.validateDaVoucher;
+  }
+
+  private syncDaVoucherValidation(): void {
+    const daVoucher = this.collectService.documentSaleOpen?.daVoucher;
+    this.collectService.validateDaVoucher = daVoucher != null && String(daVoucher).trim().length > 0;
+  }
+
   //[a-zA-Z ]
 
   validateNuVaucherRetention(sendMessage: boolean) {
@@ -2546,15 +2594,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (this.collectService.validNuRetention && this.isEmptyOrZeroRetention()) {
       this.disabledSaveButton = true;
+      this.syncDaVoucherValidation();
+      this.cdr.detectChanges();
       return;
     }
 
-    if (this.collectService.validNuRetention && this.collectService.documentSaleOpen.daVoucher == "") {
-      this.collectService.validateDaVoucher = false;
+    this.syncDaVoucherValidation();
+    if (this.collectService.validNuRetention && !this.collectService.validateDaVoucher) {
       this.disabledSaveButton = true;
     }
 
-
+    this.cdr.detectChanges();
   }
 
 
@@ -2580,21 +2630,25 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
-  setDaVoucher() {
-    console.log(this.daVoucher);
-    this.collectService.validateDaVoucher = true;
-    this.daVoucher = this.daVoucher.split("T")[0];
-    this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
+  setDaVoucher(event?: CustomEvent) {
+    const rawValue = event?.detail?.value ?? this.daVoucher;
+    if (rawValue != null && String(rawValue).trim() !== '') {
+      this.daVoucher = String(rawValue).split('T')[0];
+      this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
+    }
+    this.syncDaVoucherValidation();
     if (this.collectService.validNuRetention) {
       if (!this.collectService.retencion) {
         this.disabledSaveButton = false;
-      } else if (this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2 == 0) {
+      } else if (this.isEmptyOrZeroRetention()) {
         this.disabledSaveButton = true;
-      } else
+      } else {
         this.disabledSaveButton = false;
-
-    } else
+      }
+    } else {
       this.disabledSaveButton = false;
+    }
+    this.cdr.detectChanges();
   }
 
   openPartialPayment(coDocument: string) {
@@ -3935,5 +3989,390 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     //this.disabledSaveButton = false;
   }
 
+  public hasCollectRetentions(): boolean {
+    return this.collectService.retencion && this.collectService.collectRetentions.length > 0;
+  }
+
+  public usesLegacyRetentionInputs(): boolean {
+    return this.collectService.retencion && !this.hasCollectRetentions();
+  }
+
+  private async ensureCollectRetentionsCatalog(): Promise<void> {
+    if (!this.collectService.retencion || this.collectService.collectRetentions.length > 0) {
+      return;
+    }
+    const idEnterprise = this.collectService.collection?.idEnterprise;
+    if (!idEnterprise) {
+      return;
+    }
+    try {
+      await this.collectService.getCollectRetentions(
+        this.synchronizationServices.getDatabase(),
+        idEnterprise
+      );
+    } catch (err) {
+      console.warn('ensureCollectRetentionsCatalog error:', err);
+    }
+  }
+
+  public hasAvailableCollectRetentions(): boolean {
+    return this.getAvailableCollectRetentions().length > 0;
+  }
+
+  public getAvailableCollectRetentions(): CollectRetentions[] {
+    const selectedIds = new Set(this.documentRetentionLines.map(line => line.idCollectRetention));
+    return this.collectService.collectRetentions.filter(
+      retention => !selectedIds.has(retention.idCollectRetention)
+    );
+  }
+
+  public getSelectedCollectRetentions(): Array<{
+    idCollectRetention: number;
+    coCollectRetention: string;
+    nuAmountRetention: number;
+  }> {
+    return this.documentRetentionLines;
+  }
+
+  public onCollectRetentionSelectionChange(event: CustomEvent): void {
+    const rawValue = event?.detail?.value ?? this.selectedCollectRetentionId;
+    const idCollectRetention = Number(rawValue);
+    if (!Number.isFinite(idCollectRetention) || idCollectRetention <= 0) {
+      return;
+    }
+    const retention = this.collectService.collectRetentions.find(
+      item => item.idCollectRetention === idCollectRetention
+    );
+    if (!retention) {
+      return;
+    }
+    this.documentRetentionLines.push({
+      idCollectRetention: retention.idCollectRetention,
+      coCollectRetention: retention.coCollectRetention,
+      nuAmountRetention: 0,
+    });
+    this.collectRetentionCentsMap.set(idCollectRetention, 0);
+    this.selectedCollectRetentionId = undefined;
+    this.syncOpenRetentionFromLines();
+    this.setAmountTotal();
+    this.validate();
+  }
+
+  public removeCollectRetention(idCollectRetention: number): void {
+    this.documentRetentionLines = this.documentRetentionLines.filter(
+      line => line.idCollectRetention !== idCollectRetention
+    );
+    this.collectRetentionCentsMap.delete(idCollectRetention);
+    this.collectRetentionDisplayMap.delete(idCollectRetention);
+    this.collectRetentionKeyInFlightMap.delete(idCollectRetention);
+    this.syncOpenRetentionFromLines();
+    this.setAmountTotal();
+    this.validate();
+  }
+
+  public getCollectRetentionName(coCollectRetention: string): string {
+    const retention = this.collectService.collectRetentions.find(
+      item => item.coCollectRetention === coCollectRetention
+    );
+    return retention?.naCollectRetention ?? coCollectRetention;
+  }
+
+  public getRetentionInputId(idCollectRetention: number): string {
+    return `collect-retention-${idCollectRetention}`;
+  }
+
+  public getCollectRetentionCents(idCollectRetention: number): number {
+    return this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
+  }
+
+  public getCollectRetentionDisplay(idCollectRetention: number): string {
+    const display = this.collectRetentionDisplayMap.get(idCollectRetention);
+    if (display) {
+      return display;
+    }
+    return this.formatFromCents(this.getCollectRetentionCents(idCollectRetention));
+  }
+
+  private ensureCollectRetentionInit(idCollectRetention: number): void {
+    if (this.collectRetentionCentsMap.has(idCollectRetention)) {
+      return;
+    }
+    const line = this.documentRetentionLines.find(item => item.idCollectRetention === idCollectRetention);
+    const base = Number(line?.nuAmountRetention ?? 0);
+    const factor = this.centsFactor();
+    const cents = Math.round(base * factor) || 0;
+    this.collectRetentionCentsMap.set(idCollectRetention, cents);
+    this.collectRetentionDisplayMap.set(idCollectRetention, this.formatFromCents(cents));
+  }
+
+  public onCollectRetentionKeyDown(idCollectRetention: number, ev: KeyboardEvent): void {
+    const key = String(ev?.key ?? '');
+    const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
+    if (allowed.includes(key)) {
+      return;
+    }
+
+    this.ensureCollectRetentionInit(idCollectRetention);
+    const MAX_CENTS = 999999999999;
+    const current = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
+
+    if (/^\d$/.test(key)) {
+      this.collectRetentionKeyInFlightMap.set(idCollectRetention, true);
+      const digit = parseInt(key, 10);
+      this.collectRetentionCentsMap.set(
+        idCollectRetention,
+        Math.min(MAX_CENTS, current * 10 + digit)
+      );
+      this.updateCollectRetentionModel(idCollectRetention);
+      ev.preventDefault();
+      setTimeout(() => this.collectRetentionKeyInFlightMap.set(idCollectRetention, false), 0);
+      return;
+    }
+
+    if (key === 'Backspace') {
+      this.collectRetentionKeyInFlightMap.set(idCollectRetention, true);
+      this.collectRetentionCentsMap.set(idCollectRetention, Math.trunc(current / 10));
+      this.updateCollectRetentionModel(idCollectRetention);
+      ev.preventDefault();
+      setTimeout(() => this.collectRetentionKeyInFlightMap.set(idCollectRetention, false), 0);
+      return;
+    }
+
+    if (key === 'Delete') {
+      this.collectRetentionKeyInFlightMap.set(idCollectRetention, true);
+      this.collectRetentionCentsMap.set(idCollectRetention, 0);
+      this.updateCollectRetentionModel(idCollectRetention);
+      ev.preventDefault();
+      setTimeout(() => this.collectRetentionKeyInFlightMap.set(idCollectRetention, false), 0);
+      return;
+    }
+
+    ev.preventDefault();
+  }
+
+  public onCollectRetentionFocus(idCollectRetention: number): void {
+    this.ensureCollectRetentionInit(idCollectRetention);
+    if ((this.collectRetentionCentsMap.get(idCollectRetention) ?? 0) === 0) {
+      this.collectRetentionDisplayMap.set(idCollectRetention, this.formatFromCents(0));
+    }
+  }
+
+  public onCollectRetentionBlur(idCollectRetention: number): void {
+    this.ensureCollectRetentionInit(idCollectRetention);
+    const cents = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
+    const parsed = cents / this.centsFactor();
+    const line = this.documentRetentionLines.find(item => item.idCollectRetention === idCollectRetention);
+    if (line) {
+      line.nuAmountRetention = parsed;
+    }
+    try {
+      this.collectRetentionDisplayMap.set(
+        idCollectRetention,
+        this.currencyService.formatNumber(parsed)
+      );
+    } catch {
+      this.collectRetentionDisplayMap.set(idCollectRetention, this.formatFromCents(cents));
+    }
+    this.syncOpenRetentionFromLines();
+    this.setAmountTotal();
+    this.validateOpenDocumentRetentionTotals(true);
+    this.validate();
+    this.cdr.detectChanges();
+  }
+
+  public onCollectRetentionPaste(idCollectRetention: number, ev: ClipboardEvent): void {
+    ev.preventDefault();
+    this.ensureCollectRetentionInit(idCollectRetention);
+    const text = ev.clipboardData?.getData('text') ?? '';
+    this.collectRetentionCentsMap.set(idCollectRetention, this.parsePastedToCents(text));
+    this.updateCollectRetentionModel(idCollectRetention);
+  }
+
+  public onCollectRetentionInput(idCollectRetention: number, ev: Event): void {
+    if (this.collectRetentionKeyInFlightMap.get(idCollectRetention)) {
+      return;
+    }
+
+    try {
+      const inputEvent = ev as InputEvent;
+      const inputChar = typeof inputEvent?.data === 'string' ? inputEvent.data : undefined;
+      const inputType = inputEvent?.inputType ?? '';
+      const MAX_CENTS = 999999999999;
+
+      this.ensureCollectRetentionInit(idCollectRetention);
+      const current = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
+
+      if (inputType.includes('delete') || inputChar === null) {
+        this.collectRetentionCentsMap.set(idCollectRetention, Math.trunc(current / 10));
+      } else if (inputChar && /^\d$/.test(inputChar)) {
+        const digit = parseInt(inputChar, 10);
+        this.collectRetentionCentsMap.set(
+          idCollectRetention,
+          Math.min(MAX_CENTS, current * 10 + digit)
+        );
+      } else {
+        const input = ev.target as HTMLInputElement | null;
+        const raw = input?.value ?? String(ev ?? '');
+        this.collectRetentionCentsMap.set(idCollectRetention, this.parsePastedToCents(raw));
+      }
+
+      this.updateCollectRetentionModel(idCollectRetention);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  private updateCollectRetentionModel(idCollectRetention: number): void {
+    const cents = this.collectRetentionCentsMap.get(idCollectRetention) ?? 0;
+    const value = cents / this.centsFactor();
+    const line = this.documentRetentionLines.find(item => item.idCollectRetention === idCollectRetention);
+    if (line) {
+      line.nuAmountRetention = value;
+    }
+    this.collectRetentionDisplayMap.set(idCollectRetention, this.formatFromCents(cents));
+    this.syncOpenRetentionFromLines();
+    this.setAmountTotal();
+    this.validateOpenDocumentRetentionTotals(true);
+    this.validate();
+    this.cdr.detectChanges();
+  }
+
+  private getDocumentRetentionTotal(): number {
+    if (this.documentRetentionLines.length > 0) {
+      return this.documentRetentionLines.reduce(
+        (sum, line) => sum + Number(line.nuAmountRetention ?? 0),
+        0
+      );
+    }
+    return Number(this.collectService.documentSaleOpen?.nuAmountRetention ?? 0)
+      + Number(this.collectService.documentSaleOpen?.nuAmountRetention2 ?? 0);
+  }
+
+  private syncOpenRetentionFromLines(): void {
+    const total = this.getDocumentRetentionTotal();
+    this.collectService.documentSaleOpen.nuAmountRetention = total;
+    this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
+  }
+
+  private hydrateDocumentRetentionLines(positionCollecDetails: number): void {
+    this.clearDocumentRetentionState();
+    const detail = this.collectService.collection.collectionDetails?.[positionCollecDetails];
+    if (!detail) {
+      return;
+    }
+
+    const persisted = detail.collectionDetailRetentions ?? [];
+    if (persisted.length > 0) {
+      this.documentRetentionLines = persisted.map(item => ({
+        idCollectRetention: Number(item.idCollectRetention),
+        coCollectRetention: item.coCollectRetention,
+        nuAmountRetention: Number(item.nuAmountRetention ?? 0),
+      }));
+      this.documentRetentionLines.forEach(line => {
+        const factor = this.centsFactor();
+        const amount = Number(line.nuAmountRetention ?? 0);
+        const cents = Math.round(amount * factor);
+        this.collectRetentionCentsMap.set(line.idCollectRetention, cents);
+        try {
+          this.collectRetentionDisplayMap.set(
+            line.idCollectRetention,
+            amount > 0 ? this.currencyService.formatNumber(amount) : this.formatFromCents(0)
+          );
+        } catch {
+          this.collectRetentionDisplayMap.set(line.idCollectRetention, this.formatFromCents(cents));
+        }
+      });
+      this.syncOpenRetentionFromLines();
+      return;
+    }
+
+    const legacyIva = Number(detail.nuAmountRetention ?? 0);
+    const legacyIslr = Number(detail.nuAmountRetention2 ?? 0);
+    if (legacyIva > 0 || legacyIslr > 0) {
+      const catalog = this.collectService.collectRetentions;
+      if (legacyIva > 0 && catalog[0]) {
+        this.documentRetentionLines.push({
+          idCollectRetention: catalog[0].idCollectRetention,
+          coCollectRetention: catalog[0].coCollectRetention,
+          nuAmountRetention: legacyIva,
+        });
+      }
+      if (legacyIslr > 0 && catalog[1]) {
+        this.documentRetentionLines.push({
+          idCollectRetention: catalog[1].idCollectRetention,
+          coCollectRetention: catalog[1].coCollectRetention,
+          nuAmountRetention: legacyIslr,
+        });
+      }
+      this.documentRetentionLines.forEach(line => {
+        const factor = this.centsFactor();
+        const amount = Number(line.nuAmountRetention ?? 0);
+        const cents = Math.round(amount * factor);
+        this.collectRetentionCentsMap.set(line.idCollectRetention, cents);
+        try {
+          this.collectRetentionDisplayMap.set(
+            line.idCollectRetention,
+            amount > 0 ? this.currencyService.formatNumber(amount) : this.formatFromCents(0)
+          );
+        } catch {
+          this.collectRetentionDisplayMap.set(line.idCollectRetention, this.formatFromCents(cents));
+        }
+      });
+      this.syncOpenRetentionFromLines();
+    }
+  }
+
+  private setCollectionDetailRetentions(index: number): void {
+    const detail = this.collectService.collection.collectionDetails[index];
+    if (!detail) {
+      return;
+    }
+
+    this.detailCollectRetentionsPos = 0;
+    detail.collectionDetailRetentions = [] as CollectionDetailRetentions[];
+    const coCollection = detail.coCollection ?? this.collectService.collection.coCollection;
+    const coDocument = detail.coDocument ?? this.collectService.documentSaleOpen.coDocument;
+
+    this.documentRetentionLines.forEach(line => {
+      const amount = Number(line.nuAmountRetention ?? 0);
+      if (amount <= 0) {
+        return;
+      }
+      const retentionLine = this.collectService.normalizeCollectionDetailRetentionLine(
+        {
+          idCollectionDetailRetention: null,
+          idCollectionDetail: index,
+          coCollection: coCollection,
+          coDocument: coDocument,
+          idCollectRetention: line.idCollectRetention,
+          coCollectRetention: line.coCollectRetention,
+          nuAmountRetention: amount,
+          nuAmountRetentionConversion: this.collectService.convertirMonto(
+            amount,
+            this.collectService.collection.nuValueLocal,
+            this.collectService.documentSaleOpen.coCurrency
+          ),
+          posicion: this.detailCollectRetentionsPos + 1,
+        },
+        coCollection,
+        coDocument,
+        index,
+        this.detailCollectRetentionsPos
+      );
+      detail.collectionDetailRetentions!.push(retentionLine);
+      this.detailCollectRetentionsPos++;
+    });
+
+    this.syncOpenRetentionFromLines();
+  }
+
+  private clearDocumentRetentionState(): void {
+    this.documentRetentionLines = [];
+    this.collectRetentionCentsMap.clear();
+    this.collectRetentionDisplayMap.clear();
+    this.collectRetentionKeyInFlightMap.clear();
+    this.selectedCollectRetentionId = undefined;
+    this.detailCollectRetentionsPos = 0;
+  }
 
 }

@@ -840,11 +840,12 @@
                     <ion-input [id]="getRetentionInputId(retentionDetail.idCollectRetention)"
                       label="{{this.collectService.collectionTags.get('COB_MONTO')}}"
                       label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                      [value]="formatFromCents(getCollectRetentionCents(retentionDetail.idCollectRetention))"
+                      [value]="getCollectRetentionDisplay(retentionDetail.idCollectRetention)"
                       [disabled]="!this.collectService.validNuRetention"
                       (keydown)="onCollectRetentionKeyDown(retentionDetail.idCollectRetention, $event)"
                       (focus)="onCollectRetentionFocus(retentionDetail.idCollectRetention)"
                       (blur)="onCollectRetentionBlur(retentionDetail.idCollectRetention)"
+                      (paste)="onCollectRetentionPaste(retentionDetail.idCollectRetention, $event)"
                       (input)="onCollectRetentionInput(retentionDetail.idCollectRetention, $event)">
                     </ion-input>
                     <ion-button slot="end" fill="clear" color="danger"
@@ -1223,11 +1224,12 @@
                 <ion-input [id]="getRetentionInputId(retentionDetail.idCollectRetention)"
                   label="{{this.collectService.collectionTags.get('COB_MONTO')}}"
                   label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                  [value]="formatFromCents(getCollectRetentionCents(retentionDetail.idCollectRetention))"
+                  [value]="getCollectRetentionDisplay(retentionDetail.idCollectRetention)"
                   [disabled]="!this.collectService.validNuRetention"
                   (keydown)="onCollectRetentionKeyDown(retentionDetail.idCollectRetention, $event)"
                   (focus)="onCollectRetentionFocus(retentionDetail.idCollectRetention)"
                   (blur)="onCollectRetentionBlur(retentionDetail.idCollectRetention)"
+                  (paste)="onCollectRetentionPaste(retentionDetail.idCollectRetention, $event)"
                   (input)="onCollectRetentionInput(retentionDetail.idCollectRetention, $event)">
                 </ion-input>
                 <ion-button slot="end" fill="clear" color="danger"
