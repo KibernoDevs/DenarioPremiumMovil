@@ -10,6 +10,7 @@ import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { formatClientForList } from 'src/app/utils/client-display.util';
+import { buildModuleSearchPlaceholder } from 'src/app/utils/search-placeholder.util';
 
 @Component({
   selector: 'app-pedidos-lista',
@@ -51,7 +52,7 @@ export class PedidosListaComponent implements OnInit {
   }
 
   async ngOnInit() {
-    this.searchPlaceholder = this.getTag("PED_BUSQUEDA");
+    this.searchPlaceholder = buildModuleSearchPlaceholder(this.getTag('PED_NOMBRE_MODULO'));
     if (this.orderServ.userMustActivateGPS) {
       this.orderServ.coordenadas = "";
       this.geoLoc.getCurrentPosition().then(xy => {

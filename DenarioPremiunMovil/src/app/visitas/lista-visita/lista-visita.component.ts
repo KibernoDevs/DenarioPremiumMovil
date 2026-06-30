@@ -13,6 +13,7 @@ import { DateServiceService } from 'src/app/services/dates/date-service.service'
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { formatClientForList } from 'src/app/utils/client-display.util';
+import { buildModuleSearchPlaceholder } from 'src/app/utils/search-placeholder.util';
 
 
 @Component({
@@ -24,6 +25,7 @@ import { formatClientForList } from 'src/app/utils/client-display.util';
 export class ListaVisitaComponent implements OnInit, ViewWillEnter {
   listaVisitas: Visit[] = []
   searchText = "";
+  searchPlaceholder = '';
 
   alertDelete: boolean = false;
   selectedVisit: string = "";
@@ -58,6 +60,7 @@ export class ListaVisitaComponent implements OnInit, ViewWillEnter {
     this.mensajeDelete = this.getTag('VIS_BORRAR_CONFIRMA');
     this.service.coordenadas = "";
     this.rolTransportista = this.service.rolTransportista;
+    this.searchPlaceholder = this.buildSearchPlaceholder();
     if (this.service.userMustActivateGPS) {
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
@@ -140,6 +143,13 @@ export class ListaVisitaComponent implements OnInit, ViewWillEnter {
 
   getTag(tagName: string) {
     return this.service.getTag(tagName);
+  }
+
+  private buildSearchPlaceholder(): string {
+    const moduleName = this.rolTransportista
+      ? this.getTag('VIS_NOMBRE_MODULO_DESPACHOS')
+      : this.getTag('VIS_NOMBRE_MODULO');
+    return buildModuleSearchPlaceholder(moduleName);
   }
 
   formatVisitClient(visit: Visit): string {

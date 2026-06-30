@@ -1,4 +1,5 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 
 @Component({
     selector: 'app-client-search',
@@ -10,9 +11,12 @@ export class ClientSearchComponent implements OnInit {
   @Output()
   searchTextEmit: EventEmitter<string> = new EventEmitter<string>();
 
-  constructor() { }
+  clientLogic = inject(ClientLogicService);
+  searchPlaceholder = '';
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.searchPlaceholder = this.clientLogic.clientTags.get('CLI_PLACEHOLDER') ?? 'Clientes...';
+  }
 
   handleInput(searchText: any) {
     this.searchTextEmit.emit(searchText.target.value.toLowerCase());

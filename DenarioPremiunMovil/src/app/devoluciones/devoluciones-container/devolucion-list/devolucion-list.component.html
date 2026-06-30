@@ -1,7 +1,8 @@
 <div class="listado-product-structures">
-
-  <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
-    placeholder="{{this.tags.get('DEV_NOMBRE_MODULO')}}..." (ionInput)="handleInput($event)"></ion-searchbar>
+  <div class="sticky-searchbar">
+    <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
+      placeholder="{{tags.get('DEV_NOMBRE_MODULO')}}..." (ionInput)="handleInput($event)"></ion-searchbar>
+  </div>
 
   <!--  Listado clickeable de productos  -->
   <div class="product-card">
