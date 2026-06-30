@@ -349,6 +349,13 @@ export class CobrosHeaderComponent implements OnInit {
       }
     }
 
+    if (sendOrSave && this.collectService.collection.coType !== '2') {
+      if (this.collectService.hasIncompletePaymentMethods()) {
+        this.collectService.onCollectionValidToSend(false);
+        return;
+      }
+    }
+
     this.collectService.collectionIsSave = true;
     this.messageService.showLoading().then(async () => {
       if (this.collectService.collection.coType === '1') {

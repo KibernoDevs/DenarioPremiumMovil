@@ -2076,6 +2076,11 @@ export class CollectionService {
     this.alertMessageOpen = false;
     if (this.collection.coType == '1') {
       //SI ERES ANTICIPO
+      if (this.hasIncompletePaymentMethods()) {
+        this.onCollectionValidToSend(false);
+        return;
+      }
+
       if (this.collection.collectionPayments.length > 0) {
         if (this.collection && Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
           const hasPartialAmount = this.collection.collectionPayments.some(p => {
@@ -2090,6 +2095,9 @@ export class CollectionService {
             return;
           }
         }
+      } else {
+        this.onCollectionValidToSend(false);
+        return;
       }
 
     } else if (this.collection.coType == '2') {
@@ -2109,6 +2117,11 @@ export class CollectionService {
         }
       }
     } else {
+
+      if (this.hasIncompletePaymentMethods()) {
+        this.onCollectionValidToSend(false);
+        return;
+      }
 
       if (!(await this.validateReferencePayment())) {
         this.onCollectionValidToSend(false);
@@ -2395,6 +2408,105 @@ export class CollectionService {
         }
       }
     }
+  }
+
+  private hasPaymentText(value: unknown): boolean {
+    return value !== undefined && value !== null && String(value).trim() !== '';
+  }
+
+  private isPositivePaymentAmount(value: unknown): boolean {
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount > 0;
+  }
+
+  private isEfectivoPaymentComplete(pago: PagoEfectivo): boolean {
+    return this.isPositivePaymentAmount(pago?.monto);
+  }
+
+  private isChequePaymentComplete(pago: PagoCheque): boolean {
+    return this.isPositivePaymentAmount(pago?.monto)
+      && this.hasPaymentText(pago?.fecha)
+      && this.hasPaymentText(pago?.fechaValor)
+      && this.hasPaymentText(pago?.nombreBanco)
+      && this.hasPaymentText(pago?.numeroCheque);
+  }
+
+  private isDepositoPaymentComplete(pago: PagoDeposito): boolean {
+    return this.isPositivePaymentAmount(pago?.monto)
+      && this.hasPaymentText(pago?.fecha)
+      && this.hasPaymentText(pago?.nombreBanco)
+      && this.hasPaymentText(pago?.numeroCuenta)
+      && this.hasPaymentText(pago?.numeroDeposito);
+  }
+
+  private isTransferenciaPaymentComplete(pago: PagoTransferencia): boolean {
+    if (!this.isPositivePaymentAmount(pago?.monto)
+      || !this.hasPaymentText(pago?.fecha)
+      || !this.hasPaymentText(pago?.nombreBanco)) {
+      return false;
+    }
+
+    if (this.clientBankAccount) {
+      return this.hasPaymentText(pago?.nuevaCuenta)
+        && this.hasPaymentText(pago?.numeroTransferencia);
+    }
+
+    return this.hasPaymentText(pago?.numeroTransferencia);
+  }
+
+  private isPagoMovilPaymentComplete(pago: PagoMovil): boolean {
+    return this.isPositivePaymentAmount(pago?.monto)
+      && this.hasPaymentText(pago?.fecha)
+      && this.hasPaymentText(pago?.nombreBancoEmisor)
+      && this.hasPaymentText(pago?.nombreBancoDestino)
+      && this.hasPaymentText(pago?.numeroDocumento)
+      && this.hasPaymentText(pago?.numeroReferencia);
+  }
+
+  private isOtrosPaymentComplete(pago: PagoOtros): boolean {
+    return this.isPositivePaymentAmount(pago?.monto) && this.hasPaymentText(pago?.nombre);
+  }
+
+  public isIndexedPaymentMethodComplete(type: string, index: number): boolean {
+    switch (type) {
+      case 'ef':
+        return this.isEfectivoPaymentComplete(this.pagoEfectivo[index]);
+      case 'ch':
+        return this.isChequePaymentComplete(this.pagoCheque[index]);
+      case 'de':
+        return this.isDepositoPaymentComplete(this.pagoDeposito[index]);
+      case 'tr':
+        return this.isTransferenciaPaymentComplete(this.pagoTransferencia[index]);
+      case 'pm':
+        return this.isPagoMovilPaymentComplete(this.pagoMovil[index]);
+      case 'ot':
+        return this.isOtrosPaymentComplete(this.pagoOtros[index]);
+      default:
+        return false;
+    }
+  }
+
+  public hasIncompletePaymentMethods(): boolean {
+    if (this.tipoPagoEfectivo && this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
+      return true;
+    }
+    if (this.tipoPagoCheque && this.pagoCheque.some(p => !this.isChequePaymentComplete(p))) {
+      return true;
+    }
+    if (this.tipoPagoDeposito && this.pagoDeposito.some(p => !this.isDepositoPaymentComplete(p))) {
+      return true;
+    }
+    if (this.tipoPagoTransferencia && this.pagoTransferencia.some(p => !this.isTransferenciaPaymentComplete(p))) {
+      return true;
+    }
+    if (this.tipoPagoPagoMovil && this.pagoMovil.some(p => !this.isPagoMovilPaymentComplete(p))) {
+      return true;
+    }
+    if (this.tipoPagoOtros && this.pagoOtros.some(p => !this.isOtrosPaymentComplete(p))) {
+      return true;
+    }
+
+    return false;
   }
 
   async validateReferencePayment() {

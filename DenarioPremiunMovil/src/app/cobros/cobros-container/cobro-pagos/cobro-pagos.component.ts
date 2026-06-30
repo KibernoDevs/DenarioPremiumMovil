@@ -383,6 +383,8 @@ export class CobroPagosComponent implements OnInit {
       this.centsMap[uid] = Math.round((newPago.monto ?? 0) * this.getMultiplier());
       this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
     }
+
+    void this.collectService.validateToSend();
   }
 
   deleteTipoPago(index: number, type: string) {
@@ -1101,140 +1103,52 @@ export class CobroPagosComponent implements OnInit {
   }
 
 
+  validatePaymentMethodsForSend(): void {
+    void this.collectService.validateToSend();
+  }
+
+  private finalizePaymentValidation(type: string, index: number): void {
+    if (this.collectService.createAutomatedPrepaid
+      && this.collectService.isIndexedPaymentMethodComplete(type, index)) {
+      this.checkCreateAutomatedPrepaid();
+    }
+    this.validatePaymentMethodsForSend();
+  }
+
   validatePayment(type: string, index: number) {
     this.collectService.alertMessageOpen = false;
     // Si createAutomatedPrepaid pasa a false, resetea el flag para volver a mostrar el mensaje en el próximo ciclo
     if (!this.collectService.createAutomatedPrepaid) {
       this.hasShownAutomatedPrepaidMsg = false;
     }
+
+    const canRecalculateAmount = this.canRecalculatePaymentAmount(type, index);
+    if (!canRecalculateAmount) {
+      this.validatePaymentMethodsForSend();
+      return;
+    }
+
+    this.collectService.calcularMontos(type, index).then(() => {
+      this.finalizePaymentValidation(type, index);
+    });
+  }
+
+  private canRecalculatePaymentAmount(type: string, index: number): boolean {
     switch (type) {
-      case "ef": {
-        if (this.collectService.pagoEfectivo[index].monto >= 0) {
-          this.collectService.calcularMontos(type, index).then(resp => {
-            if (this.collectService.createAutomatedPrepaid)
-              this.checkCreateAutomatedPrepaid();
-            this.collectService.validateToSend();
-
-          })
-        }
-
-        break
-      }
-      case "ch": {
-
-        /* if (this.collectService.pagoCheque[index].fecha != "" && this.collectService.pagoCheque[index].fechaValor != "" && this.collectService.pagoCheque[index].monto > 0
-          && this.collectService.pagoCheque[index].nombreBanco != "" && this.collectService.pagoCheque[index].nuevaCuenta != ""
-          && this.collectService.pagoCheque[index].numeroCheque != "") {
-          this.collectService.validateToSend();
-        } */
-        if (this.collectService.pagoCheque[index].monto >= 0) {
-          this.collectService.calcularMontos(type, index).then(resp => {
-            if (this.collectService.pagoCheque[index].fecha != ""
-              && this.collectService.pagoCheque[index].fechaValor != ""
-              && this.collectService.pagoCheque[index].nombreBanco != ""
-              && this.collectService.pagoCheque[index].numeroCheque != "") {
-              if (this.collectService.createAutomatedPrepaid)
-                this.checkCreateAutomatedPrepaid();
-
-              this.collectService.validateToSend();
-            }
-          })
-        }
-
-        break
-      }
-
-      case "de": {
-        /* if (this.collectService.pagoDeposito[index].fecha != "" && this.collectService.pagoDeposito[index].monto > 0
-          && this.collectService.pagoDeposito[index].nombreBanco != "" && this.collectService.pagoDeposito[index].numeroCuenta != ""
-          && this.collectService.pagoDeposito[index].numeroDeposito != "") {
-          this.collectService.validateToSend();
-        } */
-        if (this.collectService.pagoDeposito[index].monto >= 0) {
-          this.collectService.calcularMontos(type, index).then(resp => {
-            if (this.collectService.pagoDeposito[index].fecha != ""
-              && this.collectService.pagoDeposito[index].nombreBanco != ""
-              && this.collectService.pagoDeposito[index].numeroCuenta != ""
-              && this.collectService.pagoDeposito[index].numeroDeposito != "") {
-              if (this.collectService.createAutomatedPrepaid)
-                this.checkCreateAutomatedPrepaid();
-
-              this.collectService.validateToSend();
-            }
-          })
-        }
-        break;
-      }
-
-      case "tr": {
-        /* if (this.collectService.pagoTransferencia[index].fecha != "" && this.collectService.pagoTransferencia[index].monto > 0
-          && this.collectService.pagoTransferencia[index].nombreBanco != "" && this.collectService.pagoTransferencia[index].nuevaCuenta != ""
-          && this.collectService.pagoTransferencia[index].numeroTransferencia != "") {
-          this.collectService.validateToSend();
-        } */
-        if (this.collectService.clientBankAccount) {
-          if (this.collectService.pagoTransferencia[index].monto >= 0) {
-            this.collectService.calcularMontos(type, index).then(resp => {
-              if (this.collectService.pagoTransferencia[index].fecha != ""
-                && this.collectService.pagoTransferencia[index].nombreBanco != ""
-                && this.collectService.pagoTransferencia[index].nuevaCuenta != ""
-                && this.collectService.pagoTransferencia[index].numeroTransferencia != "") {
-                if (this.collectService.createAutomatedPrepaid)
-                  this.checkCreateAutomatedPrepaid();
-
-                this.collectService.validateToSend();
-              }
-            })
-          }
-        } else {
-          if (this.collectService.pagoTransferencia[index].monto >= 0) {
-            this.collectService.calcularMontos(type, index).then(resp => {
-              if (this.collectService.pagoTransferencia[index].fecha != ""
-                && this.collectService.pagoTransferencia[index].nombreBanco != ""
-                && this.collectService.pagoTransferencia[index].numeroTransferencia != "") {
-                if (this.collectService.createAutomatedPrepaid)
-                  this.checkCreateAutomatedPrepaid();
-
-                this.collectService.validateToSend();
-              }
-            })
-          }
-        }
-
-        break;
-      }
-
-      case "pm": {
-        if (this.collectService.pagoMovil[index].monto >= 0) {
-          this.collectService.calcularMontos(type, index).then(() => {
-            if (this.collectService.pagoMovil[index].fecha != ""
-              && this.collectService.pagoMovil[index].nombreBancoEmisor != ""
-              && this.collectService.pagoMovil[index].nombreBancoDestino != ""
-              && this.collectService.pagoMovil[index].numeroDocumento != ""
-              && this.collectService.pagoMovil[index].numeroReferencia != "") {
-              if (this.collectService.createAutomatedPrepaid)
-                this.checkCreateAutomatedPrepaid();
-
-              this.collectService.validateToSend();
-            }
-          })
-        }
-        break;
-      }
-
-      case "ot": {
-        if (this.collectService.pagoOtros[index].monto >= 0) {
-          this.collectService.calcularMontos(type, index).then(resp => {
-            if (this.collectService.pagoOtros[index].nombre != "") {
-              this.collectService.validateToSend();
-            }
-          })
-        }
-        /*  if (this.collectService.pagoOtros[index].monto > 0 && this.collectService.pagoOtros[index].nombre != "") {
-           this.collectService.validateToSend();
-         } */
-        break;
-      }
+      case 'ef':
+        return (this.collectService.pagoEfectivo[index]?.monto ?? -1) >= 0;
+      case 'ch':
+        return (this.collectService.pagoCheque[index]?.monto ?? -1) >= 0;
+      case 'de':
+        return (this.collectService.pagoDeposito[index]?.monto ?? -1) >= 0;
+      case 'tr':
+        return (this.collectService.pagoTransferencia[index]?.monto ?? -1) >= 0;
+      case 'pm':
+        return (this.collectService.pagoMovil[index]?.monto ?? -1) >= 0;
+      case 'ot':
+        return (this.collectService.pagoOtros[index]?.monto ?? -1) >= 0;
+      default:
+        return false;
     }
   }
 
