@@ -14,6 +14,8 @@ import { ImageServicesService } from '../services/imageServices/image-services.s
 import { MessageAlert } from '../modelos/tables/messageAlert';
 import { StraightSwap } from '../modelos/tables/straightSwap';
 
+const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81];
+
 @Component({
   selector: 'app-synchronization',
   templateUrl: './synchronization.component.html',
@@ -297,8 +299,7 @@ export class SynchronizationComponent implements OnInit {
     }
 
     if (this.user.catalogo) {
-      const tablasCatalogo = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74];
-      this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCatalogo.includes(id));
+      this.tableKeyOrder = this.tableKeyOrder.filter(id => TABLAS_CATALOGO.includes(id));
     }
 
     this.recomputeProgressStep();
@@ -789,8 +790,7 @@ export class SynchronizationComponent implements OnInit {
 
       ///DEFINIR QUE TABLAS LLEVA EL ROL CATALOGO
       if (this.user.catalogo) {
-        const tablasCatalogo = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 53, 59, 60, 72, 74]; // ejemplo, ajusta según tu lógica
-        this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCatalogo.includes(id));
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => TABLAS_CATALOGO.includes(id));
         this.N = Object.keys(this.tableKeyMap).length;
         this.PROGRESS = 1 / this.N;
         this.BUFF = 1 / this.N;

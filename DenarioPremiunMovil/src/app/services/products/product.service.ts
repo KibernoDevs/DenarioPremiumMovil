@@ -86,9 +86,26 @@ export class ProductService {
 
   /**
    * Copia estado desde `PedidosService` (no inyectarlo aquí: evita ciclo DI vía ReturnDatabaseService → ProductService → Pedidos).
+   * Si pedidos no inicializó datos de catálogo, ejecuta `ped.setup()` como contingencia.
    */
-  syncOrderPresentationFromPedidos(ped: PedidosService): void {
-    this.catalogOrderPresentationTags = new Map(ped.tags);
+  async syncOrderPresentationFromPedidos(ped: PedidosService): Promise<void> {
+    await this.ensureCatalogPresentationReady(ped);
+    this.applyCatalogFlagsFallback(ped);
+    this.copyCatalogSnapshotFromPedidos(ped);
+  }
+
+  private async ensureCatalogPresentationReady(ped: PedidosService): Promise<void> {
+    ped.getConfig();
+    if (ped.isCatalogDataReady()) {
+      return;
+    }
+    if (!ped.empresaSeleccionada?.idEnterprise) {
+      return;
+    }
+    await ped.setup();
+  }
+
+  private applyCatalogFlagsFallback(ped: PedidosService): void {
     this.catalogShowProductImages = !!ped.showProductImages;
     this.catalogDisplayProductPoints = !!ped.displayProductPoints;
     this.catalogShowStock = !!ped.showStock;
@@ -98,6 +115,10 @@ export class ProductService {
     this.catalogProductMinMul = !!ped.productMinMul;
     this.catalogHideStock0 = !!ped.hideStock0;
     this.catalogHideProdWithoutPrice = !!ped.hideProdWithoutPrice;
+  }
+
+  private copyCatalogSnapshotFromPedidos(ped: PedidosService): void {
+    this.catalogOrderPresentationTags = new Map(ped.tags);
     this.catalogListaPricelist = [...ped.listaPricelist];
     this.catalogListaList = [...ped.listaList];
     this.catalogListaUnitPriceList = [...ped.listaUnitPriceList];

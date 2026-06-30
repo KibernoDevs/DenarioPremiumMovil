@@ -70,8 +70,7 @@ export class ProductStructuresListComponent  implements OnInit {
     this.empresaSeleccionada = value;
     this.productService.empresaSeleccionada = this.empresaSeleccionada;
     this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-    await this.orderServ.setup();
-    this.productService.syncOrderPresentationFromPedidos(this.orderServ);
+    await this.productService.syncOrderPresentationFromPedidos(this.orderServ);
     this.tpsSeleccionada = {} as TypeProductStructure;
     this.getTypeProductStructures();
   }

@@ -25,10 +25,10 @@
 </ion-header>
 
 <ion-content>
-  <ion-toolbar>
+  <div class="sticky-searchbar">
     <ion-searchbar show-clear-button="always" class="lupamorada" search-icon="search-circle" clear-icon="trash-bin"
-      placeholder="Busqueda..." [debounce]="1000" (ionInput)="handleInput($event)"></ion-searchbar>
-  </ion-toolbar>
+      [placeholder]="searchPlaceholder" [debounce]="1000" (ionInput)="handleInput($event)"></ion-searchbar>
+  </div>
 
   <ion-fab size="small" slot="fixed" vertical="bottom" horizontal="end" *ngIf="rolTransportista">
     <ion-fab-button>

@@ -76,8 +76,8 @@ export class ProductListComponent implements OnInit {
     private cd: ChangeDetectorRef,
   ) { }
 
-  ngOnInit() {
-    this.productService.syncOrderPresentationFromPedidos(this.pedidosService);
+  async ngOnInit() {
+    await this.productService.syncOrderPresentationFromPedidos(this.pedidosService);
 
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {

@@ -102,6 +102,7 @@ export class PedidosService {
   public listaList: List[] = [];
   public listaInfoModalList: List[] = [];
   public listaUnitPriceList: UnitPriceList[] = [];
+  private catalogDataEnterpriseId: number | null = null;
   public ivaList: IvaList[] = [];
   public orderTypeIvaChanged$ = new Subject<void>();
   public carrito: OrderUtil[] = [];
@@ -274,12 +275,17 @@ export class PedidosService {
     return ((this.carrito.length > 0) || this.adjuntoService.hasItems())
   }
 
+  isCatalogDataReady(): boolean {
+    return this.catalogDataEnterpriseId === this.empresaSeleccionada?.idEnterprise;
+  }
+
   /**
    * Carga paralela habitual; catalogCritical garantiza datos mínimos del catálogo (listas, precios, unidades).
    */
   setup(): Promise<void> {
     let idEnterprise = this.empresaSeleccionada.idEnterprise;
     let coEnterprise = this.empresaSeleccionada.coEnterprise;
+    this.catalogDataEnterpriseId = null;
     this.getConfig();
     if (this.monedaSeleccionada == null) {
       this.currencySelection();
@@ -369,7 +375,9 @@ export class PedidosService {
       });
     }
 
-    return Promise.all(catalogCritical).then(() => undefined);
+    return Promise.all(catalogCritical).then(() => {
+      this.catalogDataEnterpriseId = idEnterprise;
+    });
   }
   fillProdMinMulMap() {
     this.listaProdMinMul.forEach((value) => {
