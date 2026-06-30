@@ -1025,6 +1025,9 @@ export class CollectionService {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
+      this.applyCollectionIgtfAmountFields(this.normalizeIgtfPrice(this.montoIgtf));
+      this.syncCollectionDetailsIgtfAmounts();
+      this.syncCollectionIgtfFields();
       this.resolveAutomatedPrepaid(type, index);
       this.syncAddPaymentMethodDisabledState();
       return Promise.resolve(this.createAutomatedPrepaid);
@@ -1043,19 +1046,15 @@ export class CollectionService {
               this.collection.nuValueLocal,
               this.collection.coCurrency,
             );
-            igtfSum += this.resolvePartialPaymentIgtfAmount(detail);
             continue;
           }
           const netAmount = this.resolveDetailNetAmountToPay(detail);
-          const gross = this.resolveDetailGrossBalanceForTotals(detail);
-          const igtfBase = this.getDocumentIgtfBase(detail, gross);
           monto += netAmount;
           montoConversion += this.convertirMonto(
             netAmount,
             this.collection.nuValueLocal,
             this.collection.coCurrency,
           );
-          igtfSum += this.resolveDocumentIgtfAmount(igtfBase);
         }
       } else {
         for (let i = 0; i < this.documentSales.length; i++) {
@@ -1082,14 +1081,8 @@ export class CollectionService {
               this.collection.nuValueLocal,
               this.collection.coCurrency,
             );
-            igtfSum += this.resolvePartialPaymentIgtfAmount(detail);
           } else {
             const netAmount = this.resolveDocumentNetAmountForCalculation(
-              i,
-              detail,
-              this.documentSalesBackup[i],
-            );
-            const igtfBase = this.resolveDocumentIgtfBaseForCalculation(
               i,
               detail,
               this.documentSalesBackup[i],
@@ -1100,38 +1093,34 @@ export class CollectionService {
               this.collection.nuValueLocal,
               this.collection.coCurrency,
             );
-            igtfSum += this.resolveDocumentIgtfAmount(igtfBase);
           }
         }
       }
     }
 
     const netMonto = monto;
+    const shouldCalcEmbeddedIgtf = this.shouldCalculateEmbeddedIgtf();
+    igtfSum = shouldCalcEmbeddedIgtf
+      ? this.resolveDocumentIgtfAmount(netMonto)
+      : 0;
     igtfSum = this.cleanFormattedNumber(this.currencyService.formatNumber(igtfSum));
-    if (this.shouldApplyIgtfToCollection()) {
+    if (shouldCalcEmbeddedIgtf) {
       this.montoIgtf = igtfSum;
       this.montoIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
-
-      if (this.separateIgtf) {
-        if (this.currencyHard) {
-          this.montoIgtfLocal = this.montoIgtf * this.collection.nuValueLocal;
-        }
-
-        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(netMonto));
-      } else {
-        this.montoTotalPagar = this.cleanFormattedNumber(
-          this.currencyService.formatNumber(netMonto + this.montoIgtf),
-        );
-      }
+      this.montoIgtfLocal = 0;
+      this.montoTotalPagar = this.cleanFormattedNumber(
+        this.currencyService.formatNumber(netMonto + this.montoIgtf),
+      );
     } else {
       this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(netMonto));
       this.montoIgtf = 0;
       this.montoIgtfConversion = 0;
+      this.montoIgtfLocal = 0;
     }
 
-    const amountToPayForDifference = this.separateIgtf || !this.shouldApplyIgtfToCollection()
-      ? netMonto
-      : this.cleanFormattedNumber(this.currencyService.formatNumber(netMonto + this.montoIgtf));
+    const amountToPayForDifference = shouldCalcEmbeddedIgtf
+      ? this.cleanFormattedNumber(this.currencyService.formatNumber(netMonto + this.montoIgtf))
+      : netMonto;
 
 
     this.collection.nuAmountPaid = this.montoTotalPagar;
@@ -1139,8 +1128,8 @@ export class CollectionService {
     this.collection.nuAmountFinal = this.montoTotalPagar;
     this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
     this.collection.nuAmountTotal = this.montoTotalPagado;
-    this.collection.nuAmountIgtf = this.montoIgtf;
-    this.collection.nuAmountIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
+    this.applyCollectionIgtfAmountFields(igtfSum);
+    this.syncCollectionDetailsIgtfAmounts();
 
     if (this.coTypeModule == "2") {
       //es retencion
@@ -1156,7 +1145,7 @@ export class CollectionService {
 
       this.montoTotalPagarConversion = this.cleanFormattedNumber(
         this.currencyService.formatNumber(
-          montoConversion + (this.shouldApplyIgtfToCollection() ? this.montoIgtfConversion : 0),
+          montoConversion + (shouldCalcEmbeddedIgtf ? this.montoIgtfConversion : 0),
         ),
       );
     }
@@ -1181,18 +1170,74 @@ export class CollectionService {
     return candidates.find(value => Number.isFinite(value) && value > 0) ?? 0;
   }
 
-  private resolveDetailNetAmountToPay(
+  private findDocumentSaleIndexForDetail(detail: CollectionDetail): number {
+    if (!detail || !Array.isArray(this.documentSales)) {
+      return -1;
+    }
+
+    return this.documentSales.findIndex(doc =>
+      (detail.idDocument != null && doc.idDocument === detail.idDocument)
+      || (detail.coDocument && doc.coDocument === detail.coDocument),
+    );
+  }
+
+  /** Neto esperado sin normalizar abonos persistidos (hoja del árbol de cálculo). */
+  private computeDetailExpectedNet(
     detail: CollectionDetail,
-    backup?: { nuBalance?: number },
+    backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
+    docIndex: number = -1,
   ): number {
     if (detail?.inPaymentPartial === true) {
       return Number(detail.nuAmountPaid ?? 0);
     }
 
+    const index = docIndex >= 0 ? docIndex : this.findDocumentSaleIndexForDetail(detail);
+    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
+    const resolvedBackup = index >= 0 ? (backup ?? this.documentSalesBackup[index]) : backup;
+    const doc = index >= 0 ? this.documentSales[index] : undefined;
+    const isLiveOpen = index >= 0 && this.isOpen && this.indexDocumentSaleOpen === index;
+    const isDocumentSaved = (doc?.isSave === true || detail?.isSave === true) && !isLiveOpen;
+    const deductions = this.getDetailDeductionsForTotals(
+      detail,
+      isDocumentSaved,
+      resolvedBackup,
+      index,
+    );
+
+    return Math.max(0, gross - deductions);
+  }
+
+  /** Neto a pagar del documento: saldo − descuentos − descuentos de cobro − retenciones. */
+  private resolveDetailNetAmountForIgtfBase(
+    detail: CollectionDetail,
+    backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
+    docIndex: number = -1,
+  ): number {
+    return this.computeDetailExpectedNet(detail, backup, docIndex);
+  }
+
+  private resolveDetailNetAmountToPay(
+    detail: CollectionDetail,
+    backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
+  ): number {
+    if (detail?.inPaymentPartial === true) {
+      return Number(detail.nuAmountPaid ?? 0);
+    }
+
+    const docIndex = this.findDocumentSaleIndexForDetail(detail);
     const balance = this.resolveDetailGrossBalanceForTotals(detail, backup);
-    const deductions = this.getDetailDeductionsForTotals(detail, true);
-    const expectedNet = Math.max(0, balance - deductions);
-    const igtfBase = this.getDocumentIgtfBase(detail, balance);
+    const resolvedBackup = docIndex >= 0 ? (backup ?? this.documentSalesBackup[docIndex]) : backup;
+    const doc = docIndex >= 0 ? this.documentSales[docIndex] : undefined;
+    const isLiveOpen = docIndex >= 0 && this.isOpen && this.indexDocumentSaleOpen === docIndex;
+    const isDocumentSaved = (doc?.isSave === true || detail?.isSave === true) && !isLiveOpen;
+    const deductions = this.getDetailDeductionsForTotals(
+      detail,
+      isDocumentSaved,
+      resolvedBackup,
+      docIndex,
+    );
+    const expectedNet = this.computeDetailExpectedNet(detail, backup, docIndex);
+    const igtfBase = expectedNet;
     const persistedPaid = Number(detail?.nuAmountPaid ?? 0);
 
     if (Number.isFinite(persistedPaid) && persistedPaid > 0) {
@@ -1227,92 +1272,28 @@ export class CollectionService {
       return this.resolveDetailNetAmountToPay(detail, backup);
     }
 
-    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
-    const retention = Number(
-      isLiveOpen
-        ? (this.documentSaleOpen?.nuAmountRetention ?? 0)
-        : (doc?.nuAmountRetention ?? detail?.nuAmountRetention ?? backup?.nuAmountRetention ?? 0),
-    );
-    const retention2 = Number(
-      isLiveOpen
-        ? (this.documentSaleOpen?.nuAmountRetention2 ?? 0)
-        : (doc?.nuAmountRetention2 ?? detail?.nuAmountRetention2 ?? backup?.nuAmountRetention2 ?? 0),
-    );
-    const deductions = Number(detail?.nuAmountDiscount ?? 0)
-      + Number(detail?.nuAmountCollectDiscount ?? 0)
-      + retention
-      + retention2;
-    const expectedNet = Math.max(0, gross - deductions);
-    return expectedNet > 0 ? expectedNet : gross;
+    return this.computeDetailExpectedNet(detail, backup, index);
   }
 
   private resolveDocumentIgtfBaseForCalculation(
     index: number,
     detail: CollectionDetail,
-    backup?: { nuBalance?: number },
+    backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
   ): number {
-    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
-    return this.getDocumentIgtfBase(detail, gross);
+    return this.resolveDocumentNetAmountForCalculation(index, detail, backup);
   }
 
   private resolvePersistedIgtfSumFromDocuments(): number {
-    if (!this.shouldApplyIgtfToCollection()) {
+    if (!this.shouldCalculateEmbeddedIgtf()) {
       return 0;
     }
 
-    if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
-      let igtfFromDocuments = 0;
-      for (let i = 0; i < this.documentSales.length; i++) {
-        if (!this.documentSales[i].isSave && !this.documentSales[i].isSelected) {
-          continue;
-        }
-
-        const pos = this.documentSales[i].positionCollecDetails;
-        if (!Number.isInteger(pos) || pos < 0 || pos >= this.collection.collectionDetails.length) {
-          continue;
-        }
-
-        const detail = this.collection.collectionDetails[pos];
-        if (!detail || detail.idDocument !== this.documentSales[i].idDocument) {
-          continue;
-        }
-
-        // Fix IGTF pago parcial: incluir abonos parciales en el acumulador al reabrir cobro persistido.
-        if (detail.inPaymentPartial === true) {
-          igtfFromDocuments += this.resolvePartialPaymentIgtfAmount(detail);
-          continue;
-        }
-
-        const igtfBase = this.resolveDocumentIgtfBaseForCalculation(
-          i,
-          detail,
-          this.documentSalesBackup[i],
-        );
-        igtfFromDocuments += this.resolveDocumentIgtfAmount(igtfBase);
-      }
-
-      if (igtfFromDocuments > 0) {
-        return igtfFromDocuments;
-      }
+    const netSum = this.resolvePersistedNetAmountSum();
+    if (netSum <= 0) {
+      return 0;
     }
 
-    const details = Array.isArray(this.collection?.collectionDetails)
-      ? this.collection.collectionDetails
-      : [];
-
-    if (details.length > 0 && this.isPersistedCollection()) {
-      return details.reduce((sum, detail) => {
-        // Fix IGTF pago parcial: no omitir parciales en reduce de collectionDetails persistidos.
-        if (detail?.inPaymentPartial === true) {
-          return sum + this.resolvePartialPaymentIgtfAmount(detail);
-        }
-        const gross = this.resolveDetailGrossBalanceForTotals(detail);
-        const igtfBase = this.getDocumentIgtfBase(detail, gross);
-        return sum + this.resolveDocumentIgtfAmount(igtfBase);
-      }, 0);
-    }
-
-    return 0;
+    return this.resolveDocumentIgtfAmount(netSum);
   }
 
   private resolvePersistedAmountToPayFromDocuments(): number {
@@ -2946,19 +2927,30 @@ export class CollectionService {
       detail.nuValueLocal = open.nuValueLocal;
       detail.isSave = true;
 
-      if (this.shouldApplyIgtfToCollection()) {
+      if (this.shouldCalculateEmbeddedIgtf()) {
         const gross = this.resolveDetailGrossBalanceForTotals(
           detail,
           this.documentSalesBackup[idx],
         );
-        const igtfBase = this.getDocumentIgtfBase(detail, gross);
-        detail.nuAmountIgtf = this.resolveDocumentIgtfAmount(igtfBase);
+        const payment = this.resolveDocumentPaymentAmount({
+          grossBalance: gross,
+          nuAmountDiscount: detail.nuAmountDiscount,
+          nuAmountCollectDiscount: detail.nuAmountCollectDiscount,
+          nuAmountRetention: open.nuAmountRetention,
+          nuAmountRetention2: open.nuAmountRetention2,
+        });
+        const igtfAmount = payment.igtfAmount;
+        open.igtfAmount = igtfAmount;
+        detail.nuAmountIgtf = igtfAmount;
         detail.nuAmountIgtfConversion = this.convertirMonto(
           detail.nuAmountIgtf,
           this.collection.nuValueLocal,
           this.collection.coCurrency,
         );
-        open.igtfAmount = detail.nuAmountIgtf;
+      } else {
+        detail.nuAmountIgtf = 0;
+        detail.nuAmountIgtfConversion = 0;
+        open.igtfAmount = 0;
       }
 
       // Restablecer explícitamente los montos originales para garantizar que no se alteren
@@ -4212,10 +4204,14 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     return true;
   }
 
+  /** Toggle OFF: IGTF embebido — calcular montos y persistirlos. Toggle ON: solo flag hasIGTF. */
+  shouldCalculateEmbeddedIgtf(): boolean {
+    return this.shouldApplyIgtfToCollection() && !this.separateIgtf;
+  }
+
   shouldDisplayIgtfInTotals(): boolean {
-    return this.shouldApplyIgtfToCollection()
-      && this.normalizeIgtfPrice(this.igtfSelected?.price) > 0
-      && !this.separateIgtf;
+    return this.shouldCalculateEmbeddedIgtf()
+      && this.normalizeIgtfPrice(this.igtfSelected?.price) > 0;
   }
 
   shouldIncludeIgtfInAmountToPay(): boolean {
@@ -4223,7 +4219,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   resolveDocumentIgtfAmount(baseAmount: number): number {
-    if (!this.shouldApplyIgtfToCollection()) {
+    if (!this.shouldCalculateEmbeddedIgtf()) {
       return 0;
     }
 
@@ -4244,14 +4240,24 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     return this.resolveDocumentIgtfAmount(Number(detail?.nuAmountPaid ?? 0));
   }
 
+  /**
+   * Base del IGTF: monto neto a pagar después de descuento del documento,
+   * descuento de cobro y retenciones.
+   */
   getDocumentIgtfBase(
-    detail: { nuAmountDiscount?: number; nuAmountCollectDiscount?: number } | null | undefined,
+    detail: {
+      nuAmountDiscount?: number;
+      nuAmountCollectDiscount?: number;
+      nuAmountRetention?: number;
+      nuAmountRetention2?: number;
+    } | null | undefined,
     grossBalance: number,
   ): number {
-    const baseDeductions = Number(detail?.nuAmountDiscount ?? 0)
-      + Number(detail?.nuAmountCollectDiscount ?? 0);
-    const igtfBase = grossBalance - baseDeductions;
-    return igtfBase > 0 ? igtfBase : Math.max(0, grossBalance);
+    const deductions = Number(detail?.nuAmountDiscount ?? 0)
+      + Number(detail?.nuAmountCollectDiscount ?? 0)
+      + Number(detail?.nuAmountRetention ?? 0)
+      + Number(detail?.nuAmountRetention2 ?? 0);
+    return Math.max(0, grossBalance - deductions);
   }
 
   resolveDocumentPaymentAmount(params: {
@@ -4271,11 +4277,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     const collectDiscount = Number(params.nuAmountCollectDiscount ?? 0);
     const retention = Number(params.nuAmountRetention ?? 0);
     const retention2 = Number(params.nuAmountRetention2 ?? 0);
-    const igtfBase = this.getDocumentIgtfBase(
-      { nuAmountDiscount: faltante, nuAmountCollectDiscount: collectDiscount },
-      gross,
-    );
     const netAfterDeductions = Math.max(0, gross - faltante - collectDiscount - retention - retention2);
+    const igtfBase = netAfterDeductions;
     const igtfAmount = this.resolveDocumentIgtfAmount(igtfBase);
     const amountToPay = this.shouldIncludeIgtfInAmountToPay()
       ? this.resolveAmountToPayWithIgtfFromBase(netAfterDeductions, igtfBase)
@@ -4304,29 +4307,32 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     amountToPay: number;
   } {
     if (detail?.inPaymentPartial === true) {
-      // Fix IGTF pago parcial: columna IGTF en grilla Total (antes hardcodeado a 0).
       const partialAmount = Number(detail.nuAmountPaid ?? 0);
+      const igtfAmount = this.shouldDisplayIgtfInTotals()
+        ? this.resolveDocumentIgtfAmount(partialAmount)
+        : 0;
+      const amountToPay = this.shouldIncludeIgtfInAmountToPay()
+        ? this.cleanFormattedNumber(
+            this.currencyService.formatNumber(partialAmount + igtfAmount),
+          )
+        : partialAmount;
       return {
-        igtfAmount: this.shouldDisplayIgtfInTotals()
-          ? this.resolveDocumentIgtfAmount(partialAmount)
-          : 0,
-        amountToPay: partialAmount,
+        igtfAmount,
+        amountToPay,
       };
     }
 
     const backup = this.resolveCollectionDetailBackup(detail);
-    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
-    const payment = this.resolveDocumentPaymentAmount({
-      grossBalance: gross,
-      nuAmountDiscount: detail.nuAmountDiscount,
-      nuAmountCollectDiscount: detail.nuAmountCollectDiscount,
-      nuAmountRetention: detail.nuAmountRetention,
-      nuAmountRetention2: detail.nuAmountRetention2,
-    });
+    const docIndex = this.findDocumentSaleIndexForDetail(detail);
+    const netAfterDeductions = this.resolveDetailNetAmountForIgtfBase(detail, backup, docIndex);
+    const igtfAmount = this.resolveDocumentIgtfAmount(netAfterDeductions);
+    const amountToPay = this.shouldIncludeIgtfInAmountToPay()
+      ? this.resolveAmountToPayWithIgtfFromBase(netAfterDeductions, netAfterDeductions)
+      : netAfterDeductions;
 
     return {
-      igtfAmount: this.shouldDisplayIgtfInTotals() ? payment.igtfAmount : 0,
-      amountToPay: payment.amountToPay,
+      igtfAmount: this.shouldDisplayIgtfInTotals() ? igtfAmount : 0,
+      amountToPay,
     };
   }
 
@@ -4342,7 +4348,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     );
   }
 
-  /** Solo cuando no hay retenciones: la base del IGTF coincide con el neto. */
+  /** IGTF sobre el monto neto a pagar (después de descuentos y retenciones). */
   resolveAmountToPayWithIgtf(netAmount: number): number {
     const net = Math.max(0, Number(netAmount) || 0);
     return this.resolveAmountToPayWithIgtfFromBase(net, net);
@@ -4426,8 +4432,73 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     if (!this.userCanSelectIGTF) {
       return;
     }
-    this.collection.nuIgtf = this.normalizeIgtfPrice(this.igtfSelected?.price);
+
+    // hasIGTF = pago separado (ON). Montos IGTF solo con toggle OFF (embebido).
     this.collection.hasIGTF = this.separateIgtf;
+    if (this.shouldCalculateEmbeddedIgtf()) {
+      this.collection.nuIgtf = this.normalizeIgtfPrice(this.igtfSelected?.price);
+    } else {
+      this.collection.nuIgtf = 0;
+    }
+  }
+
+  private clearCollectionIgtfAmountFields(): void {
+    this.collection.nuAmountIgtf = 0;
+    this.collection.nuAmountIgtfConversion = 0;
+    this.montoIgtfLocal = 0;
+  }
+
+  private applyCollectionIgtfAmountFields(igtfSum: number): void {
+    if (!this.shouldCalculateEmbeddedIgtf() || igtfSum <= 0) {
+      this.clearCollectionIgtfAmountFields();
+      return;
+    }
+
+    const amount = this.cleanFormattedNumber(this.currencyService.formatNumber(igtfSum));
+    this.collection.nuAmountIgtf = amount;
+    this.collection.nuAmountIgtfConversion = this.convertirMonto(
+      amount,
+      0,
+      this.collection.coCurrency,
+    );
+  }
+
+  private syncCollectionDetailsIgtfAmounts(): void {
+    const details = this.collection?.collectionDetails;
+    if (!Array.isArray(details)) {
+      return;
+    }
+
+    for (const detail of details) {
+      if (!detail) {
+        continue;
+      }
+
+      if (!this.shouldCalculateEmbeddedIgtf()) {
+        detail.nuAmountIgtf = 0;
+        detail.nuAmountIgtfConversion = 0;
+        continue;
+      }
+
+      detail.nuAmountIgtf = this.resolveDetailIgtfAmountForSeparateIgtf(detail);
+      detail.nuAmountIgtfConversion = this.convertirMonto(
+        detail.nuAmountIgtf,
+        this.collection.nuValueLocal,
+        this.collection.coCurrency,
+      );
+    }
+  }
+
+  private resolveDetailIgtfAmountForSeparateIgtf(detail: CollectionDetail): number {
+    const backup = this.resolveCollectionDetailBackup(detail);
+    const docIndex = this.findDocumentSaleIndexForDetail(detail);
+    const igtfBase = this.resolveDetailNetAmountForIgtfBase(detail, backup, docIndex);
+    return this.resolveDocumentIgtfAmount(igtfBase);
+  }
+
+  handleSeparateIgtfToggle(): void {
+    this.syncCollectionIgtfFields();
+    this.calculatePayment('', 0, true);
   }
 
   compareIgtfOptions(first: IgtfList | null | undefined, second: IgtfList | null | undefined): boolean {
@@ -4557,6 +4628,21 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     this.syncCollectionIgtfFields();
   }
 
+  private applyDefaultSeparateIgtfToggle(): void {
+    if (!this.userCanSelectIGTF) {
+      this.separateIgtf = false;
+      if (this.collection) {
+        this.collection.hasIGTF = false;
+      }
+      return;
+    }
+
+    this.separateIgtf = this.igtfDefault;
+    if (this.collection) {
+      this.collection.hasIGTF = this.separateIgtf;
+    }
+  }
+
   private resolveSavedIgtfPrice(): number {
     let savedPrice = this.normalizeIgtfPrice(this.collection?.nuIgtf);
     if (savedPrice > 0) {
@@ -4632,13 +4718,14 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       return;
     }
 
-    this.separateIgtf = this.toBooleanFlag(this.collection?.hasIGTF);
-    this.collection.hasIGTF = this.separateIgtf;
-
     if (!this.isPersistedCollection()) {
+      this.applyDefaultSeparateIgtfToggle();
       this.applyDefaultIgtfSelection();
       return;
     }
+
+    this.separateIgtf = this.toBooleanFlag(this.collection?.hasIGTF);
+    this.collection.hasIGTF = this.separateIgtf;
 
     const savedPrice = this.resolveSavedIgtfPrice();
     if (savedPrice > 0 && this.applyIgtfSelectionByPrice(savedPrice)) {
@@ -4897,52 +4984,113 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         })
     }
   }
-  createDocumentSaleIGTF(dbServ: SQLiteObject, collection: Collection) {
-    let igtfDocument = [] as DocumentSale[];
-    let date = this.dateServ.hoyISOFullTime();
-    igtfDocument.push({
+  private buildIgtfDocumentSalePayload(collection: Collection): DocumentSale {
+    const date = this.dateServ.hoyISOFullTime();
+    const igtfAmount = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    return {
       idDocument: 0,
       idClient: collection.idClient,
       coClient: collection.coClient,
       idDocumentSaleType: 4,
-      coDocumentSaleType: "IGTF",
-      daDocument: date.split(" ")[0],
-      daDueDate: date.split(" ")[0],
+      coDocumentSaleType: 'IGTF',
+      daDocument: date.split(' ')[0],
+      daDueDate: date.split(' ')[0],
       nuAmountBase: 0,
       nuAmountDiscount: 0,
       nuAmountTax: 0,
-      nuAmountTotal: collection.nuAmountIgtf,
+      nuAmountTotal: igtfAmount,
       nuAmountPaid: 0,
-      nuBalance: collection.nuAmountIgtf,
+      nuBalance: igtfAmount,
       coCurrency: collection.coCurrency,
       idCurrency: collection.idCurrency,
-      nuDocument: "",
-      txComment: "IGTF " + collection.nuAmountIgtf + " " + collection.coCollection,
-      coDocument: "IGTF-" + date,
+      nuDocument: '',
+      txComment: `IGTF ${igtfAmount} ${collection.coCollection}`,
+      coDocument: `IGTF-${collection.coCollection}`,
       coCollection: collection.coCollection,
       nuValueLocal: collection.nuValueLocal,
       stDocumentSale: 0,
       coEnterprise: collection.coEnterprise,
       idEnterprise: collection.idEnterprise,
-      naType: "IGTF",
+      naType: 'IGTF',
       isSelected: false,
       positionCollecDetails: 0,
       nuAmountRetention: 0,
       nuAmountRetention2: 0,
-      daVoucher: "",
-      nuVaucherRetention: "",
+      daVoucher: '',
+      nuVaucherRetention: '',
       igtfAmount: 0,
       txConversion: 0,
       inPaymentPartial: false,
       historicPaymentPartial: false,
       isSave: false,
-      colorRow: "",
-      daUpdate: "",
+      colorRow: '',
+      daUpdate: '',
       missingRetention: false,
-    });
+    };
+  }
 
-    this.insertDocumentSaleBatch(dbServ, igtfDocument).then((resp) => {
-      console.log("SE GUARDO DOCUMETNO IGTF EN DOCUMETN SALES DESDE COLLECT");
+  private deleteIgtfDocumentSaleByCoDocument(dbServ: SQLiteObject, coDocument: string): Promise<void> {
+    return dbServ.executeSql('DELETE FROM document_st WHERE co_document = ?', [coDocument])
+      .then(() => dbServ.executeSql('DELETE FROM document_sales WHERE co_document = ?', [coDocument]))
+      .then(() => undefined)
+      .catch(err => {
+        console.warn('deleteIgtfDocumentSaleByCoDocument error:', err);
+        return undefined;
+      });
+  }
+
+  private updateExistingIgtfDocumentSale(
+    dbServ: SQLiteObject,
+    coDocument: string,
+    collection: Collection,
+  ): Promise<void> {
+    const igtfAmount = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    const txComment = `IGTF ${igtfAmount} ${collection.coCollection}`;
+    return dbServ.executeSql(
+      'UPDATE document_sales SET nu_amount_total = ?, nu_balance = ?, tx_comment = ? WHERE co_document = ?',
+      [igtfAmount, igtfAmount, txComment, coDocument],
+    ).then(() => undefined);
+  }
+
+  private removeDuplicateIgtfDocumentSales(
+    dbServ: SQLiteObject,
+    coCollection: string,
+    keepCoDocument: string,
+  ): Promise<void> {
+    return dbServ.executeSql(
+      'SELECT co_document FROM document_sales WHERE co_collection = ? AND co_document_sale_type = ? AND co_document != ?',
+      [coCollection, 'IGTF', keepCoDocument],
+    ).then(data => {
+      const deleteTasks: Promise<void>[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        const coDocument = data.rows.item(i).co_document;
+        deleteTasks.push(this.deleteIgtfDocumentSaleByCoDocument(dbServ, coDocument));
+      }
+      return Promise.all(deleteTasks).then(() => undefined);
+    });
+  }
+
+  syncDocumentSaleIGTF(dbServ: SQLiteObject, collection: Collection): Promise<void> {
+    const igtfAmount = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    if (igtfAmount <= 0) {
+      return Promise.resolve();
+    }
+
+    return dbServ.executeSql(
+      'SELECT co_document FROM document_sales WHERE co_collection = ? AND co_document_sale_type = ? ORDER BY rowid ASC',
+      [collection.coCollection, 'IGTF'],
+    ).then(data => {
+      if (data.rows.length > 0) {
+        const coDocument = data.rows.item(0).co_document;
+        return this.updateExistingIgtfDocumentSale(dbServ, coDocument, collection)
+          .then(() => this.removeDuplicateIgtfDocumentSales(dbServ, collection.coCollection, coDocument));
+      }
+
+      const igtfDocument = this.buildIgtfDocumentSalePayload(collection);
+      return this.insertDocumentSaleBatch(dbServ, [igtfDocument]).then(() => undefined);
+    }).catch(err => {
+      console.warn('syncDocumentSaleIGTF error:', err);
+      return undefined;
     });
   }
 
@@ -5012,11 +5160,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       this.syncCollectionIgtfFields();
 
-      if (collection.hasIGTF && action) {
-        //SE DEBE CREAR UN DOCUMENTO DE VENTA TIPO IGTF
-        this.createDocumentSaleIGTF(dbServ, collection);
-      }
+      const igtfDocumentSync = collection.hasIGTF && action
+        ? this.syncDocumentSaleIGTF(dbServ, collection)
+          .then(() => this.getDocumentIGTF(dbServ, collection))
+          .then(() => undefined)
+        : Promise.resolve();
 
+      return igtfDocumentSync.then(() => {
       if (this.isAnticipoCollection(collection)) {
         this.syncAnticipoTotalsBeforePersist();
       } else {
@@ -5172,6 +5322,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         }).catch(e => {
           return Promise.reject(e);
         })
+      });
       });
     })
 
@@ -5997,8 +6148,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   getDocumentIGTF(dbServ: SQLiteObject, collection: Collection) {
     return dbServ.executeSql(
-      'SELECT * FROM document_sales WHERE co_collection = ?', [collection.coCollection
-    ]).then(data => {
+      'SELECT * FROM document_sales WHERE co_collection = ? AND co_document_sale_type = ? ORDER BY rowid ASC LIMIT 1',
+      [collection.coCollection, 'IGTF'],
+    ).then(data => {
       if (data.rows.length > 0) {
         let documentSales = {} as DocumentSale;
         documentSales.idDocument = data.rows.item(0).id_document;

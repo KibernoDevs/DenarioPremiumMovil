@@ -42,7 +42,7 @@
 <!-- LABEL PARA EL PAGO DEL IGTF SEPARADO O NO -->
 @if(this.collectService.shouldShowIgtfControls()){
 <ion-item>
-  <ion-toggle [enableOnOffLabels]="true" labelPlacement="start" checked="{{this.collectService.separateIgtf}}"
+  <ion-toggle [enableOnOffLabels]="true" labelPlacement="start"
     [disabled]="this.collectService.disableCheckIGTF" [(ngModel)]="this.collectService.separateIgtf"
     (ionChange)="separateIgtf()">
     {{this.collectService.collectionTags.get('COB_EMPTY_SEPARATE_IGTF_PAY')}}:

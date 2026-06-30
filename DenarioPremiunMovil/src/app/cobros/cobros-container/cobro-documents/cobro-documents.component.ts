@@ -619,6 +619,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   getIgtfList() {
     this.collectService.restoreCollectionIgtfFields();
+    this.collectService.calculatePayment('', 0, true);
     this.cdr.detectChanges();
   }
 
@@ -648,15 +649,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   separateIgtf() {
-    /* console.log(igtfDefault)
-    this.collectService.separateIgtf = igtfDefault.target.checked; */
-    this.collectService.collection.hasIGTF = this.collectService.separateIgtf;
-    this.collectService.syncCollectionIgtfFields();
-    this.collectService.calculatePayment('', 0, true);
+    this.collectService.handleSeparateIgtfToggle();
     this.refreshOpenDocumentAmountPaidIfNeeded();
     this.cdr.detectChanges();
     if (this.collectService.igtfSelected.price <= 0 && this.collectService.separateIgtf) {
-      //MANDAR MENSAJE DE ERROR, IGTF SEPARADO DEBE SER MAYOR A 0
       this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_IGTF_MAYOR0')!;
       this.alertMessageOpen = true;
     }
