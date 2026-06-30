@@ -314,7 +314,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public get canShowDocumentPagination(): boolean {
-    return this.collectService.documentSalesTotalRows > this.collectService.documentSalesPageSize;
+    return this.documentSalesTotalPages > 1;
   }
 
   public get canGoToPreviousDocumentsPage(): boolean {
@@ -833,13 +833,30 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const detail = Number.isInteger(pos)
       ? cs.collection.collectionDetails?.[pos as number]
       : undefined;
+    const liveRetentions = this.resolveOpenDocumentLiveRetentionTotals();
 
     return {
       grossBalance,
       nuAmountDiscount: detail?.nuAmountDiscount,
       nuAmountCollectDiscount: detail?.nuAmountCollectDiscount,
-      nuAmountRetention: cs.documentSaleOpen?.nuAmountRetention ?? detail?.nuAmountRetention,
-      nuAmountRetention2: cs.documentSaleOpen?.nuAmountRetention2 ?? detail?.nuAmountRetention2,
+      nuAmountRetention: liveRetentions.retention,
+      nuAmountRetention2: liveRetentions.retention2,
+    };
+  }
+
+  private resolveOpenDocumentLiveRetentionTotals(): {
+    retention: number;
+    retention2: number;
+  } {
+    if (this.documentRetentionLines.length > 0) {
+      const total = this.getDocumentRetentionTotal();
+      return { retention: total, retention2: 0 };
+    }
+
+    const cs = this.collectService;
+    return {
+      retention: Number(cs.documentSaleOpen?.nuAmountRetention ?? 0),
+      retention2: Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0),
     };
   }
 
@@ -885,8 +902,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const cs = this.collectService;
-    const retentionIva = Number(cs.documentSaleOpen?.nuAmountRetention ?? 0);
-    const retentionIslr = Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+    const liveRetentions = this.resolveOpenDocumentLiveRetentionTotals();
+    const retentionIva = liveRetentions.retention;
+    const retentionIslr = liveRetentions.retention2;
     const retentionSum = retentionIva + retentionIslr;
     if (retentionSum <= 0) {
       return true;
@@ -1118,8 +1136,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private resolveDocumentPaymentPartialFlag(
-    detail?: { inPaymentPartial?: boolean | string | null },
-    doc?: { inPaymentPartial?: boolean | string | null },
+    detail?: { inPaymentPartial?: boolean | string | null; isSave?: boolean },
+    doc?: { inPaymentPartial?: boolean | string | null; isSave?: boolean },
   ): boolean {
     if (detail != null) {
       return detail.inPaymentPartial === true
@@ -1127,6 +1145,49 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
     return doc?.inPaymentPartial === true
       || String(doc?.inPaymentPartial ?? '').toLowerCase() === 'true';
+  }
+
+  private resolvePartialPaymentForOpenDocument(
+    detail?: { inPaymentPartial?: boolean | string | null; isSave?: boolean },
+    doc?: { inPaymentPartial?: boolean | string | null; isSave?: boolean },
+  ): boolean {
+    const cs = this.collectService;
+    const isPersisted = detail?.isSave === true || doc?.isSave === true;
+    if (isPersisted) {
+      return this.resolveDocumentPaymentPartialFlag(detail, doc);
+    }
+    if (cs.isChangePaymentPartialPersistence) {
+      return cs.isPaymentPartial;
+    }
+    return cs.alwaysPartialPayment;
+  }
+
+  private restoreCollectionPartialPaymentPreference(): void {
+    const cs = this.collectService;
+    if (cs.isChangePaymentPartialPersistence) {
+      return;
+    }
+    cs.isPaymentPartial = cs.alwaysPartialPayment;
+  }
+
+  private applyDefaultPartialPaymentIfNeeded(index: number): void {
+    const cs = this.collectService;
+    if (!cs.alwaysPartialPayment || cs.isChangePaymentPartialPersistence) {
+      return;
+    }
+
+    const pos = cs.documentSaleOpen?.positionCollecDetails;
+    if (index < 0 || !Number.isInteger(pos)) {
+      cs.isPaymentPartial = true;
+      return;
+    }
+
+    this.syncDocumentPaymentPartialState(index, pos as number, true);
+    cs.amountPaid = 0;
+    this.valuePartialPayment = 0;
+    this.centsAmountPaid = 0;
+    this.displayAmountPaid = this.formatFromCents(0);
+    this.disabledSaveButton = true;
   }
 
   private syncDocumentPaymentPartialState(
@@ -1256,7 +1317,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       const difFaltate = cs.collection.collectionDetails?.[positionCollecDetails]?.nuAmountDiscount ?? 0;
       const detailAtPos = cs.collection.collectionDetails?.[positionCollecDetails];
 
-      cs.isPaymentPartial = this.resolveDocumentPaymentPartialFlag(detailAtPos, doc);
+      cs.isPaymentPartial = this.resolvePartialPaymentForOpenDocument(detailAtPos, doc);
 
       if (!doc || !backup) {
         console.warn('calculateDocumentSaleOpen: documento o backup no encontrados, index=', index);
@@ -1442,7 +1503,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.collectService.documentSales[index].isSave) {
         const savedDetailPos = this.collectService.documentSales[index].positionCollecDetails;
         const savedDetail = this.collectService.collection.collectionDetails[savedDetailPos];
-        const isPaymentPartial = this.resolveDocumentPaymentPartialFlag(
+        const isPaymentPartial = this.resolvePartialPaymentForOpenDocument(
           savedDetail,
           this.collectService.documentSales[index],
         );
@@ -1462,7 +1523,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         }
       } else {
         this.collectService.nuBalance = this.collectService.documentSales[index].nuBalance;
-        const defaultPartial = this.collectService.alwaysPartialPayment;
+        const defaultPartial = this.resolvePartialPaymentForOpenDocument(
+          this.collectService.collection.collectionDetails[positionCollecDetails],
+          this.collectService.documentSales[index],
+        );
         this.syncDocumentPaymentPartialState(index, positionCollecDetails, defaultPartial);
         this.valuePartialPayment = 0;
       }
@@ -1522,7 +1586,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.collectService.documentSaleOpen.inPaymentPartial = detail.inPaymentPartial;
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
           this.collectService.nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
-          this.collectService.isPaymentPartial = this.resolveDocumentPaymentPartialFlag(
+          this.collectService.isPaymentPartial = this.resolvePartialPaymentForOpenDocument(
             detail,
             this.collectService.documentSales[index],
           );
@@ -1551,7 +1615,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         );
         if (i !== -1) {
           const detailAtPos = this.collectService.collection.collectionDetails[i];
-          const isPaymentPartial = this.resolveDocumentPaymentPartialFlag(
+          const isPaymentPartial = this.resolvePartialPaymentForOpenDocument(
             detailAtPos,
             this.collectService.documentSales[index],
           );
@@ -1580,10 +1644,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const isReopeningSavedPartial = this.collectService.documentSaleOpen?.isSave === true
       && this.collectService.isPaymentPartial;
 
-    if (this.collectService.alwaysPartialPayment && !isReopeningSavedPartial) {
-      this.partialPay({ target: { checked: true } });
-    } else if (isReopeningSavedPartial) {
+    if (isReopeningSavedPartial) {
       this.syncPersistedPartialPaymentAmount(index);
+    } else {
+      this.applyDefaultPartialPaymentIfNeeded(index);
     }
   }
 
@@ -1647,6 +1711,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.collectService.documentSales[indexDocumentSale].inPaymentPartial = true;
         this.collectService.documentSalesBackup[indexDocumentSale].inPaymentPartial = true;
         this.collectService.documentSalesView[indexDocumentSale].inPaymentPartial = true;
+        if (!this.collectService.isChangePaymentPartialPersistence) {
+          this.collectService.isPaymentPartial = true;
+        }
       }
 
       this.initCollectionDetail(documentSale, indexDocumentSale);
@@ -1918,8 +1985,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.disabledSaveButton)
       this.disabledSaveButton = false;
 
-    if (!this.collectService.documentSaleOpen.inPaymentPartial)
-      this.collectService.isPaymentPartial = false;
+    this.restoreCollectionPartialPaymentPreference();
 
     this.collectService.validNuRetention = false;
     this.collectService.isOpen = action;
@@ -2233,7 +2299,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   partialPay(event: any) {
     this.collectService.isChangePaymentPartial = true;
     this.collectService.isChangePaymentPartialPersistence = true;
-    const isPartialEnabled = event.target.checked;
+    const isPartialEnabled = event.detail?.checked ?? event.target?.checked;
     this.collectService.isPaymentPartial = isPartialEnabled;
     const factor = this.centsFactor();
     const index = this.collectService.indexDocumentSaleOpen;
@@ -2399,7 +2465,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     // Si hay retenciones
-    if (doc.nuAmountRetention || doc.nuAmountRetention2) {
+    const retentionTotal = this.getDocumentRetentionTotal();
+    if (retentionTotal > 0 || doc.nuAmountRetention || doc.nuAmountRetention2) {
       if (!this.validateOpenDocumentRetentionTotals(false)) {
         return;
       }
@@ -2688,11 +2755,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   showDocumentIgtfField(): boolean {
-    const igtfPrice = Number(this.collectService.igtfSelected?.price ?? 0);
-    const conversionCode = this.collectService.currencyConversion?.coCurrency ?? '';
-    return igtfPrice > 0
-      && this.globalConfig.get('userCanSelectIGTF') === 'true'
-      && conversionCode.length > 0;
+    return this.collectService.shouldDisplayIgtfInTotals();
   }
 
   getCurrencyConversionCode(): string {
@@ -4261,8 +4324,18 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   private syncOpenRetentionFromLines(): void {
     const total = this.getDocumentRetentionTotal();
-    this.collectService.documentSaleOpen.nuAmountRetention = total;
-    this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
+    const cs = this.collectService;
+    const index = cs.indexDocumentSaleOpen;
+
+    cs.documentSaleOpen.nuAmountRetention = total;
+    cs.documentSaleOpen.nuAmountRetention2 = 0;
+
+    if (index >= 0) {
+      cs.documentSales[index].nuAmountRetention = total;
+      cs.documentSalesBackup[index].nuAmountRetention = total;
+      cs.documentSales[index].nuAmountRetention2 = 0;
+      cs.documentSalesBackup[index].nuAmountRetention2 = 0;
+    }
   }
 
   private hydrateDocumentRetentionLines(positionCollecDetails: number): void {
@@ -4294,6 +4367,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         }
       });
       this.syncOpenRetentionFromLines();
+      this.finalizeHydratedRetentionAmounts();
       return;
     }
 
@@ -4330,6 +4404,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         }
       });
       this.syncOpenRetentionFromLines();
+      this.finalizeHydratedRetentionAmounts();
+    }
+  }
+
+  private finalizeHydratedRetentionAmounts(): void {
+    if (this.getDocumentRetentionTotal() <= 0) {
+      return;
+    }
+    this.syncOpenRetentionFromLines();
+    if (!this.collectService.isPaymentPartial) {
+      this.setAmountTotal();
     }
   }
 

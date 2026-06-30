@@ -23,6 +23,8 @@
 <!-- LABEL PARA MOSTRAR MONEDA DEL DOCUMENTO-->
 
 @if(this.collectService.documentsSaleComponent){
+<div class="cobro-documents-viewport" [class.cobro-documents-viewport--paginated]="canShowDocumentPagination">
+<div class="cobro-documents-shell">
 @if(this.collectService.shouldShowIgtfControls()){
 <ion-item>
   <ion-label>
@@ -336,9 +338,15 @@
       </div>
     </div>
   </div>
+</div>
 
-  @if(canShowDocumentPagination){
-  <nav class="document-pagination" aria-label="Paginacion de documentos">
+</div>
+}
+
+</div>
+
+@if(canShowDocumentPagination){
+<nav class="document-pagination document-pagination--module-footer" aria-label="Paginacion de documentos">
     <button type="button" class="document-pagination__btn" (click)="goToPreviousDocumentsPage()"
       [disabled]="!canGoToPreviousDocumentsPage" aria-label="Pagina anterior">
       <ion-icon name="chevron-back-outline"></ion-icon>
@@ -356,8 +364,7 @@
       <ion-icon name="chevron-forward-outline"></ion-icon>
     </button>
   </nav>
-  }
-</div>
+}
 </div>
 }
 
@@ -433,8 +440,7 @@
                 <!-- TASA -->
 
                 <!-- IGTF-->
-                @if(this.collectService.shouldApplyIgtfToCollection()
-                && this.collectService.igtfSelected.price > 0){
+                @if(showDocumentIgtfField()){
                 <ion-col>
                   <ion-input label="IGTF {{this.collectService.multiCurrency
                     ? this.collectService.currencyConversion.coCurrency
@@ -1378,7 +1384,6 @@
 </div>
 }
 <!-- MODAL PAYMENTPARTIAL-->
-}
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="alertMessageOpen" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"

@@ -31,40 +31,40 @@
     </div>
 </ion-item-divider>
 
-<div [ngSwitch]="segment">
-    <!-- Pestana General-->
-    <div *ngSwitchCase="'default'">
-        <app-cobro-general></app-cobro-general>
-    </div>
+<div class="cobro-tabs-viewport">
+    <div [ngSwitch]="segment" class="cobro-tabs-switch">
+        <!-- Pestana General-->
+        <div *ngSwitchCase="'default'" class="cobro-tab-panel cobro-tab-panel--scroll">
+            <app-cobro-general></app-cobro-general>
+        </div>
 
-    <!-- Pestana Pagos-->
-    <div *ngSwitchCase="'pagos'" class="cobro-tab-pagos">
-        <app-cobro-pagos></app-cobro-pagos>
-    </div>
+        <!-- Pestana Pagos-->
+        <div *ngSwitchCase="'pagos'" class="cobro-tab-panel cobro-tab-panel--scroll cobro-tab-pagos">
+            <app-cobro-pagos></app-cobro-pagos>
+        </div>
 
-    <!-- Pestana Total -->
-    <div *ngSwitchCase="'total'">
-        <app-cobro-total></app-cobro-total>
-    </div>
+        <!-- Pestana Total -->
+        <div *ngSwitchCase="'total'" class="cobro-tab-panel cobro-tab-panel--scroll">
+            <app-cobro-total></app-cobro-total>
+        </div>
 
-    <!-- Pestana Adjuntos -->
-    <div *ngSwitchCase="'adjuntos'">
-        <div>
+        <!-- Pestana Adjuntos -->
+        <div *ngSwitchCase="'adjuntos'" class="cobro-tab-panel cobro-tab-panel--scroll">
             <app-adjunto #selectorAdjunto></app-adjunto>
         </div>
+
+        <!-- Modal de seleccionar fecha -->
+        <ion-modal [keepContentsMounted]="true" class="fechasModal">
+            <ng-template>
+                <ion-datetime id="datetime" presentation="date" [(ngModel)]="fecha"
+                    (ngModelChange)="getDate()"></ion-datetime>
+            </ng-template>
+        </ion-modal>
     </div>
 
-    <!-- Modal de seleccionar fecha -->
-    <ion-modal [keepContentsMounted]="true" class="fechasModal">
-        <ng-template>
-            <ion-datetime id="datetime" presentation="date" [(ngModel)]="fecha"
-                (ngModelChange)="getDate()"></ion-datetime>
-        </ng-template>
-    </ion-modal>
+    @if (documentsTabMounted) {
+        <div [hidden]="segment !== 'documentos'" class="cobro-tab-panel cobro-tab-panel--documents">
+            <app-cobro-documents #cobroDocuments></app-cobro-documents>
+        </div>
+    }
 </div>
-
-@if (documentsTabMounted) {
-    <div [hidden]="segment !== 'documentos'" class="cobro-tab-panel">
-        <app-cobro-documents #cobroDocuments></app-cobro-documents>
-    </div>
-}

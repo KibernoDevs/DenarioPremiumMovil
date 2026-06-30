@@ -1504,8 +1504,11 @@ export class CollectionService {
       : isDocumentSaved
         ? Number(detail.nuAmountRetention2 ?? 0)
         : Number(doc?.nuAmountRetention2 ?? detail?.nuAmountRetention2 ?? documentBackup?.nuAmountRetention2 ?? 0);
+    const retentionTotal = !isLiveOpen && detail.collectionDetailRetentions?.length
+      ? this.getDetailRetentionTotal(detail)
+      : retention + retention2;
 
-    return Number(detail.nuAmountDiscount ?? 0) + collectDiscount + retention + retention2;
+    return Number(detail.nuAmountDiscount ?? 0) + collectDiscount + retentionTotal;
   }
 
   private hasValidDocumentSalesForSend(): boolean {
@@ -2760,10 +2763,16 @@ export class CollectionService {
     this.documentSalesBackup[index].nuBalance = nuBalance;
     this.documentSales[index].inPaymentPartial = inPaymentPartial;
     this.documentSalesBackup[index].inPaymentPartial = inPaymentPartial;
+    this.documentSaleOpen.inPaymentPartial = inPaymentPartial;
     this.documentSales[index].isSave = isSave;
     this.documentSalesBackup[index].isSave = isSave;
 
     /*  } */
+
+    if (!this.isChangePaymentPartialPersistence) {
+      this.isPaymentPartial = inPaymentPartial === true
+        || String(inPaymentPartial ?? '').toLowerCase() === 'true';
+    }
 
     this.calculatePayment("", 0);
   }
@@ -2873,23 +2882,18 @@ export class CollectionService {
         );
       });
 
-      const total = this.getDetailRetentionTotal(detail);
-      const totalConversion = detail.collectionDetailRetentions.reduce(
-        (sum, line) => sum + Number(line.nuAmountRetentionConversion ?? 0),
-        0
-      );
       const { ivaAmount, islrAmount, ivaConversion, islrConversion } =
         this.resolveDynamicRetentionIvaIslrTotals(detail.collectionDetailRetentions);
 
-      detail.nuAmountRetention = total;
+      detail.nuAmountRetention = ivaAmount;
       detail.nuAmountRetention2 = islrAmount;
-      detail.nuAmountRetentionConversion = totalConversion;
+      detail.nuAmountRetentionConversion = ivaConversion;
       detail.nuAmountRetention2Conversion = islrConversion;
       detail.nuAmountRetentionIvaConversion = ivaConversion;
       detail.nuAmountRetentionIslrConversion = islrConversion;
 
       if (open) {
-        open.nuAmountRetention = total;
+        open.nuAmountRetention = ivaAmount;
         open.nuAmountRetention2 = islrAmount;
       }
       return;
