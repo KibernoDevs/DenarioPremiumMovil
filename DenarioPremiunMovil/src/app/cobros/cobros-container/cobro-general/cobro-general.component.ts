@@ -1550,6 +1550,9 @@ export class CobrosGeneralComponent implements OnInit {
       const nuAmountCollectDiscount = previousDetail?.nuAmountCollectDiscount ?? 0;
       const nuAmountIgtf = previousDetail?.nuAmountIgtf ?? 0;
 
+      const documentCurrency = doc.coCurrency ?? this.collectService.collection.coCurrency;
+      const detailRate = this.collectService.collection.nuValueLocal;
+
       this.collectService.collection.collectionDetails.push({
         idCollectionDetail: previousDetail?.idCollectionDetail ?? null,
         coCollection: this.collectService.collection.coCollection,
@@ -1559,10 +1562,10 @@ export class CobrosGeneralComponent implements OnInit {
         nuVoucherRetention: previousDetail?.nuVoucherRetention ?? "",
         nuAmountRetention: nuAmountRetention,
         nuAmountRetention2: nuAmountRetention2,
-        nuAmountRetentionConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
-        nuAmountRetention2Conversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
-        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
-        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetentionConversion: this.collectService.convertirMonto(nuAmountRetention, detailRate, documentCurrency),
+        nuAmountRetention2Conversion: this.collectService.convertirMonto(nuAmountRetention2, detailRate, documentCurrency),
+        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(nuAmountRetention2, detailRate, documentCurrency),
+        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(nuAmountRetention, detailRate, documentCurrency),
         nuAmountPaid: nuAmountBalance,
         nuAmountPaidConversion: nuAmountBalanceConversion,
         nuAmountDiscount: nuAmountDiscount,
@@ -1578,7 +1581,7 @@ export class CobrosGeneralComponent implements OnInit {
         coTypeDoc: doc.coDocumentSaleType,
         nuValueLocal: this.collectService.collection.nuValueLocal,
         nuAmountIgtf: nuAmountIgtf,
-        nuAmountIgtfConversion: this.collectService.convertirMonto(nuAmountIgtf, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountIgtfConversion: this.collectService.convertirMonto(nuAmountIgtf, detailRate, documentCurrency),
         st: previousDetail?.st ?? 0,
         isSave: previousDetail?.isSave ?? false,
         daVoucher: previousDetail?.daVoucher ?? this.dateServ.onlyDateHoyISO(),
@@ -1589,7 +1592,13 @@ export class CobrosGeneralComponent implements OnInit {
         missingRetention: missingRetention,
         nuAmountCollectDiscountConversion: this.collectService.convertirMonto(nuAmountCollectDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         collectionDetailDiscounts: previousDetail?.collectionDetailDiscounts,
+        collectionDetailRetentions: previousDetail?.collectionDetailRetentions,
       });
+      const newDetailIndex = this.collectService.collection.collectionDetails.length - 1;
+      const newDetail = this.collectService.collection.collectionDetails[newDetailIndex];
+      if (newDetail) {
+        this.collectService.syncDetailRetentionAmountsAndConversions(newDetail, undefined, newDetailIndex);
+      }
       // Actualizar positionCollecDetails en los arrays de documentos
       const newPos = this.collectService.collection.collectionDetails.length - 1;
       const docIndex = this.collectService.documentSales.findIndex(documentSale => documentSale.idDocument === doc.idDocument);

@@ -305,6 +305,8 @@ export class CollectionDetailRetentions {
       obj['nuAmountRetention'],
       obj['nuAmountRetentionConversion'],
       obj['posicion'],
+      obj['nuVoucherRetention'],
+      obj['daVoucherRetention'],
     );
   }
 
@@ -318,6 +320,8 @@ export class CollectionDetailRetentions {
     public nuAmountRetention: number = 0,
     public nuAmountRetentionConversion: number = 0,
     public posicion: number = 0,
+    public nuVoucherRetention: string = "",
+    public daVoucherRetention: string = "",
 
   ) { }
 }

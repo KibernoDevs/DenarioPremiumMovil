@@ -129,6 +129,60 @@ ion-modal.collectDiscounts {
   z-index: 11;
 }
 
+ion-modal.detail-doc-modal {
+  --height: 100%;
+  --width: 100%;
+}
+
+ion-modal.detail-doc-modal::part(content) {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-doc-modal-content {
+  flex: 1 1 auto;
+  --background: #fff;
+}
+
+.detail-doc-modal-content .contenedorModalActividades {
+  padding-bottom: 8px;
+}
+
+.detailDoc-scroll {
+  display: block;
+  width: 100%;
+}
+
+.detail-doc-modal-footer {
+  flex-shrink: 0;
+  z-index: 12;
+  box-shadow: 0 -4px 12px rgba(67, 1, 151, 0.08);
+}
+
+.detail-doc-modal-footer ion-toolbar {
+  --background: #fff;
+  --padding-top: 8px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  --min-height: auto;
+  border-top: 1px solid rgba(67, 1, 151, 0.12);
+}
+
+.detail-doc-modal-footer__grid {
+  width: 100%;
+  padding: 0 5% 4px;
+}
+
+.detail-doc-modal-footer__partial-row {
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.detail-doc-modal-footer__grid ion-row:last-child {
+  margin-top: 4px;
+}
+
 // ...existing code...
 /* oscurecer backdrop del ion-modal */
 .collectDiscounts {
@@ -205,6 +259,16 @@ ion-modal.collectDiscounts {
   font-size: 12px;
   font-weight: 600;
   color: #000000;
+}
+
+.retention-line-block {
+  margin-top: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e8e8e8;
+
+  ion-input {
+    margin-bottom: 4px;
+  }
 }
 
 .retention-amount-item {

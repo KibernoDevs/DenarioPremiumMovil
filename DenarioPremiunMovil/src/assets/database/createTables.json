@@ -579,6 +579,6 @@
     "table": "collection_detail_retentions",
     "name": "collection_detail_retentions",
     "idName": "id_collection_detail_retention",
-    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_retentions(id_collection_detail_retention INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_retention INTEGER, co_collect_retention VARCHAR(80), nu_amount_retention NUMERIC(29,4), nu_amount_retention_conversion NUMERIC(29,4),co_collection VARCHAR(30), posicion INTEGER, co_document VARCHAR(30));"
+    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_retentions(id_collection_detail_retention INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_retention INTEGER, co_collect_retention VARCHAR(80), nu_amount_retention NUMERIC(29,4), nu_amount_retention_conversion NUMERIC(29,4),co_collection VARCHAR(30), posicion INTEGER, co_document VARCHAR(30), nu_voucher_retention VARCHAR(30), da_voucher_retention TIMESTAMP );"
   }
 ]

@@ -1,0 +1,10 @@
+[
+    {
+        "sql": "ALTER TABLE collection_detail_retentions ADD COLUMN nu_voucher_retention VARCHAR(30);",
+        "description": "Se agrega la columna 'nu_voucher_retention' a 'collection_detail_retentions' para almacenar el comprobante de retención por línea."
+    },
+    {
+        "sql": "ALTER TABLE collection_detail_retentions ADD COLUMN da_voucher_retention TIMESTAMP;",
+        "description": "Se agrega la columna 'da_voucher_retention' a 'collection_detail_retentions' para almacenar la fecha del comprobante de retención por línea."
+    }
+]
