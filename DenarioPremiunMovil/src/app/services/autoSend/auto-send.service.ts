@@ -92,11 +92,10 @@ export class AutoSendService implements OnInit {
         this.initTransaction(this.pendingTransaction);
       }
     })
-    this.getPendingTransactionsAttachments().then((result) => {
+    this.getPendingTransactionsAttachments().then(async (result) => {
       console.log("PendingTransactionsAttachments", result);
       this.pendingTransactionsAttachments = result;
       if (this.pendingTransactionsAttachments.length > 0) {
-        // actualizar en memoria la propiedad `cantidad` con el total por coTransaction
         const counts = new Map<string, number>();
         this.pendingTransactionsAttachments.forEach(att => {
           counts.set(att.coTransaction, (counts.get(att.coTransaction) ?? 0) + 1);
@@ -104,7 +103,7 @@ export class AutoSendService implements OnInit {
         this.pendingTransactionsAttachments.forEach(att => {
           att.cantidad = counts.get(att.coTransaction) ?? 0;
         });
-        this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), this.pendingTransactionsAttachments);
+        await this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), this.pendingTransactionsAttachments);
       }
     })
   }
@@ -134,7 +133,7 @@ export class AutoSendService implements OnInit {
           att.cantidad = counts.get(att.coTransaction) ?? 0;
         });
 
-        this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), pendingAttachments);
+        await this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), pendingAttachments);
       }
     } finally {
       this.isProcessingPending = false;
@@ -174,19 +173,63 @@ export class AutoSendService implements OnInit {
 
   private getPendingTransactionsAttachments() {
     let pendingTransactionsAttachments: PendingTransactionsAttachments[] = [];
-    return this.dbService.getDatabase().executeSql(
-      'SELECT * FROM pending_transactions_attachments WHERE id_transaction <> 0;', [
-    ]).then(res => {
+    const sql = `
+      SELECT p.* FROM pending_transactions_attachments p
+      WHERE p.id_transaction <> 0
+      OR (
+        p.id_transaction = 0
+        AND (
+          (p.na_transaction = 'cobros' AND EXISTS (
+            SELECT 1 FROM collections c
+            WHERE c.co_collection = p.co_transaction AND c.id_collection > 0
+          ))
+          OR (p.na_transaction = 'pedidos' AND EXISTS (
+            SELECT 1 FROM orders o
+            WHERE o.co_order = p.co_transaction AND o.st_delivery = 1
+          ))
+          OR (p.na_transaction = 'visitas' AND EXISTS (
+            SELECT 1 FROM visits v
+            WHERE v.co_visit = p.co_transaction AND v.id_visit > 0
+          ))
+          OR (p.na_transaction = 'clientes' AND EXISTS (
+            SELECT 1 FROM potential_clients pc
+            WHERE pc.co_client = p.co_transaction AND pc.id_client > 0
+          ))
+          OR (p.na_transaction = 'devoluciones' AND EXISTS (
+            SELECT 1 FROM returns r
+            WHERE r.co_return = p.co_transaction AND r.id_return > 0
+          ))
+          OR (p.na_transaction = 'inventarios' AND EXISTS (
+            SELECT 1 FROM client_stocks cs
+            WHERE cs.co_client_stock = p.co_transaction AND cs.id_client_stock > 0
+          ))
+          OR (p.na_transaction = 'depositos' AND EXISTS (
+            SELECT 1 FROM deposits d
+            WHERE d.co_deposit = p.co_transaction AND d.id_deposit > 0
+          ))
+        )
+      )
+    `;
+    return this.dbService.getDatabase().executeSql(sql, []).then(async res => {
       for (var i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        let idTransaction = Number(row.id_transaction ?? 0);
+        if (idTransaction <= 0) {
+          idTransaction = await this.adjuntoService.resolveServerTransactionId(
+            this.dbService.getDatabase(),
+            row.co_transaction,
+            row.na_transaction,
+          );
+        }
         pendingTransactionsAttachments.push({
-          naAttachment: res.rows.item(i).na_attachment,
-          idTransaction: res.rows.item(i).id_transaction,
-          coTransaction: res.rows.item(i).co_transaction,
-          type: res.rows.item(i).type,
-          naTransaction: res.rows.item(i).na_transaction,
-          position: res.rows.item(i).position,
+          naAttachment: row.na_attachment,
+          idTransaction,
+          coTransaction: row.co_transaction,
+          type: row.type,
+          naTransaction: row.na_transaction,
+          position: row.position,
           cantidad: 0
-        })
+        });
       }
       return pendingTransactionsAttachments;
     }).catch(e => {
@@ -857,117 +900,96 @@ export class AutoSendService implements OnInit {
   }
 
   async updateTransaction(coTransaction: string, idTransaction: number, type: string) {
-
     const updatePendingTransactionsAttachments = 'UPDATE pending_transactions_attachments SET id_transaction = ? WHERE co_transaction = ?';
-    await this.dbService.getDatabase().executeSql(updatePendingTransactionsAttachments, [idTransaction, coTransaction])
+    await this.dbService.getDatabase().executeSql(updatePendingTransactionsAttachments, [idTransaction, coTransaction]);
+
+    const db = this.dbService.getDatabase();
 
     switch (type) {
       case 'potentialClient': {
-        this.dbService.getDatabase()!.executeSql(
+        await db.executeSql(
           'UPDATE potential_clients SET id_client = ?, st_potential_client = ? WHERE co_client = ?',
-          [idTransaction, CLIENT_POTENTIAL_STATUS_SENT, coTransaction]
-        ).then(res => {
-          console.log("UPDATE EXITOSO ", res);
-          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "clientes", coTransaction);
-        }).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        })
+          [idTransaction, CLIENT_POTENTIAL_STATUS_SENT, coTransaction],
+        );
+        console.log('UPDATE EXITOSO potentialClient', coTransaction);
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'clientes', coTransaction);
         break;
       }
 
       case 'visit': {
-
-        this.dbService.getDatabase().executeSql("UPDATE incidences SET id_visit = ?  WHERE co_visit = ?", [idTransaction, coTransaction]).then(res => {
-
-          console.log("UPDATE EXITOSO ", res);
-          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "visitas", coTransaction);
-        }).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        });
-
-        this.dbService.getDatabase().executeSql(
-          'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
-        ).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        });
+        await db.executeSql('UPDATE incidences SET id_visit = ? WHERE co_visit = ?', [idTransaction, coTransaction]);
+        await db.executeSql(
+          'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?',
+          [idTransaction, VISIT_STATUS_VISITED, coTransaction],
+        );
+        console.log('UPDATE EXITOSO visit', coTransaction);
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'visitas', coTransaction);
         break;
       }
 
-      case 'order':
-        this.dbService.getDatabase().executeSql(
-          'UPDATE orders SET id_order = ?, st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
-        ).then(res => {
-          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "pedidos", coTransaction);
-          void this.dbService.getDatabase().executeSql(
-            'UPDATE client_stocks SET id_order = ? WHERE co_order = ?',
-            [idTransaction, coTransaction],
-          ).catch(e => console.log('UPDATE client_stocks.id_order vínculo', e));
-        })
+      case 'order': {
+        await db.executeSql(
+          'UPDATE orders SET id_order = ?, st_delivery = ? WHERE co_order = ?',
+          [idTransaction, DELIVERY_STATUS_SENT, coTransaction],
+        );
+        await db.executeSql(
+          'UPDATE client_stocks SET id_order = ? WHERE co_order = ?',
+          [idTransaction, coTransaction],
+        ).catch(e => console.log('UPDATE client_stocks.id_order vínculo', e));
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'pedidos', coTransaction);
         break;
+      }
 
       case 'updateaddress': {
-        this.dbService.getDatabase().executeSql(
+        await db.executeSql(
           'UPDATE user_address_clients SET id_user_address_client = ?, status = ? WHERE co_user_address_client = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
-        ).then(res => {
-          console.log("UPDATE EXITOSO ", res);
-        }).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        })
+          [idTransaction, DELIVERY_STATUS_SENT, coTransaction],
+        );
+        console.log('UPDATE EXITOSO updateaddress', coTransaction);
         break;
       }
 
       case 'return': {
-        this.dbService.getDatabase().executeSql(
+        await db.executeSql(
           'UPDATE returns SET id_return = ?, st_delivery = ? WHERE co_return = ?',
-          [idTransaction, 1, coTransaction]
-        ).then(res => {
-          console.log("UPDATE EXITOSO ", res);
-
-          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "devoluciones", coTransaction);
-
-        }).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        })
+          [idTransaction, 1, coTransaction],
+        );
+        console.log('UPDATE EXITOSO return', coTransaction);
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'devoluciones', coTransaction);
         break;
       }
 
       case 'clientStock': {
-        await this.dbService.getDatabase().executeSql(
+        await db.executeSql(
           'UPDATE client_stocks SET id_client_stock = ?, st_delivery = ? WHERE co_client_stock = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          [idTransaction, DELIVERY_STATUS_SENT, coTransaction],
         );
-        console.log("UPDATE EXITOSO ", coTransaction);
-        this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "inventarios", coTransaction);
-        await this.dbService.getDatabase().executeSql(
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'inventarios', coTransaction);
+        await db.executeSql(
           'UPDATE orders SET id_client_stock = ? WHERE co_client_stock = ?',
           [idTransaction, coTransaction],
         );
+        console.log('UPDATE EXITOSO clientStock', coTransaction);
         break;
       }
 
       case 'collect': {
-        this.dbService.getDatabase().executeSql(
+        await db.executeSql(
           'UPDATE collections SET id_collection= ?, st_collection= ?, st_delivery = 1 WHERE co_collection = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
-        ).then(res => {
-          console.log("UPDATE EXITOSO ", res);
-          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "cobros", coTransaction);
-        }).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        })
+          [idTransaction, DELIVERY_STATUS_SENT, coTransaction],
+        );
+        console.log('UPDATE EXITOSO collect', coTransaction);
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'cobros', coTransaction);
         break;
       }
+
       case 'deposit': {
-        this.dbService.getDatabase().executeSql(
+        await db.executeSql(
           'UPDATE deposits SET id_deposit= ?, st_deposit= ?, st_delivery = ? WHERE co_deposit= ?',
-          [idTransaction, DEPOSITO_STATUS_SENT, 1, coTransaction]
-        ).then(res => {
-          console.log("UPDATE EXITOSO ", res);
-          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "depositos", coTransaction);
-        }).catch(e => {
-          console.log("UPDATE NO EXITOSO ", e);
-        })
+          [idTransaction, DEPOSITO_STATUS_SENT, 1, coTransaction],
+        );
+        console.log('UPDATE EXITOSO deposit', coTransaction);
+        await this.adjuntoService.sendPhotos(db, idTransaction, 'depositos', coTransaction);
         break;
       }
     }

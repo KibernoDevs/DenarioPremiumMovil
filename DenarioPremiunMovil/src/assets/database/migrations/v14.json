@@ -1,0 +1,14 @@
+[
+    {
+        "sql": "ALTER TABLE pending_transactions_attachments ADD COLUMN attempt_count INTEGER DEFAULT 0;",
+        "description": "Se agrega 'attempt_count' para rastrear reintentos de envío de adjuntos."
+    },
+    {
+        "sql": "ALTER TABLE pending_transactions_attachments ADD COLUMN last_attempt TIMESTAMP;",
+        "description": "Se agrega 'last_attempt' con la fecha del último intento de envío de adjunto."
+    },
+    {
+        "sql": "ALTER TABLE pending_transactions_attachments ADD COLUMN last_error VARCHAR(200);",
+        "description": "Se agrega 'last_error' para almacenar el último error de envío de adjunto."
+    }
+]
