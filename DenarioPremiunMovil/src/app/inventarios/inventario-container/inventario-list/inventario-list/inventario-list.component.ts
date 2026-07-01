@@ -7,6 +7,8 @@ import { InventariosLogicService } from 'src/app/services/inventarios/inventario
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
+import { ItemListaInventarios } from 'src/app/inventarios/item-lista-inventarios';
+import { LOCAL_LIST_PAGE_SIZE, paginateFilteredList } from 'src/app/utils/local-paginated-list.util';
 
 @Component({
   selector: 'app-inventario-list',
@@ -24,18 +26,23 @@ export class InventarioListComponent implements OnInit {
   public valid: Boolean = false;
   public delete: Boolean = false;
   public searchText: string = '';
-  public indice!: number;
+  public displayedItems: ItemListaInventarios[] = [];
+  public scrollDisable = false;
   public messageAlert!: MessageAlert;
+
+  private readonly pageSize = LOCAL_LIST_PAGE_SIZE;
+  private filteredItems: ItemListaInventarios[] = [];
+  private currentPage = 0;
 
   public DELIVERY_STATUS_SAVED = DELIVERY_STATUS_SAVED; // para usar en el html
 
   constructor() { }
 
   ngOnInit() {
-    this.indice = 0;
     this.message.showLoading().then(() => {
       this.inventariosLogicService.getAllClientStock(this.synchronizationServices.getDatabase(),).then(list => {
         this.listClientStock = list;
+        this.resetListPagination();
         this.message.hideLoading();
         if (this.listClientStock.length == 0)
           this.valid = true;
@@ -51,6 +58,40 @@ export class InventarioListComponent implements OnInit {
 
     }
 
+  }
+
+  private matchesSearch(item: ItemListaInventarios): boolean {
+    if (!this.searchText) {
+      return true;
+    }
+    const coClient = (item.coClient ?? '').toLowerCase();
+    const lbClient = (item.lbClient ?? '').toLowerCase();
+    const idRef = item.idClientStock != null ? item.idClientStock.toString() : '';
+    return coClient.includes(this.searchText)
+      || lbClient.includes(this.searchText)
+      || idRef.includes(this.searchText);
+  }
+
+  private buildFilteredItems(): ItemListaInventarios[] {
+    return this.inventariosLogicService.itemListClientStocks.filter(item => this.matchesSearch(item));
+  }
+
+  private resetListPagination(): void {
+    this.filteredItems = this.buildFilteredItems();
+    this.currentPage = 0;
+    this.refreshDisplayedItems();
+  }
+
+  private refreshDisplayedItems(): void {
+    const page = paginateFilteredList(this.filteredItems, this.currentPage, this.pageSize);
+    this.displayedItems = page.items;
+    this.scrollDisable = page.scrollDisable;
+  }
+
+  getOriginalIndex(item: ItemListaInventarios): number {
+    return this.inventariosLogicService.itemListClientStocks.findIndex(
+      stock => stock.coClientStock === item.coClientStock
+    );
   }
 
   deleteClientStock(index: number) {
@@ -71,6 +112,7 @@ export class InventarioListComponent implements OnInit {
         if (response) {
           this.listClientStock.splice(index, 1);
           this.inventariosLogicService.itemListClientStocks.splice(index, 1);
+          this.resetListPagination();
           this.messageAlert = new MessageAlert(
             "Denario Inventarios",
             "¡EL Inventario se borro con exito!"
@@ -128,15 +170,19 @@ export class InventarioListComponent implements OnInit {
     }
   }
 
-  onIonInfinite(ev: any) {
-    this.indice++;
-    setTimeout(() => {
-      (ev as InfiniteScrollCustomEvent).target.complete();
-    }, 800);
+  onIonInfinite(ev: InfiniteScrollCustomEvent) {
+    if (this.scrollDisable) {
+      ev.target.complete();
+      return;
+    }
+    this.currentPage++;
+    this.refreshDisplayedItems();
+    ev.target.complete();
   }
 
   handleInput(event: any) {
-    this.searchText = event.target.value.toLowerCase();
+    this.searchText = (event?.detail?.value ?? event?.target?.value ?? '').toString().toLowerCase().trim();
+    this.resetListPagination();
   }
 
   getStatusOrderName(status: number, naStatus: any, idClientStock: number) {
