@@ -10,18 +10,10 @@
         <p *ngIf="valid">
           NO HAY COBROS
         </p>
-        <!-- Ahora iteramos this.collectService.displayedItems en lugar de itemListaCobros -->
-        <!-- <ion-list *ngFor="let collect of this.collectService.displayedItems; index as i" button detail="false">
-                    <div *ngIf="searchText === ''
-  || (collect.co_client || '').toLowerCase().includes(searchText)
-  || (collect.lb_client || '').toLowerCase().includes(searchText)
-  || (collect.id_collection != null && collect.id_collection.toString().includes(searchText))"> -->
-        <ion-list *ngFor="let collect of this.collectService.displayedItems; index as i" button detail="false">
+        <ion-list *ngFor="let collect of displayedItems; index as i" button detail="false">
           <div>
             <ion-item button detail="true">
-              <!-- Pasamos el índice real en la lista completa usando getOriginalIndex -->
-              <ion-label
-                (click)="onCollectSelect(collect.co_collection, getOriginalIndex(collect), collect.st_delivery)">
+              <ion-label (click)="onCollectSelect(collect.co_collection, getOriginalIndex(collect), collect.st_delivery)">
                 <p>
                   {{this.collectService.collectionTags.get('COB_CLIENTE')}}: {{ collect.co_client }} -
                   {{collect.lb_client}}
@@ -34,16 +26,11 @@
                   {{ getStatusOrderName(collect.st_collection, collect.st_delivery,collect.na_status)
                   }}
 
-                  <!-- Icono info si hay comentario -->
                   <ion-button *ngIf="collect.tx_comment != null && collect.tx_comment !== ''" fill="clear" size="small"
                     (click)="showCollectComment($event, collect.tx_comment)" aria-label="Ver comentario">
                     <ion-icon name="information-circle-outline"></ion-icon>
                   </ion-button>
                 </p>
-                <!--   <p *ngIf="collect.tx_comment != '' && collect.tx_comment != null">
-                                    {{this.collectService.collectionTags.get('COB_DEV_COMMENT')}}: {{
-                                    collect.tx_comment}}
-                                </p> -->
                 <p>
                   {{this.collectService.collectionTags.get('COB_FECHA')}}:
                   {{collect.da_collection.replace('T', ' ') | date:"dd/MM/yyyy"}}
@@ -57,7 +44,7 @@
             </ion-item>
           </div>
         </ion-list>
-        <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" threshold="100px">
+        <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
           <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles">
           </ion-infinite-scroll-content>
         </ion-infinite-scroll>

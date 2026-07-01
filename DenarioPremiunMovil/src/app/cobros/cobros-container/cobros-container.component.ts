@@ -29,6 +29,7 @@ export class CobrosContainerComponent implements OnInit {
 
   public collectValid: Boolean = false;
   public coordenada = '';
+  private isLoadingCollectList = false;
 
   constructor() { }
 
@@ -202,15 +203,21 @@ export class CobrosContainerComponent implements OnInit {
   }
 
   buscarCobro() {
+    if (this.isLoadingCollectList) {
+      return;
+    }
     console.log("buscar cobro");
 
     this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!;
+    this.isLoadingCollectList = true;
     this.messageService.showLoading().then(() => {
       this.collectService.findCollect(this.synchronizationServices.getDatabase()).then(resp => {
         this.messageService.hideLoading();
         this.collectService.cobrosComponent = false;
         this.collectService.cobroListComponent = true;
-      })
+      }).finally(() => {
+        this.isLoadingCollectList = false;
+      });
     });
   }
 }
