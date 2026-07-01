@@ -1536,7 +1536,16 @@ export class CobrosGeneralComponent implements OnInit {
       const nuAmountRetention2 = previousDetail?.nuAmountRetention2 ?? 0;
       const nuAmountDiscount = previousDetail?.nuAmountDiscount ?? 0;
       const nuAmountCollectDiscount = previousDetail?.nuAmountCollectDiscount ?? 0;
-      const nuAmountIgtf = previousDetail?.nuAmountIgtf ?? 0;
+      const detailPayment = this.collectService.buildInitialCollectionDetailPaymentFields(
+        nuAmountBalance!,
+        doc.coCurrency,
+        {
+          nuAmountDiscount,
+          nuAmountCollectDiscount,
+          nuAmountRetention,
+          nuAmountRetention2,
+        },
+      );
 
       this.collectService.collection.collectionDetails.push({
         idCollectionDetail: previousDetail?.idCollectionDetail ?? null,
@@ -1551,8 +1560,8 @@ export class CobrosGeneralComponent implements OnInit {
         nuAmountRetention2Conversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         nuAmountRetentionIslrConversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         nuAmountRetentionIvaConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
-        nuAmountPaid: nuAmountBalance,
-        nuAmountPaidConversion: nuAmountBalanceConversion,
+        nuAmountPaid: detailPayment.nuAmountPaid,
+        nuAmountPaidConversion: detailPayment.nuAmountPaidConversion,
         nuAmountDiscount: nuAmountDiscount,
         nuAmountDiscountConversion: this.collectService.convertirMonto(nuAmountDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         nuAmountDoc: nuAmountTotal!,
@@ -1565,8 +1574,8 @@ export class CobrosGeneralComponent implements OnInit {
         coOriginal: doc.coCurrency,
         coTypeDoc: doc.coDocumentSaleType,
         nuValueLocal: this.collectService.collection.nuValueLocal,
-        nuAmountIgtf: nuAmountIgtf,
-        nuAmountIgtfConversion: this.collectService.convertirMonto(nuAmountIgtf, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountIgtf: detailPayment.nuAmountIgtf,
+        nuAmountIgtfConversion: detailPayment.nuAmountIgtfConversion,
         st: previousDetail?.st ?? 0,
         isSave: previousDetail?.isSave ?? false,
         daVoucher: previousDetail?.daVoucher ?? this.dateServ.onlyDateHoyISO(),
