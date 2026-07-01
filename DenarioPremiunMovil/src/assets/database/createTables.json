@@ -558,7 +558,7 @@
     "name": "pending_transactions_attachments",
     "table": "pendingTransactionsAttachments",
     "idName": "id_pending",
-    "sql": "CREATE TABLE IF NOT EXISTS pending_transactions_attachments(id_pending INTEGER PRIMARY KEY AUTOINCREMENT, na_attachment VARCHAR(30), id_transaction INTEGER, co_transaction VARCHAR(40), type VARCHAR(30), na_transaction VARCHAR(30), position INTEGER);"
+    "sql": "CREATE TABLE IF NOT EXISTS pending_transactions_attachments(id_pending INTEGER PRIMARY KEY AUTOINCREMENT, na_attachment VARCHAR(30), id_transaction INTEGER, co_transaction VARCHAR(40), type VARCHAR(30), na_transaction VARCHAR(30), position INTEGER, attempt_count INTEGER DEFAULT 0, last_attempt TIMESTAMP, last_error VARCHAR(200));"
   },
   {
     "id": 991189,
