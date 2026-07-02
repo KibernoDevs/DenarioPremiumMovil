@@ -3416,6 +3416,10 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     });
 
     try {
+      if (moduleType === '3') {
+        await this.reopenPendingSeparateIgtfDocumentsForClient(dbServ, idClient, idEnterprise);
+      }
+
       if (pagination) {
         this.documentSalesTotalRows = await this.countDocumentsSales(dbServ, query, params);
       }
@@ -3475,7 +3479,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         this.documentSalesPageIds.add(row.id_document);
       }
 
-      if (this.mapDocumentsSales.has(row.id_document)) continue;
+      if (this.mapDocumentsSales.has(row.id_document)) {
+        continue;
+      }
 
       const doc = this.mapRowToDocumentSale(row, isIgtf);
       const backup = Object.assign({}, doc);
@@ -3558,7 +3564,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       };
     }
 
-    // module 3 -> IGTF only
+    // module 3 -> IGTF only (incluye documentos sin fila en document_st)
+    const igtfOpenStateFilter = 'AND (ds.st_document IS NULL OR ds.st_document < 2) ';
     if (currencyIsEmpty) {
       return {
         isIgtf: true,
@@ -3566,7 +3573,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         query:
           'SELECT DISTINCT d.* FROM document_sales d ' +
           'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-          'WHERE (d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF") ' +
+          'WHERE (d.id_client = ? ' + igtfOpenStateFilter +
+          'AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF") ' +
           'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection = ?) ' +
           commonOrder
       };
@@ -3578,7 +3586,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       query:
         'SELECT DISTINCT d.* FROM document_sales d ' +
         'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-        'WHERE (d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ? AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF") ' +
+        'WHERE (d.id_client = ? ' + igtfOpenStateFilter +
+        'AND d.co_currency = ? AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF") ' +
         'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection = ?) ' +
         commonOrder
     };
@@ -5265,6 +5274,59 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     });
   }
 
+  private ensureSeparateIgtfDocumentOpenForPayment(
+    dbServ: SQLiteObject,
+    coDocument: string,
+  ): Promise<void> {
+    const daUpdate = this.dateServ.hoyISOFullTime();
+
+    return dbServ.executeSql(
+      'UPDATE document_st SET st_document = 0, da_update = ? WHERE co_document = ?',
+      [daUpdate, coDocument],
+    ).then(result => {
+      if ((result.rowsAffected ?? 0) > 0) {
+        return undefined;
+      }
+
+      return dbServ.executeSql(
+        'INSERT OR REPLACE INTO document_st (id_document, co_document, st_document, da_update) VALUES (0, ?, 0, ?)',
+        [coDocument, daUpdate],
+      ).then(() => undefined);
+    }).catch(err => {
+      console.warn('ensureSeparateIgtfDocumentOpenForPayment error:', err);
+      return undefined;
+    });
+  }
+
+  /** Reabre documentos IGTF-{cobro} cerrados por error y aún con saldo pendiente. */
+  private reopenPendingSeparateIgtfDocumentsForClient(
+    dbServ: SQLiteObject,
+    idClient: number,
+    idEnterprise: number,
+  ): Promise<void> {
+    const daUpdate = this.dateServ.hoyISOFullTime();
+
+    return dbServ.executeSql(
+      `UPDATE document_st
+       SET st_document = 0, da_update = ?
+       WHERE co_document IN (
+         SELECT d.co_document
+         FROM document_sales d
+         LEFT JOIN document_st ds ON d.co_document = ds.co_document
+         WHERE d.id_client = ?
+           AND d.id_enterprise = ?
+           AND d.co_document_sale_type = 'IGTF'
+           AND d.co_document LIKE 'IGTF-%'
+           AND COALESCE(d.nu_balance, 0) > 0
+           AND COALESCE(ds.st_document, 0) >= 2
+       )`,
+      [daUpdate, idClient, idEnterprise],
+    ).then(() => undefined).catch(err => {
+      console.warn('reopenPendingSeparateIgtfDocumentsForClient error:', err);
+      return undefined;
+    });
+  }
+
   syncDocumentSaleIGTF(dbServ: SQLiteObject, collection: Collection): Promise<boolean> {
     const igtfAmount = this.resolveSeparateIgtfDocumentAmount();
     if (igtfAmount <= 0) {
@@ -5274,25 +5336,36 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     const canonicalCoDocument = this.resolveIgtfDocumentCoDocument(collection.coCollection);
 
     return dbServ.executeSql(
-      `SELECT co_document FROM document_sales
-       WHERE co_collection = ? AND co_document_sale_type = ?`,
-      [collection.coCollection, 'IGTF'],
+      `SELECT id_document, co_document FROM document_sales
+       WHERE co_document = ?
+          OR (co_collection = ? AND co_document_sale_type = ?)`,
+      [canonicalCoDocument, collection.coCollection, 'IGTF'],
     ).then(data => {
-      const existingCoDocuments: string[] = [];
+      const rows: Array<{ idDocument: number; coDocument: string }> = [];
       for (let i = 0; i < data.rows.length; i++) {
-        existingCoDocuments.push(String(data.rows.item(i).co_document ?? ''));
+        rows.push({
+          idDocument: Number(data.rows.item(i).id_document ?? 0),
+          coDocument: String(data.rows.item(i).co_document ?? ''),
+        });
       }
 
-      const keepCoDocument = existingCoDocuments.includes(canonicalCoDocument)
-        ? canonicalCoDocument
-        : (existingCoDocuments[0] ?? canonicalCoDocument);
+      const canonicalRow = rows.find(row => row.coDocument === canonicalCoDocument);
+      const keepCoDocument = canonicalRow?.coDocument
+        ?? rows[0]?.coDocument
+        ?? canonicalCoDocument;
+      const keepIdDocument = this.resolveKeepIdDocumentForCoDocument(
+        canonicalRow?.idDocument ?? rows[0]?.idDocument ?? 0,
+        rows.map(row => row.idDocument),
+      );
 
-      const syncPromise = existingCoDocuments.length > 0
+      const syncPromise = rows.length > 0
         ? this.updateExistingIgtfDocumentSale(dbServ, keepCoDocument, collection)
         : this.insertDocumentSaleBatch(dbServ, [this.buildIgtfDocumentSalePayload(collection)]);
 
       return syncPromise
+        .then(() => this.deleteDocumentSalesByCoDocumentExceptId(dbServ, keepCoDocument, keepIdDocument))
         .then(() => this.removeDuplicateIgtfDocumentSales(dbServ, collection.coCollection, keepCoDocument))
+        .then(() => this.ensureSeparateIgtfDocumentOpenForPayment(dbServ, keepCoDocument))
         .then(() => true);
     }).catch(err => {
       console.warn('syncDocumentSaleIGTF error:', err);
@@ -5300,19 +5373,99 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     });
   }
 
+  private resolveKeepIdDocumentForCoDocument(
+    incomingIdDocument: number,
+    existingIdDocuments: number[],
+  ): number {
+    const incomingId = Number(incomingIdDocument) || 0;
+    const preferredExistingId = existingIdDocuments.find(id => id > 0) ?? existingIdDocuments[0] ?? 0;
+
+    if (incomingId > 0) {
+      return incomingId;
+    }
+
+    return preferredExistingId;
+  }
+
+  private deleteDocumentSalesByCoDocumentExceptId(
+    dbServ: SQLiteObject,
+    coDocument: string,
+    keepIdDocument: number,
+  ): Promise<void> {
+    const normalizedCoDocument = this.normalizeDocumentCoDocumentKey(coDocument);
+    if (!normalizedCoDocument) {
+      return Promise.resolve();
+    }
+
+    return dbServ.executeSql(
+      'DELETE FROM document_st WHERE co_document = ? AND id_document != ?',
+      [normalizedCoDocument, keepIdDocument],
+    ).then(() => dbServ.executeSql(
+      'DELETE FROM document_sales WHERE co_document = ? AND id_document != ?',
+      [normalizedCoDocument, keepIdDocument],
+    )).then(() => undefined);
+  }
+
+  private normalizeDocumentCoDocumentKey(coDocument: unknown): string {
+    return String(coDocument ?? '').trim();
+  }
+
+  private upsertIgtfDocumentSaleReplacingDuplicates(
+    dbServ: SQLiteObject,
+    obj: DocumentSale,
+  ): Promise<void> {
+    const coDocument = this.normalizeDocumentCoDocumentKey(obj.coDocument);
+    let keepIdDocument = Number(obj.idDocument ?? 0);
+
+    const loadExisting = coDocument
+      ? dbServ.executeSql(
+        `SELECT id_document FROM document_sales
+         WHERE co_document = ?
+         ORDER BY CASE WHEN id_document > 0 THEN 0 ELSE 1 END, id_document DESC`,
+        [coDocument],
+      )
+      : Promise.resolve({ rows: { length: 0, item: () => ({ id_document: 0 }) } } as any);
+
+    return loadExisting.then(existing => {
+      if (coDocument && existing.rows.length > 0) {
+        const existingIds: number[] = [];
+        for (let i = 0; i < existing.rows.length; i++) {
+          existingIds.push(Number(existing.rows.item(i).id_document ?? 0));
+        }
+
+        keepIdDocument = this.resolveKeepIdDocumentForCoDocument(keepIdDocument, existingIds);
+        return this.deleteDocumentSalesByCoDocumentExceptId(dbServ, coDocument, keepIdDocument);
+      }
+
+      return undefined;
+    }).then(() => {
+      obj.idDocument = keepIdDocument;
+      return this.insertDocumentSaleBatchDirect(dbServ, [obj]);
+    });
+  }
+
   insertDocumentSaleBatch(dbServ: SQLiteObject, arr: DocumentSale[]) {
-    var statements = [];
-    let insertStatement = 'INSERT OR REPLACE INTO document_sales(' +
+    const tasks = arr.map(obj => this.upsertIgtfDocumentSaleReplacingDuplicates(dbServ, obj));
+    return Promise.all(tasks).then(() => undefined);
+  }
+
+  private insertDocumentSaleBatchDirect(dbServ: SQLiteObject, arr: DocumentSale[]) {
+    if (arr.length === 0) {
+      return Promise.resolve(undefined);
+    }
+
+    const statements = [];
+    const insertStatement = 'INSERT OR REPLACE INTO document_sales(' +
       'id_document,id_client,co_client,id_document_sale_type, co_document_sale_type,' +
       'da_document,da_due_date,nu_amount_base,nu_amount_discount,nu_amount_tax,' +
       'nu_amount_total,nu_balance,id_currency,co_currency,id_enterprise,' +
       'co_enterprise,nu_document,tx_comment,co_document,co_collection,' +
       'nu_value_local,st_document_sale' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
-    for (var i = 0; i < arr.length; i++) {
-      var obj = arr[i];
+    for (let i = 0; i < arr.length; i++) {
+      const obj = arr[i];
       statements.push([insertStatement, [obj.idDocument, obj.idClient, obj.coClient, obj.idDocumentSaleType, obj.coDocumentSaleType,
       obj.daDocument, obj.daDueDate, obj.nuAmountBase, obj.nuAmountDiscount, obj.nuAmountTax,
       obj.nuAmountTotal, obj.nuBalance, obj.idCurrency, obj.coCurrency, obj.idEnterprise,
@@ -5320,25 +5473,26 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       obj.nuValueLocal, obj.stDocumentSale]]);
     }
 
-    return dbServ.sqlBatch(statements).then(res => {
-      var statements = [];
-
-      let statementsDocumentSt = 'INSERT OR REPLACE INTO document_st (' +
+    return dbServ.sqlBatch(statements).then(() => {
+      const documentStStatements = [];
+      const statementsDocumentSt = 'INSERT OR REPLACE INTO document_st (' +
         'id_document, co_document, st_document' +
         ') VALUES (' +
-        '?,?,?)'
-      for (var i = 0; i < arr.length; i++) {
-        var obj = arr[i];
-        statements.push([statementsDocumentSt, [obj.idDocument, obj.coDocument, 0]]);
+        '?,?,?)';
+
+      for (let i = 0; i < arr.length; i++) {
+        const obj = arr[i];
+        documentStStatements.push([statementsDocumentSt, [obj.idDocument, obj.coDocument, 0]]);
       }
-      dbServ.sqlBatch(statements).then(res => {
-        console.log(res)
+
+      return dbServ.sqlBatch(documentStStatements).then(res => {
+        console.log(res);
       }).catch(e => {
         console.log(e);
-      })
+      });
     }).catch(e => {
       console.log(e);
-    })
+    });
   }
 
   deleteCollectionBatch(dbServ: SQLiteObject, deleteCollectionSQL: string, deleteCollectionDetailsSQL: string, deleteCollectionDetailDiscountsSQL: string, deleteCollectionPaymentsSQL: string, coCollection: string) {
@@ -6194,73 +6348,55 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       })
   }
 
+  private isSeparateCollectionIgtfDocument(documentSale: DocumentSale | null | undefined): boolean {
+    if (documentSale?.coDocumentSaleType !== 'IGTF') {
+      return false;
+    }
+
+    return /^IGTF-/i.test(String(documentSale.coDocument ?? ''));
+  }
+
   updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[], coType: string = "") {
-    if (documentSales.length == 0) {
+    const documentsToUpdate = coType === '3'
+      ? documentSales.filter(documentSale => documentSale.isSelected)
+      : documentSales.filter(documentSale => !this.isSeparateCollectionIgtfDocument(documentSale));
+
+    if (documentsToUpdate.length === 0) {
       return Promise.resolve(true);
     }
-    let daUpdate = this.dateServ.hoyISOFullTime();
-    if (documentSales[0].coDocumentSaleType == "IGTF") {
 
-      const updateStatement = "UPDATE document_st SET st_document = 2, da_update = ? WHERE co_document = ?"
-      return dbServ.executeSql(updateStatement,
-        [daUpdate, documentSales[0].coDocument]
-      ).then(data => {
-        console.log("UPDATE DOCUMENTO IGTF", documentSales[0].coDocument)
-      }).catch(e => {
-        console.log(e);
-      })
-    } else {
-      let stamentenDocumentSt = []
-      /*     let insertStatement = 'INSERT OR REPLACE INTO document_st (' +
-            'id_document,co_document,st_document' +
-            ') VALUES (?,?,?)'; */
-      const updateStatement = "UPDATE document_st SET st_document = ?, da_update = ? WHERE co_document = ?"
-      for (var i = 0; i < documentSales.length; i++) {
-        let stDelivery = 0;
-        if (documentSales[i].isSelected) {
-          if (coType == '2') {
-            //es una retencion, no debe marcar el documento como entregado
-            stDelivery = 0;
-          } else if (documentSales[i].inPaymentPartial) { // Prioridad al pago parcial
-            stDelivery = 0;
-          } else if (documentSales[i].missingRetention) { // Luego la retención
-            stDelivery = 2;
-          } else {
-            stDelivery = 2;
-          }
+    const daUpdate = this.dateServ.hoyISOFullTime();
+    const stamentenDocumentSt: unknown[][] = [];
+    const updateStatement = 'UPDATE document_st SET st_document = ?, da_update = ? WHERE co_document = ?';
 
-          stamentenDocumentSt.push([updateStatement, [
-            stDelivery,
-            daUpdate,
-            documentSales[i].coDocument,
-          ]]);
+    for (const documentSale of documentsToUpdate) {
+      let stDelivery = 0;
+      if (documentSale.isSelected) {
+        if (coType == '2') {
+          stDelivery = 0;
+        } else if (documentSale.inPaymentPartial) {
+          stDelivery = 0;
+        } else if (documentSale.missingRetention) {
+          stDelivery = 2;
         } else {
-          stamentenDocumentSt.push([updateStatement, [
-            stDelivery,
-            daUpdate,
-            documentSales[i].coDocument,
-          ]]);
+          stDelivery = 2;
         }
       }
 
-      return dbServ.sqlBatch(stamentenDocumentSt).then(res => {
-        console.log("SE ACTUALIZARON LOS DOCUMENT ST")
-        /*  dbServ.executeSql('SELECT * FROM document_st', []).then(resBloq => {
-           console.log("DOCUMENT STs", resBloq);
-           return Promise.resolve(true)
-         }).catch(e => {
-           console.log(e);
-           return Promise.resolve(true)
-         }) */
-        setTimeout(() => {
-          return Promise.resolve(true)
-        }, 1000);
-
-      }).catch(e => {
-        console.log(e);
-        return e;
-      })
+      stamentenDocumentSt.push([updateStatement, [
+        stDelivery,
+        daUpdate,
+        documentSale.coDocument,
+      ]]);
     }
+
+    return dbServ.sqlBatch(stamentenDocumentSt).then(() => {
+      setTimeout(() => Promise.resolve(true), 1000);
+      return Promise.resolve(true);
+    }).catch(e => {
+      console.log(e);
+      return e;
+    });
   }
 
 
