@@ -23,11 +23,15 @@ export class ProductosSearchComponent{
   showSearch!: Boolean;
   @Input()
   productStructureSelected!: Boolean;
+  @Input()
+  allowProductReports = false;
 
   @Output()
   viewStructuresClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();
   @Output()
   searchTextChanged: EventEmitter<string> = new EventEmitter<string>();
+  @Output()
+  reportsClicked: EventEmitter<void> = new EventEmitter<void>();
 
   productoService = inject(ProductService);
   messageService = inject(MessageService);
@@ -66,6 +70,10 @@ export class ProductosSearchComponent{
   clearSearch(){
     this.searchText = '';
     this.onSearchTextChanged();
+  }
+
+  onReportsClicked(): void {
+    this.reportsClicked.emit();
   }
 
 }

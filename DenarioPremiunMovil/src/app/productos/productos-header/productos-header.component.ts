@@ -23,6 +23,8 @@ export class ProductosHeaderComponent  implements OnInit {
   showProductStructures!: Boolean;
   @Input()
   showProducts!: Boolean;
+  @Input()
+  showProductReports = false;
 
   @Output()
   onBackClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();
@@ -31,7 +33,7 @@ export class ProductosHeaderComponent  implements OnInit {
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
-    if(this.showProductStructures){
+    if(this.showProductStructures && !this.showProductReports){
       this.navigateToHome();  
     }else{
       this.onBackClicked.emit(true);

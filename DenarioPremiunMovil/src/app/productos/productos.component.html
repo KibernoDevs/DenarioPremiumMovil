@@ -1,10 +1,11 @@
 <productos-header [headerTags]="tags" [showDetail]="showProductDetail" [showProductStructures]="showProductStructures"
-  [showProducts]="showProducts" (onBackClicked)="onBackClicked($event)"></productos-header>
+  [showProducts]="showProducts" [showProductReports]="showProductReports" (onBackClicked)="onBackClicked($event)"></productos-header>
 
 <ion-content>
   <div class="productos-view">
-    <productos-search *ngIf="!showProductDetail" [searchTags]="tags" [mostrarVolver]="showProducts"
+    <productos-search *ngIf="!showProductDetail && !showProductReports" [searchTags]="tags" [mostrarVolver]="showProducts"
       (viewStructuresClicked)="viewStructures($event)" (searchTextChanged)="setSearchText($event)"
+      (reportsClicked)="openProductReports()" [allowProductReports]="allowProductReports"
       [searchText]="searchText" [showSearch]="showSearch" [productStructureSelected]="psSelected"></productos-search>
 
     <product-structures-list *ngIf="showProductStructures" [empresaSeleccionada]="empresaSeleccionada"
@@ -17,5 +18,8 @@
 
     <product-detail *ngIf="showProductDetail" [productDetailTags]="tags" [empresaSeleccionada]="empresaSeleccionada"
       [pSeleccionado]="selectedProduct"></product-detail>
+
+    <productos-reports *ngIf="showProductReports" [empresaSeleccionada]="empresaSeleccionada"
+      [productTags]="tags" (backClicked)="onBackClicked(true)"></productos-reports>
   </div>
 </ion-content>

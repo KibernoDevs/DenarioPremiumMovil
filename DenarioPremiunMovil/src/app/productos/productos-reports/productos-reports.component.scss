@@ -1,0 +1,44 @@
+.productos-reports {
+  padding: 12px 10px 24px;
+}
+
+.reports-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #430197;
+}
+
+.reports-subtitle {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+.reports-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.reports-select {
+  width: 100%;
+  border: 1px solid #430197;
+  border-radius: 25px;
+  margin-bottom: 12px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+}
+
+.reports-actions {
+  margin-top: 10px;
+}
+
+.reports-button {
+  --background: #430197;
+  --border-radius: 25px;
+  --box-shadow: none;
+  font-weight: 600;
+}
