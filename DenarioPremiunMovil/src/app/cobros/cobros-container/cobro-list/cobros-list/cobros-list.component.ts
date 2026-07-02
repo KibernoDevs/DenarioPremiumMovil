@@ -209,6 +209,7 @@ export class CobrosListComponent implements OnInit {
 
           this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
+          this.collectService.sanitizeLoadedSeparateIgtfAmounts(this.collectService.collection);
           this.collectService.getCollectionDetailsDiscounts(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsDiscounts => {
 
 

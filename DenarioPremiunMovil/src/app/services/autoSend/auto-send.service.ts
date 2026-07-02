@@ -353,6 +353,8 @@ export class AutoSendService implements OnInit {
       request.collection.collectionPayments = await this.collectionService.getCollectionPayments(db, coTransaction);
     }
 
+    this.collectionService.sanitizeLoadedSeparateIgtfAmounts(request.collection);
+
     const payments = request.collection?.collectionPayments ?? [];
     const details = request.collection?.collectionDetails ?? [];
     let send = true;

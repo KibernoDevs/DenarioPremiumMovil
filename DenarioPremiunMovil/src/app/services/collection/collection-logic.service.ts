@@ -4125,8 +4125,15 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       && this.normalizeIgtfPrice(this.igtfSelected?.price) > 0;
   }
 
+  /** Solo con toggle OFF (IGTF embebido) el monto a pagar incluye el impuesto. */
   shouldIncludeIgtfInAmountToPay(): boolean {
-    return this.shouldDisplayIgtfInTotals();
+    return this.shouldCalculateEmbeddedIgtf()
+      && this.normalizeIgtfPrice(this.igtfSelected?.price) > 0;
+  }
+
+  /** Solo en modo embebido el móvil persiste `nuAmountIgtf`; en pago separado lo calcula el backend. */
+  shouldPersistIgtfAmountOnMobile(): boolean {
+    return this.shouldCalculateEmbeddedIgtf();
   }
 
   resolveDocumentIgtfAmount(baseAmount: number): number {
@@ -4361,6 +4368,19 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       return;
     }
 
+    if (this.separateIgtf) {
+      const computedIgtf = this.resolvePersistedIgtfSumFromDocuments();
+      if (computedIgtf > 0) {
+        this.montoIgtf = this.cleanFormattedNumber(this.currencyService.formatNumber(computedIgtf));
+        this.montoIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
+      } else {
+        this.montoIgtf = 0;
+        this.montoIgtfConversion = 0;
+      }
+      this.clearMobileIgtfAmountFields();
+      return;
+    }
+
     const savedIgtfAmount = this.normalizeIgtfPrice(this.collection?.nuAmountIgtf);
     if (savedIgtfAmount <= 0) {
       this.montoIgtf = 0;
@@ -4394,13 +4414,47 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   private clearCollectionIgtfAmountFields(): void {
+    if (!this.collection) {
+      return;
+    }
+
     this.collection.nuAmountIgtf = 0;
     this.collection.nuAmountIgtfConversion = 0;
     this.montoIgtfLocal = 0;
   }
 
+  private clearCollectionDetailsIgtfAmountFields(): void {
+    const details = this.collection?.collectionDetails;
+    if (!Array.isArray(details)) {
+      return;
+    }
+
+    for (const detail of details) {
+      if (!detail) {
+        continue;
+      }
+
+      detail.nuAmountIgtf = 0;
+      detail.nuAmountIgtfConversion = 0;
+    }
+  }
+
+  clearMobileIgtfAmountFields(): void {
+    if (this.shouldPersistIgtfAmountOnMobile()) {
+      return;
+    }
+
+    this.clearCollectionIgtfAmountFields();
+    this.clearCollectionDetailsIgtfAmountFields();
+  }
+
   private applyCollectionIgtfAmountFields(igtfSum: number): void {
     if (!this.shouldApplyIgtfToCollection() || igtfSum <= 0) {
+      this.clearCollectionIgtfAmountFields();
+      return;
+    }
+
+    if (!this.shouldPersistIgtfAmountOnMobile()) {
       this.clearCollectionIgtfAmountFields();
       return;
     }
@@ -4425,13 +4479,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         continue;
       }
 
-      if (!this.shouldApplyIgtfToCollection()) {
+      if (!this.shouldApplyIgtfToCollection() || !this.shouldPersistIgtfAmountOnMobile()) {
         detail.nuAmountIgtf = 0;
         detail.nuAmountIgtfConversion = 0;
         continue;
       }
 
-      detail.nuAmountIgtf = this.resolveDetailIgtfAmountForSeparateIgtf(detail);
+      detail.nuAmountIgtf = this.resolveDetailIgtfAmountForEmbeddedIgtf(detail);
       detail.nuAmountIgtfConversion = this.convertirMonto(
         detail.nuAmountIgtf,
         this.collection.nuValueLocal,
@@ -4442,6 +4496,10 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   /** Con IGTF embebido, `nuAmountPaid` del detalle debe incluir neto + IGTF (p. ej. 60 + 3%). */
   private syncCollectionDetailsEmbeddedAmountPaid(): void {
+    if (!this.shouldApplyIgtfToCollection()) {
+      return;
+    }
+
     const details = this.collection?.collectionDetails;
     if (!Array.isArray(details) || !Array.isArray(this.documentSales)) {
       return;
@@ -4488,19 +4546,66 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         this.collection.nuValueLocal,
         documentCurrency,
       );
+
+      if (docIndex >= 0) {
+        this.documentSales[docIndex].nuAmountPaid = detail.nuAmountPaid;
+        this.documentSalesBackup[docIndex].nuAmountPaid = detail.nuAmountPaid;
+      }
     }
   }
 
-  private resolveDetailIgtfAmountForSeparateIgtf(detail: CollectionDetail): number {
+  private resolveDetailIgtfAmountForEmbeddedIgtf(detail: CollectionDetail): number {
     const backup = this.resolveCollectionDetailBackup(detail);
     const docIndex = this.findDocumentSaleIndexForDetail(detail);
     const igtfBase = this.resolveDetailNetAmountForIgtfBase(detail, backup, docIndex);
     return this.resolveDocumentIgtfAmount(igtfBase);
   }
 
+  resolveSeparateIgtfDocumentAmount(): number {
+    if (!this.separateIgtf || !this.shouldApplyIgtfToCollection()) {
+      return 0;
+    }
+
+    const fromDisplay = this.normalizeIgtfPrice(this.montoIgtf);
+    if (fromDisplay > 0) {
+      return fromDisplay;
+    }
+
+    const netSum = this.resolvePersistedNetAmountSum();
+    if (netSum > 0) {
+      return this.resolveDocumentIgtfAmount(netSum);
+    }
+
+    const fromTotal = this.normalizeIgtfPrice(this.montoTotalPagar);
+    if (fromTotal > 0) {
+      return this.resolveDocumentIgtfAmount(fromTotal);
+    }
+
+    return 0;
+  }
+
+  sanitizeLoadedSeparateIgtfAmounts(collection: Collection): void {
+    if (!collection || !this.toBooleanFlag(collection.hasIGTF)) {
+      return;
+    }
+
+    collection.nuAmountIgtf = 0;
+    collection.nuAmountIgtfConversion = 0;
+
+    for (const detail of collection.collectionDetails ?? []) {
+      if (!detail) {
+        continue;
+      }
+
+      detail.nuAmountIgtf = 0;
+      detail.nuAmountIgtfConversion = 0;
+    }
+  }
+
   handleSeparateIgtfToggle(): void {
     this.separateIgtfToggleInitialized = true;
     this.syncCollectionIgtfFields();
+    this.clearMobileIgtfAmountFields();
     this.calculatePayment('', 0, true);
   }
 
@@ -4538,8 +4643,14 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
     this.collection.nuIgtf = this.normalizeIgtfPrice(source.nuIgtf);
     this.collection.hasIGTF = source.hasIGTF;
-    this.collection.nuAmountIgtf = this.normalizeIgtfPrice(source.nuAmountIgtf);
-    this.collection.nuAmountIgtfConversion = this.normalizeIgtfPrice(source.nuAmountIgtfConversion);
+
+    if (this.toBooleanFlag(source.hasIGTF)) {
+      this.collection.nuAmountIgtf = 0;
+      this.collection.nuAmountIgtfConversion = 0;
+    } else {
+      this.collection.nuAmountIgtf = this.normalizeIgtfPrice(source.nuAmountIgtf);
+      this.collection.nuAmountIgtfConversion = this.normalizeIgtfPrice(source.nuAmountIgtfConversion);
+    }
 
     this.syncListCollectFinancialFields(this.collection, source.coCollection);
   }
@@ -5012,7 +5123,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   private buildIgtfDocumentSalePayload(collection: Collection): DocumentSale {
     const date = this.dateServ.hoyISOFullTime();
-    const igtfAmount = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    const igtfAmount = this.resolveSeparateIgtfDocumentAmount();
     const coDocument = this.resolveIgtfDocumentCoDocument(collection.coCollection);
     return {
       idDocument: 0,
@@ -5071,7 +5182,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     coDocument: string,
     collection: Collection,
   ): Promise<void> {
-    const igtfAmount = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    const igtfAmount = this.resolveSeparateIgtfDocumentAmount();
     const txComment = `IGTF ${igtfAmount} ${collection.coCollection}`;
     return dbServ.executeSql(
       'UPDATE document_sales SET nu_amount_total = ?, nu_balance = ?, tx_comment = ? WHERE co_document = ?',
@@ -5111,38 +5222,46 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       ?? 'Este cobro generó un documento IGTF.';
   }
 
-  /** Asegura `collection.nuAmountIgtf` antes de crear/actualizar el documento IGTF separado. */
+  /** Asegura el monto en memoria antes de crear/actualizar el documento IGTF separado. */
   ensureSeparateIgtfAmountBeforePersist(): void {
     if (!this.separateIgtf || !this.shouldApplyIgtfToCollection()) {
       return;
     }
 
-    const existingAmount = this.normalizeIgtfPrice(this.collection?.nuAmountIgtf);
-    if (existingAmount > 0) {
+    if (this.normalizeIgtfPrice(this.montoIgtf) > 0) {
       return;
     }
 
-    const fromDisplay = this.normalizeIgtfPrice(this.montoIgtf);
-    if (fromDisplay > 0) {
-      this.applyCollectionIgtfAmountFields(fromDisplay);
+    const igtfSum = this.resolveSeparateIgtfDocumentAmount();
+    if (igtfSum <= 0) {
       return;
     }
 
-    const netBase = this.normalizeIgtfPrice(this.montoTotalPagar);
-    if (netBase <= 0) {
-      return;
-    }
+    this.montoIgtf = this.cleanFormattedNumber(this.currencyService.formatNumber(igtfSum));
+    this.montoIgtfConversion = this.convertirMonto(igtfSum, 0, this.collection.coCurrency);
+  }
 
-    const igtfSum = this.resolveDocumentIgtfAmount(netBase);
-    if (igtfSum > 0) {
-      this.applyCollectionIgtfAmountFields(igtfSum);
-      this.montoIgtf = igtfSum;
-      this.montoIgtfConversion = this.convertirMonto(igtfSum, 0, this.collection.coCurrency);
-    }
+  private removeSeparateIgtfDocumentsIfPresent(
+    dbServ: SQLiteObject,
+    coCollection: string,
+  ): Promise<void> {
+    return dbServ.executeSql(
+      'SELECT co_document FROM document_sales WHERE co_collection = ? AND co_document_sale_type = ?',
+      [coCollection, 'IGTF'],
+    ).then(data => {
+      const deleteTasks: Promise<void>[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        deleteTasks.push(this.deleteIgtfDocumentSaleByCoDocument(dbServ, data.rows.item(i).co_document));
+      }
+      return Promise.all(deleteTasks).then(() => undefined);
+    }).catch(err => {
+      console.warn('removeSeparateIgtfDocumentsIfPresent error:', err);
+      return undefined;
+    });
   }
 
   syncDocumentSaleIGTF(dbServ: SQLiteObject, collection: Collection): Promise<boolean> {
-    const igtfAmount = this.normalizeIgtfPrice(collection.nuAmountIgtf);
+    const igtfAmount = this.resolveSeparateIgtfDocumentAmount();
     if (igtfAmount <= 0) {
       return Promise.resolve(false);
     }
@@ -5237,6 +5356,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         this.collection.hasAttachments = true;
 
       this.syncCollectionIgtfFields();
+      this.clearMobileIgtfAmountFields();
 
       const shouldCreateSeparateIgtfDocument = this.shouldCreateSeparateIgtfDocumentOnSend(collection);
       if (shouldCreateSeparateIgtfDocument) {
@@ -5252,7 +5372,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
             }
             return this.getDocumentIGTF(dbServ, collection).then(() => undefined);
           })
-        : Promise.resolve();
+        : this.removeSeparateIgtfDocumentsIfPresent(dbServ, collection.coCollection);
 
       return igtfDocumentSync.then(() => {
       if (this.isAnticipoCollection(collection)) {
@@ -6238,6 +6358,10 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.nuAmountDiscountTotal = res.rows.item(0).nu_amount_discount_total == null ? 0 : res.rows.item(0).nu_amount_discount_total;
         collection.nuAmountDiscountTotalConversion = res.rows.item(0).nu_amount_discount_total_conversion == null ? 0 : res.rows.item(0).nu_amount_discount_total_conversion;
         collection.hasIGTF = res.rows.item(0).hasIGTF == undefined ? false : res.rows.item(0).hasIGTF;
+        if (collection.hasIGTF.toString() === 'true' ? true : false) {
+          collection.nuAmountIgtf = 0;
+          collection.nuAmountIgtfConversion = 0;
+        }
         //collection.daVoucher = res.rows.item(0).daVoucher;
         collection.document = {} as DocumentSale;
         collection.coordenada = res.rows.item(0).coordenada;
