@@ -236,8 +236,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       ? this.collectService.documentSalesView
       : this.collectService.documentSales;
     const pageIds = this.collectService.documentSalesPageIds;
+    const selectedDocumentIds = new Set(
+      (this.collectService.collection.collectionDetails ?? [])
+        .map(detail => Number(detail?.idDocument ?? 0))
+        .filter(idDocument => idDocument > 0),
+    );
     const pageSource = pageIds?.size
-      ? source.filter(doc => pageIds.has(doc.idDocument))
+      ? source.filter(doc =>
+        pageIds.has(doc.idDocument)
+        || doc.isSelected
+        || selectedDocumentIds.has(doc.idDocument),
+      )
       : source;
 
     if (!Array.isArray(pageSource) || pageSource.length === 0) {

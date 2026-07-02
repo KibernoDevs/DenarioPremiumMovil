@@ -3503,7 +3503,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       'SELECT DISTINCT d.* FROM document_sales d ' +
       'WHERE d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection = ?)';
     const data = await dbServ.executeSql(query, [coCollection]);
-    this.addDocumentSalesRows(data, isIgtf, false);
+    this.addDocumentSalesRows(data, isIgtf, true);
   }
 
   private buildDocsQuery(opts: {
@@ -3562,22 +3562,24 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     if (currencyIsEmpty) {
       return {
         isIgtf: true,
-        params: [idClient, idEnterprise],
+        params: [idClient, idEnterprise, coCollection],
         query:
           'SELECT DISTINCT d.* FROM document_sales d ' +
           'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+          'WHERE (d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF") ' +
+          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection = ?) ' +
           commonOrder
       };
     }
 
     return {
       isIgtf: true,
-      params: [idClient, coCurrency, idEnterprise],
+      params: [idClient, coCurrency, idEnterprise, coCollection],
       query:
         'SELECT DISTINCT d.* FROM document_sales d ' +
         'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+        'WHERE (d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ? AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF") ' +
+        'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection = ?) ' +
         commonOrder
     };
   }
@@ -3633,7 +3635,10 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   private applyExistingSelection(index: number, doc: DocumentSale, backup: DocumentSale) {
     for (let cd = 0; cd < this.collection.collectionDetails.length; cd++) {
       const detail = this.collection.collectionDetails[cd];
-      if (doc.idDocument !== detail.idDocument) continue;
+      if (doc.idDocument !== detail.idDocument
+        && String(doc.coDocument) !== String(detail.coDocument)) {
+        continue;
+      }
 
       if (!this.isPersistedCollection()) {
         this.disabledSelectCollectMethodDisabled = false;
@@ -5270,16 +5275,19 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
     return dbServ.executeSql(
       `SELECT co_document FROM document_sales
-       WHERE co_document = ?
-          OR (co_collection = ? AND co_document_sale_type = ?)
-       ORDER BY CASE WHEN co_document = ? THEN 0 ELSE 1 END, rowid ASC
-       LIMIT 1`,
-      [canonicalCoDocument, collection.coCollection, 'IGTF', canonicalCoDocument],
+       WHERE co_collection = ? AND co_document_sale_type = ?`,
+      [collection.coCollection, 'IGTF'],
     ).then(data => {
-      const keepCoDocument = data.rows.length > 0
-        ? data.rows.item(0).co_document
-        : canonicalCoDocument;
-      const syncPromise = data.rows.length > 0
+      const existingCoDocuments: string[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        existingCoDocuments.push(String(data.rows.item(i).co_document ?? ''));
+      }
+
+      const keepCoDocument = existingCoDocuments.includes(canonicalCoDocument)
+        ? canonicalCoDocument
+        : (existingCoDocuments[0] ?? canonicalCoDocument);
+
+      const syncPromise = existingCoDocuments.length > 0
         ? this.updateExistingIgtfDocumentSale(dbServ, keepCoDocument, collection)
         : this.insertDocumentSaleBatch(dbServ, [this.buildIgtfDocumentSalePayload(collection)]);
 

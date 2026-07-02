@@ -205,7 +205,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.isOpenCollect = false;
     this.collectService.newCollect = false;
     this.collectService.recentOpenCollect = true;
-    this.collectService.skipDocumentReloadInLoadData = true;
+    this.collectService.skipDocumentReloadInLoadData = this.collectService.coTypeModule !== '3';
     this.collectService.createAutomatedPrepaid = false;
     this.collectService.anticipoAutomatico = [];
     //this.collectService.disabledCurrency = true;
@@ -1454,6 +1454,13 @@ export class CobrosGeneralComponent implements OnInit {
         documentSale[field] = (detail as any)[field];
       }
     });
+
+    documentSale.isSelected = true;
+    documentSale.isSave = detail.isSave ?? true;
+    documentSale.positionCollecDetails = this.collectService.collection.collectionDetails.findIndex(
+      item => item.idDocument === detail.idDocument
+        || String(item.coDocument) === String(detail.coDocument),
+    );
   }
 
   private syncPaymentConversionsForRateChange(): void {
