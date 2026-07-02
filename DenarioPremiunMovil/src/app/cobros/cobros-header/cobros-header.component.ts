@@ -273,18 +273,21 @@ export class CobrosHeaderComponent implements OnInit {
     if (send) {
       this.collectService.sendCollection = true;
       this.collectService.saveSendCollection(coCollection);
-      if (localStorage.getItem("connected") == "true") {
-        this.messageAlert = new MessageAlert(
-          this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
-          this.collectService.collectionTags.get('COB_DENARIO_TO_SEND')!,
-        );
-      } else {
-        this.messageAlert = new MessageAlert(
-          this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
-          this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!,
-        );
 
+      const sendMessage = localStorage.getItem("connected") == "true"
+        ? this.collectService.collectionTags.get('COB_DENARIO_TO_SEND')!
+        : this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!;
+
+      if (this.collectService.lastPersistCreatedSeparateIgtfDocument) {
+        this.collectService.mensaje = `${sendMessage}\n\n${this.collectService.resolveSeparateIgtfDocumentCreatedMessage()}`;
+        this.alertMessageOpen = true;
+        return;
       }
+
+      this.messageAlert = new MessageAlert(
+        this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+        sendMessage,
+      );
       this.messageService.alertModal(this.messageAlert);
     }
 
