@@ -8,19 +8,19 @@
     <!--         <ion-grid [fixed]="true"> -->
     <ion-grid [fixed]="true">
       <!-- IGTF -->
-      @if (this.collectService.shouldDisplayIgtfInTotals() && this.collectService.coTypeModule != '4') {
+      @if (shouldShowTotalizationIgtfSummary()) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
           {{this.collectService.collection.coCurrency}}</ion-col>
-        <ion-col>{{this.currencyService.formatNumber(this.collectService.montoIgtf)}}</ion-col>
+        <ion-col>{{formatTotalizationAmount(this.collectService.montoIgtf)}}</ion-col>
       </ion-row>
       }
 
-      @if (this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.shouldDisplayIgtfInTotals() && this.collectService.coTypeModule != '4') {
+      @if (this.collectService.multiCurrency && this.collectService.showConversion && shouldShowTotalizationIgtfSummary()) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
           {{this.collectService.currencyConversion.coCurrency}}</ion-col>
-        <ion-col>{{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.montoIgtf,this.collectService.collection.nuValueLocal,
+        <ion-col>{{formatTotalizationAmount(this.collectService.convertirMonto(this.collectService.montoIgtf,this.collectService.collection.nuValueLocal,
           this.collectService.collection.coCurrency))}}
         </ion-col>
       </ion-row>
@@ -118,20 +118,24 @@
           size="4">{{this.collectService.collectionTags.get('COB_TIPO')}}</ion-col>
         <ion-col class="titulosBold col" size="7">{{this.collectService.collectionTags.get('COB_NRO_DOC')}}</ion-col>
         <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_MONTO_DOC')}}</ion-col>
+        @if (hasTotalizationColumnAmount('discount')) {
         <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_DEV_FALT')}}</ion-col>
+        }
+        @if (hasTotalizationColumnAmount('retentionIva')) {
         <ion-col class="titulosBold col"
           size="4">{{this.collectService.collectionTags.get('COB_IVA_RETENTION')}}</ion-col>
-        @if (!this.collectService.isRetention) {
+        }
+        @if (!this.collectService.isRetention && hasTotalizationColumnAmount('retentionIslr')) {
         <ion-col class="titulosBold col" size="4">
           {{this.collectService.collectionTags.get('COB_ISLR_RETENTION')}}
         </ion-col>
         }
-        @if (this.collectService.shouldDisplayIgtfInTotals()) {
+        @if (this.collectService.shouldDisplayIgtfInTotals() && hasTotalizationColumnAmount('igtf')) {
         <ion-col class="titulosBold col" size="4">
           {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
         </ion-col>
         }
-        @if(this.collectService.userCanSelectCollectDiscount){
+        @if(this.collectService.userCanSelectCollectDiscount && hasTotalizationColumnAmount('collectDiscount')){
         <ion-col class="titulosBold col" size="4">
           {{this.collectService.collectionTags.get('COB_DESC')}}
         </ion-col>
@@ -148,24 +152,28 @@
           {{collectionDetails.coDocument}}</ion-col>
         <ion-col class="ion-text-center col"
           size="4">{{this.currencyService.formatNumber(collectionDetails.nuAmountDoc)}}</ion-col>
+        @if (hasTotalizationColumnAmount('discount')) {
         <ion-col class="ion-text-center col"
-          size="4">{{this.currencyService.formatNumber(collectionDetails.nuAmountDiscount)}}</ion-col>
+          size="4">{{formatTotalizationAmount(collectionDetails.nuAmountDiscount)}}</ion-col>
+        }
+        @if (hasTotalizationColumnAmount('retentionIva')) {
         <ion-col class="ion-text-center col" size="4">
-          {{this.currencyService.formatNumber(collectionDetails.nuAmountRetention)}}
-        </ion-col>
-        @if (!this.collectService.isRetention) {
-        <ion-col class="ion-text-center col" size="4">
-          {{this.currencyService.formatNumber(collectionDetails.nuAmountRetention2)}}
+          {{formatTotalizationAmount(collectionDetails.nuAmountRetention)}}
         </ion-col>
         }
-        @if (this.collectService.shouldDisplayIgtfInTotals()) {
+        @if (!this.collectService.isRetention && hasTotalizationColumnAmount('retentionIslr')) {
         <ion-col class="ion-text-center col" size="4">
-          {{this.currencyService.formatNumber(detailPayment.igtfAmount)}}
+          {{formatTotalizationAmount(collectionDetails.nuAmountRetention2)}}
         </ion-col>
         }
-        @if(this.collectService.userCanSelectCollectDiscount){
+        @if (this.collectService.shouldDisplayIgtfInTotals() && hasTotalizationColumnAmount('igtf')) {
         <ion-col class="ion-text-center col" size="4">
-          {{this.currencyService.formatNumber(collectionDetails.nuAmountCollectDiscount)}}
+          {{formatTotalizationAmount(detailPayment.igtfAmount)}}
+        </ion-col>
+        }
+        @if(this.collectService.userCanSelectCollectDiscount && hasTotalizationColumnAmount('collectDiscount')){
+        <ion-col class="ion-text-center col" size="4">
+          {{formatTotalizationAmount(collectionDetails.nuAmountCollectDiscount)}}
         </ion-col>
         }
         <ion-col class="ion-text-center col borderInferiorDerecho" size="4">
@@ -600,6 +608,26 @@
     }
     <!-- DETAILS -->
   </ion-accordion-group>
+
+  <ion-grid [fixed]="true">
+    <ion-row>
+      <ion-col size="4" class="titulosBold">
+        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_PAGAR')}}
+        {{this.collectService.collection.coCurrency}}
+      </ion-col>
+      <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagar)}}</ion-col>
+    </ion-row>
+
+    @if (this.collectService.multiCurrency && this.collectService.showConversion) {
+    <ion-row>
+      <ion-col size="4" class="titulosBold">
+        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_PAGAR')}}
+        {{this.collectService.currencyConversion.coCurrency}}
+      </ion-col>
+      <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagarConversion)}}</ion-col>
+    </ion-row>
+    }
+  </ion-grid>
 
 
 
