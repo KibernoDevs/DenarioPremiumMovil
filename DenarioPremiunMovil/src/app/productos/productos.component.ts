@@ -43,7 +43,7 @@ export class ProductosComponent {
   showProducts: Boolean = false;
   showProductDetail: Boolean = false;
   showProductStructures: Boolean = true;
-  showProductReports: Boolean = false;
+  showProductReports = false;
   showSearch: Boolean = true;
   psSelected: Boolean = false;
   productStructureList: ProductStructure[] = [];

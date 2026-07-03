@@ -24,7 +24,7 @@ export class ProductosHeaderComponent  implements OnInit {
   @Input()
   showProducts!: Boolean;
   @Input()
-  showProductReports = false;
+  showProductReports: boolean = false;
 
   @Output()
   onBackClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();

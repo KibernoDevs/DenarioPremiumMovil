@@ -63,7 +63,7 @@ export class ProductReportsService {
     await this.currencyService.setup(db);
     const structureIds = await this.resolveTargetStructureIds(db, options);
     const orderClause = this.buildOrderClause(options.reportType, options.sortField);
-    const whereClause = this.buildWhereClause(structureIds, options.idEnterprise);
+    const whereClause = this.buildWhereClause(structureIds);
     const select = this.buildReportSelectQuery(whereClause, orderClause);
 
     const result = await db.executeSql(select, [options.idEnterprise]);
@@ -176,12 +176,12 @@ export class ProductReportsService {
     };
   }
 
-  private buildWhereClause(structureIds: number[] | null, idEnterprise: number): string {
+  private buildWhereClause(structureIds: number[] | null): string {
     if (!structureIds || structureIds.length === 0) {
-      return `p.id_enterprise = ${idEnterprise}`;
+      return 'p.id_enterprise = ?';
     }
 
-    return `p.id_enterprise = ${idEnterprise} AND p.id_product_structure IN (${structureIds.join(',')})`;
+    return `p.id_enterprise = ? AND p.id_product_structure IN (${structureIds.join(',')})`;
   }
 
   private buildOrderClause(reportType: ProductReportType, sortField: ProductReportSortField): string {
