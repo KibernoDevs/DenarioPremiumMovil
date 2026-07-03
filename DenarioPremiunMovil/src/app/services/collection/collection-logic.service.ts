@@ -1004,7 +1004,7 @@ export class CollectionService {
     const persistedAmountToPay = this.resolvePersistedAmountToPay();
     const persistedAmountToPayConversion = this.resolvePersistedAmountToPayConversion();
 
-    if (preserveAmountsWithoutRecalc && persistedAmountToPay > 0) {
+    if (preserveAmountsWithoutRecalc && persistedAmountToPay > 0 && !this.isRetentionCollection()) {
       monto = persistedAmountToPay;
       montoConversion = persistedAmountToPayConversion;
       this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(persistedAmountToPay));
@@ -1025,6 +1025,7 @@ export class CollectionService {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
+      this.syncCollectionAmountToPayTotalsBeforePersist();
       this.applyCollectionIgtfAmountFields(this.normalizeIgtfPrice(this.montoIgtf));
       this.syncCollectionDetailsIgtfAmounts();
       this.syncCollectionDetailsEmbeddedAmountPaid();
@@ -1129,19 +1130,28 @@ export class CollectionService {
       ? this.cleanFormattedNumber(this.currencyService.formatNumber(netMonto + this.montoIgtf))
       : netMonto;
 
-
-    this.collection.nuAmountPaid = this.montoTotalPagar;
-    this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
-    this.collection.nuAmountFinal = this.montoTotalPagar;
-    this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
-    this.collection.nuAmountTotal = this.montoTotalPagado;
     this.applyCollectionIgtfAmountFields(igtfSum);
     this.syncCollectionDetailsIgtfAmounts();
     this.syncCollectionDetailsEmbeddedAmountPaid();
 
     if (this.coTypeModule == "2") {
-      //es retencion
+      this.syncCollectionDetailsRetentionConversions();
+      const retentionSum = this.resolveRetentionSumFromCollectionDetails();
+      const retentionSumConversion = this.resolveRetentionSumConversionFromCollectionDetails();
+      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(retentionSum));
+      this.montoTotalPagarConversion = this.cleanFormattedNumber(
+        this.currencyService.formatNumber(
+          retentionSumConversion > 0
+            ? retentionSumConversion
+            : this.convertirMonto(
+              retentionSum,
+              this.collection.nuValueLocal,
+              this.collection.coCurrency,
+            ),
+        ),
+      );
       this.collection.nuDifference = 0;
+      this.collection.nuDifferenceConversion = 0;
     }
     else if (this.separateIgtf) {
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
@@ -1159,7 +1169,7 @@ export class CollectionService {
     }
 
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
-    this.collection.nuAmountTotalConversion = this.convertirMonto(this.collection.nuAmountTotal, 0, this.collection.coCurrency);
+    this.syncCollectionAmountToPayTotalsBeforePersist();
     this.syncCollectionIgtfFields();
     this.resolveAutomatedPrepaid(type, index, skipValidateToSend);
     return Promise.resolve(this.createAutomatedPrepaid);
@@ -1413,12 +1423,31 @@ export class CollectionService {
   }
 
   private resolveCollectionAmountToPay(preferredNetSum?: number): number {
+    if (this.isRetentionCollection()) {
+      const retentionSum = this.resolveRetentionSumFromCollectionDetails();
+      if (retentionSum > 0) {
+        return retentionSum;
+      }
+
+      return Number(
+        this.collection?.nuAmountTotal
+        ?? this.collection?.nuAmountFinal
+        ?? this.collection?.nuAmountPaid
+        ?? 0,
+      );
+    }
+
     const netSum = Number(preferredNetSum ?? 0) > 0
       ? Number(preferredNetSum)
       : this.resolvePersistedNetAmountSum();
 
     if (netSum <= 0) {
-      return Number(this.collection?.nuAmountFinal ?? this.collection?.nuAmountPaid ?? 0);
+      return Number(
+        this.collection?.nuAmountTotal
+        ?? this.collection?.nuAmountFinal
+        ?? this.collection?.nuAmountPaid
+        ?? 0,
+      );
     }
 
     if (this.shouldIncludeIgtfInAmountToPay()) {
@@ -1452,12 +1481,36 @@ export class CollectionService {
   }
 
   private resolveCollectionAmountToPayConversion(preferredNetSumConversion?: number): number {
+    if (this.isRetentionCollection()) {
+      const retentionSumConversion = this.resolveRetentionSumConversionFromCollectionDetails();
+      if (retentionSumConversion > 0) {
+        return retentionSumConversion;
+      }
+
+      const retentionSum = this.resolveRetentionSumFromCollectionDetails();
+      if (retentionSum > 0) {
+        return this.convertirMonto(retentionSum, this.collection.nuValueLocal, this.collection.coCurrency);
+      }
+
+      return Number(
+        this.collection?.nuAmountTotalConversion
+        ?? this.collection?.nuAmountFinalConversion
+        ?? this.collection?.nuAmountPaidConversion
+        ?? 0,
+      );
+    }
+
     const netSumConversion = Number(preferredNetSumConversion ?? 0) > 0
       ? Number(preferredNetSumConversion)
       : this.resolvePersistedNetAmountSumConversion();
 
     if (netSumConversion <= 0) {
-      return Number(this.collection?.nuAmountFinalConversion ?? this.collection?.nuAmountPaidConversion ?? 0);
+      return Number(
+        this.collection?.nuAmountTotalConversion
+        ?? this.collection?.nuAmountFinalConversion
+        ?? this.collection?.nuAmountPaidConversion
+        ?? 0,
+      );
     }
 
     if (this.shouldIncludeIgtfInAmountToPay()) {
@@ -1625,7 +1678,158 @@ export class CollectionService {
     return coType === '1';
   }
 
+  private isRetentionCollection(collection?: Collection): boolean {
+    const coType = String(collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '');
+    return coType === '2';
+  }
+
+  private resolveDetailRetentionAmount(detail: CollectionDetail): number {
+    return Number(detail?.nuAmountRetention ?? 0) + Number(detail?.nuAmountRetention2 ?? 0);
+  }
+
+  private resolveRetentionComponentConversion(
+    amount: number,
+    primaryConversion: number | undefined,
+    alternateConversion: number | undefined,
+    rate: number,
+  ): number {
+    const persistedConversion = Number(primaryConversion ?? alternateConversion ?? 0);
+    if (persistedConversion > 0) {
+      return persistedConversion;
+    }
+
+    if (amount <= 0) {
+      return 0;
+    }
+
+    return this.convertirMonto(amount, rate, this.collection.coCurrency);
+  }
+
+  private resolveDetailRetentionAmountConversion(detail: CollectionDetail): number {
+    const rate = Number(detail?.nuValueLocal ?? this.collection.nuValueLocal ?? 0);
+    const ivaAmount = Number(detail?.nuAmountRetention ?? 0);
+    const islrAmount = Number(detail?.nuAmountRetention2 ?? 0);
+
+    return this.resolveRetentionComponentConversion(
+      ivaAmount,
+      detail?.nuAmountRetentionConversion,
+      detail?.nuAmountRetentionIvaConversion,
+      rate,
+    ) + this.resolveRetentionComponentConversion(
+      islrAmount,
+      detail?.nuAmountRetention2Conversion,
+      detail?.nuAmountRetentionIslrConversion,
+      rate,
+    );
+  }
+
+  private syncCollectionDetailsRetentionConversions(): void {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    for (const detail of details) {
+      const rate = Number(detail?.nuValueLocal ?? this.collection.nuValueLocal ?? 0);
+      const ivaAmount = Number(detail?.nuAmountRetention ?? 0);
+      const islrAmount = Number(detail?.nuAmountRetention2 ?? 0);
+      const ivaConversion = this.resolveRetentionComponentConversion(
+        ivaAmount,
+        detail.nuAmountRetentionConversion,
+        detail.nuAmountRetentionIvaConversion,
+        rate,
+      );
+      const islrConversion = this.resolveRetentionComponentConversion(
+        islrAmount,
+        detail.nuAmountRetention2Conversion,
+        detail.nuAmountRetentionIslrConversion,
+        rate,
+      );
+      const retentionTotal = ivaAmount + islrAmount;
+      const retentionTotalConversion = ivaConversion + islrConversion;
+
+      detail.nuAmountRetentionConversion = ivaConversion;
+      detail.nuAmountRetentionIvaConversion = ivaConversion;
+      detail.nuAmountRetention2Conversion = islrConversion;
+      detail.nuAmountRetentionIslrConversion = islrConversion;
+
+      if (retentionTotal > 0) {
+        detail.nuAmountPaid = this.cleanFormattedNumber(
+          this.currencyService.formatNumber(retentionTotal),
+        );
+      }
+
+      if (retentionTotalConversion > 0) {
+        detail.nuAmountPaidConversion = this.cleanFormattedNumber(
+          this.currencyService.formatNumber(retentionTotalConversion),
+        );
+      } else if (retentionTotal > 0) {
+        detail.nuAmountPaidConversion = this.convertirMonto(
+          retentionTotal,
+          rate,
+          this.collection.coCurrency,
+        );
+      }
+    }
+  }
+
+  private resolveRetentionSumFromCollectionDetails(): number {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    return details.reduce(
+      (sum, detail) => sum + this.resolveDetailRetentionAmount(detail),
+      0,
+    );
+  }
+
+  private resolveRetentionSumConversionFromCollectionDetails(): number {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    return details.reduce(
+      (sum, detail) => sum + this.resolveDetailRetentionAmountConversion(detail),
+      0,
+    );
+  }
+
+  private syncRetentionTotalsBeforePersist(): void {
+    this.syncCollectionDetailsRetentionConversions();
+
+    let amountToPay = this.resolveRetentionSumFromCollectionDetails();
+    let amountToPayConversion = this.resolveRetentionSumConversionFromCollectionDetails();
+
+    if (amountToPayConversion <= 0 && amountToPay > 0) {
+      amountToPayConversion = this.convertirMonto(
+        amountToPay,
+        this.collection.nuValueLocal,
+        this.collection.coCurrency,
+      );
+    }
+
+    amountToPay = this.cleanFormattedNumber(this.currencyService.formatNumber(amountToPay));
+    amountToPayConversion = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(amountToPayConversion),
+    );
+
+    this.montoTotalPagar = amountToPay;
+    this.montoTotalPagarConversion = amountToPayConversion;
+    this.collection.nuAmountTotal = amountToPay;
+    this.collection.nuAmountTotalConversion = amountToPayConversion;
+    this.collection.nuAmountFinal = amountToPay;
+    this.collection.nuAmountFinalConversion = amountToPayConversion;
+    this.collection.nuAmountPaid = amountToPay;
+    this.collection.nuAmountPaidConversion = amountToPayConversion;
+    this.collection.nuDifference = 0;
+    this.collection.nuDifferenceConversion = 0;
+  }
+
   private resolveAnticipoPaidSumFromCollectionPayments(): number {
+    return this.resolvePaidSumFromCollectionPayments();
+  }
+
+  private resolvePaidSumFromCollectionPayments(): number {
     const payments = Array.isArray(this.collection?.collectionPayments)
       ? this.collection.collectionPayments
       : [];
@@ -1633,6 +1837,57 @@ export class CollectionService {
       (sum, payment) => sum + Number(payment?.nuAmountPartial ?? 0),
       0,
     );
+  }
+
+  private syncRuntimePaidTotalsFromPayments(): void {
+    this.syncMontosPagadosFromPayments();
+
+    if (Number(this.montoTotalPagado ?? 0) <= 0) {
+      const paidFromPayments = this.resolvePaidSumFromCollectionPayments();
+      if (paidFromPayments > 0) {
+        this.montoTotalPagado = this.cleanFormattedNumber(
+          this.currencyService.formatNumber(paidFromPayments),
+        );
+        this.montoTotalPagadoConversion = this.convertirMonto(
+          this.montoTotalPagado,
+          0,
+          this.collection.coCurrency,
+        );
+      }
+    }
+  }
+
+  /** Persiste el monto total a pagar en cabecera (`nu_amount_total`) para backend y SQLite. */
+  private syncCollectionAmountToPayTotalsBeforePersist(): void {
+    if (this.isRetentionCollection()) {
+      this.syncRetentionTotalsBeforePersist();
+      return;
+    }
+
+    let amountToPay = Number(this.montoTotalPagar ?? 0);
+    if (amountToPay <= 0) {
+      amountToPay = this.resolvePersistedAmountToPay();
+    }
+
+    let amountToPayConversion = Number(this.montoTotalPagarConversion ?? 0);
+    if (amountToPayConversion <= 0) {
+      amountToPayConversion = this.resolvePersistedAmountToPayConversion();
+    }
+    if (amountToPayConversion <= 0 && amountToPay > 0) {
+      amountToPayConversion = this.convertirMonto(amountToPay, 0, this.collection.coCurrency);
+    }
+
+    amountToPay = this.cleanFormattedNumber(this.currencyService.formatNumber(amountToPay));
+    amountToPayConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(amountToPayConversion));
+
+    this.montoTotalPagar = amountToPay;
+    this.montoTotalPagarConversion = amountToPayConversion;
+    this.collection.nuAmountTotal = amountToPay;
+    this.collection.nuAmountTotalConversion = amountToPayConversion;
+    this.collection.nuAmountFinal = amountToPay;
+    this.collection.nuAmountFinalConversion = amountToPayConversion;
+    this.collection.nuAmountPaid = amountToPay;
+    this.collection.nuAmountPaidConversion = amountToPayConversion;
   }
 
   syncAnticipoTotalsBeforePersist(): void {
@@ -1694,7 +1949,12 @@ export class CollectionService {
     if (persistedAmount > 0) {
       return persistedAmount;
     }
-    return Number(this.collection.nuAmountFinal ?? this.collection.nuAmountPaid ?? 0);
+    return Number(
+      this.collection?.nuAmountTotal
+      ?? this.collection?.nuAmountFinal
+      ?? this.collection?.nuAmountPaid
+      ?? 0,
+    );
   }
 
   private getPaymentExcessAmount(): number {
@@ -2110,7 +2370,8 @@ export class CollectionService {
 
         let sum = 0;
         for (var i = 0; i < this.collection.collectionDetails.length; i++) {
-          sum = this.collection.collectionDetails[i].nuAmountRetention + this.collection.collectionDetails[i].nuAmountRetention2;
+          sum += this.collection.collectionDetails[i].nuAmountRetention
+            + this.collection.collectionDetails[i].nuAmountRetention2;
         }
         if (sum > 0) {
           this.onCollectionValidToSend(true);
@@ -2820,9 +3081,21 @@ export class CollectionService {
       detail.daVoucher = open.daVoucher;
       detail.nuAmountDiscountConversion = this.convertirMonto(detail.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention = open.nuAmountRetention;
-      detail.nuAmountRetentionConversion = this.convertirMonto(open.nuAmountRetention, this.collection.nuValueLocal, this.collection.coCurrency);
+      const retentionIvaConversion = this.convertirMonto(
+        open.nuAmountRetention,
+        this.collection.nuValueLocal,
+        this.collection.coCurrency,
+      );
+      detail.nuAmountRetentionConversion = retentionIvaConversion;
+      detail.nuAmountRetentionIvaConversion = retentionIvaConversion;
       detail.nuAmountRetention2 = open.nuAmountRetention2;
-      detail.nuAmountRetention2Conversion = this.convertirMonto(open.nuAmountRetention2, this.collection.nuValueLocal, this.collection.coCurrency);
+      const retentionIslrConversion = this.convertirMonto(
+        open.nuAmountRetention2,
+        this.collection.nuValueLocal,
+        this.collection.coCurrency,
+      );
+      detail.nuAmountRetention2Conversion = retentionIslrConversion;
+      detail.nuAmountRetentionIslrConversion = retentionIslrConversion;
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
       detail.isSave = true;
@@ -4691,25 +4964,35 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   syncRuntimeTotalsFromPersistedHeader(): void {
-    const amountFinal = Number(this.collection?.nuAmountFinal ?? 0);
-    const amountFinalConversion = Number(this.collection?.nuAmountFinalConversion ?? 0);
-    const amountTotal = Number(this.collection?.nuAmountTotal ?? 0);
-    const amountTotalConversion = Number(this.collection?.nuAmountTotalConversion ?? 0);
+    if (this.isRetentionCollection()) {
+      const retentionSum = this.resolveRetentionSumFromCollectionDetails();
+      if (retentionSum > 0) {
+        this.syncRetentionTotalsBeforePersist();
+        this.syncRuntimePaidTotalsFromPayments();
+        this.restorePersistedIgtfDisplayAmounts();
+        return;
+      }
+    }
 
-    if (amountFinal > 0) {
-      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(amountFinal));
+    const amountToPay = Number(this.collection?.nuAmountTotal ?? 0) > 0
+      ? Number(this.collection.nuAmountTotal)
+      : Number(this.collection?.nuAmountFinal ?? 0);
+    const amountToPayConversion = Number(this.collection?.nuAmountTotalConversion ?? 0) > 0
+      ? Number(this.collection.nuAmountTotalConversion)
+      : Number(this.collection?.nuAmountFinalConversion ?? 0);
+
+    if (amountToPay > 0) {
+      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(amountToPay));
       this.montoTotalPagarConversion = this.cleanFormattedNumber(
-        this.currencyService.formatNumber(amountFinalConversion > 0 ? amountFinalConversion : this.convertirMonto(amountFinal, 0, this.collection.coCurrency)),
+        this.currencyService.formatNumber(
+          amountToPayConversion > 0
+            ? amountToPayConversion
+            : this.convertirMonto(amountToPay, 0, this.collection.coCurrency),
+        ),
       );
     }
 
-    if (amountTotal > 0) {
-      this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(amountTotal));
-      this.montoTotalPagadoConversion = this.cleanFormattedNumber(
-        this.currencyService.formatNumber(amountTotalConversion > 0 ? amountTotalConversion : this.convertirMonto(amountTotal, 0, this.collection.coCurrency)),
-      );
-    }
-
+    this.syncRuntimePaidTotalsFromPayments();
     this.restorePersistedIgtfDisplayAmounts();
   }
 
@@ -5540,18 +5823,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       if (this.isAnticipoCollection(collection)) {
         this.syncAnticipoTotalsBeforePersist();
       } else {
-        this.collection.nuAmountFinal = this.montoTotalPagar;
-        this.collection.nuAmountFinalConversion = this.convertirMonto(
-          this.collection.nuAmountFinal,
-          0,
-          this.collection.coCurrency,
-        );
-        this.collection.nuAmountPaid = this.montoTotalPagar;
-        this.collection.nuAmountPaidConversion = this.convertirMonto(
-          this.collection.nuAmountPaid,
-          0,
-          this.collection.coCurrency,
-        );
+        this.syncCollectionAmountToPayTotalsBeforePersist();
       }
 
 
