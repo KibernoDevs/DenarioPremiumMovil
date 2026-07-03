@@ -37,6 +37,7 @@ import { ProductStructuresListComponent } from './productos/product-structures-l
 import { ListaVisitaComponent } from './visitas/lista-visita/lista-visita.component';
 import { ProductListComponent } from './productos/product-list/product-list.component';
 import { ProductDetailComponent } from './productos/product-detail/product-detail.component';
+import { ProductosReportsComponent } from './productos/productos-reports/productos-reports.component';
 import { ClientesHeaderComponent } from './clientes/client-header/client-header.component';
 import { ClientListComponent } from './clientes/client-container/client-list/client-list.component';
 import { ClientSearchComponent } from './clientes/client-search/client-search.component';
@@ -133,6 +134,7 @@ import { InventarioSugeridoPreviewComponent } from './inventarios/inventario-con
     ProductStructuresListComponent,
     ProductListComponent,
     ProductDetailComponent,
+    ProductosReportsComponent,
     ProductosTabComponent,
     ProductosTabSearchComponent,
     ProductosTabStructureListComponent,
