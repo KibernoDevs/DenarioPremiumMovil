@@ -1336,7 +1336,7 @@ export class PedidosService {
     if (Number(unit.quAmount) <= 0) {
       return 0;
     }
-    return unit.quUnit * unit.quAmount * this.resolveUnitNuPriceForLineTotal(item, unit);
+    return unit.quUnit  * this.resolveUnitNuPriceForLineTotal(item, unit); //* unit.quAmount;
   }
 
   /**
