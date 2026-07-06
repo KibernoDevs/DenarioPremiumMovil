@@ -597,18 +597,111 @@ export class SynchronizationDBService {
 
 
   insertDocumentSaleBatch(arr: DocumentSale[]) {
-    var statements = [];
-    let insertStatement = 'INSERT OR REPLACE INTO document_sales(' +
+    const standardRows: DocumentSale[] = [];
+    const igtfUpsertTasks: Promise<void>[] = [];
+
+    for (const obj of arr) {
+      if (this.isSeparateIgtfDocumentSale(obj)) {
+        igtfUpsertTasks.push(this.upsertIgtfDocumentSaleReplacingDuplicates(obj));
+        continue;
+      }
+
+      standardRows.push(obj);
+    }
+
+    return Promise.all(igtfUpsertTasks)
+      .then(() => {
+        if (standardRows.length === 0) {
+          return undefined;
+        }
+
+        return this.insertDocumentSaleBatchDirect(standardRows);
+      });
+  }
+
+  private isSeparateIgtfDocumentSale(documentSale: DocumentSale): boolean {
+    if (documentSale.coDocumentSaleType === 'IGTF') {
+      return true;
+    }
+
+    return /^IGTF-/i.test(String(documentSale.coDocument ?? '').trim());
+  }
+
+  private normalizeDocumentCoDocumentKey(coDocument: unknown): string {
+    return String(coDocument ?? '').trim();
+  }
+
+  private resolveKeepIdDocumentForCoDocument(
+    incomingIdDocument: number,
+    existingIdDocuments: number[],
+  ): number {
+    const incomingId = Number(incomingIdDocument) || 0;
+    const preferredExistingId = existingIdDocuments.find(id => id > 0) ?? existingIdDocuments[0] ?? 0;
+
+    if (incomingId > 0) {
+      return incomingId;
+    }
+
+    return preferredExistingId;
+  }
+
+  private deleteDocumentSalesByCoDocumentExceptId(
+    coDocument: string,
+    keepIdDocument: number,
+  ): Promise<void> {
+    return this.database.executeSql(
+      'DELETE FROM document_st WHERE co_document = ? AND id_document != ?',
+      [coDocument, keepIdDocument],
+    ).then(() => this.database.executeSql(
+      'DELETE FROM document_sales WHERE co_document = ? AND id_document != ?',
+      [coDocument, keepIdDocument],
+    )).then(() => undefined);
+  }
+
+  private async upsertIgtfDocumentSaleReplacingDuplicates(obj: DocumentSale): Promise<void> {
+    const coDocument = this.normalizeDocumentCoDocumentKey(obj.coDocument);
+    let keepIdDocument = Number(obj.idDocument ?? 0);
+
+    if (coDocument) {
+      const existing = await this.database.executeSql(
+        `SELECT id_document FROM document_sales
+         WHERE co_document = ?
+         ORDER BY CASE WHEN id_document > 0 THEN 0 ELSE 1 END, id_document DESC`,
+        [coDocument],
+      );
+
+      if (existing.rows.length > 0) {
+        const existingIds: number[] = [];
+        for (let i = 0; i < existing.rows.length; i++) {
+          existingIds.push(Number(existing.rows.item(i).id_document ?? 0));
+        }
+
+        keepIdDocument = this.resolveKeepIdDocumentForCoDocument(keepIdDocument, existingIds);
+        await this.deleteDocumentSalesByCoDocumentExceptId(coDocument, keepIdDocument);
+      }
+    }
+
+    obj.idDocument = keepIdDocument;
+    await this.insertDocumentSaleBatchDirect([obj]);
+  }
+
+  private insertDocumentSaleBatchDirect(arr: DocumentSale[]) {
+    if (arr.length === 0) {
+      return Promise.resolve(undefined);
+    }
+
+    const statements = [];
+    const insertStatement = 'INSERT OR REPLACE INTO document_sales(' +
       'id_document,id_client,co_client,id_document_sale_type, co_document_sale_type,' +
       'da_document,da_due_date,nu_amount_base,nu_amount_discount,nu_amount_tax,' +
       'nu_amount_total,nu_balance,id_currency,co_currency,id_enterprise,' +
       'co_enterprise,nu_document,tx_comment,co_document,co_collection,' +
       'nu_value_local,st_document_sale, da_update' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
-    for (var i = 0; i < arr.length; i++) {
-      var obj = arr[i];
+    for (let i = 0; i < arr.length; i++) {
+      const obj = arr[i];
       statements.push([insertStatement, [obj.idDocument, obj.idClient, obj.coClient, obj.idDocumentSaleType, obj.coDocumentSaleType,
       obj.daDocument, obj.daDueDate, obj.nuAmountBase, obj.nuAmountDiscount, obj.nuAmountTax,
       obj.nuAmountTotal, obj.nuBalance, obj.idCurrency, obj.coCurrency, obj.idEnterprise,
@@ -616,25 +709,26 @@ export class SynchronizationDBService {
       obj.nuValueLocal, obj.stDocumentSale, obj.daUpdate]]);
     }
 
-    return this.database.sqlBatch(statements).then(res => {
-      var statements = [];
-
-      let statementsDocumentSt = 'INSERT OR REPLACE INTO document_st (' +
+    return this.database.sqlBatch(statements).then(() => {
+      const documentStStatements = [];
+      const statementsDocumentSt = 'INSERT OR REPLACE INTO document_st (' +
         'id_document, co_document, st_document' +
         ') VALUES (' +
-        '?,?,?)'
-      for (var i = 0; i < arr.length; i++) {
-        var obj = arr[i];
-        statements.push([statementsDocumentSt, [obj.idDocument, obj.coDocument, 0]]);
+        '?,?,?)';
+
+      for (let i = 0; i < arr.length; i++) {
+        const obj = arr[i];
+        documentStStatements.push([statementsDocumentSt, [obj.idDocument, obj.coDocument, 0]]);
       }
-      this.database.sqlBatch(statements).then(res => {
-        console.log(res)
+
+      return this.database.sqlBatch(documentStStatements).then(res => {
+        console.log(res);
       }).catch(e => {
         console.log(e);
-      })
+      });
     }).catch(e => {
       console.log(e);
-    })
+    });
   }
 
   insertDocumentSaleTypeBatch(arr: DocumentSaleType[]) {

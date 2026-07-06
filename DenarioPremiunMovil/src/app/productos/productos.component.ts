@@ -17,6 +17,7 @@ import { ImageServicesService } from '../services/imageServices/image-services.s
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 import { PedidosService } from '../pedidos/pedidos.service';
+import { ProductReportsService } from '../services/products/product-reports.service';
 
 @Component({
   selector: 'app-productos',
@@ -37,10 +38,12 @@ export class ProductosComponent {
   currencyService = inject(CurrencyService);
   public config = inject(GlobalConfigService);
   public orderService = inject(PedidosService);
+  private productReportsService = inject(ProductReportsService);
 
   showProducts: Boolean = false;
   showProductDetail: Boolean = false;
   showProductStructures: Boolean = true;
+  showProductReports = false;
   showSearch: Boolean = true;
   psSelected: Boolean = false;
   productStructureList: ProductStructure[] = [];
@@ -52,6 +55,7 @@ export class ProductosComponent {
   selectedProduct!: ProductDetail;
   listaEmpresa: Enterprise[] = [];
   multiempresa: Boolean = false;
+  allowProductReports = false;
 
 
   constructor(private router: Router,
@@ -76,6 +80,7 @@ export class ProductosComponent {
     });
     this.productService.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.productService.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === "true";
+    this.allowProductReports = this.productReportsService.isProductReportsEnabled();
   }
 
   getTags(): Promise<void> {
@@ -104,6 +109,7 @@ export class ProductosComponent {
   viewStructures(verEstructuras: Boolean) {
     this.showProducts = false;
     this.showProductStructures = true;
+    this.showProductReports = false;
     this.psSelected = false;
     this.searchText = '';
     this.productService.productList = [];
@@ -117,6 +123,12 @@ export class ProductosComponent {
   }
 
   onBackClicked(verListaProductos: Boolean) {
+    if (this.showProductReports) {
+      this.showProductReports = false;
+      this.showProductStructures = true;
+      this.showSearch = true;
+      return;
+    }
     if (this.showProductDetail) {
       this.showProductDetail = false;
       this.showProducts = true;
@@ -132,9 +144,22 @@ export class ProductosComponent {
   setSearchText(value: string) {
     this.searchText = value;
     this.showProductDetail = false;
+    this.showProductReports = false;
     this.showProducts = true;
     this.showProductStructures = false;
     this.showSearch = true;
     // this.productService.getProductsSearchedByCoProductAndNaProduct(this.searchText, this.empresaSeleccionada.idEnterprise);
+  }
+
+  openProductReports(): void {
+    if (!this.empresaSeleccionada?.idEnterprise && this.productService.empresaSeleccionada) {
+      this.empresaSeleccionada = this.productService.empresaSeleccionada;
+    }
+
+    this.showProductDetail = false;
+    this.showProducts = false;
+    this.showProductStructures = false;
+    this.showProductReports = true;
+    this.showSearch = false;
   }
 }

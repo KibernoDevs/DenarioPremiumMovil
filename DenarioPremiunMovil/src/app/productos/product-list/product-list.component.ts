@@ -52,6 +52,7 @@ export class ProductListComponent implements OnInit {
   noProductsAlertShown = false;
   unitByPriceList: Boolean = false;
   showStock: Boolean = false;
+  productStock0: boolean = false;
   productList: ProductUtil[] = [];
   productListView: ProductUtil[] = [];
   idProductStructureList: number[] = [];
@@ -93,6 +94,7 @@ export class ProductListComponent implements OnInit {
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
     this.showStock = this.config.get("showStock").toLowerCase() === "true";
+    this.productStock0 = this.config.get("productStock0").toLowerCase() === "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
@@ -106,8 +108,7 @@ export class ProductListComponent implements OnInit {
     }
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
-        //this.productList = this.filterProductList(this.productService.productList);
-        this.productList = this.productService.productList;
+        this.productList = this.filterProductList(this.productService.productList);
         if (this.productService.catalogUnitByPriceList) {
           this.fillListPrices(this.productList);
         }
@@ -115,8 +116,7 @@ export class ProductListComponent implements OnInit {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
             this.noProductsAlertShown = false;
-            //this.productList = this.filterProductList(this.productService.productList);
-            this.productList = this.productService.productList;
+            this.productList = this.filterProductList(this.productService.productList);
             if (this.productService.catalogUnitByPriceList) {
               this.fillListPrices(this.productList);
             }
@@ -130,8 +130,7 @@ export class ProductListComponent implements OnInit {
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
           this.noProductsAlertShown = false;
-          //this.productList = this.filterProductList(this.productService.productList);
-          this.productList = this.productService.productList;
+          this.productList = this.filterProductList(this.productService.productList);
           if (this.productService.catalogUnitByPriceList) {
             this.fillListPrices(this.productList);
           }
@@ -141,10 +140,8 @@ export class ProductListComponent implements OnInit {
   }
 
   filterProductList(list: ProductUtil[]) {
-    //No se usa por los momentos.
-    //Esta funcion filtra productos sin stock y productos sin precio, dependiendo de la configuracion seteada en PedidosService. 
-    //Se dejo por si en algun momento se quiere volver a usar esta funcionalidad sin tener que reescribirla.
-    if (this.productService.catalogHideStock0) {
+    // Filtra productos sin stock (productStock0) y sin precio (catalogHideProdWithoutPrice).
+    if (this.productStock0) {
       list = list.filter(product => product.stock && product.stock > 0);
     }
     if (this.productService.catalogHideProdWithoutPrice) {
@@ -167,8 +164,7 @@ export class ProductListComponent implements OnInit {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
           this.noProductsAlertShown = false;
-          //this.productList = this.filterProductList(this.productService.productList);
-          this.productList = this.productService.productList;
+          this.productList = this.filterProductList(this.productService.productList);
           if (this.productService.catalogUnitByPriceList) {
             this.fillListPrices(this.productList);
           }
@@ -201,8 +197,7 @@ export class ProductListComponent implements OnInit {
     } else {
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
-          //const newProducts = this.filterProductList(this.productService.productList);
-          const newProducts = this.productService.productList;
+          const newProducts = this.filterProductList(this.productService.productList);
           if (this.productService.catalogUnitByPriceList) {
             this.fillListPrices(newProducts);
           }

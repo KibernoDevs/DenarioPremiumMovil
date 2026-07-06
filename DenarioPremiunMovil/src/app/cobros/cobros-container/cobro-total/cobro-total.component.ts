@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, inject } from '@angular/core';
 
 import { Retention } from 'src/app/modelos/retention';
-import { CollectionDetail } from 'src/app/modelos/tables/collection';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
@@ -70,12 +69,27 @@ export class CobroTotalComponent implements OnInit {
     this.collectService.collection.collectionDetails.splice(index, 1);
     if (this.collectService.collection.collectionDetails.length == 0)
       this.collectService.onCollectionValidToSend(false);
+    else
+      void this.collectService.calculatePayment('', 0, true);
   }
 
   saveRetention(isSave: Boolean) {
     console.log(isSave);
     if (isSave) {
       let daVoucher = this.dateServ.hoyISO();
+      const nuValueLocal = this.collectService.collection.nuValueLocal;
+      const coCurrency = this.collectService.collection.coCurrency;
+      const ivaConversion = this.collectService.convertirMonto(
+        this.collectService.retention.nuAmountRetention,
+        nuValueLocal,
+        coCurrency,
+      );
+      const islrConversion = this.collectService.convertirMonto(
+        this.collectService.retention.nuAmountRetention2,
+        nuValueLocal,
+        coCurrency,
+      );
+      const retentionTotalConversion = ivaConversion + islrConversion;
       this.collectService.collection.collectionDetails.push({
         //idCollectionDetail: null,
         coCollection: this.collectService.collection.coCollection,
@@ -85,12 +99,14 @@ export class CobroTotalComponent implements OnInit {
         nuVoucherRetention: this.collectService.retention.nuVoucherRetention,
         nuAmountRetention: this.collectService.retention.nuAmountRetention, //iva
         nuAmountRetention2: this.collectService.retention.nuAmountRetention2, //islr
-        nuAmountRetentionConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention, 0, this.collectService.collection.coCurrency),
-        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention, 0, this.collectService.collection.coCurrency),
-        nuAmountRetention2Conversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention2, 0, this.collectService.collection.coCurrency),
-        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention2, 0, this.collectService.collection.coCurrency),
+        nuAmountRetentionConversion: ivaConversion,
+        nuAmountRetentionIvaConversion: ivaConversion,
+        nuAmountRetention2Conversion: islrConversion,
+        nuAmountRetentionIslrConversion: islrConversion,
         nuAmountPaid: this.collectService.retention.nuAmountPaid,
-        nuAmountPaidConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountPaid, 0, this.collectService.collection.coCurrency),
+        nuAmountPaidConversion: this.currencyService.cleanFormattedNumber(
+          this.currencyService.formatNumber(retentionTotalConversion),
+        ),
         nuAmountDiscount: 0,
         nuAmountDiscountConversion: 0,
         nuAmountDoc: 0,
@@ -102,7 +118,7 @@ export class CobroTotalComponent implements OnInit {
         nuBalanceDocOriginalConversion: 0,
         coOriginal: "",
         coTypeDoc: "",
-        nuValueLocal: this.collectService.collection.nuValueLocal,
+        nuValueLocal: nuValueLocal,
         nuAmountIgtf: 0,
         nuAmountIgtfConversion: 0,
         st: 0,
@@ -118,6 +134,7 @@ export class CobroTotalComponent implements OnInit {
     }
     this.collectService.addRetention = false;
     this.validate();
+    void this.collectService.calculatePayment('', 0, true);
     this.collectService.validateToSend();
   }
 
@@ -138,12 +155,30 @@ export class CobroTotalComponent implements OnInit {
     this.collectService.collection.nuAmountFinalConversion = 0;
     this.collectService.collection.nuAmountTotalConversion = 0;
 
-    for (var i = 0; i < this.collectService.collection.collectionPayments!.length; i++) {
-      this.collectService.collection.nuAmountFinal += this.collectService.collection.collectionDetails![i].nuAmountPaid;
-      this.collectService.collection.nuAmountTotal += this.collectService.collection.collectionDetails![i].nuAmountPaid;
+    const details = this.collectService.collection.collectionDetails ?? [];
+    for (let i = 0; i < details.length; i++) {
+      const retentionAmount = Number(details[i].nuAmountRetention ?? 0)
+        + Number(details[i].nuAmountRetention2 ?? 0);
+      const ivaConversion = Number(
+        details[i].nuAmountRetentionConversion ?? details[i].nuAmountRetentionIvaConversion ?? 0,
+      );
+      const islrConversion = Number(
+        details[i].nuAmountRetention2Conversion ?? details[i].nuAmountRetentionIslrConversion ?? 0,
+      );
+      let retentionConversion = ivaConversion + islrConversion;
+      if (retentionConversion <= 0 && retentionAmount > 0) {
+        retentionConversion = this.collectService.convertirMonto(
+          retentionAmount,
+          details[i].nuValueLocal ?? this.collectService.collection.nuValueLocal,
+          this.collectService.collection.coCurrency,
+        );
+      }
+
+      this.collectService.collection.nuAmountFinal += retentionAmount;
+      this.collectService.collection.nuAmountTotal += retentionAmount;
+      this.collectService.collection.nuAmountFinalConversion += retentionConversion;
+      this.collectService.collection.nuAmountTotalConversion = this.collectService.collection.nuAmountFinalConversion;
     }
-    this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-    this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
   }
 
   calculateDifDocsNegativos() {
@@ -180,8 +215,52 @@ export class CobroTotalComponent implements OnInit {
     }
   }
 
-  getDetailRetentionTotal(detail: CollectionDetail): number {
-    return this.collectService.getDetailRetentionTotal(detail);
+  private normalizeTotalizationAmount(amount: unknown): number {
+    const value = Number(amount ?? 0);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  shouldShowTotalizationAmount(amount: unknown): boolean {
+    return this.normalizeTotalizationAmount(amount) > 0;
+  }
+
+  formatTotalizationAmount(amount: unknown): string {
+    if (!this.shouldShowTotalizationAmount(amount)) {
+      return '';
+    }
+
+    return this.currencyService.formatNumber(this.normalizeTotalizationAmount(amount));
+  }
+
+  hasTotalizationColumnAmount(
+    field: 'discount' | 'retentionIva' | 'retentionIslr' | 'igtf' | 'collectDiscount',
+  ): boolean {
+    const details = this.collectService.collection?.collectionDetails ?? [];
+
+    return details.some(detail => {
+      switch (field) {
+        case 'discount':
+          return this.shouldShowTotalizationAmount(detail.nuAmountDiscount);
+        case 'retentionIva':
+          return this.shouldShowTotalizationAmount(detail.nuAmountRetention);
+        case 'retentionIslr':
+          return this.shouldShowTotalizationAmount(detail.nuAmountRetention2);
+        case 'igtf':
+          return this.shouldShowTotalizationAmount(
+            this.collectService.resolveCollectionDetailPaymentDisplay(detail).igtfAmount,
+          );
+        case 'collectDiscount':
+          return this.shouldShowTotalizationAmount(detail.nuAmountCollectDiscount);
+        default:
+          return false;
+      }
+    });
+  }
+
+  shouldShowTotalizationIgtfSummary(): boolean {
+    return this.collectService.shouldDisplayIgtfInTotals()
+      && this.collectService.coTypeModule !== '4'
+      && this.shouldShowTotalizationAmount(this.collectService.montoIgtf);
   }
 
 }

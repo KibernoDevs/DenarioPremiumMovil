@@ -10,6 +10,7 @@ import { MessageService } from 'src/app/services/messageService/message.service'
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
+import { LOCAL_LIST_PAGE_SIZE, paginateFilteredList } from 'src/app/utils/local-paginated-list.util';
 
 @Component({
   selector: 'app-cobros-list',
@@ -29,28 +30,23 @@ export class CobrosListComponent implements OnInit {
 
   public valid: Boolean = false;
   public alertDelete: boolean = false;
-  public allItems: any[] = [];         // llena al cargar
-  // lo que iteras en la plantilla
   public searchText = '';
+  public displayedItems: ItemListaCobros[] = [];
+  public scrollDisable = false;
 
-  public indice = 0;
   public headerDelete = "";
   public mensajeDelete = "";
   public selectedCollect!: Collection;
   public selectedCollectIndex: number = 0;
-
-  // --- Infinite scroll / paginación client-side ---
-  private readonly PAGE_SIZE = 20;
-  //public displayedItems: ItemListaCobros[] = []; // lo que se muestra en la UI
-  private displayedIndexMap: Map<string, number> = new Map(); // map co_collection -> indice real en itemListaCobros
-  private currentOffset = 0; // cuántos items ya mostramos
-  public hasMore = true;
 
   public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
   public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
+  private readonly pageSize = LOCAL_LIST_PAGE_SIZE;
+  private filteredItems: ItemListaCobros[] = [];
+  private currentPage = 0;
 
   public buttonsDelete = [
     {
@@ -67,12 +63,6 @@ export class CobrosListComponent implements OnInit {
     }
   ];
 
-  constructor() {
-    // inicializa after load
-    this.allItems = this.collectService.itemListaCobros;        // lo que obtengas originalmente
-    this.collectService.displayedItems = [...this.allItems];
-  }
-
   ngOnInit() {
     if (this.collectService.userMustActivateGPS) {
       this.coordenada = '';
@@ -86,68 +76,41 @@ export class CobrosListComponent implements OnInit {
     this.headerDelete = this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!;
     this.mensajeDelete = this.collectService.collectionTags.get('COB_CONFIRM_DELETE')!;
     this.collectService.initLogicService();
-
-    // Cargar la primera página (si ya hay datos en el service lo toma, sino intenta forzar la carga)
-    this.tryLoadInitialItems();
+    this.resetListPagination();
   }
 
-  private tryLoadInitialItems() {
-    const total = this.collectService.itemListaCobros?.length ?? 0;
-    if (total > 0) {
-      this.rebuildDisplayedItems(Math.min(this.PAGE_SIZE, total));
-    } else {
-      // Si no hay items, intenta cargar la lista (buscarCobro en container suele hacerlo, pero por seguridad aquí intentamos)
-      this.collectService.findCollect(this.synchronizationServices.getDatabase()).then(() => {
-        const newTotal = this.collectService.itemListaCobros?.length ?? 0;
-        this.rebuildDisplayedItems(Math.min(this.PAGE_SIZE, newTotal));
-      }).catch(err => {
-        console.warn('CobrosList: fallo al cargar lista inicial', err);
-        this.rebuildDisplayedItems(0);
-      });
+  private matchesSearch(collect: ItemListaCobros): boolean {
+    if (!this.searchText) {
+      return true;
     }
+    const coClient = (collect.co_client ?? '').toString().toLowerCase();
+    const lbClient = (collect.lb_client ?? '').toString().toLowerCase();
+    const idColl = collect.id_collection != null ? collect.id_collection.toString() : '';
+    return coClient.includes(this.searchText)
+      || lbClient.includes(this.searchText)
+      || idColl.includes(this.searchText);
   }
 
-  private rebuildDisplayedItems(count: number) {
-    const total = this.collectService.itemListaCobros?.length ?? 0;
-    this.collectService.displayedItems = this.collectService.itemListaCobros.slice(0, count);
-    this.displayedIndexMap.clear();
-    for (let i = 0; i < this.collectService.displayedItems.length; i++) {
-      const it = this.collectService.displayedItems[i];
-      // usamos co_collection como clave (único por colección)
-      this.displayedIndexMap.set(it.co_collection, this.collectService.itemListaCobros.findIndex(x => x.co_collection === it.co_collection));
-    }
-    this.currentOffset = this.collectService.displayedItems.length;
-    this.hasMore = this.currentOffset < total;
+  private buildFilteredItems(): ItemListaCobros[] {
+    return this.collectService.itemListaCobros.filter(collect => this.matchesSearch(collect));
   }
 
-  private loadNextPage(): Promise<void> {
-    return new Promise((resolve) => {
-      const total = this.collectService.itemListaCobros?.length ?? 0;
-      if (!this.hasMore || total === 0) {
-        this.hasMore = false;
-        resolve();
-        return;
-      }
-      const nextOffset = this.currentOffset + this.PAGE_SIZE;
-      const nextSlice = this.collectService.itemListaCobros.slice(this.currentOffset, nextOffset);
-      for (const item of nextSlice) {
-        this.collectService.displayedItems.push(item);
-        this.displayedIndexMap.set(item.co_collection, this.collectService.itemListaCobros.findIndex(x => x.co_collection === item.co_collection));
-      }
-      this.currentOffset = this.collectService.displayedItems.length;
-      this.hasMore = this.currentOffset < total;
-      resolve();
-    });
+  private resetListPagination(): void {
+    this.filteredItems = this.buildFilteredItems();
+    this.currentPage = 0;
+    this.refreshDisplayedItems();
   }
 
-  // Devuelve el índice real en la lista completa para usar al abrir/eliminar
+  private refreshDisplayedItems(): void {
+    const page = paginateFilteredList(this.filteredItems, this.currentPage, this.pageSize);
+    this.displayedItems = page.items;
+    this.scrollDisable = page.scrollDisable;
+  }
+
   getOriginalIndex(collect: ItemListaCobros): number {
-    const key = collect?.co_collection;
-    if (!key) return -1;
-    const mapped = this.displayedIndexMap.get(key);
-    if (mapped != null && mapped >= 0) return mapped;
-    // fallback: buscar por id
-    return this.collectService.itemListaCobros.findIndex(x => x.id_collection === collect.id_collection);
+    return this.collectService.itemListaCobros.findIndex(
+      item => item.co_collection === collect.co_collection
+    );
   }
 
   onCollectSelect(coCollection: string, index: number, stCollection: number) {
@@ -246,6 +209,7 @@ export class CobrosListComponent implements OnInit {
 
           this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
+          this.collectService.sanitizeLoadedSeparateIgtfAmounts(this.collectService.collection);
           this.collectService.getCollectionDetailsDiscounts(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsDiscounts => {
 
 
@@ -316,10 +280,7 @@ export class CobrosListComponent implements OnInit {
       // Eliminar del servicio (lista completa)
       this.collectService.listCollect.splice(this.selectedCollectIndex, 1);
       this.collectService.itemListaCobros.splice(this.selectedCollectIndex, 1);
-      // Reconstruir los displayedItems para mantener consistencia
-      const newTotal = this.collectService.itemListaCobros.length;
-      const desired = Math.min(this.currentOffset, newTotal);
-      this.rebuildDisplayedItems(desired);
+      this.resetListPagination();
       console.log(r, "BORRADO CON EXITO");
     })
   }
@@ -328,37 +289,19 @@ export class CobrosListComponent implements OnInit {
     this.alertDelete = value;
   }
 
-  /* handleInput(event: any) {
-    this.searchText = (event?.detail?.value ?? '').toString().toLowerCase().trim();
-  } */
   handleInput(event: any) {
-    this.searchText = (event?.detail?.value ?? '').toString().toLowerCase().trim();
-    if (!this.searchText) {
-      this.collectService.displayedItems = [...this.allItems];
-      return;
-    }
-    const q = this.searchText;
-    this.collectService.displayedItems = this.allItems.filter(collect => {
-      const coClient = (collect.co_client ?? '').toString().toLowerCase();
-      const lbClient = (collect.lb_client ?? '').toString().toLowerCase();
-      const idColl = collect.id_collection != null ? collect.id_collection.toString() : '';
-      return coClient.includes(q) || lbClient.includes(q) || idColl.includes(q);
-    });
+    this.searchText = (event?.detail?.value ?? event?.target?.value ?? '').toString().toLowerCase().trim();
+    this.resetListPagination();
   }
 
-  async onIonInfinite(ev: any) {
-    // cargar siguiente página
-    await this.loadNextPage();
-    // completar el infinite scroll
-    try {
-      (ev as InfiniteScrollCustomEvent).target.complete();
-      // si ya no hay más, deshabilitar el infinite-scroll para evitar llamadas adicionales
-      if (!this.hasMore) {
-        (ev as InfiniteScrollCustomEvent).target.disabled = true;
-      }
-    } catch (err) {
-      console.warn('onIonInfinite: complete error', err);
+  onIonInfinite(ev: InfiniteScrollCustomEvent) {
+    if (this.scrollDisable) {
+      ev.target.complete();
+      return;
     }
+    this.currentPage++;
+    this.refreshDisplayedItems();
+    ev.target.complete();
   }
 
   getStatusOrderName(stCollection: number, stDelivery: number, naStatus: any) {

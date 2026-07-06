@@ -62,6 +62,9 @@ export class AdjuntoService {
 
   public servicesServ = inject(ServicesService);
 
+  private uploadQueue: Promise<void> = Promise.resolve();
+  private isUploadingAttachments = false;
+
   constructor() { }
 
   setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
@@ -254,7 +257,7 @@ export class AdjuntoService {
         directory: Directory.External
       });
       batch.push([saveStatement, [coTransaction, naTransaction, this.files[j].naFile]]);
-      batch.push([saveTransacctionImages, [this.files[j].naFile, 0, coTransaction, "file", naTransaction, 0]]);
+      batch.push([saveTransacctionImages, [this.files[j].naFile, 0, coTransaction, "file", naTransaction, j]]);
     }
 
 
@@ -348,198 +351,216 @@ export class AdjuntoService {
   }
 
   async sendPendingPhotos(dbServ: SQLiteObject, pendingTransactionsAttachments: PendingTransactionsAttachments[]) {
-
-    for (var i = 0; i < pendingTransactionsAttachments.length; i++) {
-      let item = pendingTransactionsAttachments[i];
-      switch (pendingTransactionsAttachments[i].type) {
-        case 'attach':
-          var file: string;
-          try {
-            Filesystem.readFile({
-              path: item.naAttachment,
-              directory: Directory.External,
-            }).then(f => {
-              file = f.data as string;
-
-              this.servicesServ.sendImage(item.naTransaction, item.idTransaction.toString(), item.position.toString(), file, item.naAttachment, 'attach', item.cantidad!).then((resp) => {
-                console.log(resp);
-                let idTransaction = resp.name.split('_')[0];
-                let position = resp.name.split('_')[1].split(".")[0]
-                let type = resp.type;
-                let naTransaction = resp.transaction;
-                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
-              })
-
-            }).catch((error) => { console.log(error) });
-            break;
-          } catch (e) {
-            console.log(e);
-            break;
-          }
-        case 'signature':
-          var file: string;
-          try {
-            Filesystem.readFile({
-              path: item.naAttachment,
-              directory: Directory.External,
-            }).then(f => {
-              file = f.data as string;
-
-              this.servicesServ.sendImage(item.naTransaction, item.idTransaction.toString(), item.position.toString(), file, item.naAttachment, 'signature', item.cantidad - 1).then((resp) => {
-                let idTransaction = resp.name.split('_')[0];
-                let position = resp.name.split('_')[1].split(".")[0];
-                let type = resp.type;
-                let naTransaction = resp.transaction;
-                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
-              })
-
-            }).catch((error) => { console.log(error) });
-          } catch (e) {
-            console.log(e);
-          }
-          break;
-        case 'file':
-          var file: string;
-          try {
-            Filesystem.readFile({
-              path: item.naAttachment,
-              directory: Directory.External,
-            }).then(f => {
-              file = f.data as string;
-
-              this.servicesServ.sendImage(item.naTransaction, item.idTransaction.toString(), item.position.toString(), file, item.naAttachment, 'file', item.cantidad!).then((resp) => {
-                let idTransaction = resp.name.split('_')[0];
-                let position = resp.name.split('_')[1].split(".")[0]
-                let type = resp.type;
-                let naTransaction = resp.transaction;
-                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
-              })
-
-            }).catch((error) => { console.log(error) });
-          } catch (e) {
-            console.log(e);
-          }
-          break;
-      }
+    if (!pendingTransactionsAttachments.length) {
+      return;
     }
+
+    return this.runWithUploadMutex(async () => {
+      for (const item of pendingTransactionsAttachments) {
+        const cantidad = item.type === 'signature'
+          ? Math.max(0, (item.cantidad ?? 1) - 1)
+          : (item.cantidad ?? 1);
+        await this.uploadPendingAttachment(dbServ, {
+          naTransaction: item.naTransaction,
+          idTransaction: item.idTransaction,
+          coTransaction: item.coTransaction,
+          naAttachment: item.naAttachment,
+          type: item.type,
+          position: item.position,
+          cantidad,
+        });
+      }
+    });
   }
 
   async sendPhotos(dbServ: SQLiteObject, idTransaction: number, naTransaction: string, coTransaction: string) {
+    return this.runWithUploadMutex(async () => {
+      const cantidad = await this.getNuAttachImages(dbServ, coTransaction, naTransaction);
+      const uploadItems: UploadAttachmentParams[] = [];
 
-    let cantidad: number = 0;
-    let cantidadFotos: number = 0;
-    return this.getNuAttachImages(dbServ, coTransaction, naTransaction).then(nuAttachImages => {
-
-      cantidad = nuAttachImages;
-
-      var retrieveStatement = "SELECT id_transaction_image as idTransactionImage," +
-        "co_transaction as coTransaction, " +
-        "na_transaction as naTransaction, " +
-        "na_image as naImage from transaction_images " +
-        "WHERE na_transaction = ? and co_transaction = ? ";
-
-      return dbServ.executeSql(retrieveStatement, [naTransaction, coTransaction]).then(data => {
-        console.log("[AdjuntoService] Enviando fotos");
-
-        for (let i = 0; i < data.rows.length; i++) {
-          const item: TransactionImage = data.rows.item(i);
-          var file: string;
-          try {
-            Filesystem.readFile({
-              path: item.naImage,
-              directory: Directory.External,
-            }).then(f => {
-              file = f.data as string;
-
-              this.servicesServ.sendImage(naTransaction, idTransaction.toString(), i.toString(), file, item.naImage, 'attach', cantidad).then((resp) => {
-                console.log(resp);
-                let idTransaction = resp.name.split('_')[0];
-                let position = resp.name.split('_')[1].split(".")[0]
-                let type = resp.type;
-                let naTransaction = resp.transaction;
-                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
-              })
-
-
-            }).catch((error) => { console.log(error) });
-          } catch (e) {
-            console.log(e);
-          }
-
-        }
-        //firma
-        var retrieveStatement = "SELECT id_transaction_signature as idTransactionSignature," +
-          "co_transaction as coTransaction, " +
-          "na_transaction as naTransaction, " +
-          "na_image as naImage from transaction_signatures " +
-          "WHERE na_transaction = ? and co_transaction = ? ";
-        dbServ.executeSql(retrieveStatement, [naTransaction, coTransaction]).then(data => {
-          console.log("[AdjuntoService] Enviando firma");
-          var file: string;
-          const item: TransactionSignature = data.rows.item(0);
-          if (data.rows.length > 0) {
-            try {
-              Filesystem.readFile({
-                path: item.naImage,
-                directory: Directory.External,
-              }).then(f => {
-                file = f.data as string;
-
-                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), '0', file, item.naImage, 'signature', cantidad).then((resp) => {
-                  let idTransaction = resp.name.split('_')[0];
-                  let position = resp.name.split('_')[1].split(".")[0];
-                  let type = resp.type;
-                  let naTransaction = resp.transaction;
-                  this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
-                })
-
-              }).catch((error) => { console.log(error) });
-            } catch (e) {
-              console.log(e);
-            }
-          }
+      const imagesResult = await dbServ.executeSql(
+        'SELECT na_image as naImage FROM transaction_images WHERE na_transaction = ? AND co_transaction = ?',
+        [naTransaction, coTransaction],
+      );
+      for (let i = 0; i < imagesResult.rows.length; i++) {
+        const naImage = imagesResult.rows.item(i).naImage as string;
+        uploadItems.push({
+          naTransaction,
+          idTransaction,
+          coTransaction,
+          naAttachment: naImage,
+          type: 'attach',
+          position: i,
+          cantidad,
         });
+      }
 
-        //Archivos
-        var retrieveStatement = "SELECT id_transaction_files as idTransactionFile," +
-          "co_transaction as coTransaction, " +
-          "na_transaction as naTransaction, " +
-          "na_file as naFile from transaction_files " +
-          "WHERE na_transaction = ? and co_transaction = ? ";
-        dbServ.executeSql(retrieveStatement, [naTransaction, coTransaction]).then(data => {
-          console.log("[AdjuntoService] Enviando archivo");
-          var file: string;
-          for (let i = 0; i < data.rows.length; i++) {
-          const item: TransactionFile = data.rows.item(i);
-          if (data.rows.length > 0) {
-            try {
-              Filesystem.readFile({
-                path: item.naFile,
-                directory: Directory.External,
-              }).then(f => {
-                file = f.data as string;
-
-                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), i.toString(), file, item.naFile, 'file', cantidad).then((resp) => {
-                  let idTransaction = resp.name.split('_')[0];
-                  let position = resp.name.split('_')[1].split(".")[0]
-                  let type = resp.type;
-                  let naTransaction = resp.transaction;
-
-                  this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
-                })
-              
-
-              }).catch((error) => { console.log(error) });
-            } catch (e) {
-              console.log(e);
-            }
-          }
-        }
+      const signatureResult = await dbServ.executeSql(
+        'SELECT na_image as naImage FROM transaction_signatures WHERE na_transaction = ? AND co_transaction = ?',
+        [naTransaction, coTransaction],
+      );
+      if (signatureResult.rows.length > 0) {
+        const naImage = signatureResult.rows.item(0).naImage as string;
+        uploadItems.push({
+          naTransaction,
+          idTransaction,
+          coTransaction,
+          naAttachment: naImage,
+          type: 'signature',
+          position: 0,
+          cantidad: Math.max(0, cantidad - 1),
         });
+      }
 
+      const filesResult = await dbServ.executeSql(
+        'SELECT na_file as naFile FROM transaction_files WHERE na_transaction = ? AND co_transaction = ?',
+        [naTransaction, coTransaction],
+      );
+      for (let i = 0; i < filesResult.rows.length; i++) {
+        const naFile = filesResult.rows.item(i).naFile as string;
+        uploadItems.push({
+          naTransaction,
+          idTransaction,
+          coTransaction,
+          naAttachment: naFile,
+          type: 'file',
+          position: i,
+          cantidad,
+        });
+      }
 
-      })
-    })
+      console.log('[AdjuntoService] Enviando adjuntos:', uploadItems.length);
+      for (const item of uploadItems) {
+        await this.uploadPendingAttachment(dbServ, item);
+      }
+    });
+  }
+
+  private async runWithUploadMutex<T>(task: () => Promise<T>): Promise<T> {
+    const run = this.uploadQueue.then(async () => {
+      this.isUploadingAttachments = true;
+      try {
+        return await task();
+      } finally {
+        this.isUploadingAttachments = false;
+      }
+    });
+    this.uploadQueue = run.then(() => undefined, () => undefined);
+    return run;
+  }
+
+  private async uploadPendingAttachment(
+    dbServ: SQLiteObject,
+    params: UploadAttachmentParams,
+  ): Promise<boolean> {
+    if (localStorage.getItem('connected') !== 'true') {
+      return false;
+    }
+
+    let idTransaction = Number(params.idTransaction ?? 0);
+    if (idTransaction <= 0) {
+      idTransaction = await this.resolveServerTransactionId(
+        dbServ,
+        params.coTransaction,
+        params.naTransaction,
+      );
+      if (idTransaction <= 0) {
+        console.warn('[AdjuntoService] Sin id de servidor para adjunto', params);
+        return false;
+      }
+    }
+
+    try {
+      const fileContent = await Filesystem.readFile({
+        path: params.naAttachment,
+        directory: Directory.External,
+      });
+      const file = fileContent.data as string;
+      const mimeType = this.getMIMEType(params.naAttachment) || undefined;
+
+      await this.servicesServ.sendImage(
+        params.naTransaction,
+        idTransaction.toString(),
+        params.position.toString(),
+        file,
+        params.naAttachment,
+        params.type,
+        params.cantidad,
+        mimeType,
+      );
+
+      await this.deletePendingTransactionAttachmentsByKey(
+        dbServ,
+        params.coTransaction,
+        params.naAttachment,
+        params.type,
+      );
+      return true;
+    } catch (error) {
+      console.error('[AdjuntoService] uploadPendingAttachment failed', params, error);
+      await this.recordUploadAttemptFailure(
+        dbServ,
+        params.coTransaction,
+        params.naAttachment,
+        params.type,
+        error,
+      );
+      return false;
+    }
+  }
+
+  async resolveServerTransactionId(
+    dbServ: SQLiteObject,
+    coTransaction: string,
+    naTransaction: string,
+  ): Promise<number> {
+    const queryByModule: Record<string, { sql: string; column: string }> = {
+      cobros: { sql: 'SELECT id_collection AS id FROM collections WHERE co_collection = ?', column: 'id' },
+      pedidos: { sql: 'SELECT id_order AS id FROM orders WHERE co_order = ?', column: 'id' },
+      visitas: { sql: 'SELECT id_visit AS id FROM visits WHERE co_visit = ?', column: 'id' },
+      clientes: { sql: 'SELECT id_client AS id FROM potential_clients WHERE co_client = ?', column: 'id' },
+      devoluciones: { sql: 'SELECT id_return AS id FROM returns WHERE co_return = ?', column: 'id' },
+      inventarios: { sql: 'SELECT id_client_stock AS id FROM client_stocks WHERE co_client_stock = ?', column: 'id' },
+      depositos: { sql: 'SELECT id_deposit AS id FROM deposits WHERE co_deposit = ?', column: 'id' },
+    };
+
+    const query = queryByModule[naTransaction];
+    if (!query) {
+      return 0;
+    }
+
+    try {
+      const result = await dbServ.executeSql(query.sql, [coTransaction]);
+      if (result.rows.length === 0) {
+        return 0;
+      }
+      return Number(result.rows.item(0).id) || 0;
+    } catch (e) {
+      console.error('[AdjuntoService] resolveServerTransactionId error', e);
+      return 0;
+    }
+  }
+
+  private async recordUploadAttemptFailure(
+    dbServ: SQLiteObject,
+    coTransaction: string,
+    naAttachment: string,
+    type: string,
+    error: unknown,
+  ): Promise<void> {
+    const message = String((error as Error)?.message ?? error ?? 'Error desconocido').slice(0, 200);
+    try {
+      await dbServ.executeSql(
+        `UPDATE pending_transactions_attachments
+         SET attempt_count = COALESCE(attempt_count, 0) + 1,
+             last_attempt = ?,
+             last_error = ?
+         WHERE co_transaction = ? AND na_attachment = ? AND type = ?`,
+        [new Date().toISOString(), message, coTransaction, naAttachment, type],
+      );
+    } catch (e) {
+      console.warn('[AdjuntoService] recordUploadAttemptFailure skipped', e);
+    }
   }
 
   getSavedPhotos(dbServ: SQLiteObject, co_transaction: string, na_transaction: string) {
@@ -691,4 +712,29 @@ export class AdjuntoService {
     });
   }
 
+  deletePendingTransactionAttachmentsByKey(
+    dbServ: SQLiteObject,
+    coTransaction: string,
+    naAttachment: string,
+    type: string,
+  ): Promise<boolean> {
+    return dbServ.executeSql(
+      'DELETE FROM pending_transactions_attachments WHERE co_transaction = ? AND na_attachment = ? AND type = ?;',
+      [coTransaction, naAttachment, type],
+    ).then(() => true).catch(e => {
+      console.error('[AdjuntoService] deletePendingTransactionAttachmentsByKey error', e);
+      return false;
+    });
+  }
+
+}
+
+interface UploadAttachmentParams {
+  naTransaction: string;
+  idTransaction: number;
+  coTransaction: string;
+  naAttachment: string;
+  type: string;
+  position: number;
+  cantidad: number;
 }

@@ -13,12 +13,11 @@
         </p>
         }
 
-        @for (list of this.inventariosLogicService.itemListClientStocks; track $index; let i = $index) {
+        @for (list of displayedItems; track list.coClientStock; let i = $index) {
         <ion-list button detail="false">
-        @if (searchText === '' || list.coClient.toLowerCase().includes(searchText) || list.lbClient.toLowerCase().includes(searchText) || list.idClientStock.toString().includes(searchText)) {
         <div>
           <ion-item button detail="true">
-            <ion-label (click)="beforeOpenStock(i)">
+            <ion-label (click)="beforeOpenStock(getOriginalIndex(list))">
               <p>
                 {{this.inventariosLogicService.inventarioTags.get('INV_NRO_REF')}}:
                 {{list.idClientStock}}
@@ -37,16 +36,15 @@
               </p>
             </ion-label>
             @if (list.stDelivery == 3) {
-            <ion-button color="danger" (click)="deleteClientStock(i)"><ion-icon
+            <ion-button color="danger" (click)="deleteClientStock(getOriginalIndex(list))"><ion-icon
               slot="icon-only" name="trash"></ion-icon>
             </ion-button>
             }
           </ion-item>
         </div>
-          }
         </ion-list>
           }
-        <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+        <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
           <ion-infinite-scroll-content loadingText="Por favor espere..."
             loadingSpinner="bubbles"></ion-infinite-scroll-content>
         </ion-infinite-scroll>

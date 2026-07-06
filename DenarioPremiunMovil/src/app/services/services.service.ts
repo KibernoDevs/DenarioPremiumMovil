@@ -9,8 +9,13 @@ import { Login } from '../modelos/login';
 import { syncResponse } from '../modelos/tables/getSyncResponse';
 import { ApplicationTags } from '../modelos/tables/applicationTags';
 import { PendingTransaction } from '../modelos/tables/pendingTransactions';
-import { url } from 'inspector';
-
+export interface UploadImageResponse {
+  errorCode: string;
+  errorMessage?: string;
+  name?: string;
+  transaction?: string;
+  type?: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -187,11 +192,50 @@ export class ServicesService {
   }
 
 
-  async sendImage(transaction: string, id: string, posicion: string, file: string, filename: string, type: string, cantidad: number) {
-    const httpOptions = this.getHttpOptionsAuthorization();
+  resolveMimeTypeFromFilename(filename: string, attachmentType?: string): string {
+    const extension = filename.split('.').pop()?.toLowerCase() ?? '';
+    switch (extension) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'doc':
+        return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'xls':
+        return 'application/vnd.ms-excel';
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      default:
+        if (attachmentType === 'file') {
+          return 'application/octet-stream';
+        }
+        return 'image/jpeg';
+    }
+  }
 
-    let fetched = await fetch('data:image/jpeg;base64,' + file);
-    let blob = await fetched.blob();
+  async sendImage(
+    transaction: string,
+    id: string,
+    posicion: string,
+    file: string,
+    filename: string,
+    type: string,
+    cantidad: number,
+    mimeType?: string,
+  ): Promise<UploadImageResponse> {
+    const httpOptions = this.getHttpOptionsAuthorization();
+    const resolvedMime = mimeType || this.resolveMimeTypeFromFilename(filename, type);
+    const normalizedFile = file.includes('base64,') ? file.split('base64,').pop() ?? file : file;
+
+    const fetched = await fetch(`data:${resolvedMime};base64,${normalizedFile}`);
+    const blob = await fetched.blob();
 
     const data = new FormData();
     data.append('transaction', transaction);
@@ -201,27 +245,43 @@ export class ServicesService {
     data.append('type', type);
     data.append('cantidad', cantidad.toString());
 
-    const url = (httpOptions.url.endsWith('/') ? httpOptions.url : httpOptions.url) + 'uploadimages';
-    const headers: any = {};
-    if (httpOptions.headers && (httpOptions.headers as any).Authorization) {
-      headers['Authorization'] = (httpOptions.headers as any).Authorization;
-    }
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: data,
-        headers
-      });
-      const text = await response.text();
-      let body: any;
-      try { body = JSON.parse(text); } catch { body = text; }
-      console.log("[ServiceService] Respuesta de server:", response.status, body);
-      return body;
-    } catch (err) {
-      console.error("[ServiceService] upload error:", err);
-      throw err;
+    const baseUrl = httpOptions.url.endsWith('/') ? httpOptions.url : `${httpOptions.url}/`;
+    const url = `${baseUrl}uploadimages`;
+    const headers: Record<string, string> = {};
+    if (httpOptions.headers && (httpOptions.headers as { Authorization?: string }).Authorization) {
+      headers['Authorization'] = (httpOptions.headers as { Authorization: string }).Authorization;
     }
 
+    const response = await fetch(url, {
+      method: 'POST',
+      body: data,
+      headers,
+    });
+    const text = await response.text();
+    let body: UploadImageResponse | string;
+    try {
+      body = JSON.parse(text) as UploadImageResponse;
+    } catch {
+      body = text;
+    }
+
+    console.log('[ServiceService] Respuesta de server:', response.status, body);
+
+    if (!response.ok) {
+      const message = typeof body === 'string'
+        ? body
+        : body.errorMessage ?? `Error HTTP ${response.status} al subir adjunto`;
+      throw new Error(message);
+    }
+
+    if (typeof body === 'string' || String(body.errorCode ?? '') !== '000') {
+      const message = typeof body === 'string'
+        ? body
+        : body.errorMessage ?? 'El servidor rechazó el adjunto';
+      throw new Error(message);
+    }
+
+    return body;
   }
 
   getTagsHome() {

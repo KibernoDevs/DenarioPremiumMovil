@@ -205,7 +205,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.isOpenCollect = false;
     this.collectService.newCollect = false;
     this.collectService.recentOpenCollect = true;
-    this.collectService.skipDocumentReloadInLoadData = true;
+    this.collectService.skipDocumentReloadInLoadData = this.collectService.coTypeModule !== '3';
     this.collectService.createAutomatedPrepaid = false;
     this.collectService.anticipoAutomatico = [];
     //this.collectService.disabledCurrency = true;
@@ -850,12 +850,6 @@ export class CobrosGeneralComponent implements OnInit {
                   this.collectService.collection.idEnterprise,
                 );
               }
-              if (this.collectService.retencion) {
-                void this.collectService.getCollectRetentions(
-                  this.synchronizationServices.getDatabase(),
-                  this.collectService.collection.idEnterprise,
-                );
-              }
               this.collectService.findIsMissingRetention(
                 this.synchronizationServices.getDatabase(),
                 this.collectService.collection.idClient,
@@ -864,18 +858,12 @@ export class CobrosGeneralComponent implements OnInit {
             } else {
               this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
                 this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
-                this.getDocumentSalesFirstPageOptions()).then(async () => {
+                this.getDocumentSalesFirstPageOptions()).then(() => {
                   if (this.collectService.historicPartialPayment) {
                     this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                   }
                   if (this.collectService.userCanSelectCollectDiscount) {
                     this.collectService.getCollectDiscounts(
-                      this.synchronizationServices.getDatabase(),
-                      this.collectService.collection.idEnterprise
-                    );
-                  }
-                  if (this.collectService.retencion) {
-                    await this.collectService.getCollectRetentions(
                       this.synchronizationServices.getDatabase(),
                       this.collectService.collection.idEnterprise
                     );
@@ -1466,6 +1454,13 @@ export class CobrosGeneralComponent implements OnInit {
         documentSale[field] = (detail as any)[field];
       }
     });
+
+    documentSale.isSelected = true;
+    documentSale.isSave = detail.isSave ?? true;
+    documentSale.positionCollecDetails = this.collectService.collection.collectionDetails.findIndex(
+      item => item.idDocument === detail.idDocument
+        || String(item.coDocument) === String(detail.coDocument),
+    );
   }
 
   private syncPaymentConversionsForRateChange(): void {
@@ -1548,10 +1543,16 @@ export class CobrosGeneralComponent implements OnInit {
       const nuAmountRetention2 = previousDetail?.nuAmountRetention2 ?? 0;
       const nuAmountDiscount = previousDetail?.nuAmountDiscount ?? 0;
       const nuAmountCollectDiscount = previousDetail?.nuAmountCollectDiscount ?? 0;
-      const nuAmountIgtf = previousDetail?.nuAmountIgtf ?? 0;
-
-      const documentCurrency = doc.coCurrency ?? this.collectService.collection.coCurrency;
-      const detailRate = this.collectService.collection.nuValueLocal;
+      const detailPayment = this.collectService.buildInitialCollectionDetailPaymentFields(
+        nuAmountBalance!,
+        doc.coCurrency,
+        {
+          nuAmountDiscount,
+          nuAmountCollectDiscount,
+          nuAmountRetention,
+          nuAmountRetention2,
+        },
+      );
 
       this.collectService.collection.collectionDetails.push({
         idCollectionDetail: previousDetail?.idCollectionDetail ?? null,
@@ -1562,12 +1563,12 @@ export class CobrosGeneralComponent implements OnInit {
         nuVoucherRetention: previousDetail?.nuVoucherRetention ?? "",
         nuAmountRetention: nuAmountRetention,
         nuAmountRetention2: nuAmountRetention2,
-        nuAmountRetentionConversion: this.collectService.convertirMonto(nuAmountRetention, detailRate, documentCurrency),
-        nuAmountRetention2Conversion: this.collectService.convertirMonto(nuAmountRetention2, detailRate, documentCurrency),
-        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(nuAmountRetention2, detailRate, documentCurrency),
-        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(nuAmountRetention, detailRate, documentCurrency),
-        nuAmountPaid: nuAmountBalance,
-        nuAmountPaidConversion: nuAmountBalanceConversion,
+        nuAmountRetentionConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetention2Conversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(nuAmountRetention2, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(nuAmountRetention, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
+        nuAmountPaid: detailPayment.nuAmountPaid,
+        nuAmountPaidConversion: detailPayment.nuAmountPaidConversion,
         nuAmountDiscount: nuAmountDiscount,
         nuAmountDiscountConversion: this.collectService.convertirMonto(nuAmountDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         nuAmountDoc: nuAmountTotal!,
@@ -1580,8 +1581,8 @@ export class CobrosGeneralComponent implements OnInit {
         coOriginal: doc.coCurrency,
         coTypeDoc: doc.coDocumentSaleType,
         nuValueLocal: this.collectService.collection.nuValueLocal,
-        nuAmountIgtf: nuAmountIgtf,
-        nuAmountIgtfConversion: this.collectService.convertirMonto(nuAmountIgtf, detailRate, documentCurrency),
+        nuAmountIgtf: detailPayment.nuAmountIgtf,
+        nuAmountIgtfConversion: detailPayment.nuAmountIgtfConversion,
         st: previousDetail?.st ?? 0,
         isSave: previousDetail?.isSave ?? false,
         daVoucher: previousDetail?.daVoucher ?? this.dateServ.onlyDateHoyISO(),
@@ -1592,13 +1593,7 @@ export class CobrosGeneralComponent implements OnInit {
         missingRetention: missingRetention,
         nuAmountCollectDiscountConversion: this.collectService.convertirMonto(nuAmountCollectDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         collectionDetailDiscounts: previousDetail?.collectionDetailDiscounts,
-        collectionDetailRetentions: previousDetail?.collectionDetailRetentions,
       });
-      const newDetailIndex = this.collectService.collection.collectionDetails.length - 1;
-      const newDetail = this.collectService.collection.collectionDetails[newDetailIndex];
-      if (newDetail) {
-        this.collectService.syncDetailRetentionAmountsAndConversions(newDetail, undefined, newDetailIndex);
-      }
       // Actualizar positionCollecDetails en los arrays de documentos
       const newPos = this.collectService.collection.collectionDetails.length - 1;
       const docIndex = this.collectService.documentSales.findIndex(documentSale => documentSale.idDocument === doc.idDocument);

@@ -45,5 +45,12 @@
 
 
       </ion-row>
+      <ion-row *ngIf="allowProductReports && showSearch">
+        <ion-col size="12">
+          <button type="button" class="reports-entry-button" (click)="onReportsClicked()">
+            REPORTES
+          </button>
+        </ion-col>
+      </ion-row>
   </ion-grid>
 </div>
