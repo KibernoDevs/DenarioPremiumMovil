@@ -110,6 +110,23 @@ export class DevolucionListComponent implements OnInit {
     this.searchText = event.target.value.toLowerCase();
   }
 
+  matchesReturnSearch(returnItem: ItemListaDevoluciones): boolean {
+    if (this.searchText === '') {
+      return true;
+    }
+    const search = this.searchText;
+    return returnItem.coClient.toLowerCase().includes(search)
+      || returnItem.naClient.toLowerCase().includes(search);
+  }
+
+  hasVisibleReturns(): boolean {
+    return (this.returnLogic.itemReturns ?? []).some(returnItem => this.matchesReturnSearch(returnItem));
+  }
+
+  getEmptyReturnsLabel(): string {
+    return 'No hay resultados';
+  }
+
   getStatusOrderName(status: number, naStatus: any) {
     if (typeof naStatus === 'object') {
       return naStatus.na_status;

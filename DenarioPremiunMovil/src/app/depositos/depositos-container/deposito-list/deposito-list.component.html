@@ -7,9 +7,11 @@
   <div class="collect-card">
     <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">
-        <p *ngIf="valid">
-          NO HAY DEPOSITOS
+        @if (hasNoVisibleItems()) {
+        <p class="search-empty-state ion-text-center">
+          {{ getEmptyListLabel() }}
         </p>
+        }
         <ion-list *ngFor="let deposit of displayedItems; index as i" button detail="false">
           <div>
             <ion-item button detail="false" detail="true">

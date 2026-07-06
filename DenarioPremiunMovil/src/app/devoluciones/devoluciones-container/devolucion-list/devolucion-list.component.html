@@ -6,6 +6,11 @@
 
   <!--  Listado clickeable de productos  -->
   <div class="product-card">
+    @if (!hasVisibleReturns()) {
+    <p class="search-empty-state ion-text-center">
+      {{ getEmptyReturnsLabel() }}
+    </p>
+    }
     <ion-list class="espacioListasProductos" *ngFor="let return of this.returnLogic.itemReturns; index as i">
       <div
         *ngIf="searchText === '' || return.coClient.toLowerCase().includes(searchText) || return.naClient.toLowerCase().includes(searchText)">

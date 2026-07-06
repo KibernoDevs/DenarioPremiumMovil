@@ -25,11 +25,9 @@
       </ion-segment>
     </div>
     @if(noProductsAlertShown || getVisibleProducts().length === 0){
-    <ion-item>
-      <ion-label class="ion-text-center" style="color: red;">
-        {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
-      </ion-label>
-    </ion-item>
+    <p class="search-empty-state ion-text-center">
+      {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
+    </p>
     }
     <ion-content class="products-list-content" [forceOverscroll]="false" scrollY="true">
       <ion-list class="products-list-inner">
