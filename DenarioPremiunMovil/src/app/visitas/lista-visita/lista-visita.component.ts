@@ -166,6 +166,14 @@ export class ListaVisitaComponent implements OnInit, ViewWillEnter {
       || (visit.naClient ?? '').toLowerCase().includes(search);
   }
 
+  hasVisibleVisits(): boolean {
+    return this.listaVisitas.some(visit => this.matchesVisitSearch(visit));
+  }
+
+  getEmptyListLabel(): string {
+    return 'No hay resultados';
+  }
+
   getStatusVisitName(stVisit: number, isReassigned: boolean) {
 
     switch (stVisit) {

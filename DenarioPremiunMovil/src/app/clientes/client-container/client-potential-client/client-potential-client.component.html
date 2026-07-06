@@ -12,11 +12,9 @@
       <ion-row>
         <ion-col class="" size="12" size-sm="12" size-xs="12">
           @if (clientLogic.potentialClients.length === 0) {
-          <ion-item>
-            <ion-label class="ion-text-center" style="color: red;">
-              Aún no hay clientes potenciales
-            </ion-label>
-          </ion-item>
+          <p class="search-empty-state ion-text-center">
+            Aún no hay clientes potenciales
+          </p>
           }
 
           <ion-list *ngFor="let potentialClient of clientLogic.potentialClients;index as i" button detail="false">

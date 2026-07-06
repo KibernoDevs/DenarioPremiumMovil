@@ -48,6 +48,12 @@
     </ion-fab-list>
   </ion-fab>
 
+  @if (!hasVisibleVisits()) {
+  <p class="search-empty-state ion-text-center">
+    {{ getEmptyListLabel() }}
+  </p>
+  }
+
   <ion-list *ngFor="let visit of listaVisitas;" button detail="false">
     <!-- <ion-button (click)="service.changeDateVisit()"></ion-button> -->
     <div *ngIf="matchesVisitSearch(visit)">

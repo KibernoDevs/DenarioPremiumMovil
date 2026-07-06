@@ -88,6 +88,14 @@ export class InventarioListComponent implements OnInit {
     this.scrollDisable = page.scrollDisable;
   }
 
+  hasNoVisibleItems(): boolean {
+    return this.filteredItems.length === 0;
+  }
+
+  getEmptyListLabel(): string {
+    return this.inventariosLogicService.inventarioTags.get('INV_LIST_NOSTOCKS') ?? 'No hay resultados';
+  }
+
   getOriginalIndex(item: ItemListaInventarios): number {
     return this.inventariosLogicService.itemListClientStocks.findIndex(
       stock => stock.coClientStock === item.coClientStock

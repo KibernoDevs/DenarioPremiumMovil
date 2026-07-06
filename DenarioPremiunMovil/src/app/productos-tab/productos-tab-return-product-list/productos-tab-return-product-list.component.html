@@ -3,11 +3,9 @@
   <!--  Listado clickeable de productos  -->
   <div class="product-card cardProduct product-structure-scroll ion-content-scroll-host">
     @if(noProductsAlertShown){
-    <ion-item>
-      <ion-label class="ion-text-center" style="color: red;">
-        {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
-      </ion-label>
-    </ion-item>
+    <p class="search-empty-state ion-text-center">
+      {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
+    </p>
     }
     <ion-list class="espacioListasProductos">
       @for(product of productList; track product.idProduct; let i = $index){

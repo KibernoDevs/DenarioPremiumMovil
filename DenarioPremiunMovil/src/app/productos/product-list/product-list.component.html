@@ -1,10 +1,8 @@
 <div class="listado-product-structures">
   @if(noProductsAlertShown){
-  <ion-item>
-    <ion-label class="ion-text-center" style="color: red;">
-      {{ emptyResultsLabel() }}
-    </ion-label>
-  </ion-item>
+  <p class="search-empty-state ion-text-center">
+    {{ emptyResultsLabel() }}
+  </p>
   }
   <!--  Listado clickeable de productos  -->
   <div class="product-card" *ngIf="!selectedProduct">

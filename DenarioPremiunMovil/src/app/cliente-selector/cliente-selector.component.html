@@ -62,11 +62,9 @@
 
       <ion-list button detail="false">
         @if(noClientsAlertShown){
-        <ion-item>
-          <ion-label class="ion-text-center" style="color: red;">
-            {{this.getTag("CLI_SIN_RESULTADOS")}}
-          </ion-label>
-        </ion-item>
+        <p class="search-empty-state ion-text-center">
+          {{this.getTag("CLI_SIN_RESULTADOS")}}
+        </p>
         }
         @for (client of clientes; track client.coClient){
         <div class="product-structure-title listaProductos">

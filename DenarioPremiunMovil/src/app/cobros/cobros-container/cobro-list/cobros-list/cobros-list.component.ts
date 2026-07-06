@@ -107,6 +107,14 @@ export class CobrosListComponent implements OnInit {
     this.scrollDisable = page.scrollDisable;
   }
 
+  hasNoVisibleItems(): boolean {
+    return this.filteredItems.length === 0;
+  }
+
+  getEmptyListLabel(): string {
+    return 'No hay resultados';
+  }
+
   getOriginalIndex(collect: ItemListaCobros): number {
     return this.collectService.itemListaCobros.findIndex(
       item => item.co_collection === collect.co_collection

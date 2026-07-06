@@ -28,6 +28,11 @@
 
 
   <div class="scroll-lista-pedidos">
+    @if (!hasVisibleOrders()) {
+    <p class="search-empty-state ion-text-center">
+      {{ getEmptyOrdersLabel() }}
+    </p>
+    }
     <ion-list *ngFor="let order of orderServ.listaPedidos; index as i" button detail="false">
       <div *ngIf="matchesOrderSearch(order)">
         <ion-item button detail="false">
