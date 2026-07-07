@@ -978,16 +978,17 @@ export class SynchronizationDBService {
   'da_initial, id_address_client, co_address_client, nu_attachments, has_attachments,' +
   'is_reassigned, tx_reassigned_motive, da_reassign) ' +
   'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
-  'ON CONFLICT(co_visit) DO UPDATE SET ' + 
-  'co_visit=excluded.co_visit, st_visit=excluded.st_visit, da_visit=excluded.da_visit, ' +
+  'ON CONFLICT(co_visit) DO UPDATE SET ' +
+  'co_visit=excluded.co_visit, ' +
+  'st_visit=CASE WHEN visits.st_visit = 3 THEN excluded.st_visit ELSE visits.st_visit END, ' +
+  'da_visit=excluded.da_visit, ' +
   'coordenada=excluded.coordenada, id_client=excluded.id_client, co_client=excluded.co_client, ' +
   'na_client=excluded.na_client, nu_sequence=excluded.nu_sequence, id_user=excluded.id_user, ' +
   'co_user=excluded.co_user, co_enterprise=excluded.co_enterprise, id_enterprise=excluded.id_enterprise, ' +
   'da_real=excluded.da_real, da_initial=excluded.da_initial, id_address_client=excluded.id_address_client, ' +
   'co_address_client=excluded.co_address_client, nu_attachments=excluded.nu_attachments, ' +
   'has_attachments=excluded.has_attachments, is_reassigned=excluded.is_reassigned, ' +
-  'tx_reassigned_motive=excluded.tx_reassigned_motive, da_reassign=excluded.da_reassign ' +
-  'WHERE visits.st_visit != 0'; // <-- Checks the ALREADY SAVED value
+  'tx_reassigned_motive=excluded.tx_reassigned_motive, da_reassign=excluded.da_reassign';
     
     /*"INSERT OR REPLACE INTO visits(" +
       'id_visit, co_visit, st_visit, da_visit, coordenada, id_client, co_client,' +
