@@ -11,16 +11,15 @@
     <ion-grid>
       <ion-row>
         <ion-col class="" size="12" size-sm="12" size-xs="12">
-          @if (clientLogic.potentialClients.length === 0) {
+          @if (!hasVisiblePotentialClients()) {
           <p class="search-empty-state ion-text-center">
-            Aún no hay clientes potenciales
+            {{ getEmptyListLabel() }}
           </p>
           }
 
           <ion-list *ngFor="let potentialClient of clientLogic.potentialClients;index as i" button detail="false">
-            <div
-              *ngIf="searchText === '' || potentialClient.naClient.toLowerCase().includes(searchText) || potentialClient.nuRif.toLowerCase().includes(searchText) || potentialClient.idClient.toString().includes(searchText)">
-              <ion-item button detail="false" *ngIf="i<10*clientLogic.indice"
+            <div *ngIf="matchesPotentialClientSearch(potentialClient, i)">
+              <ion-item button detail="false"
                 (click)="openPotentialClientFunction(potentialClient)">
                 <ion-label>
                   <p> <span class="titulosBold">{{this.clientLogic.clientTags.get('CLI_POT_CLIENTE')}}:</span>

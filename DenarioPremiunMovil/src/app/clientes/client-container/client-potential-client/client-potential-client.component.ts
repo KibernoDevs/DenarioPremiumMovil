@@ -94,9 +94,34 @@ export class PotentialClientComponent implements OnInit {
   }
 
   handleInput(event: any) {
-    this.searchText = event.target.value.toLowerCase();
+    this.searchText = (event?.detail?.value ?? event?.target?.value ?? '').toString().toLowerCase().trim();
   }
 
+  matchesPotentialClientSearch(potentialClient: PotentialClient, index: number): boolean {
+    if (index >= 10 * this.clientLogic.indice) {
+      return false;
+    }
+    if (this.searchText === '') {
+      return true;
+    }
+    const search = this.searchText;
+    return (potentialClient.naClient ?? '').toLowerCase().includes(search)
+      || (potentialClient.nuRif ?? '').toLowerCase().includes(search)
+      || potentialClient.idClient.toString().includes(search);
+  }
+
+  hasVisiblePotentialClients(): boolean {
+    return this.clientLogic.potentialClients.some(
+      (client, index) => this.matchesPotentialClientSearch(client, index)
+    );
+  }
+
+  getEmptyListLabel(): string {
+    if (this.clientLogic.potentialClients.length === 0) {
+      return 'Aún no hay clientes potenciales';
+    }
+    return this.clientLogic.clientTags.get('CLI_SIN_RESULTADOS') ?? 'No hay resultados';
+  }
 
   onIonInfinite(ev: any) {
     this.clientLogic.indice++;
