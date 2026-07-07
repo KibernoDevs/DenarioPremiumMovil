@@ -13,6 +13,7 @@ import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { MessageAlert } from '../modelos/tables/messageAlert';
 import { StraightSwap } from '../modelos/tables/straightSwap';
+import { PedidosService } from '../pedidos/pedidos.service';
 
 const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81];
 
@@ -27,6 +28,7 @@ export class SynchronizationComponent implements OnInit {
   public globalConfig = inject(GlobalConfigService);
   public synchronizationServices = inject(SynchronizationDBService)
   private services = inject(ServicesService);
+  private pedidosService = inject(PedidosService);
   private message = inject(MessageService);
   private imageServices = inject(ImageServicesService);
 
@@ -839,6 +841,7 @@ export class SynchronizationComponent implements OnInit {
               if (resTable.numberOfPages == 0) {
                 this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
                   this.initProgress(this.PROGRESS, this.BUFF);
+                  this.notifyProductMinMulSynced(key);
 
                   table.page = 0;
                   resolve(rowKey);
@@ -850,6 +853,7 @@ export class SynchronizationComponent implements OnInit {
                     this.syncNextTable(response);
                   } else if (resTable.numberOfPages == resTable.page) {
                     this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
+                      this.notifyProductMinMulSynced(key);
                       table.page = 0;
                       resolve(rowKey);
                     });
@@ -1449,6 +1453,14 @@ export class SynchronizationComponent implements OnInit {
       cfg.pageKey,
       cfg.numberOfPagesKey
     );
+  }
+
+  private notifyProductMinMulSynced(tableName: string): void {
+    if (tableName !== 'product_min_muls') {
+      return;
+    }
+    this.pedidosService.invalidateCatalogCache();
+    void this.pedidosService.refreshProductMinMulData();
   }
 
   /**

@@ -7,9 +7,9 @@
   <div class="clientStock-card">
     <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">
-        @if(valid){
-        <p>
-          {{this.inventariosLogicService.inventarioTags.get('INV_LIST_NOSTOCKS')}}
+        @if (hasNoVisibleItems()) {
+        <p class="search-empty-state ion-text-center">
+          {{ getEmptyListLabel() }}
         </p>
         }
 

@@ -105,6 +105,7 @@ export class PedidosService {
   private catalogDataEnterpriseId: number | null = null;
   public ivaList: IvaList[] = [];
   public orderTypeIvaChanged$ = new Subject<void>();
+  public catalogDataChanged$ = new Subject<void>();
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
     naLine: String,
@@ -279,6 +280,30 @@ export class PedidosService {
     return this.catalogDataEnterpriseId === this.empresaSeleccionada?.idEnterprise;
   }
 
+  invalidateCatalogCache(): void {
+    this.catalogDataEnterpriseId = null;
+  }
+
+  refreshProductMinMulData(): Promise<void> {
+    this.getConfig();
+    if (!this.productMinMul) {
+      this.listaProdMinMul = [];
+      this.prodMinMulMap.clear();
+      this.catalogDataChanged$.next();
+      return Promise.resolve();
+    }
+    const idEnterprise = this.empresaSeleccionada?.idEnterprise;
+    if (!idEnterprise) {
+      return Promise.resolve();
+    }
+    return this.getProductMinMulList(idEnterprise).then(data => {
+      this.listaProdMinMul = data;
+      this.prodMinMulMap.clear();
+      this.fillProdMinMulMap();
+      this.catalogDataChanged$.next();
+    });
+  }
+
   /**
    * Carga paralela habitual; catalogCritical garantiza datos mínimos del catálogo (listas, precios, unidades).
    */
@@ -332,9 +357,13 @@ export class PedidosService {
       catalogCritical.push(
         this.getProductMinMulList(idEnterprise).then(data => {
           this.listaProdMinMul = data;
+          this.prodMinMulMap.clear();
           this.fillProdMinMulMap();
         }),
       );
+    } else {
+      this.listaProdMinMul = [];
+      this.prodMinMulMap.clear();
     }
 
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
@@ -377,9 +406,12 @@ export class PedidosService {
 
     return Promise.all(catalogCritical).then(() => {
       this.catalogDataEnterpriseId = idEnterprise;
+      this.catalogDataChanged$.next();
     });
   }
+
   fillProdMinMulMap() {
+    this.prodMinMulMap.clear();
     this.listaProdMinMul.forEach((value) => {
       this.prodMinMulMap.set(value.idProduct,
         { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
@@ -388,6 +420,13 @@ export class PedidosService {
 
   getProdMinMulByProduct(idProduct: number): { quMinimum: number; quMultiple: number } {
     return this.prodMinMulMap.get(idProduct) || { quMinimum: 1, quMultiple: 1 };
+  }
+
+  private resolveProdMinMul(idProduct: number): { quMinimum: number; quMultiple: number } {
+    if (!this.productMinMul) {
+      return { quMinimum: 1, quMultiple: 1 };
+    }
+    return this.getProdMinMulByProduct(idProduct);
   }
   getTags() {
     if (this.tags.size > 0) {
@@ -722,6 +761,9 @@ export class PedidosService {
       const sub = this.carrito.filter(p => p.idProduct == item.idProduct);
       if (sub.length > 0) {
         const cartItem = sub[0];
+        const prodMinMul = this.resolveProdMinMul(item.idProduct);
+        cartItem.quMinimum = prodMinMul.quMinimum;
+        cartItem.quMultiple = prodMinMul.quMultiple;
         if (this.shouldApplyOrderTypeIva()) {
           this.applyOrderTypeIvaToProduct(cartItem);
         }
@@ -900,15 +942,9 @@ export class PedidosService {
         }
         //FIN WAREHOUSES Y STOCK
         //MINIMOS Y MULTIPLOS
-        let quMultiple = 1;
-        let quMinimum = 1;
-        if (this.productMinMul) {
-          const productMinMulList = this.listaProdMinMul.filter(pmm => pmm.idProduct == item.idProduct);
-          if (productMinMulList.length > 0) {
-            quMultiple = productMinMulList[0].quMultiple;
-            quMinimum = productMinMulList[0].quMinimum;
-          }
-        }
+        const prodMinMul = this.resolveProdMinMul(item.idProduct);
+        const quMinimum = prodMinMul.quMinimum;
+        const quMultiple = prodMinMul.quMultiple;
 
         //DESCUENTOS
         let discountList: Discount[] = [];
@@ -1336,7 +1372,7 @@ export class PedidosService {
     if (Number(unit.quAmount) <= 0) {
       return 0;
     }
-    return unit.quUnit * unit.quAmount * this.resolveUnitNuPriceForLineTotal(item, unit);
+    return unit.quUnit  * this.resolveUnitNuPriceForLineTotal(item, unit); //* unit.quAmount;
   }
 
   /**

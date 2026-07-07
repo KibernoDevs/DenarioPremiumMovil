@@ -95,6 +95,14 @@ export class DepositoListComponent implements OnInit {
     this.scrollDisable = page.scrollDisable;
   }
 
+  hasNoVisibleItems(): boolean {
+    return this.filteredItems.length === 0;
+  }
+
+  getEmptyListLabel(): string {
+    return 'No hay resultados';
+  }
+
   getOriginalIndex(deposit: ItemListaDepositos): number {
     return this.depositService.itemListaDepositos.findIndex(
       item => item.coDeposit === deposit.coDeposit

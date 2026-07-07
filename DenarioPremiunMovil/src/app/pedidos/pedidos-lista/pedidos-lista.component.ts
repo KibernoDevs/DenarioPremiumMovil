@@ -187,6 +187,14 @@ export class PedidosListaComponent implements OnInit {
       || order.id_order.toString().toLowerCase().includes(search);
   }
 
+  hasVisibleOrders(): boolean {
+    return (this.orderServ.listaPedidos ?? []).some(order => this.matchesOrderSearch(order));
+  }
+
+  getEmptyOrdersLabel(): string {
+    return 'No hay resultados';
+  }
+
   public buttonsDelete: { text: string; role: string; handler: () => void; }[] =
     [
       {
