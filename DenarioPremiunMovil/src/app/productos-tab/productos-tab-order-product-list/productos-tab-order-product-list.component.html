@@ -71,13 +71,13 @@
             <p>{{this.productsTabTags.get('PROD_POINTS_PROD')}}: {{ product.quPoints }}</p>
             }
             @if(orderServ.productMinMul){
-            @if(product.quMinimum > 1){
+            @if(orderServ.getProdMinMulByProduct(product.idProduct).quMinimum > 1){
             <p>{{ orderServ.getTag("PED_MINIMO")}}: {{
-              product.quMinimum }}</p>
+              orderServ.getProdMinMulByProduct(product.idProduct).quMinimum }}</p>
             }
-            @if(product.quMultiple > 1){
+            @if(orderServ.getProdMinMulByProduct(product.idProduct).quMultiple > 1){
             <p>{{ orderServ.getTag("PED_MULTIPLO")}}: {{
-              product.quMultiple }}</p>
+              orderServ.getProdMinMulByProduct(product.idProduct).quMultiple }}</p>
             }
             }
             @if(orderServ.showStock){
@@ -307,13 +307,13 @@
                     productoModal.quPoints }}</p>
                   }
                   @if(orderServ.productMinMul){
-                  @if(productoModal.quMinimum > 1){
+                  @if(orderServ.getProdMinMulByProduct(productoModal.idProduct).quMinimum > 1){
                   <p><span class="titulosBold">{{
-                      orderServ.getTag("PED_MINIMO")}}:</span> {{ productoModal.quMinimum }}</p>
+                      orderServ.getTag("PED_MINIMO")}}:</span> {{ orderServ.getProdMinMulByProduct(productoModal.idProduct).quMinimum }}</p>
                   }
-                  @if(productoModal.quMultiple > 1){
+                  @if(orderServ.getProdMinMulByProduct(productoModal.idProduct).quMultiple > 1){
                   <p><span class="titulosBold">{{
-                      orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
+                      orderServ.getTag("PED_MULTIPLO")}}:</span> {{ orderServ.getProdMinMulByProduct(productoModal.idProduct).quMultiple }}</p>
                   }
                   }
                   @if(this.orderServ.vatExemptProducts){

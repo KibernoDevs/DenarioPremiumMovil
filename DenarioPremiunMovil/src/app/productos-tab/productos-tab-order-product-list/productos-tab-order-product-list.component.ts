@@ -117,6 +117,25 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       })
     );
 
+    this.subs.add(
+      this.orderServ.catalogDataChanged$.subscribe(() => {
+        if (this.modoLista === 'carrito') {
+          for (const item of this.orderServ.carrito) {
+            const prodMinMul = this.orderServ.getProdMinMulByProduct(item.idProduct);
+            item.quMinimum = prodMinMul.quMinimum;
+            item.quMultiple = prodMinMul.quMultiple;
+          }
+          this.orderUtilList = this.orderServ.carrito;
+          this.cd.markForCheck();
+          return;
+        }
+        if (this.productList?.length) {
+          this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+        }
+        this.cd.markForCheck();
+      })
+    );
+
     this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
       this.searchText = value;
     });

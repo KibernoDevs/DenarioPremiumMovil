@@ -30,7 +30,7 @@ import { OrderDetail } from 'src/app/modelos/tables/orderDetail';
 import { Discount } from 'src/app/modelos/tables/discount';
 import { OrderDetailUnit } from 'src/app/modelos/tables/orderDetailUnit';
 import { OrderDetailDiscount } from 'src/app/modelos/orderDetailDiscount';
-import { IonInput, Platform } from '@ionic/angular';
+import { IonInput, Platform, ViewWillEnter } from '@ionic/angular';
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
 import { Router } from '@angular/router';
@@ -52,7 +52,7 @@ import { formatClientForTab } from 'src/app/utils/client-display.util';
   styleUrls: ['./pedido.component.scss'],
   standalone: false
 })
-export class PedidoComponent implements OnInit {
+export class PedidoComponent implements OnInit, ViewWillEnter {
 
 
   // Injects
@@ -290,6 +290,12 @@ export class PedidoComponent implements OnInit {
     if (!this.orderServ.userMustActivateGPS && this.orderServ.pedidoModificable) {
       //chequeo suave de coordenadas si variable es false
       this.geoServ.getCurrentPosition().then(coords => { this.orderServ.coordenadas = coords });
+    }
+  }
+
+  async ionViewWillEnter(): Promise<void> {
+    if (this.empresaSeleccionada?.idEnterprise) {
+      await this.orderServ.refreshProductMinMulData();
     }
   }
 
