@@ -14,6 +14,7 @@ import { ImageServicesService } from '../services/imageServices/image-services.s
 import { MessageAlert } from '../modelos/tables/messageAlert';
 import { StraightSwap } from '../modelos/tables/straightSwap';
 import { PedidosService } from '../pedidos/pedidos.service';
+import { AutoSendService } from '../services/autoSend/auto-send.service';
 
 const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81];
 
@@ -31,6 +32,7 @@ export class SynchronizationComponent implements OnInit {
   private pedidosService = inject(PedidosService);
   private message = inject(MessageService);
   private imageServices = inject(ImageServicesService);
+  private autoSend = inject(AutoSendService);
 
   public messageAlert!: MessageAlert;
   private sqlTableMap: Record<string, { table: string, id: string, idName: string }> = {};
@@ -368,7 +370,8 @@ export class SynchronizationComponent implements OnInit {
   /**
    * Inicia la sincronización de tablas y carga los tags.
    */
-  sincronice() {
+  async sincronice(): Promise<void> {
+    await this.autoSend.runPendingQueue();
     this.getTablesVersion();
     this.initProgress(this.PROGRESS, this.BUFF);
     // Carga tags para la UI

@@ -442,7 +442,8 @@ export class AutoSendService implements OnInit {
       }
     }
     request.visit.coordenadaSaved = false;
-    if (v.stVisit == VISIT_STATUS_TO_SEND) {
+    const hasServerVisitId = v.idVisit != null && Number(v.idVisit) > 0;
+    if (v.stVisit == VISIT_STATUS_TO_SEND && !hasServerVisitId) {
       request.visit.idVisit = null as any;
     }
 
