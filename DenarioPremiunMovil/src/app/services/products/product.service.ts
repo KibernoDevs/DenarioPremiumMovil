@@ -126,6 +126,10 @@ export class ProductService {
     this.catalogProdMinMulMap = new Map(ped.prodMinMulMap);
   }
 
+  refreshCatalogMinMulFromPedidos(ped: PedidosService): void {
+    this.catalogProdMinMulMap = new Map(ped.prodMinMulMap);
+  }
+
   getCatalogPresentationTag(coApplicationTag: string): string {
     const fromOrder = this.catalogOrderPresentationTags.get(coApplicationTag);
     return typeof fromOrder === 'string' ? fromOrder : '';

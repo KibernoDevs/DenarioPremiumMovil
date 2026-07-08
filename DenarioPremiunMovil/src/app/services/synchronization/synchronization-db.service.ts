@@ -1096,6 +1096,7 @@ export class SynchronizationDBService {
 
   insertProductMinMulBatch(arr: ProductMinMulFav[]) {
     var statements = [];
+    const deleteStatement = 'DELETE FROM product_min_muls WHERE id_product = ? AND id_enterprise = ?';
     let insertStatement = "INSERT OR REPLACE INTO product_min_muls (" +
       'id_product_min_mul,co_product,id_product,qu_minimum,qu_multiple,' +
       'flag,co_enterprise,id_enterprise' +
@@ -1103,16 +1104,46 @@ export class SynchronizationDBService {
       'VALUES(?,?,?,?,?,?,?,?)'
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      statements.push([deleteStatement, [obj.idProduct, obj.idEnterprise]]);
       statements.push([insertStatement, [obj.idProductMinMul, obj.coProduct,
       obj.idProduct, obj.quMinimum, obj.quMultiple,
-      obj.flag, obj.coEnterprise, obj.idEnterprise]]);
+      ProductMinMulFav.normalizeFlag(obj.flag), obj.coEnterprise, obj.idEnterprise]]);
     }
 
-    return this.database.sqlBatch(statements).then(res => {
-      // console.log(res);
+    return this.database.sqlBatch(statements).then(() => {
+      return this.normalizeProductMinMulLegacyFlags();
+    }).then(() => {
+      return this.removeDuplicateProductMinMulRows();
     }).catch(e => {
       console.log(e);
     })
+  }
+
+  private removeDuplicateProductMinMulRows(): Promise<void> {
+    const dedupeStatement = 'DELETE FROM product_min_muls ' +
+      'WHERE id_product_min_mul IN (' +
+      'SELECT id_product_min_mul FROM (' +
+      'SELECT p1.id_product_min_mul ' +
+      'FROM product_min_muls p1 ' +
+      'INNER JOIN product_min_muls p2 ' +
+      'ON p1.id_product = p2.id_product ' +
+      'AND p1.id_enterprise = p2.id_enterprise ' +
+      'AND p1.id_product_min_mul < p2.id_product_min_mul' +
+      ')' +
+      ')';
+
+    return this.database.executeSql(dedupeStatement, []).then(() => undefined);
+  }
+
+  private normalizeProductMinMulLegacyFlags(): Promise<void> {
+    const normalizeTrue = "UPDATE product_min_muls SET flag = 1 " +
+      "WHERE LOWER(CAST(flag AS TEXT)) IN ('true', '1')";
+    const normalizeFalse = "UPDATE product_min_muls SET flag = 0 " +
+      "WHERE LOWER(CAST(flag AS TEXT)) IN ('false', '0')";
+
+    return this.database.executeSql(normalizeTrue, []).then(() => {
+      return this.database.executeSql(normalizeFalse, []);
+    }).then(() => undefined);
   }
 
   insertUserInformationBatch(arr: UserInformation[]) {

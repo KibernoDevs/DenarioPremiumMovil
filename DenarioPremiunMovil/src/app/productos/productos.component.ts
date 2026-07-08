@@ -1,4 +1,4 @@
-import { Component, ViewChild, inject } from '@angular/core';
+import { Component, ViewChild, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { ServicesService } from '../services/services.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
@@ -18,6 +18,7 @@ import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 import { PedidosService } from '../pedidos/pedidos.service';
 import { ProductReportsService } from '../services/products/product-reports.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-productos',
@@ -25,7 +26,7 @@ import { ProductReportsService } from '../services/products/product-reports.serv
   styleUrls: ['./productos.component.scss'],
   standalone: false
 })
-export class ProductosComponent {
+export class ProductosComponent implements OnInit, OnDestroy {
 
   tags = new Map<string, string>([]);
   services = inject(ServicesService);
@@ -56,6 +57,7 @@ export class ProductosComponent {
   listaEmpresa: Enterprise[] = [];
   multiempresa: Boolean = false;
   allowProductReports = false;
+  private catalogDataChangedSub?: Subscription;
 
 
   constructor(private router: Router,
@@ -81,6 +83,13 @@ export class ProductosComponent {
     this.productService.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.productService.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === "true";
     this.allowProductReports = this.productReportsService.isProductReportsEnabled();
+    this.catalogDataChangedSub = this.orderService.catalogDataChanged$.subscribe(() => {
+      this.productService.refreshCatalogMinMulFromPedidos(this.orderService);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.catalogDataChangedSub?.unsubscribe();
   }
 
   getTags(): Promise<void> {

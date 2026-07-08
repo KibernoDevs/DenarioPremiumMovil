@@ -223,12 +223,18 @@ export class ProductReportsService {
           SELECT pmm.qu_minimum
           FROM product_min_muls pmm
           WHERE pmm.id_product = p.id_product
+            AND pmm.id_enterprise = p.id_enterprise
+            AND (pmm.flag = 1 OR LOWER(CAST(pmm.flag AS TEXT)) IN ('true', '1'))
+            AND NOT (pmm.flag = 0 OR LOWER(CAST(pmm.flag AS TEXT)) IN ('false', '0'))
           LIMIT 1
         ), 1) AS qu_minimum,
         COALESCE((
           SELECT pmm.qu_multiple
           FROM product_min_muls pmm
           WHERE pmm.id_product = p.id_product
+            AND pmm.id_enterprise = p.id_enterprise
+            AND (pmm.flag = 1 OR LOWER(CAST(pmm.flag AS TEXT)) IN ('true', '1'))
+            AND NOT (pmm.flag = 0 OR LOWER(CAST(pmm.flag AS TEXT)) IN ('false', '0'))
           LIMIT 1
         ), 1) AS qu_multiple,
         COALESCE((

@@ -820,12 +820,18 @@ export class PedidosDbService {
     let query = "select id_product_min_mul as idProductMinMul, co_product as coProduct, " +
       "id_product as idProduct, qu_minimum as quMinimum, qu_multiple as quMultiple, " +
       "flag, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      "from product_min_muls where id_enterprise = ? and (qu_minimum > 1 OR qu_multiple > 1) and flag = 'true'";
+      "from product_min_muls where id_enterprise = ? and (qu_minimum > 1 OR qu_multiple > 1) " +
+      "and (flag = 1 OR LOWER(CAST(flag AS TEXT)) IN ('true', '1')) " +
+      "and NOT (flag = 0 OR LOWER(CAST(flag AS TEXT)) IN ('false', '0'))";
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: ProductMinMulFav[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i);
+        if (!ProductMinMulFav.isFlagActive(row.flag)) {
+          continue;
+        }
+        list.push(row);
       }
       return list;
     });
