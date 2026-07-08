@@ -41,7 +41,7 @@
 
           </ion-col>
         </ion-row>
-        @if(!this.clientLogic.esTransportista){
+        @if(!this.transportista){
         <ion-row>
           <ion-col>
             <div class="saldo-legend" aria-label="Leyenda de colores">
@@ -72,7 +72,7 @@
             <ion-label>
               <p>{{ client.lbClient }}</p>
               <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
-              @if(!this.clientLogic.esTransportista){
+              @if(!this.transportista){
               <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
                 {{this.getTag('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
               </p>
