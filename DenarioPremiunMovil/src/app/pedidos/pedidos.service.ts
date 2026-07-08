@@ -292,16 +292,20 @@ export class PedidosService {
       this.catalogDataChanged$.next();
       return Promise.resolve();
     }
-    const idEnterprise = this.empresaSeleccionada?.idEnterprise;
+    const idEnterprise = this.empresaSeleccionada?.idEnterprise ?? this.catalogDataEnterpriseId;
     if (!idEnterprise) {
       return Promise.resolve();
     }
     return this.getProductMinMulList(idEnterprise).then(data => {
-      this.listaProdMinMul = data;
-      this.prodMinMulMap.clear();
-      this.fillProdMinMulMap();
+      this.applyProductMinMulList(data);
       this.catalogDataChanged$.next();
     });
+  }
+
+  private applyProductMinMulList(data: ProductMinMulFav[]): void {
+    this.listaProdMinMul = data.filter(row => ProductMinMulFav.isFlagActive(row.flag));
+    this.prodMinMulMap.clear();
+    this.fillProdMinMulMap();
   }
 
   /**
@@ -356,9 +360,7 @@ export class PedidosService {
     if (this.productMinMul) {
       catalogCritical.push(
         this.getProductMinMulList(idEnterprise).then(data => {
-          this.listaProdMinMul = data;
-          this.prodMinMulMap.clear();
-          this.fillProdMinMulMap();
+          this.applyProductMinMulList(data);
         }),
       );
     } else {
@@ -413,6 +415,9 @@ export class PedidosService {
   fillProdMinMulMap() {
     this.prodMinMulMap.clear();
     this.listaProdMinMul.forEach((value) => {
+      if (!ProductMinMulFav.isFlagActive(value.flag)) {
+        return;
+      }
       this.prodMinMulMap.set(value.idProduct,
         { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
     });
