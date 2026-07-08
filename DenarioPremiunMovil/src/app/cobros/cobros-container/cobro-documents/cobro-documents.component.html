@@ -826,7 +826,7 @@
                     </ng-template>
                   </ion-modal>
 
-                  <ion-item lines="none" class="retention-amount-item">
+                  <div class="retention-amount-row">
                     <ion-input [id]="getRetentionInputId(retentionDetail.idCollectRetention)"
                       label="{{this.collectService.collectionTags.get('COB_MONTO')}}"
                       label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
@@ -837,11 +837,11 @@
                       (paste)="onCollectRetentionPaste(retentionDetail.idCollectRetention, $event)"
                       (input)="onCollectRetentionInput(retentionDetail.idCollectRetention, $event)">
                     </ion-input>
-                    <ion-button slot="end" fill="clear" color="danger"
+                    <ion-button fill="clear" color="danger" class="retention-amount-remove-btn"
                       (click)="removeCollectRetention(retentionDetail.idCollectRetention)">
                       <ion-icon name="trash-outline"></ion-icon>
                     </ion-button>
-                  </ion-item>
+                  </div>
                 </ion-col>
                 }
                 <!-- RETENCIONES DINAMICAS -->
@@ -1195,7 +1195,7 @@
                 </ng-template>
               </ion-modal>
 
-              <ion-item lines="none" class="retention-amount-item">
+              <div class="retention-amount-row">
                 <ion-input [id]="getRetentionInputId(retentionDetail.idCollectRetention)"
                   label="{{this.collectService.collectionTags.get('COB_MONTO')}}"
                   label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
@@ -1206,11 +1206,11 @@
                   (paste)="onCollectRetentionPaste(retentionDetail.idCollectRetention, $event)"
                   (input)="onCollectRetentionInput(retentionDetail.idCollectRetention, $event)">
                 </ion-input>
-                <ion-button slot="end" fill="clear" color="danger"
+                <ion-button fill="clear" color="danger" class="retention-amount-remove-btn"
                   (click)="removeCollectRetention(retentionDetail.idCollectRetention)">
                   <ion-icon name="trash-outline"></ion-icon>
                 </ion-button>
-              </ion-item>
+              </div>
             </ion-col>
             }
             <!-- RETENCIONES DINAMICAS -->
