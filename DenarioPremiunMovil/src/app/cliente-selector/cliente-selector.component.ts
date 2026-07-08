@@ -47,6 +47,7 @@ export class ClienteSelectorComponent implements OnInit {
   private localCurrency!: CurrencyEnterprise;
   private hardCurrency!: CurrencyEnterprise;
 
+  public transportista = false;
   public showConversion = false;
   public localCurrencyDefault = true;
   public currencySwitchEnabled = false; // si el usuario no tiene currencyModule, no reordenamos monedas.
@@ -98,6 +99,19 @@ export class ClienteSelectorComponent implements OnInit {
       this.loadCurrencyModule();
     }
     this.noClientsAlertShown = false;
+  }
+
+  checkUserStatus(){
+        const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        let user = JSON.parse(userStr);
+        this.transportista = user.transportista;
+        //se pueden agregar los otros roles luego, de ser necesario.
+      } catch (e) {
+        this.transportista = false;
+      }
+    }
   }
 
   getTag(tagName: string) {
