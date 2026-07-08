@@ -2218,7 +2218,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       const amountPaidConversion = cs.convertirMonto(
         amountPaidRetention,
         cs.collection.nuValueLocal,
-        cs.documentSaleOpen.coCurrency,
+        cs.collection.coCurrency,
       );
       cs.amountPaidRetention = amountPaidRetention;
       cs.amountPaidConversion = amountPaidConversion;

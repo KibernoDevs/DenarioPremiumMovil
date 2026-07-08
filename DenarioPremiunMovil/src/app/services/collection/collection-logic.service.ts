@@ -3286,16 +3286,20 @@ export class CollectionService {
       return 0;
     }
 
-    const documentCurrency = this.resolveDetailDocumentCurrency(detail, open);
-    const collectionCurrency = this.collection.coCurrency;
-    const rate = this.collection.nuValueLocal;
-
-    let conversion = this.convertirMonto(normalizedAmount, rate, documentCurrency);
-    if (conversion <= 0 && this.multiCurrency) {
-      conversion = this.convertirMonto(normalizedAmount, 0, collectionCurrency);
+    if (!this.multiCurrency) {
+      return this.cleanFormattedNumber(
+        this.currencyService.formatNumber(normalizedAmount),
+      );
     }
-    if (conversion <= 0 && normalizedAmount > 0) {
-      conversion = this.cleanFormattedNumber(
+
+    const conversion = this.convertirMonto(
+      normalizedAmount,
+      this.collection.nuValueLocal,
+      this.collection.coCurrency,
+    );
+
+    if (conversion <= 0) {
+      return this.cleanFormattedNumber(
         this.currencyService.formatNumber(normalizedAmount),
       );
     }
