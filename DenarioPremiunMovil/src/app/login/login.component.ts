@@ -275,6 +275,14 @@ export class LoginComponent implements OnInit {
               );
               this.message.alertModal(this.messageAlert);
               break;
+            case '105':
+              this.message.hideLoading();
+              this.messageAlert = new MessageAlert(
+                "Denario Premium",
+                "Su contraseña expiró. Debe cambiarla en Denario Web antes de ingresar."
+              );
+              this.message.alertModal(this.messageAlert);
+              break;
             case '403':
               let msj = "";
               if (result.data.errorMessage != null && result.data.errorMessage != undefined)
