@@ -98,6 +98,7 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.service.currencyModule) {
       this.loadCurrencyModule();
     }
+    this.checkUserStatus();
     this.noClientsAlertShown = false;
   }
 
