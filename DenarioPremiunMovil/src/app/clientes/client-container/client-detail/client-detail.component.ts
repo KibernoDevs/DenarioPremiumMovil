@@ -77,7 +77,7 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
-
+    this.clientLogic.checkUserStatus();
     this.client.txDescription1 = this.sanitizeDescription(this.client.txDescription1);
     this.client.txDescription2 = this.sanitizeDescription(this.client.txDescription2);
 

@@ -150,17 +150,9 @@ export class ClientListComponent implements OnInit {
     }
   }
 
-    checkUserStatus(){
-        const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        let user = JSON.parse(userStr);
-        this.transportista = user.transportista;
-        //se pueden agregar los otros roles luego, de ser necesario.
-      } catch (e) {
-        this.transportista = false;
-      }
-    }
+  checkUserStatus(){
+    this.clientLogic.checkUserStatus()
+    this.transportista = this.clientLogic.esTransportista;
   }
   onChangeEnterprise() {
     this.service.clientes = [] as Client[];
