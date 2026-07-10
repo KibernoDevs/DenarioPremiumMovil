@@ -355,7 +355,7 @@
     "name": "collect_retentions",
     "table": "collectRetentions",
     "idName": "id_collect_retention",
-    "sql": "CREATE TABLE IF NOT EXISTS collect_retentions (id_collect_retention INTEGER PRIMARY KEY, co_collect_retention VARCHAR(80), na_collect_retention VARCHAR(200), id_enterprise INTEGER);"
+    "sql": "CREATE TABLE IF NOT EXISTS collect_retentions (id_collect_retention INTEGER PRIMARY KEY, co_collect_retention VARCHAR(80), na_collect_retention VARCHAR(200), require_input BOOLEAN DEFAULT 0, nu_voucher_length INTEGER DEFAULT 0, id_enterprise INTEGER);"
   },
   {
     "id": 9999999,

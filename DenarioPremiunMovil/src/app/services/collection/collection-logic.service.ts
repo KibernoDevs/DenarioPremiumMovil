@@ -250,6 +250,7 @@ export class CollectionService {
   public enabledManualRate: boolean = false;
   public isRateChangeInProgress: boolean = false;
   public multiCurrencyCollection: boolean = false;
+  public dynamicRetentions: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -422,7 +423,8 @@ export class CollectionService {
     this.requiredRetentionAttachments = requiredRetentionAttachmentsValue === '' ? true : requiredRetentionAttachmentsValue === 'true' ? true : false;
     const enabledManualRateValue = (this.globalConfig.get('enabledManualRate') || '').trim();
     this.enabledManualRate = enabledManualRateValue === '' ? true : enabledManualRateValue === 'true' ? true : false;
-
+    const dynamicRetentionsValue = (this.globalConfig.get('dynamicRetentions') || '').trim();
+    this.dynamicRetentions = dynamicRetentionsValue === 'true';
     this.multiCurrencyCollection = this.globalConfig.get('multiCurrencyCollection') === 'true' ? true : false;
 
     //this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
@@ -3125,7 +3127,7 @@ export class CollectionService {
     if (!detail) {
       return 0;
     }
-    if (detail.collectionDetailRetentions?.length) {
+    if (this.dynamicRetentions && detail.collectionDetailRetentions?.length) {
       return detail.collectionDetailRetentions.reduce(
         (sum, retention) => sum + Number(retention.nuAmountRetention ?? 0),
         0
@@ -3164,26 +3166,20 @@ export class CollectionService {
     };
   }
 
-  public validateRetentionVoucherValue(value: string): boolean {
+  public validateRetentionVoucherValue(value: string, idCollectRetention?: number): boolean {
     const voucher = String(value ?? '').trim();
+    const type = idCollectRetention != null
+      ? this.collectRetentions.find(item => item.idCollectRetention === idCollectRetention)
+      : undefined;
+    const mandatory = type?.requireInput === true;
+    const requiredLength = Math.max(0, Number(type?.nuVoucherLength ?? 0));
+
     if (!voucher) {
+      return !mandatory;
+    }
+
+    if (requiredLength > 0 && voucher.length !== requiredLength) {
       return false;
-    }
-
-    if (this.sizeRetention === 0) {
-      return true;
-    }
-
-    if (voucher.length !== this.sizeRetention) {
-      return false;
-    }
-
-    if (this.formatRetention === 'text') {
-      return !this.regexOnlyText.test(voucher);
-    }
-
-    if (this.formatRetention === 'alphanumeric') {
-      return !this.regexAlphaNumeric.test(voucher);
     }
 
     return true;
@@ -3432,7 +3428,7 @@ export class CollectionService {
     const resolvedDetailIndex = detailIndex ?? this.findCollectionDetailIndex(detail);
     const dynamicLines = detail.collectionDetailRetentions ?? [];
 
-    if (dynamicLines.length > 0) {
+    if (this.dynamicRetentions && dynamicLines.length > 0) {
       detail.collectionDetailRetentions = dynamicLines.map((line, lineIndex) => {
         const amount = Number(line.nuAmountRetention ?? 0);
         const conversion = amount > 0
@@ -5034,8 +5030,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         : 0;
       const amountToPay = this.shouldIncludeIgtfInAmountToPay()
         ? this.cleanFormattedNumber(
-            this.currencyService.formatNumber(partialAmount + igtfAmount),
-          )
+          this.currencyService.formatNumber(partialAmount + igtfAmount),
+        )
         : partialAmount;
       return {
         igtfAmount,
@@ -5965,164 +5961,164 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         : Promise.resolve();
 
       return igtfDocumentSync.then(() => {
-      if (this.isAnticipoCollection(collection)) {
-        this.syncAnticipoTotalsBeforePersist();
-      } else if (this.isRetentionCollection(collection)) {
-        this.syncRetentionTotalsBeforePersist();
-      } else {
-        this.collection.nuAmountFinal = this.montoTotalPagar;
-        this.collection.nuAmountFinalConversion = this.convertirMonto(
-          this.collection.nuAmountFinal,
-          0,
-          this.collection.coCurrency,
-        );
-        this.collection.nuAmountPaid = this.montoTotalPagar;
-        this.collection.nuAmountPaidConversion = this.convertirMonto(
-          this.collection.nuAmountPaid,
-          0,
-          this.collection.coCurrency,
-        );
-      }
-
-
-      const details = this.collection?.collectionDetails ?? [];
-      const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
-      const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
-
-
-
-      const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
-      const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
-      const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
-      const deleteCollectionDetailsRetentionsSQL = 'DELETE FROM collection_detail_retentions WHERE co_collection = ?';
-      const deleteCollectionPaymentsSQL = 'DELETE FROM collection_payments WHERE co_collection = ?';
-
-      return this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionDetailsRetentionsSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
-        const insertCollection = "INSERT OR REPLACE INTO collections (" +
-          "id_collection," +
-          "co_collection," +
-          "co_original_collection," +
-          "id_client," +
-          "co_client," +
-          "lb_client," +
-          "st_collection," +
-          "st_delivery," +
-          "da_collection," +
-          "da_rate," +
-          "na_responsible," +
-          "id_enterprise," +
-          "co_enterprise," +
-          "id_currency," +
-          "co_currency," +
-          "co_type," +
-          "tx_comment," +
-          "coordenada," +
-          "nu_value_local," +
-          "nu_difference," +
-          "nu_difference_conversion," +
-          "tx_conversion," +
-          "nu_amount_total," +
-          "nu_amount_total_conversion," +
-          "nu_amount_igtf," +
-          "nu_amount_igtf_conversion," +
-          "nu_amount_final," +
-          "nu_amount_final_conversion," +
-          "nu_amount_discount_total," +
-          "nu_amount_discount_total_conversion," +
-          "nu_igtf," +
-          "hasIGTF," +
-          "nu_attachments," +
-          "has_attachments" +
-          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-        return dbServ.executeSql(insertCollection,
-          [
+        if (this.isAnticipoCollection(collection)) {
+          this.syncAnticipoTotalsBeforePersist();
+        } else if (this.isRetentionCollection(collection)) {
+          this.syncRetentionTotalsBeforePersist();
+        } else {
+          this.collection.nuAmountFinal = this.montoTotalPagar;
+          this.collection.nuAmountFinalConversion = this.convertirMonto(
+            this.collection.nuAmountFinal,
             0,
-            collection.coCollection,
-            collection.coOriginalCollection,
-            collection.idClient,
-            collection.coClient,
-            collection.lbClient,
-            collection.stCollection,
-            collection.stDelivery,
-            collection.daCollection,
-            collection.daRate,
-            collection.naResponsible,
-            collection.idEnterprise,
-            collection.coEnterprise,
-            collection.idCurrency,
-            collection.coCurrency,
-            collection.coType,
-            collection.txComment,
-            collection.coordenada,
-            collection.nuValueLocal,
-            collection.nuDifference,
-            collection.nuDifferenceConversion,
-            collection.txConversion,
-            collection.nuAmountTotal,
-            collection.nuAmountTotalConversion,
-            collection.nuAmountIgtf,
-            collection.nuAmountIgtfConversion,
-            collection.nuAmountFinal,
-            collection.nuAmountFinalConversion,
-            nuAmountDiscountTotal,
-            nuAmountDiscountTotalConversion,
-            collection.nuIgtf,
-            collection.hasIGTF,
-            collection.nuAttachments,
-            collection.hasAttachments,
+            this.collection.coCurrency,
+          );
+          this.collection.nuAmountPaid = this.montoTotalPagar;
+          this.collection.nuAmountPaidConversion = this.convertirMonto(
+            this.collection.nuAmountPaid,
+            0,
+            this.collection.coCurrency,
+          );
+        }
 
-          ]
-        ).then(data => {
-          console.log("COLLECTION INSERT", data);
-          this.updateListCollectIgtfFromCollection(collection);
 
-          //cobro o igtf
-          if (collection.coType == '0' || collection.coType == '2' || collection.coType == '3' || collection.coType == '4') {
-            return this.updateDocumentSt(dbServ, this.documentSales, collection.coType).then((resp) => {
-              console.log("TERMINE DOCUMENT ST")
-              return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                  return this.saveCollectionDetailRetentions(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                    return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
-                      if (action) {
-                        this.documentSales = [] as DocumentSale[];
-                        this.documentSalesBackup = [] as DocumentSale[];
-                      }
+        const details = this.collection?.collectionDetails ?? [];
+        const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
+        const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
 
-                      return resp
+
+
+        const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
+        const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
+        const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
+        const deleteCollectionDetailsRetentionsSQL = 'DELETE FROM collection_detail_retentions WHERE co_collection = ?';
+        const deleteCollectionPaymentsSQL = 'DELETE FROM collection_payments WHERE co_collection = ?';
+
+        return this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionDetailsRetentionsSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
+          const insertCollection = "INSERT OR REPLACE INTO collections (" +
+            "id_collection," +
+            "co_collection," +
+            "co_original_collection," +
+            "id_client," +
+            "co_client," +
+            "lb_client," +
+            "st_collection," +
+            "st_delivery," +
+            "da_collection," +
+            "da_rate," +
+            "na_responsible," +
+            "id_enterprise," +
+            "co_enterprise," +
+            "id_currency," +
+            "co_currency," +
+            "co_type," +
+            "tx_comment," +
+            "coordenada," +
+            "nu_value_local," +
+            "nu_difference," +
+            "nu_difference_conversion," +
+            "tx_conversion," +
+            "nu_amount_total," +
+            "nu_amount_total_conversion," +
+            "nu_amount_igtf," +
+            "nu_amount_igtf_conversion," +
+            "nu_amount_final," +
+            "nu_amount_final_conversion," +
+            "nu_amount_discount_total," +
+            "nu_amount_discount_total_conversion," +
+            "nu_igtf," +
+            "hasIGTF," +
+            "nu_attachments," +
+            "has_attachments" +
+            ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+          return dbServ.executeSql(insertCollection,
+            [
+              0,
+              collection.coCollection,
+              collection.coOriginalCollection,
+              collection.idClient,
+              collection.coClient,
+              collection.lbClient,
+              collection.stCollection,
+              collection.stDelivery,
+              collection.daCollection,
+              collection.daRate,
+              collection.naResponsible,
+              collection.idEnterprise,
+              collection.coEnterprise,
+              collection.idCurrency,
+              collection.coCurrency,
+              collection.coType,
+              collection.txComment,
+              collection.coordenada,
+              collection.nuValueLocal,
+              collection.nuDifference,
+              collection.nuDifferenceConversion,
+              collection.txConversion,
+              collection.nuAmountTotal,
+              collection.nuAmountTotalConversion,
+              collection.nuAmountIgtf,
+              collection.nuAmountIgtfConversion,
+              collection.nuAmountFinal,
+              collection.nuAmountFinalConversion,
+              nuAmountDiscountTotal,
+              nuAmountDiscountTotalConversion,
+              collection.nuIgtf,
+              collection.hasIGTF,
+              collection.nuAttachments,
+              collection.hasAttachments,
+
+            ]
+          ).then(data => {
+            console.log("COLLECTION INSERT", data);
+            this.updateListCollectIgtfFromCollection(collection);
+
+            //cobro o igtf
+            if (collection.coType == '0' || collection.coType == '2' || collection.coType == '3' || collection.coType == '4') {
+              return this.updateDocumentSt(dbServ, this.documentSales, collection.coType).then((resp) => {
+                console.log("TERMINE DOCUMENT ST")
+                return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                  return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                    return this.saveCollectionDetailRetentions(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                      return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+                        if (action) {
+                          this.documentSales = [] as DocumentSale[];
+                          this.documentSalesBackup = [] as DocumentSale[];
+                        }
+
+                        return resp
+                      })
                     })
                   })
-                })
+                });
               });
-            });
-          } else if (collection.coType == '1') {
-            //es ancitipo solo debo guardar el payment
-            return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
-              return resp
-            })
-          } else if (collection.coType == '2') {
-            //es retencion, solo debo guardar el detalle
-            return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-              console.log("TERMINE DOCUMENT ST")
-              return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                if (action) {
-                  this.documentSales = [] as DocumentSale[];
-                  this.documentSalesBackup = [] as DocumentSale[];
-                }
-                return resp;
+            } else if (collection.coType == '1') {
+              //es ancitipo solo debo guardar el payment
+              return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+                return resp
+              })
+            } else if (collection.coType == '2') {
+              //es retencion, solo debo guardar el detalle
+              return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+                console.log("TERMINE DOCUMENT ST")
+                return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                  if (action) {
+                    this.documentSales = [] as DocumentSale[];
+                    this.documentSalesBackup = [] as DocumentSale[];
+                  }
+                  return resp;
+                });
+
               });
 
-            });
+            } else {
 
-          } else {
-
-            return Promise.resolve();
-          }
-        }).catch(e => {
-          return Promise.reject(e);
-        })
-      });
+              return Promise.resolve();
+            }
+          }).catch(e => {
+            return Promise.reject(e);
+          })
+        });
       });
     })
 
@@ -7562,8 +7558,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           coCollectRetention: row.co_collect_retention,
           naCollectRetention: row.na_collect_retention,
           idEnterprise: idEntParsed,
-          nuVoucherRetention: row.nu_voucher_retention,
-          daVoucherRetention: row.da_voucher_retention,
+          requireInput: row.require_input === 1 || row.require_input === true || row.require_input === 'true',
+          nuVoucherLength: Number(row.nu_voucher_length ?? 0),
         } as CollectRetentions)
       }
       return Promise.resolve(true);
