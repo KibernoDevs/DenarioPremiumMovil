@@ -852,7 +852,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     retention: number;
     retention2: number;
   } {
-    if (this.documentRetentionLines.length > 0) {
+    if (this.collectService.dynamicRetentions && this.documentRetentionLines.length > 0) {
       const total = this.getDocumentRetentionTotal();
       return { retention: total, retention2: 0 };
     }
@@ -1595,7 +1595,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       await this.calculateDocumentSaleOpen(index);
       this.syncPersistedCollectDiscountTotals(positionCollecDetails);
 
-      if (this.collectService.retencion) {
+      if (this.collectService.retencion && this.collectService.dynamicRetentions) {
+        await this.ensureCollectRetentionsCatalog();
+        await this.ensurePersistedDetailRetentionsLoaded(positionCollecDetails);
+      } else if (this.collectService.coTypeModule === '2' && this.collectService.dynamicRetentions) {
         await this.ensureCollectRetentionsCatalog();
         await this.ensurePersistedDetailRetentionsLoaded(positionCollecDetails);
       }
@@ -1637,8 +1640,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       }
 
-      if (this.collectService.retencion) {
+      if (this.collectService.retencion && this.collectService.dynamicRetentions) {
         this.hydrateDocumentRetentionLines(positionCollecDetails);
+      } else if (this.collectService.coTypeModule === '2' && this.collectService.dynamicRetentions) {
+        this.hydrateDocumentRetentionLines(positionCollecDetails);
+      } else if (this.collectService.retencion) {
+        this.clearDocumentRetentionState();
       }
 
       if (this.collectService.documentSaleOpen.daVoucher != "")
@@ -1667,6 +1674,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         }
       } else
         this.collectService.isPaymentPartial = this.collectService.alwaysPartialPayment;
+
+      if (this.usesLegacyRetentionInputs()) {
+        this.syncLegacyRetentionInputStateFromOpen();
+      }
 
       this.syncAmountPaidDisplayForOpen(index);
       // Force UI update after saldo y nuVaucherRetention
@@ -1944,6 +1955,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.flushFullPaymentBeforeSave();
 
       if (this.collectService.coTypeModule == '2') {
+        if (!this.validateRetentionModuleBeforeSave()) {
+          return;
+        }
         this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaidRetention));
         this.collectService.documentSaleOpen.nuAmountPaid = this.collectService.amountPaidRetention;
       }
@@ -1987,13 +2001,31 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           (hasSelectedDiscounts || this.hasManualCollectDiscount())) {
           this.setCollectionDetailDiscounts(this.collectService.documentSaleOpen.positionCollecDetails!, this.collectService.selectedCollectDiscounts);
         }
-        this.flushCollectRetentionLinesBeforeSave();
-        if (this.collectService.retencion && !this.collectService.missingRetentionValue) {
+        if (this.collectService.retencion && !this.collectService.missingRetentionValue && this.collectService.dynamicRetentions) {
+          this.syncAllRetentionLinesValidation();
+          if (!this.collectService.validNuRetention || !this.collectService.validateDaVoucher) {
+            this.collectService.mensaje =
+              'Complete el n\u00famero de comprobante y la fecha de retenci\u00f3n en todas las l\u00edneas seleccionadas.';
+            this.alertMessageOpen = true;
+            return;
+          }
+        }
+        if (this.collectService.coTypeModule === '2' && this.collectService.dynamicRetentions) {
+          this.flushCollectRetentionLinesBeforeSave();
+          if (!this.collectService.missingRetentionValue) {
+            this.setCollectionDetailRetentions(this.collectService.documentSaleOpen.positionCollecDetails!);
+          }
+        } else if (this.collectService.retencion && this.collectService.dynamicRetentions) {
+          this.flushCollectRetentionLinesBeforeSave();
+        }
+        if (this.collectService.retencion && !this.collectService.missingRetentionValue && this.collectService.dynamicRetentions) {
           this.setCollectionDetailRetentions(this.collectService.documentSaleOpen.positionCollecDetails!);
         }
         this.collectService.copyDocumentSaleOpenToSalesAndDetails();
         this.collectService.calculatePayment("", 0, true);
-        this.clearDocumentRetentionState();
+        if (this.collectService.dynamicRetentions) {
+          this.clearDocumentRetentionState();
+        }
         this.cdr.detectChanges();
         console.log("GUARDAR")
         this.collectService.isOpen = false;
@@ -2011,9 +2043,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.displayRetention = "0";
     this.displayRetention2 = "0";
     this.centsAmountPaid = 0;
-    this.centsDiscount = 0;
-    this.centsRetention = 0;
-    this.centsRetention2 = 0;
+    this.centsDiscount = undefined;
+    this.centsRetention = undefined;
+    this.centsRetention2 = undefined;
   }
 
   dontSaveDocumentSale(action: boolean) {
@@ -2039,8 +2071,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.flushFullPaymentBeforeSave();
 
     const detailIdx = this.collectService.documentSaleOpen.positionCollecDetails;
-    this.flushCollectRetentionLinesBeforeSave();
-    if (this.collectService.retencion && !this.collectService.missingRetentionValue) {
+    if (this.collectService.retencion && this.collectService.dynamicRetentions) {
+      this.flushCollectRetentionLinesBeforeSave();
+    }
+    if (this.collectService.retencion && !this.collectService.missingRetentionValue && this.collectService.dynamicRetentions) {
       this.setCollectionDetailRetentions(detailIdx!);
     } else if (detailIdx != null && detailIdx >= 0) {
       const detail = this.collectService.collection.collectionDetails[detailIdx];
@@ -2214,6 +2248,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     });
 
     if (coTypeModule === '2') {
+      this.syncLegacyRetentionToOpenDetail(nuAmountRetention, nuAmountRetention2);
       const amountPaidRetention = totalDeductions;
       const amountPaidConversion = cs.convertirMonto(
         amountPaidRetention,
@@ -2422,7 +2457,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private isEmptyOrZeroRetention(): boolean {
-    if (this.documentRetentionLines.length > 0) {
+    if (this.collectService.dynamicRetentions && this.documentRetentionLines.length > 0) {
       return this.documentRetentionLines.every(line => this.isNullOrZero(line.nuAmountRetention));
     }
     const { nuAmountRetention, nuAmountRetention2 } = this.collectService.documentSaleOpen;
@@ -2451,7 +2486,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     // ...otros campos numéricos que uses...
 
     if (cs.coTypeModule == '2') {
-      this.syncAllRetentionLinesValidation();
+      if (this.usesLegacyRetentionInputs()) {
+        this.syncLegacyRetentionToOpenDetail(
+          Number(doc.nuAmountRetention ?? 0),
+          Number(doc.nuAmountRetention2 ?? 0),
+        );
+      }
+      this.validateNuVaucherRetention(false);
       this.disabledSaveButton = false;
       if (!cs.validNuRetention || !cs.validateDaVoucher) {
         this.disabledSaveButton = true;
@@ -2459,6 +2500,15 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
       return;
+    }
+
+    if (cs.retencion && !cs.missingRetentionValue && cs.dynamicRetentions && this.documentRetentionLines.length > 0) {
+      this.syncAllRetentionLinesValidation();
+      if (!cs.validNuRetention || !cs.validateDaVoucher) {
+        this.disabledSaveButton = true;
+        this.cdr.detectChanges();
+        return;
+      }
     }
 
     // Si es pago parcial
@@ -2612,7 +2662,11 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public shouldShowRetentionLineLengthHint(idCollectRetention: number): boolean {
-    if (this.collectService.sizeRetention <= 0) {
+    if (this.shouldShowRetentionVoucherDigitCounter(idCollectRetention)) {
+      return false;
+    }
+    const maxDigits = this.getRetentionVoucherMaxDigits(idCollectRetention);
+    if (maxDigits <= 0) {
       return false;
     }
     const line = this.getRetentionLine(idCollectRetention);
@@ -2622,13 +2676,90 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     return String(line.nuVoucherRetention ?? '').trim().length > 0;
   }
 
-  public shouldShowRetentionLineDateHint(idCollectRetention: number): boolean {
-    const line = this.getRetentionLine(idCollectRetention);
-    if (!line || Number(line.nuAmountRetention ?? 0) <= 0) {
+  public shouldShowRetentionLineVoucherValidBorder(idCollectRetention: number): boolean {
+    const hasValue = String(this.getRetentionLineVoucher(idCollectRetention) ?? '').trim().length > 0;
+    return hasValue && this.isRetentionLineVoucherValid(idCollectRetention);
+  }
+
+  public shouldShowRetentionLineVoucherInvalidBorder(idCollectRetention: number): boolean {
+    if (this.shouldShowRetentionLineVoucherValidBorder(idCollectRetention)) {
       return false;
     }
-    const hasVoucher = String(line.nuVoucherRetention ?? '').trim().length > 0;
-    return hasVoucher && !this.isRetentionLineDateValid(idCollectRetention);
+    const hasValue = String(this.getRetentionLineVoucher(idCollectRetention) ?? '').trim().length > 0;
+    if (hasValue) {
+      return true;
+    }
+    return this.isRetentionVoucherMandatory(idCollectRetention);
+  }
+
+  public shouldShowRetentionLineDateValidBorder(idCollectRetention: number): boolean {
+    return String(this.getRetentionLineDaVoucher(idCollectRetention) ?? '').trim().length > 0;
+  }
+
+  public shouldShowRetentionLineDateInvalidBorder(idCollectRetention: number): boolean {
+    if (this.shouldShowRetentionLineDateValidBorder(idCollectRetention)) {
+      return false;
+    }
+    return this.isRetentionDateMandatory(idCollectRetention);
+  }
+
+  public shouldShowCollectRetentionAmountValidBorder(idCollectRetention: number): boolean {
+    const cents = this.collectRetentionCentsMap.get(idCollectRetention);
+    if (cents != null && cents > 0) {
+      return true;
+    }
+    const line = this.getRetentionLine(idCollectRetention);
+    return Number(line?.nuAmountRetention ?? 0) > 0;
+  }
+
+  public shouldShowCollectRetentionAmountInvalidBorder(idCollectRetention: number): boolean {
+    if (this.shouldShowCollectRetentionAmountValidBorder(idCollectRetention)) {
+      return false;
+    }
+    return this.getRetentionLine(idCollectRetention) != null;
+  }
+
+  public shouldShowRetentionVoucherDigitCounter(idCollectRetention: number): boolean {
+    return this.getRetentionVoucherMaxDigits(idCollectRetention) > 0;
+  }
+
+  public shouldUseNumericRetentionVoucherInput(idCollectRetention: number): boolean {
+    return this.getRetentionVoucherMaxDigits(idCollectRetention) > 0;
+  }
+
+  public getRetentionVoucherDigitCount(idCollectRetention: number): number {
+    return String(this.getRetentionLineVoucher(idCollectRetention) ?? '').length;
+  }
+
+  public getRetentionVoucherMaxDigits(idCollectRetention: number): number {
+    const type = this.getCollectRetentionType(idCollectRetention);
+    return Math.max(0, Number(type?.nuVoucherLength ?? 0));
+  }
+
+  public isRetentionVoucherMandatory(idCollectRetention: number): boolean {
+    const type = this.getCollectRetentionType(idCollectRetention);
+    return type?.requireInput === true;
+  }
+
+  public isRetentionDateMandatory(idCollectRetention: number): boolean {
+    return this.getRetentionLine(idCollectRetention) != null;
+  }
+
+  public getCollectRetentionType(idCollectRetention: number) {
+    return this.collectService.collectRetentions.find(
+      item => item.idCollectRetention === idCollectRetention,
+    );
+  }
+
+  public shouldShowRetentionLineDateHint(idCollectRetention: number): boolean {
+    if (!this.isRetentionDateMandatory(idCollectRetention)) {
+      return false;
+    }
+    const line = this.getRetentionLine(idCollectRetention);
+    if (!line) {
+      return false;
+    }
+    return !this.isRetentionLineDateValid(idCollectRetention);
   }
 
   public isRetentionLineVoucherValid(idCollectRetention: number): boolean {
@@ -2648,7 +2779,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (!line) {
       return;
     }
-    line.nuVoucherRetention = value ?? '';
+    let sanitized = value ?? '';
+    const maxDigits = this.getRetentionVoucherMaxDigits(idCollectRetention);
+    if (maxDigits > 0) {
+      sanitized = sanitized.replace(/\D/g, '').slice(0, maxDigits);
+    }
+    line.nuVoucherRetention = sanitized;
     this.validateRetentionLineVoucher(idCollectRetention, false);
     this.syncAllRetentionLinesValidation();
   }
@@ -2690,40 +2826,23 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const voucher = String(line.nuVoucherRetention ?? '').trim();
+    const mandatory = this.isRetentionVoucherMandatory(idCollectRetention);
+    const requiredLength = this.getRetentionVoucherMaxDigits(idCollectRetention);
+
     if (!voucher) {
-      this.retentionLineVoucherValidMap.set(idCollectRetention, false);
-      return false;
+      const isValid = !mandatory;
+      this.retentionLineVoucherValidMap.set(idCollectRetention, isValid);
+      return isValid;
     }
 
-    if (this.collectService.sizeRetention !== 0) {
-      if (voucher.length !== this.collectService.sizeRetention) {
-        this.collectService.mensaje =
-          'El comprobante de retenci\u00f3n debe tener una longitud de ' + this.collectService.sizeRetention + ' caracteres ';
-        if (sendMessage) {
-          this.alertMessageOpen = true;
-        }
-        this.retentionLineVoucherValidMap.set(idCollectRetention, false);
-        return false;
+    if (requiredLength > 0 && voucher.length !== requiredLength) {
+      this.collectService.mensaje =
+        'El comprobante de retenci\u00f3n debe tener una longitud de ' + requiredLength + ' caracteres ';
+      if (sendMessage) {
+        this.alertMessageOpen = true;
       }
-
-      if (this.collectService.formatRetention === 'text' && this.collectService.regexOnlyText.test(voucher)) {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_RETENTION_ONLY_TEXT')!;
-        if (sendMessage) {
-          this.alertMessageOpen = true;
-        }
-        this.retentionLineVoucherValidMap.set(idCollectRetention, false);
-        return false;
-      }
-
-      if (this.collectService.formatRetention === 'alphanumeric'
-        && this.collectService.regexAlphaNumeric.test(voucher)) {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_RETENTION_ALPHANUMERIC')!;
-        if (sendMessage) {
-          this.alertMessageOpen = true;
-        }
-        this.retentionLineVoucherValidMap.set(idCollectRetention, false);
-        return false;
-      }
+      this.retentionLineVoucherValidMap.set(idCollectRetention, false);
+      return false;
     }
 
     this.retentionLineVoucherValidMap.set(idCollectRetention, true);
@@ -2734,12 +2853,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const line = this.getRetentionLine(idCollectRetention);
     if (!line) {
       return false;
-    }
-
-    const amount = Number(line.nuAmountRetention ?? 0);
-    if (amount <= 0) {
-      this.retentionLineDateValidMap.set(idCollectRetention, true);
-      return true;
     }
 
     const isValid = String(line.daVoucherRetention ?? '').trim().length > 0;
@@ -2754,18 +2867,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    const activeLines = this.documentRetentionLines.filter(
-      line => Number(line.nuAmountRetention ?? 0) > 0,
-    );
-
-    if (activeLines.length === 0) {
-      this.collectService.validNuRetention = this.documentRetentionLines.length === 0;
+    if (this.documentRetentionLines.length === 0) {
+      this.collectService.validNuRetention = true;
       this.collectService.validateDaVoucher = true;
       return;
     }
 
     let allValid = true;
-    for (const line of activeLines) {
+    for (const line of this.documentRetentionLines) {
       const voucherValid = this.validateRetentionLineVoucher(line.idCollectRetention, false);
       const dateValid = this.validateRetentionLineDate(line.idCollectRetention);
       if (!voucherValid || !dateValid) {
@@ -2794,8 +2903,16 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     );
   }
 
-  /** @deprecated Usar validación por línea; se mantiene por compatibilidad de llamadas existentes. */
+  /** Valida comprobante legacy (IVA/ISLR) o dinámico según configuración. */
   validateNuVaucherRetention(sendMessage: boolean) {
+    if (this.collectService.dynamicRetentions) {
+      this.validateDynamicRetentionLines(sendMessage);
+      return;
+    }
+    this.validateLegacyNuVaucherRetention(sendMessage);
+  }
+
+  private validateDynamicRetentionLines(sendMessage: boolean): void {
     this.documentRetentionLines.forEach(line => {
       this.validateRetentionLineVoucher(line.idCollectRetention, sendMessage);
       this.validateRetentionLineDate(line.idCollectRetention);
@@ -2811,9 +2928,99 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.cdr.detectChanges();
   }
 
+  private validateLegacyNuVaucherRetention(sendMessage: boolean): void {
+    const cs = this.collectService;
+    const open = cs.documentSaleOpen;
+
+    if (cs.sizeRetention !== 0) {
+      if (open.nuVaucherRetention == null || String(open.nuVaucherRetention).trim() === '') {
+        this.disabledSaveButton = true;
+        cs.validNuRetention = false;
+        open.nuVaucherRetention = '';
+        open.nuAmountRetention = 0;
+        open.nuAmountRetention2 = 0;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const voucher = String(open.nuVaucherRetention);
+      if (cs.formatRetention === 'number') {
+        if (voucher.length !== cs.sizeRetention) {
+          this.disabledSaveButton = true;
+          cs.mensaje = 'El comprobante de retenci\u00f3n debe tener una longitud de ' + cs.sizeRetention + ' caracteres ';
+          if (sendMessage) {
+            this.alertMessageOpen = true;
+          }
+          cs.validNuRetention = false;
+        } else {
+          this.disabledSaveButton = false;
+          cs.validNuRetention = true;
+        }
+      } else if (cs.formatRetention === 'text') {
+        if (voucher.length !== cs.sizeRetention) {
+          if (cs.regexOnlyText.test(voucher)) {
+            this.disabledSaveButton = true;
+            cs.mensaje = 'El comprobante de retenci\u00f3n debe tener una longitud de ' + cs.sizeRetention + ' caracteres ';
+            if (sendMessage) {
+              this.alertMessageOpen = true;
+            }
+            cs.validNuRetention = false;
+          } else {
+            this.disabledSaveButton = true;
+            cs.mensaje = cs.collectionTags.get('COB_MSJ_RETENTION_ONLY_TEXT')!;
+            if (sendMessage) {
+              this.alertMessageOpen = true;
+            }
+            cs.validNuRetention = false;
+          }
+        } else {
+          this.disabledSaveButton = false;
+          cs.validNuRetention = true;
+        }
+      } else if (voucher.length !== cs.sizeRetention) {
+        if (cs.regexAlphaNumeric.test(voucher)) {
+          this.disabledSaveButton = true;
+          cs.mensaje = 'El comprobante de retenci\u00f3n debe tener una longitud de ' + cs.sizeRetention + ' caracteres ';
+          if (sendMessage) {
+            this.alertMessageOpen = true;
+          }
+          cs.validNuRetention = false;
+        } else {
+          this.disabledSaveButton = true;
+          cs.mensaje = cs.collectionTags.get('COB_MSJ_RETENTION_ALPHANUMERIC')!;
+          if (sendMessage) {
+            this.alertMessageOpen = true;
+          }
+          cs.validNuRetention = false;
+        }
+      } else {
+        this.disabledSaveButton = false;
+        cs.validNuRetention = true;
+      }
+    } else {
+      this.disabledSaveButton = false;
+      cs.validNuRetention = String(open.nuVaucherRetention ?? '').trim() !== '';
+    }
+
+    if (cs.validNuRetention && this.isEmptyOrZeroRetention()) {
+      this.disabledSaveButton = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (cs.validNuRetention && String(open.daVoucher ?? '').trim() === '') {
+      cs.validateDaVoucher = false;
+      this.disabledSaveButton = true;
+    } else if (cs.validNuRetention) {
+      cs.validateDaVoucher = String(open.daVoucher ?? '').trim() !== '';
+    }
+
+    this.cdr.detectChanges();
+  }
+
   /** @deprecated Usar setRetentionLineDaVoucher por línea. */
   setDaVoucher(event?: CustomEvent) {
-    const firstLine = this.documentRetentionLines[0];
+    const firstLine = this.collectService.dynamicRetentions ? this.documentRetentionLines[0] : undefined;
     if (firstLine) {
       this.setRetentionLineDaVoucher(firstLine.idCollectRetention, event);
       return;
@@ -2823,6 +3030,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.daVoucher = String(rawValue).split('T')[0];
       this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
     }
+    this.validateNuVaucherRetention(false);
     this.cdr.detectChanges();
   }
 
@@ -3404,6 +3612,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public onRetentionInput(ev: any): void {
     try {
+      if (this.retentionKeyInFlight) {
+        return;
+      }
+
       const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
       const inputType = ev?.inputType ?? '';
       const MAX_CENTS = 999999999999;
@@ -3429,6 +3641,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public onRetention2Input(ev: any): void {
     try {
+      if (this.retention2KeyInFlight) {
+        return;
+      }
+
       const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
       const inputType = ev?.inputType ?? '';
       const MAX_CENTS = 999999999999;
@@ -4184,11 +4400,85 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public hasCollectRetentions(): boolean {
-    return this.collectService.retencion && this.collectService.collectRetentions.length > 0;
+    return this.collectService.dynamicRetentions
+      && this.collectService.retencion
+      && this.collectService.collectRetentions.length > 0;
   }
 
   public usesLegacyRetentionInputs(): boolean {
-    return this.collectService.retencion && !this.hasCollectRetentions();
+    return this.collectService.retencion && !this.collectService.dynamicRetentions;
+  }
+
+  private syncLegacyRetentionInputStateFromOpen(): void {
+    const factor = this.centsFactor();
+    const ivaAmount = Number(this.collectService.documentSaleOpen?.nuAmountRetention ?? 0);
+    const islrAmount = Number(this.collectService.documentSaleOpen?.nuAmountRetention2 ?? 0);
+
+    this.centsRetention = Math.round(ivaAmount * factor) || 0;
+    this.centsRetention2 = Math.round(islrAmount * factor) || 0;
+    this.displayRetention = ivaAmount > 0
+      ? this.formatNumber(ivaAmount)
+      : this.formatFromCents(0);
+    this.displayRetention2 = islrAmount > 0
+      ? this.formatNumber(islrAmount)
+      : this.formatFromCents(0);
+  }
+
+  private syncLegacyRetentionToOpenDetail(
+    nuAmountRetention: number,
+    nuAmountRetention2: number,
+  ): void {
+    const cs = this.collectService;
+    const pos = cs.documentSaleOpen?.positionCollecDetails;
+    if (!Number.isInteger(pos) || pos! < 0) {
+      return;
+    }
+
+    const detail = cs.collection.collectionDetails?.[pos as number];
+    if (!detail) {
+      return;
+    }
+
+    detail.collectionDetailRetentions = [];
+    detail.nuAmountRetention = nuAmountRetention;
+    detail.nuAmountRetention2 = nuAmountRetention2;
+    cs.syncDetailRetentionAmountsAndConversions(detail, cs.documentSaleOpen, pos as number);
+
+    const retentionTotal = nuAmountRetention + nuAmountRetention2;
+    if (retentionTotal > 0) {
+      detail.nuAmountPaid = this.currencyService.cleanFormattedNumber(
+        this.currencyService.formatNumber(retentionTotal),
+      );
+    }
+  }
+
+  private validateRetentionModuleBeforeSave(): boolean {
+    const cs = this.collectService;
+    this.validateNuVaucherRetention(false);
+
+    if (!cs.validNuRetention || !cs.validateDaVoucher) {
+      cs.mensaje = cs.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')
+        ?? 'Complete el comprobante y la fecha de retenci\u00f3n.';
+      this.alertMessageOpen = true;
+      return false;
+    }
+
+    if (this.usesLegacyRetentionInputs()) {
+      this.syncLegacyRetentionToOpenDetail(
+        Number(cs.documentSaleOpen?.nuAmountRetention ?? 0),
+        Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0),
+      );
+    }
+
+    const retentionTotal = Number(cs.documentSaleOpen?.nuAmountRetention ?? 0)
+      + Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+    if (retentionTotal <= 0) {
+      cs.mensaje = 'Debe ingresar al menos un monto de retenci\u00f3n.';
+      this.alertMessageOpen = true;
+      return false;
+    }
+
+    return true;
   }
 
   private async ensureCollectRetentionsCatalog(): Promise<void> {
@@ -4248,7 +4538,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       daVoucherRetention: '',
     });
     this.collectRetentionCentsMap.set(idCollectRetention, 0);
-    this.retentionLineVoucherValidMap.set(idCollectRetention, false);
+    this.retentionLineVoucherValidMap.set(idCollectRetention, !retention.requireInput);
     this.retentionLineDateValidMap.set(idCollectRetention, false);
     this.selectedCollectRetentionId = undefined;
     this.syncOpenRetentionFromLines();
@@ -4270,6 +4560,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const detailIdx = this.collectService.documentSaleOpen?.positionCollecDetails;
     if (detailIdx != null && detailIdx >= 0
       && this.collectService.retencion
+      && this.collectService.dynamicRetentions
       && !this.collectService.missingRetentionValue) {
       this.setCollectionDetailRetentions(detailIdx);
     }
@@ -4447,7 +4738,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private getDocumentRetentionTotal(): number {
-    if (this.documentRetentionLines.length > 0) {
+    if (this.collectService.dynamicRetentions && this.documentRetentionLines.length > 0) {
       return this.documentRetentionLines.reduce(
         (sum, line) => sum + Number(line.nuAmountRetention ?? 0),
         0
@@ -4566,7 +4857,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private flushCollectRetentionLinesBeforeSave(): void {
-    if (!this.collectService.retencion || this.documentRetentionLines.length === 0) {
+    if (!this.collectService.dynamicRetentions || !this.collectService.retencion || this.documentRetentionLines.length === 0) {
       return;
     }
 

@@ -78,8 +78,77 @@ $fondoLila: #430197;
     ;
 }
 
-.inp-write {
-    --border-color: #e60c0c;
+ion-input.input-rojo,
+.input-rojo ion-input {
+  --border-color: #e53935 !important;
+  --highlight-color: #e53935 !important;
+  --highlight-color-focused: #e53935 !important;
+  --highlight-color-valid: #e53935 !important;
+  --highlight-color-invalid: #e53935 !important;
+}
+
+ion-input.inp-write,
+.inp-write ion-input {
+  --border-color: #{$colorVerde} !important;
+  --highlight-color: #{$colorVerde} !important;
+  --highlight-color-focused: #{$colorVerde} !important;
+  --highlight-color-valid: #{$colorVerde} !important;
+}
+
+.retention-selector-label {
+  display: block;
+  margin: 4px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666666;
+}
+
+.retention-selector-empty-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #666666;
+}
+
+.retention-selector-item {
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.retention-selector-box {
+  text-align: center !important;
+  border: 1px solid #9c9c9c;
+  border-radius: 25px;
+  font-weight: bold;
+  height: 40px;
+  padding-left: 5%;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.retention-detail-title {
+  display: block;
+  margin: 6px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.retention-line-block {
+  margin-top: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.retention-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  ion-input {
+    flex: 1;
+  }
 }
 
 .good {

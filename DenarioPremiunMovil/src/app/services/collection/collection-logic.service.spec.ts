@@ -77,29 +77,48 @@ describe('CollectionService', () => {
       expect(normalized.nuAmountRetention).toBe(50);
     });
 
-    it('validateRetentionVoucherValue should enforce size and number format', () => {
-      service.sizeRetention = 10;
-      service.formatRetention = 'number';
+    it('validateRetentionVoucherValue should enforce nuVoucherLength from collect_retentions', () => {
+      service.collectRetentions = [{
+        idCollectRetention: 1,
+        coCollectRetention: 'IVA',
+        naCollectRetention: 'Retencion IVA',
+        idEnterprise: 1,
+        requireInput: true,
+        nuVoucherLength: 10,
+      } as any];
 
-      expect(service.validateRetentionVoucherValue('')).toBeFalse();
-      expect(service.validateRetentionVoucherValue('12345')).toBeFalse();
-      expect(service.validateRetentionVoucherValue('1234567890')).toBeTrue();
+      expect(service.validateRetentionVoucherValue('', 1)).toBeFalse();
+      expect(service.validateRetentionVoucherValue('12345', 1)).toBeFalse();
+      expect(service.validateRetentionVoucherValue('1234567890', 1)).toBeTrue();
     });
 
-    it('validateRetentionVoucherValue should reject letters in text format', () => {
-      service.sizeRetention = 5;
-      service.formatRetention = 'text';
+    it('validateRetentionVoucherValue should allow empty voucher when requireInput is false', () => {
+      service.collectRetentions = [{
+        idCollectRetention: 2,
+        coCollectRetention: 'ISLR',
+        naCollectRetention: 'Retencion ISLR',
+        idEnterprise: 1,
+        requireInput: false,
+        nuVoucherLength: 0,
+      } as any];
 
-      expect(service.validateRetentionVoucherValue('12345')).toBeTrue();
-      expect(service.validateRetentionVoucherValue('12a45')).toBeFalse();
+      expect(service.validateRetentionVoucherValue('', 2)).toBeTrue();
+      expect(service.validateRetentionVoucherValue('ABC', 2)).toBeTrue();
     });
 
-    it('validateRetentionVoucherValue should reject letters in alphanumeric format', () => {
-      service.sizeRetention = 6;
-      service.formatRetention = 'alphanumeric';
+    it('validateRetentionVoucherValue should enforce configured length even when optional', () => {
+      service.collectRetentions = [{
+        idCollectRetention: 3,
+        coCollectRetention: 'IVA2',
+        naCollectRetention: 'Retencion IVA 2',
+        idEnterprise: 1,
+        requireInput: false,
+        nuVoucherLength: 6,
+      } as any];
 
-      expect(service.validateRetentionVoucherValue('123456')).toBeTrue();
-      expect(service.validateRetentionVoucherValue('12AB56')).toBeFalse();
+      expect(service.validateRetentionVoucherValue('', 3)).toBeTrue();
+      expect(service.validateRetentionVoucherValue('123456', 3)).toBeTrue();
+      expect(service.validateRetentionVoucherValue('12345', 3)).toBeFalse();
     });
 
     it('syncLegacyDetailFieldsFromFirstRetentionLine should copy first line with amount', () => {
