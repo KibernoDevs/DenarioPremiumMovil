@@ -510,7 +510,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
   ('INV_INVENTARIO_ANTERIOR','INV','INVENTARIO','ESP','Inv. Anterior'),
   ('INV_DESPACHO','INV','INVENTARIO','ESP','Despacho'),
   ('INV_CAMBIO_POR_CAMBIO','INV','INVENTARIO','ESP','Cambio por cambio'),
-  ('INV_VENTA','INV','INVENTARIO','ESP','Venta'),
+  ('INV_VENTA','INV','INVENTARIO','ESP','Venta S/Devo Calidad'),
   ('INV_DEV_DISTRIBUCION','INV','INVENTARIO','ESP','Distribución'),
   ('INV_VENTAS_DIARIAS','INV','INVENTARIO','ESP','Ventas Diarias Estimadas'),
   ('INV_ACTIVIDADES_ELIMINAR_SELECCIONADOS','INV','INVENTARIO','ESP','Eliminar seleccionados'),
