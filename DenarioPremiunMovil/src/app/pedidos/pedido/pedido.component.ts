@@ -43,6 +43,7 @@ import { ClientChannelOrderType } from 'src/app/modelos/tables/clientChannelOrde
 import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
+import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Share } from '@capacitor/share';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
 
@@ -70,6 +71,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
   private pdfCreator = inject(PdfCreatorService);
+  private imageServices = inject(ImageServicesService);
   messageAlert!: MessageAlert;
 
 
@@ -1661,6 +1663,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           return row;
         });
 
+        const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(
+          this.empresaSeleccionada?.coEnterprise
+        );
+
         const doc = await this.pdfCreator.generateSummaryPdfDoc({
           title: `Resumen pedido`,
           meta: [
@@ -1678,7 +1684,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             leftLabel: 'Totales ',
             detailLines: summaryTotalsDetailLines
           },
-          fileName: `pedido_${idOrder}_${daOrder}.pdf`
+          fileName: `pedido_${idOrder}_${daOrder}.pdf`,
+          logoBase64
         }, { orientation: 'landscape', scale: 1, layoutScale: 1, format: 'letter' });
 
         const base64 = doc.output('datauristring');

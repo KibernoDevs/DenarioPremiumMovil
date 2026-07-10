@@ -5,6 +5,7 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
+import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
@@ -19,6 +20,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
   public currencyService = inject(CurrencyService);
   private globalConfig = inject(GlobalConfigService);
   private pdfCreator = inject(PdfCreatorService);
+  private imageServices = inject(ImageServicesService);
   private message = this.clientLogic.message;
 
   public localCurrency = '';
@@ -204,6 +206,10 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
       const showConversion = this.clientLogic.multiCurrency && this.clientLogic.showConversion;
       const client = this.client!;
 
+      const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(
+        client.coEnterprise ?? this.clientLogic.empresaSeleccionada?.coEnterprise
+      );
+
       const doc = await this.pdfCreator.generateSummaryPdfDoc({
         title: tags.get('CLI_DETAIL_TAB_DOCUMENTO_VENTA') ?? 'Documentos de venta',
         meta: [
@@ -218,6 +224,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
         ],
         columns: this.buildPdfColumns(showConversion),
         rows: this.buildPdfRows(showConversion),
+        logoBase64
       }, { orientation: 'landscape', format: 'letter' });
 
       const base64 = doc.output('datauristring');

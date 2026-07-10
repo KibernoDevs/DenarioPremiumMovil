@@ -314,6 +314,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       detailLines: string[];
     };
     fileName?: string;
+    logoBase64?: string | null;
   }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number, format?: 'letter' | 'legal' }): Promise<jsPDF> {
     const doc = new jsPDF({
       format: opts?.format ?? 'letter',
@@ -350,13 +351,29 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     let pageNumber = 1;
 
     const drawPageHeader = (continued = false) => {
+      const headerHeight = 56;
       doc.setFillColor(...headerColor);
-      doc.roundedRect(marginX, cursorY, usableWidth, 56, 8, 8, 'F');
+      doc.roundedRect(marginX, cursorY, usableWidth, headerHeight, 8, 8, 'F');
+
+      let titleX = marginX + 16;
+      if (data.logoBase64) {
+        const logoDrawn = this.drawEnterpriseLogo(
+          doc,
+          data.logoBase64,
+          marginX + 10,
+          cursorY + 8,
+          40,
+          40
+        );
+        if (logoDrawn) {
+          titleX = marginX + 62;
+        }
+      }
 
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(24);
-      doc.text(this.escapePdfText(data.title), marginX + 16, cursorY + 24);
+      doc.text(this.escapePdfText(data.title), titleX, cursorY + 24);
       cursorY += 74;
     };
 
@@ -770,6 +787,42 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       path: fileName,
       directory,
     });
+  }
+
+  private drawEnterpriseLogo(
+    doc: jsPDF,
+    logoBase64: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    maxHeight: number
+  ): boolean {
+    try {
+      const format = this.resolveJsPdfImageFormat(logoBase64);
+      if (!format) {
+        return false;
+      }
+      doc.addImage(logoBase64, format, x, y, maxWidth, maxHeight);
+      return true;
+    } catch (err) {
+      console.warn('[drawEnterpriseLogo] unsupported logo format', err);
+      return false;
+    }
+  }
+
+  private resolveJsPdfImageFormat(logoBase64: string): 'PNG' | 'JPEG' | null {
+    const value = String(logoBase64 || '').toLowerCase();
+    if (value.includes('image/jpeg') || value.includes('image/jpg')) {
+      return 'JPEG';
+    }
+    if (value.includes('image/png') || value.startsWith('data:image/png')) {
+      return 'PNG';
+    }
+    if (value.includes('image/gif') || value.includes('image/svg') || value.includes('image/webp')) {
+      return null;
+    }
+    // fallback: intentar PNG (muchos logos llegan sin mime claro)
+    return 'PNG';
   }
 }
 

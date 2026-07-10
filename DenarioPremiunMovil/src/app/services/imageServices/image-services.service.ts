@@ -22,14 +22,19 @@ export class ImageServicesService {
   public removeFileList: string[] = [];
   public downloadFileListPdf: string[] = [];
   public removeFileListPdf: string[] = [];
+  public downloadFileListLogos: string[] = [];
+  public removeFileListLogos: string[] = [];
   public fechaCreacion: string = "2000-01-01 00:00:00";
   private allFileList: Imagenes[] = [];
   private listFilesImages: string[] = [];
   private listFilesPdf: string[] = [];
+  private listFilesLogos: string[] = [];
 
   public mapImages: Map<string, string[]> = new Map<string, string[]>();
   public mapImagesFiles: Map<string, string[]> = new Map<string, string[]>();
   public mapPdfFiles: Map<string, string[]> = new Map<string, string[]>();
+  public mapLogos: Map<string, string> = new Map<string, string>();
+  public mapLogosByFilename: Map<string, string> = new Map<string, string>();
   public imageLoaded$ = new Subject<{ imgName: string, imgSrc: string }>();
 
   public pendingLoads: Map<string, Promise<string>> = new Map(); // evita duplicados
@@ -743,5 +748,181 @@ export class ImageServicesService {
     return { deleted, failed };
   }
 
+  async getServerLogoList() {
+    if (localStorage.getItem('listFilesLogos') != null) {
+      this.listFilesLogos = JSON.parse(localStorage.getItem('listFilesLogos')!);
+    }
+    if (localStorage.getItem('mapLogos') != null) {
+      this.mapLogos = new Map(JSON.parse(localStorage.getItem('mapLogos')!));
+    }
+
+    const opt = this.services.getHttpOptionsAuthorization();
+    opt.url = this.services.getURLService() + 'listfilespremium';
+    opt.data = {
+      type: 'logos',
+      naImages: this.listFilesLogos
+    };
+
+    return from(CapacitorHttp.post(opt)).pipe(
+      map(resp => {
+        if (resp.data.errorCode !== '000') {
+          return '';
+        }
+        this.downloadFileListLogos = this.filterNonImageFiles(resp.data.downloadFileList || []);
+        this.removeFileListLogos = this.filterNonImageFiles(resp.data.removeFileList || []);
+        if (this.removeFileListLogos.length > 0) {
+          this.deleteLogos(this.removeFileListLogos);
+        }
+        return resp;
+      })
+    );
+  }
+
+  async downloadLogosWithConcurrency(logosDownload?: string[], concurrency: number = 3): Promise<void> {
+    const imagenesDownload = logosDownload ?? this.downloadFileListLogos;
+    if (!imagenesDownload || imagenesDownload.length === 0) {
+      return;
+    }
+
+    const queue = [...imagenesDownload];
+    const running: Promise<void>[] = [];
+
+    const schedule = () => {
+      while (queue.length > 0 && running.length < concurrency) {
+        const logoName = queue.shift()!;
+        let p: Promise<void>;
+        p = this.downloadSingleLogo(logoName).finally(() => {
+          const idx = running.indexOf(p);
+          if (idx > -1) {
+            running.splice(idx, 1);
+          }
+        });
+        running.push(p);
+      }
+    };
+
+    schedule();
+    while (running.length > 0 || queue.length > 0) {
+      if (running.length > 0) {
+        await Promise.race(running);
+      }
+      schedule();
+    }
+  }
+
+  async getLogoBase64ForEnterprise(coEnterprise?: string | null): Promise<string | null> {
+    if (!coEnterprise) {
+      return null;
+    }
+
+    const filename = this.findLogoFilename(coEnterprise);
+    if (!filename) {
+      return null;
+    }
+
+    if (this.mapLogosByFilename.has(filename)) {
+      return this.mapLogosByFilename.get(filename)!;
+    }
+
+    try {
+      const path = this.mapLogos.get(coEnterprise.toLowerCase()) ?? this.mapLogos.get(coEnterprise);
+      if (path) {
+        const raw = await this.readFileResultToBase64(this.normalizeFileUri(path));
+        const base64 = this.buildDataUri(filename, raw);
+        this.mapLogosByFilename.set(filename, base64);
+        return base64;
+      }
+      await this.downloadSingleLogo(filename);
+      return this.mapLogosByFilename.get(filename) ?? null;
+    } catch (err) {
+      console.warn('[getLogoBase64ForEnterprise] failed for', coEnterprise, err);
+      return null;
+    }
+  }
+
+  private async downloadSingleLogo(logoName: string): Promise<void> {
+    const url = this.buildLogoDownloadUrl(logoName);
+    try {
+      const fileResult: any = await Filesystem.downloadFile({
+        url,
+        path: logoName,
+        directory: Directory.Cache
+      });
+      if (!fileResult?.path) {
+        return;
+      }
+
+      const enterpriseKey = this.getEnterpriseKeyFromFilename(logoName);
+      this.listFilesLogos = Array.from(new Set([...this.listFilesLogos, logoName]));
+      this.mapLogos.set(enterpriseKey, fileResult.path);
+
+      const raw = await this.readFileResultToBase64(this.normalizeFileUri(fileResult.path));
+      const base64 = this.buildDataUri(logoName, raw);
+      this.mapLogosByFilename.set(logoName, base64);
+
+      localStorage.setItem('listFilesLogos', JSON.stringify(this.listFilesLogos));
+      localStorage.setItem('mapLogos', JSON.stringify(Array.from(this.mapLogos.entries())));
+    } catch (e) {
+      console.error('Logo download error', logoName, url, e);
+    }
+  }
+
+  private async deleteLogos(listLogosDelete: string[]): Promise<void> {
+    const toDelete = Array.from(new Set(listLogosDelete));
+    for (const filename of toDelete) {
+      try {
+        await Filesystem.deleteFile({ path: filename, directory: Directory.Cache });
+      } catch (err) {
+        console.warn('[deleteLogos] failed deleting', filename, err);
+      }
+      const enterpriseKey = this.getEnterpriseKeyFromFilename(filename);
+      this.listFilesLogos = this.listFilesLogos.filter(n => n !== filename);
+      this.mapLogos.delete(enterpriseKey);
+      this.mapLogosByFilename.delete(filename);
+    }
+    localStorage.setItem('listFilesLogos', JSON.stringify(this.listFilesLogos));
+    localStorage.setItem('mapLogos', JSON.stringify(Array.from(this.mapLogos.entries())));
+  }
+
+  private buildLogoDownloadUrl(logoName: string): string {
+    return this.services.getURLService() + 'download?type=logos&id=' + encodeURIComponent(logoName);
+  }
+
+  private findLogoFilename(coEnterprise: string): string | null {
+    const key = coEnterprise.toLowerCase();
+    const fromList = this.listFilesLogos.find(name => this.getEnterpriseKeyFromFilename(name) === key)
+      ?? this.downloadFileListLogos.find(name => this.getEnterpriseKeyFromFilename(name) === key);
+    if (fromList) {
+      return fromList;
+    }
+    const path = this.mapLogos.get(key) ?? this.mapLogos.get(coEnterprise);
+    return path ? path.split('/').pop() ?? null : null;
+  }
+
+  private getEnterpriseKeyFromFilename(filename: string): string {
+    const basename = filename.split('/').pop() || filename;
+    const dot = basename.lastIndexOf('.');
+    return (dot > 0 ? basename.substring(0, dot) : basename).toLowerCase();
+  }
+
+  private filterNonImageFiles(files: string[]): string[] {
+    return (files || []).filter(name => {
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      return ext !== 'db' && ext !== 'ini';
+    });
+  }
+
+  private buildDataUri(filename: string, rawBase64: string): string {
+    const ext = (filename.split('.').pop() || 'png').toLowerCase();
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+      : ext === 'gif' ? 'image/gif'
+        : ext === 'webp' ? 'image/webp'
+          : 'image/png';
+    return `data:${mime};base64,${rawBase64}`;
+  }
+
+  private normalizeFileUri(path: string): string {
+    return path.startsWith('file://') ? path : 'file://' + path;
+  }
 
 }
