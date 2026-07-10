@@ -16,7 +16,8 @@
             <ion-row>
               <ion-col size="12" size-sm="12" size-xs="12">
                 
-                <div class="saldo-legend" *ngIf="!this.clientLogic.esTransportista">
+                @if(!this.transportista){
+                <div class="saldo-legend">
                   <span class="legend-item">
                     <span class="legend-dot legend-blue" aria-hidden="true"></span>
                     {{this.clientLogic.clientTags.get('DENARIO_DOC_VIGENTE')}}
@@ -26,6 +27,7 @@
                     {{this.clientLogic.clientTags.get('DENARIO_DOC_VENCIDO')}}
                   </span>
                 </div>
+              }
               </ion-col>
                 
             </ion-row>
@@ -34,7 +36,8 @@
     
     <ion-grid>
       <ion-row>
-        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="this.enterpriseServ.esMultiempresa()">
+        @if(this.enterpriseServ.esMultiempresa()){
+        <ion-col size="12" size-sm="12" size-xs="12">
           <ion-label>{{this.clientLogic.clientTags.get('CLI_EMPRESA')}}:</ion-label>
           <div class="listado-enterprise-selector ion-text-center">
             <ion-select class="ion-text-center always-flip" [(ngModel)]="this.clientLogic.empresaSeleccionada"
@@ -46,6 +49,7 @@
             </ion-select>
           </div>
         </ion-col>
+      }
 
         <ion-col size="12" size-sm="12" size-xs="12">
           <ion-list button detail="false">
@@ -57,17 +61,20 @@
                     <p>{{ client.lbClient }}</p>
                     <p>{{this.clientLogic.clientTags.get('CLI_CODIGO')}}: {{ client.coClient}}
                     </p>
-                    <div *ngIf="!this.clientLogic.esTransportista">
+                    @if(!this.transportista){
+                    <div>
                       <p [ngStyle]="{ color: client.countDueDate > 0 ? 'Red' : 'Blue' }">
                         {{this.clientLogic.clientTags.get('CLI_SALDO')}} {{client.coCurrency}}:
                         {{formatNumber(client.saldo1)}}
                       </p>
-                      <p [ngStyle]="{ color: client.countDueDate > 0 ? 'Red' : 'Blue' }"
-                        *ngIf="this.clientLogic.showConversion">
+                      @if(this.clientLogic.showConversion){
+                      <p [ngStyle]="{ color: client.countDueDate > 0 ? 'Red' : 'Blue' }">
                         {{this.clientLogic.clientTags.get('CLI_SALDO')}}
                         {{oppositeCoCurrency(client.coCurrency)}}: {{formatNumber(client.saldo2)}}
                       </p>
+                    }
                     </div>
+                  }
                   </ion-label>
                   <ion-note slot="end">
                     <ion-icon class="icon-List-Client" name="chevron-forward-outline"></ion-icon>
