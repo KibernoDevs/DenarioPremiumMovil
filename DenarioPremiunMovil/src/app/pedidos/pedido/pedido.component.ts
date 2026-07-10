@@ -1242,6 +1242,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
     } else {
       this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
+      this.orderServ.dctoGlobal = 0;
       this.orderServ.setup();
 
 
