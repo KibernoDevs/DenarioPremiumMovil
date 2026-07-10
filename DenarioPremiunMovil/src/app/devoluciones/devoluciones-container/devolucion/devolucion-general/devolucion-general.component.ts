@@ -140,13 +140,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
   reset() {
     this.bloquearFactura = true;
     console.log('Aqui vamos a resetar la devolucion');
-    //this.returnLogic.newReturn.naResponsible = "";
-    //this.returnLogic.newReturn.nuSeal = "";
-    //this.returnLogic.newReturn.idType = 0;
-    //this.returnLogic.newReturn.txComment = "";
-    this.returnLogic.newReturn.coInvoice = "";
-    this.returnLogic.newReturn.idInvoice = 0;
-    this.returnLogic.productList = [];
+    this.clearInvoiceSelection();
     this.returnLogic.validateClient = false;
     this.setClientfromSelector(this.cliente);
     if (this.returnLogic.validateReturn) {
@@ -156,40 +150,60 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     }
   }
 
+  clearInvoiceSelection(): void {
+    this.returnLogic.newReturn.coInvoice = '';
+    this.returnLogic.newReturn.idInvoice = 0;
+    this.returnLogic.newReturn.invoicedetailUnits = [];
+    this.returnLogic.productList = [];
+    this.returnLogic.validateReturnProductList = [];
+  }
+
   setClientfromSelector(cliente: Client) {
-    if (cliente) {
-      //this.returnLogic.newReturn.coReturn = this.dateServ.generateCO(0);
-      this.hasClient = true;
-      this.returnLogic.newReturn.idReturn = 0; // este se va a actualizar con la repsuesta del API
-      this.cliente = cliente;
-      this.bloquearFactura = false;
-      this.nombreCliente = cliente.lbClient;
-      this.cliente.naClient = cliente.naClient || cliente.lbClient;
-      this.returnLogic.clientReturn = this.cliente;
-      //this.returnLogic.setChange(true, false);
-      this.returnLogic.newReturn.idClient = this.cliente.idClient;
-      this.returnLogic.newReturn.coClient = this.cliente.coClient;
-      this.returnLogic.newReturn.lbClient = this.cliente.lbClient;
-      this.returnLogic.newReturn.idEnterprise = this.empresaSeleccionada.idEnterprise;
-      this.returnLogic.newReturn.coEnterprise = this.empresaSeleccionada.coEnterprise;
-      this.returnLogic.newReturn.idUser = Number(localStorage.getItem("idUser"));
-      this.returnLogic.newReturn.coUser = localStorage.getItem('coUser') || "[]";
-      this.returnLogic.enterpriseReturn = this.empresaSeleccionada;
-      this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
-      this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
-      this.returnLogic.onReturnValidToSave(true);
-      if (this.returnLogic.validateReturn) {
-        this.returnLogic.findInvoices();
-      } else {
-        this.returnLogic.onReturnValid(true);
-      }
-    }
-    else {
+    if (!cliente) {
       this.bloquearFactura = true;
       console.log("cliente vacio");
       this.nombreCliente = "";
       this.hasClient = false;
+      this.clearInvoiceSelection();
+      return;
+    }
 
+    const previousClientId = this.returnLogic.newReturn.idClient;
+    const clientChanged = !!previousClientId && previousClientId !== cliente.idClient;
+
+    // Al cambiar de cliente, la factura del cliente anterior no puede permanecer.
+    if (clientChanged) {
+      this.clearInvoiceSelection();
+      if (this.returnLogic.validateReturn) {
+        this.returnLogic.onReturnValid(false);
+      }
+    }
+
+    this.hasClient = true;
+    this.returnLogic.newReturn.idReturn = 0; // este se va a actualizar con la repsuesta del API
+    this.cliente = cliente;
+    this.bloquearFactura = false;
+    this.nombreCliente = cliente.lbClient;
+    this.cliente.naClient = cliente.naClient || cliente.lbClient;
+    this.returnLogic.clientReturn = this.cliente;
+    this.returnLogic.newReturn.idClient = this.cliente.idClient;
+    this.returnLogic.newReturn.coClient = this.cliente.coClient;
+    this.returnLogic.newReturn.lbClient = this.cliente.lbClient;
+    this.returnLogic.newReturn.idEnterprise = this.empresaSeleccionada.idEnterprise;
+    this.returnLogic.newReturn.coEnterprise = this.empresaSeleccionada.coEnterprise;
+    this.returnLogic.newReturn.idUser = Number(localStorage.getItem("idUser"));
+    this.returnLogic.newReturn.coUser = localStorage.getItem('coUser') || "[]";
+    this.returnLogic.enterpriseReturn = this.empresaSeleccionada;
+    this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+    this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+    this.returnLogic.onReturnValidToSave(true);
+    this.selectorService.checkClient = true;
+    this.selectorService.clienteAnterior = this.cliente;
+
+    if (this.returnLogic.validateReturn) {
+      this.returnLogic.findInvoices();
+    } else {
+      this.returnLogic.onReturnValid(true);
     }
   }
 
@@ -206,7 +220,8 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
     this.cliente = {} as Client;
     this.returnLogic.enterpriseReturn = this.empresaSeleccionada;
-    this.returnLogic.productList = [];
+    this.clearInvoiceSelection();
+    this.hasClient = false;
     this.nombreCliente = "";
     this.returnValid = false;
     this.returnLogic.onReturnValid(false);
