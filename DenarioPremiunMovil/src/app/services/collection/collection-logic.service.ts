@@ -2177,6 +2177,13 @@ export class CollectionService {
   convertirMonto(monto: number, rate: number, currency: string) {
 
     if (this.multiCurrency) {
+      if (!this.currencySelected?.coCurrency || !this.currencyConversion?.coCurrency) {
+        if (monto > 0) {
+          return this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+        }
+        return 0;
+      }
+
       //let rateReal = this.getNuValueLocal(rate);
       let rateReal = rate;
       if (rate == 0)
@@ -3282,7 +3289,7 @@ export class CollectionService {
       return 0;
     }
 
-    if (!this.multiCurrency) {
+    if (!this.multiCurrency || !this.currencySelected?.coCurrency || !this.currencyConversion?.coCurrency) {
       return this.cleanFormattedNumber(
         this.currencyService.formatNumber(normalizedAmount),
       );
@@ -3416,6 +3423,48 @@ export class CollectionService {
     return { ivaAmount, islrAmount, ivaConversion, islrConversion };
   }
 
+  private syncDetailRetentionTotalsFromPersistedLines(
+    detail: CollectionDetail,
+  ): void {
+    const lines = detail.collectionDetailRetentions ?? [];
+    if (lines.length === 0) {
+      return;
+    }
+
+    if (this.dynamicRetentions) {
+      const { ivaAmount, islrAmount, ivaConversion, islrConversion } =
+        this.resolveDynamicRetentionIvaIslrTotals(lines);
+
+      detail.nuAmountRetention = ivaAmount;
+      detail.nuAmountRetention2 = islrAmount;
+      detail.nuAmountRetentionConversion = ivaConversion;
+      detail.nuAmountRetention2Conversion = islrConversion;
+      detail.nuAmountRetentionIvaConversion = ivaConversion;
+      detail.nuAmountRetentionIslrConversion = islrConversion;
+      return;
+    }
+
+    const ivaAmount = Number(detail.nuAmountRetention ?? 0);
+    const islrAmount = Number(detail.nuAmountRetention2 ?? 0);
+    const ivaConversion = Number(
+      detail.nuAmountRetentionConversion
+      ?? detail.nuAmountRetentionIvaConversion
+      ?? 0,
+    );
+    const islrConversion = Number(
+      detail.nuAmountRetention2Conversion
+      ?? detail.nuAmountRetentionIslrConversion
+      ?? 0,
+    );
+
+    detail.nuAmountRetention = ivaAmount;
+    detail.nuAmountRetention2 = islrAmount;
+    detail.nuAmountRetentionConversion = ivaConversion;
+    detail.nuAmountRetention2Conversion = islrConversion;
+    detail.nuAmountRetentionIvaConversion = ivaConversion;
+    detail.nuAmountRetentionIslrConversion = islrConversion;
+  }
+
   public syncDetailRetentionAmountsAndConversions(
     detail: CollectionDetail,
     open?: DocumentSale,
@@ -3519,7 +3568,7 @@ export class CollectionService {
 
       detail.collectionDetailRetentions = detailRetentions;
       if (detailRetentions.length > 0) {
-        this.syncDetailRetentionAmountsAndConversions(detail, undefined, i);
+        this.syncDetailRetentionTotalsFromPersistedLines(detail);
       }
     }
   }

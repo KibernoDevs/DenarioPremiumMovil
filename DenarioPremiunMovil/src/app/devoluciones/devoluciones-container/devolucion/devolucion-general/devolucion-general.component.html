@@ -31,7 +31,8 @@
     <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="returnLogic.validateReturn">
       <div id="inputInvoice">
         <ion-input label="Factura:" label-placement="floating" fill="outline"
-          disabled="{{ this.returnLogic.returnSent }}" value="{{ this.returnLogic.newReturn.coInvoice }}"
+          [disabled]="returnLogic.returnSent" [readonly]="true"
+          [(ngModel)]="returnLogic.newReturn.coInvoice"
           id="invoiceSelect" color="primary"></ion-input>
       </div>
     </ion-col>
