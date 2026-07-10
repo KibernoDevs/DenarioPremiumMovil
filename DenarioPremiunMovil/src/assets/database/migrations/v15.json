@@ -1,0 +1,10 @@
+[
+    {
+        "sql": "ALTER TABLE collect_retentions ADD COLUMN require_input BOOLEAN DEFAULT 0;",
+        "description": "Indica si el comprobante de retencion es obligatorio para el tipo."
+    },
+    {
+        "sql": "ALTER TABLE collect_retentions ADD COLUMN nu_voucher_length INTEGER DEFAULT 0;",
+        "description": "Cantidad de digitos requeridos para el comprobante de retencion."
+    }
+]
