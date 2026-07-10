@@ -67,7 +67,7 @@
         <ion-input type="number"
           label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
           label-placement="floating" fill="outline" min="0.01" step="0.01" [value]="rateSelected"
-          [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur()"
+          [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur($event)"
           id="manualRateInput" color="primary" required inputmode="decimal"></ion-input>
         @if (manualRateError) {
         <ion-label color="danger" class="campoObligatorio">

@@ -108,8 +108,8 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.rateSelected = savedRate;
         this.lastManualRateValue = savedRate;
       } else if (!this.collectService.rateSelected || this.collectService.rateSelected === 0) {
-        this.collectService.rateSelected = this.lastRateValue;
-        this.lastManualRateValue = this.lastRateValue;
+        this.collectService.rateSelected = this.defaultDayRate;
+        this.lastManualRateValue = this.defaultDayRate;
       } else {
         // Mantener la tasa manual ya ingresada
         this.lastManualRateValue = this.collectService.rateSelected;
@@ -1325,32 +1325,57 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   /**
-   * Valida y aplica la tasa manual al perder el foco (evento de ionBlur)
+   * Valida la tasa manual al perder el foco (evento de ionBlur).
    */
-  public onManualRateBlur(): void {
-    if (this.manualRateError) {
-      // No aplicar si hay error
+  public onManualRateBlur(event?: any): void {
+    const rawValue = event?.detail?.value ?? event?.target?.value;
+    const trimmed = String(rawValue ?? this.rateSelected ?? '').trim();
+
+    if (trimmed === '' || trimmed === '.') {
+      this.manualRateError = 'Ingrese un valor numérico mayor a 0';
       return;
     }
-    // Si la tasa cambió, recalcular montos
-    if (this.rateSelected !== this.lastManualRateValue) {
-      this.lastManualRateValue = this.rateSelected;
-      void this.applySelectedRate(this.rateSelected);
+
+    const value = this.parseManualRateInput(trimmed);
+    if (value == null || value <= 0) {
+      this.manualRateError = 'Ingrese un valor numérico mayor a 0';
+      return;
+    }
+
+    this.manualRateError = '';
+    if (value !== this.lastManualRateValue) {
+      this.lastManualRateValue = value;
+      void this.applySelectedRate(value);
     }
   }
 
   /**
-   * Maneja el input de la tasa manual (evento de ionInput)
+   * Maneja el input de la tasa manual (evento de ionInput).
+   * Solo valida y actualiza el valor en pantalla; el recálculo ocurre en blur.
    */
-  public async onManualRateInput(event: any): Promise<void> {
+  public onManualRateInput(event: any): void {
     const rawValue = event?.detail?.value ?? event?.target?.value;
-    const value = parseFloat(rawValue);
-    if (isNaN(value) || value <= 0) {
+    const trimmed = String(rawValue ?? '').trim();
+
+    if (trimmed === '' || trimmed === '.') {
+      this.manualRateError = '';
+      return;
+    }
+
+    const value = this.parseManualRateInput(trimmed);
+    if (value == null || value <= 0) {
       this.manualRateError = 'Ingrese un valor numérico mayor a 0';
       return;
     }
+
     this.manualRateError = '';
-    await this.applySelectedRate(value);
+    this.rateSelected = value;
+  }
+
+  private parseManualRateInput(raw: string): number | null {
+    const normalized = raw.replace(',', '.');
+    const value = parseFloat(normalized);
+    return Number.isFinite(value) ? value : null;
   }
 
   private async applySelectedRate(rate: number): Promise<void> {
@@ -1652,14 +1677,15 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   /**
- * Última tasa conocida (para inicializar el input y validar mínimo)
- * Se asume que la lógica ya la calcula y la deja en rateSelected o en rateList.
+ * Tasa del día para inicializar el input manual.
  */
+  get defaultDayRate(): number {
+    return this.collectService.defaultDayRate;
+  }
+
+  /** @deprecated Use defaultDayRate. */
   get lastRateValue(): number {
-    if (this.collectService.rateList && this.collectService.rateList.length > 0) {
-      return Math.max(...this.collectService.rateList);
-    }
-    return this.collectService.rateSelected || 0.01;
+    return this.defaultDayRate;
   }
 
   get clienteTabLabel(): string {
