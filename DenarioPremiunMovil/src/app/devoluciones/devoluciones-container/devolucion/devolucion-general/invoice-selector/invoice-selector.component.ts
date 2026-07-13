@@ -24,7 +24,7 @@ export class InvoiceSelectorComponent implements OnInit {
   mensajeInvoiceChange: string = '';
   public invoiceChangeOpen: boolean = false;
 
-  invoiceACambiar!: Invoice;
+  invoiceACambiar: Invoice | null = null;
 
   @ViewChild(IonModal) modal!: IonModal;
 
@@ -34,16 +34,10 @@ export class InvoiceSelectorComponent implements OnInit {
     {
       text: 'Aceptar',
       role: 'confirm',
-      handler: () => {
-        this.confirmInvoiceChange();
-      },
     },
     {
       text: 'Cancelar',
       role: 'cancel',
-      handler: () => {
-        this.closeModal();
-      }
     }
   ];
 
@@ -58,16 +52,10 @@ export class InvoiceSelectorComponent implements OnInit {
       {
         text: this.btnAceptar,
         role: 'confirm',
-        handler: () => {
-          this.confirmInvoiceChange();
-        },
       },
       {
         text: this.btnCancelar,
         role: 'cancel',
-        handler: () => {
-          this.closeModal();
-        }
       }
     ];
   }
@@ -75,8 +63,7 @@ export class InvoiceSelectorComponent implements OnInit {
   selectInvoice(input: Invoice) {
     const currentInvoiceId = this.returnLogic.newReturn.idInvoice;
     if (currentInvoiceId && currentInvoiceId !== input.idInvoice) {
-      //ya hay una factura asignada diferente, no podemos cambiarla sin resetear la devolucion.
-      console.log("cambio de factura");
+      // Guarda la factura pendiente y pide confirmación.
       this.invoiceACambiar = input;
       this.invoiceChangeOpen = true;
       return;
@@ -96,28 +83,33 @@ export class InvoiceSelectorComponent implements OnInit {
     this.closeModal();
   }
 
-  confirmInvoiceChange(): void {
-    if (!this.invoiceACambiar) {
-      this.invoiceChangeOpen = false;
+  onInvoiceChangeDismiss(event: CustomEvent): void {
+    this.invoiceChangeOpen = false;
+    const pendingInvoice = this.invoiceACambiar;
+    this.invoiceACambiar = null;
+
+    if (!pendingInvoice) {
       return;
     }
-    const invoiceToApply = this.invoiceACambiar;
-    this.invoiceChangeOpen = false;
-    this.returnLogic.invoiceChanged.next(invoiceToApply);
+
+    // Solo Cancelar mantiene la factura actual.
+    if (event.detail?.role === 'cancel') {
+      return;
+    }
+
+    // Aceptar, backdrop u otro cierre fuera de Cancelar: aplica el cambio.
+    this.returnLogic.invoiceChanged.next(pendingInvoice);
     this.closeModal();
   }
 
   closeModal() {
     this.invoiceChangeOpen = false;
+    this.invoiceACambiar = null;
     this.modal.dismiss(null, 'cancel');
   }
 
   handleInput(event: any) {
     this.searchText = event.target.value.toLowerCase();
-  }
-
-  setInvoiceChangeOpen(value: boolean) {
-    this.invoiceChangeOpen = value;
   }
 
 }

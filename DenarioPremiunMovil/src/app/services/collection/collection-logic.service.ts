@@ -57,7 +57,7 @@ export interface DocumentSalesPagination {
 export class CollectionService {
   // Getter para uso en template si es necesario
   public getLastRateValue(): number {
-    return this.lastRateValue;
+    return this.defaultDayRate;
   }
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
@@ -896,16 +896,16 @@ export class CollectionService {
     })
 
     const savedRate = Number(this.collection?.nuValueLocal ?? 0);
-    const isExistingCollection = Number(this.collection?.stCollection ?? 0) !== this.COLLECT_STATUS_NEW
-      || Number(this.collection?.stDelivery ?? 0) !== this.COLLECT_STATUS_NEW
-      || !!(this.collection?.coCollection && this.collection.coCollection.trim().length > 0);
-    const keepSavedManualRate = this.enabledManualRate && isExistingCollection && Number.isFinite(savedRate) && savedRate > 0;
+    const manualRateCandidate = Number(this.rateSelected ?? savedRate ?? 0);
+    const keepManualRate = this.enabledManualRate
+      && Number.isFinite(manualRateCandidate)
+      && manualRateCandidate > 0;
 
     if (this.rateList.length > 0) {
       this.historicoTasa = true;
-      if (keepSavedManualRate) {
-        this.rateSelected = savedRate;
-        this.collection.nuValueLocal = savedRate;
+      if (keepManualRate) {
+        this.rateSelected = manualRateCandidate;
+        this.collection.nuValueLocal = manualRateCandidate;
       } else {
         this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       }
@@ -915,6 +915,14 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
+      if (this.enabledManualRate && keepManualRate) {
+        this.rateSelected = this.collection.nuValueLocal = manualRateCandidate;
+        this.haveRate = true;
+        this.historicoTasa = true;
+        this.updateRateDocument();
+        this.unlockTabsFunction(false);
+        return Promise.resolve(true);
+      }
       if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
@@ -2177,13 +2185,6 @@ export class CollectionService {
   convertirMonto(monto: number, rate: number, currency: string) {
 
     if (this.multiCurrency) {
-      if (!this.currencySelected?.coCurrency || !this.currencyConversion?.coCurrency) {
-        if (monto > 0) {
-          return this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
-        }
-        return 0;
-      }
-
       //let rateReal = this.getNuValueLocal(rate);
       let rateReal = rate;
       if (rate == 0)
@@ -3289,7 +3290,7 @@ export class CollectionService {
       return 0;
     }
 
-    if (!this.multiCurrency || !this.currencySelected?.coCurrency || !this.currencyConversion?.coCurrency) {
+    if (!this.multiCurrency) {
       return this.cleanFormattedNumber(
         this.currencyService.formatNumber(normalizedAmount),
       );
@@ -3423,48 +3424,6 @@ export class CollectionService {
     return { ivaAmount, islrAmount, ivaConversion, islrConversion };
   }
 
-  private syncDetailRetentionTotalsFromPersistedLines(
-    detail: CollectionDetail,
-  ): void {
-    const lines = detail.collectionDetailRetentions ?? [];
-    if (lines.length === 0) {
-      return;
-    }
-
-    if (this.dynamicRetentions) {
-      const { ivaAmount, islrAmount, ivaConversion, islrConversion } =
-        this.resolveDynamicRetentionIvaIslrTotals(lines);
-
-      detail.nuAmountRetention = ivaAmount;
-      detail.nuAmountRetention2 = islrAmount;
-      detail.nuAmountRetentionConversion = ivaConversion;
-      detail.nuAmountRetention2Conversion = islrConversion;
-      detail.nuAmountRetentionIvaConversion = ivaConversion;
-      detail.nuAmountRetentionIslrConversion = islrConversion;
-      return;
-    }
-
-    const ivaAmount = Number(detail.nuAmountRetention ?? 0);
-    const islrAmount = Number(detail.nuAmountRetention2 ?? 0);
-    const ivaConversion = Number(
-      detail.nuAmountRetentionConversion
-      ?? detail.nuAmountRetentionIvaConversion
-      ?? 0,
-    );
-    const islrConversion = Number(
-      detail.nuAmountRetention2Conversion
-      ?? detail.nuAmountRetentionIslrConversion
-      ?? 0,
-    );
-
-    detail.nuAmountRetention = ivaAmount;
-    detail.nuAmountRetention2 = islrAmount;
-    detail.nuAmountRetentionConversion = ivaConversion;
-    detail.nuAmountRetention2Conversion = islrConversion;
-    detail.nuAmountRetentionIvaConversion = ivaConversion;
-    detail.nuAmountRetentionIslrConversion = islrConversion;
-  }
-
   public syncDetailRetentionAmountsAndConversions(
     detail: CollectionDetail,
     open?: DocumentSale,
@@ -3568,7 +3527,7 @@ export class CollectionService {
 
       detail.collectionDetailRetentions = detailRetentions;
       if (detailRetentions.length > 0) {
-        this.syncDetailRetentionTotalsFromPersistedLines(detail);
+        this.syncDetailRetentionAmountsAndConversions(detail, undefined, i);
       }
     }
   }
@@ -4158,13 +4117,18 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   /**
- * Devuelve la última tasa conocida (mayor de la lista o la seleccionada)
- */
-  get lastRateValue(): number {
+   * Tasa del día (primera tasa disponible para la fecha seleccionada).
+   */
+  get defaultDayRate(): number {
     if (this.rateList && this.rateList.length > 0) {
-      return Math.max(...this.rateList);
+      return this.rateList[0];
     }
     return this.rateSelected || 0.01;
+  }
+
+  /** @deprecated Use defaultDayRate. Conservado por compatibilidad. */
+  get lastRateValue(): number {
+    return this.defaultDayRate;
   }
 
   ///////////////////QUERYS////////////////
