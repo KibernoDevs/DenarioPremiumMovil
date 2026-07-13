@@ -54,6 +54,7 @@ export class Orders {
             obj['idClientStock'] ?? null,
             obj['coClientStock'] ?? null,
             obj['stDelivery'],
+            obj['paymentCurrency'] ?? null,
         );
     }
   
@@ -107,7 +108,8 @@ export class Orders {
         public coDistributionChannel: string | null = null,
         public idClientStock: number | null = null,
         public coClientStock: string | null = null,
-        public stDelivery: number,        
+        public stDelivery: number,
+        public paymentCurrency: number | null = null,
         
     ) { }
   }

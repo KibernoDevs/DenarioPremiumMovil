@@ -124,6 +124,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   public multiempresa = false;
   public multimoneda = false;
   public monedaSeleccionada!: CurrencyEnterprise;
+  public monedaPagoSeleccionada!: CurrencyEnterprise;
   public localCurrency = {} as CurrencyEnterprise;
   public hardCurrency = {} as CurrencyEnterprise;
 
@@ -314,6 +315,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
     this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
     this.currencySelection();
+    this.initPaymentCurrencyDefault();
     /*
     this.orderServ.monedaSeleccionada =
       this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
@@ -332,6 +334,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     this.orderServ.carritoWithLines = [];
     this.orderServ.totalUnidad = [];
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
+    this.initPaymentCurrencyFromOrder();
 
     //para pedidos enviados: ocultamos los botones y el tab de general.
     this.viewOnly = !this.orderServ.pedidoModificable;
@@ -808,6 +811,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       idClientStock: this.orderServ.order.idClientStock ?? null,
       coClientStock: this.orderServ.order.coClientStock ?? null,
       stDelivery: stDelivery,
+      paymentCurrency: this.resolvePaymentCurrencyValue(),
     } as Orders
 
     console.log(order);
@@ -1847,7 +1851,52 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       stDelivery: DELIVERY_STATUS_NEW,
       nuAmountTax: 0,
       nuAmountTaxConversion: 0,
+      paymentCurrency: null,
     } as Orders;
+  }
+
+  private resolvePaymentCurrencyValue(): number | null {
+    if (!this.orderServ.paymentCurrencyEnabled) {
+      return null;
+    }
+    return this.monedaPagoSeleccionada?.idCurrency ?? null;
+  }
+
+  private initPaymentCurrencyDefault(): void {
+    if (!this.orderServ.paymentCurrencyEnabled) {
+      return;
+    }
+    this.monedaPagoSeleccionada = this.resolvePaymentCurrencyDefault();
+  }
+
+  private initPaymentCurrencyFromOrder(): void {
+    if (!this.orderServ.paymentCurrencyEnabled) {
+      return;
+    }
+    const paymentCurrencyId = this.orderServ.order?.paymentCurrency;
+    if (paymentCurrencyId == null) {
+      this.initPaymentCurrencyDefault();
+      return;
+    }
+    this.monedaPagoSeleccionada = this.currencyServ.getCurrencyById(paymentCurrencyId);
+  }
+
+  private resolvePaymentCurrencyDefault(): CurrencyEnterprise {
+    const defaultCode = this.orderServ.paymentCurrencyDefault;
+    if (defaultCode === 'LocalCurrency') {
+      return this.currencyServ.getLocalCurrency();
+    }
+    if (defaultCode === 'HardCurrency' && this.currencyServ.multimoneda) {
+      return this.currencyServ.getHardCurrency();
+    }
+    if (defaultCode) {
+      return this.currencyServ.getCurrency(defaultCode);
+    }
+    return this.currencyServ.getLocalCurrency();
+  }
+
+  onPaymentCurrencySelect(): void {
+    this.orderServ.setChangesMade(true);
   }
   getNaPaymentCondition(coPaymentCondition: string) {
     let payCond = this.orderServ.listaPaymentCondition.find((pc) => pc.coPaymentCondition == coPaymentCondition);

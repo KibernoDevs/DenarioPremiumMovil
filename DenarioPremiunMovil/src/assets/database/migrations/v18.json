@@ -1,0 +1,6 @@
+[
+    {
+        "sql": "ALTER TABLE orders ADD COLUMN payment_currency INTEGER;",
+        "description": "Id de moneda de pago del pedido (independiente de id_currency)."
+    }
+]
