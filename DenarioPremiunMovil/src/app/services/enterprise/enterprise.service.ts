@@ -28,7 +28,8 @@ export class EnterpriseService {
       var database = dbServ;
       var select = "SELECT id_enterprise as idEnterprise, co_enterprise as coEnterprise, " +
         "lb_enterprise as lbEnterprise, co_currency_default as coCurrencyDefault, " +
-        "priority_selection as prioritySelection, enterprise_default as enterpriseDefault " +
+        "priority_selection as prioritySelection, enterprise_default as enterpriseDefault, " +
+        "na_enterprise as naEnterprise, nu_rif as nuRif, tx_address as txAddress " +
         "FROM enterprises ORDER BY priority_selection ASC"
       try {
         const result_1 = await database.executeSql(select, []);

@@ -314,7 +314,14 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       detailLines: string[];
     };
     fileName?: string;
+    /** @deprecated Usar enterpriseHeader.logoBase64 */
     logoBase64?: string | null;
+    enterpriseHeader?: {
+      name: string;
+      rif?: string;
+      address?: string;
+      logoBase64?: string | null;
+    };
   }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number, format?: 'letter' | 'legal' }): Promise<jsPDF> {
     const doc = new jsPDF({
       format: opts?.format ?? 'letter',
@@ -350,31 +357,99 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     let cursorY = topMargin;
     let pageNumber = 1;
 
-    const drawPageHeader = (continued = false) => {
-      const headerHeight = 56;
-      doc.setFillColor(...headerColor);
-      doc.roundedRect(marginX, cursorY, usableWidth, headerHeight, 8, 8, 'F');
+    const resolveEnterpriseLogo = (): string | null =>
+      data.enterpriseHeader?.logoBase64 ?? data.logoBase64 ?? null;
 
-      let titleX = marginX + 16;
-      if (data.logoBase64) {
-        const logoDrawn = this.drawEnterpriseLogo(
+    const drawEnterpriseLetterhead = (): number => {
+      const header = data.enterpriseHeader;
+      const logoBase64 = resolveEnterpriseLogo();
+      const name = (header?.name || '').trim();
+      const rif = (header?.rif || '').trim();
+      const address = (header?.address || '').trim();
+      const hasContent = !!(name || rif || address || logoBase64);
+      if (!hasContent) {
+        return 0;
+      }
+
+      const logoSize = 52;
+      const logoGap = 12;
+      const sectionPaddingY = 8;
+      let textX = marginX;
+      let logoDrawn = false;
+
+      if (logoBase64) {
+        logoDrawn = this.drawEnterpriseLogo(
           doc,
-          data.logoBase64,
-          marginX + 10,
-          cursorY + 8,
-          40,
-          40
+          logoBase64,
+          marginX,
+          cursorY + sectionPaddingY,
+          logoSize,
+          logoSize
         );
         if (logoDrawn) {
-          titleX = marginX + 62;
+          textX = marginX + logoSize + logoGap;
         }
       }
 
+      const textWidth = Math.max(80, usableWidth - (textX - marginX));
+      let textY = cursorY + sectionPaddingY + 4;
+      let textBlockHeight = 0;
+
+      if (name) {
+        doc.setTextColor(32, 32, 32);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        const nameLines = doc.splitTextToSize(this.escapePdfText(name), textWidth);
+        doc.text(nameLines, textX, textY);
+        const lineCount = Array.isArray(nameLines) ? nameLines.length : 1;
+        textY += lineCount * 15;
+        textBlockHeight += lineCount * 15;
+      }
+
+      if (rif) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(this.escapePdfText(`RIF: ${rif}`), textX, textY);
+        textY += 13;
+        textBlockHeight += 13;
+      }
+
+      if (address) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const addressLines = doc.splitTextToSize(this.escapePdfText(address), textWidth);
+        doc.text(addressLines, textX, textY);
+        const lineCount = Array.isArray(addressLines) ? addressLines.length : 1;
+        textBlockHeight += lineCount * 12;
+      }
+
+      const logoBlockHeight = logoDrawn ? logoSize + sectionPaddingY * 2 : 0;
+      const textBlockTotal = textBlockHeight + sectionPaddingY * 2;
+      const letterheadHeight = Math.max(logoBlockHeight, textBlockTotal, 56);
+
+      doc.setDrawColor(216, 229, 208);
+      doc.setLineWidth(0.75);
+      doc.line(marginX, cursorY + letterheadHeight, marginX + usableWidth, cursorY + letterheadHeight);
+
+      cursorY += letterheadHeight + 12;
+      return letterheadHeight + 12;
+    };
+
+    const drawPageHeader = (continued = false) => {
+      if (!continued) {
+        drawEnterpriseLetterhead();
+      }
+
+      const headerHeight = 48;
+      doc.setFillColor(...headerColor);
+      doc.roundedRect(marginX, cursorY, usableWidth, headerHeight, 8, 8, 'F');
+
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(24);
-      doc.text(this.escapePdfText(data.title), titleX, cursorY + 24);
-      cursorY += 74;
+      doc.setFontSize(continued ? 20 : 22);
+      const titleY = cursorY + (continued ? 20 : 22);
+      doc.text(this.escapePdfText(data.title), marginX + 16, titleY);
+      cursorY += headerHeight + 18;
     };
 
     const drawMeta = () => {

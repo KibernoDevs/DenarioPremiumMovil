@@ -206,14 +206,22 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
       const showConversion = this.clientLogic.multiCurrency && this.clientLogic.showConversion;
       const client = this.client!;
 
-      const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(
-        client.coEnterprise ?? this.clientLogic.empresaSeleccionada?.coEnterprise
-      );
+      const coEnterprise = client.coEnterprise ?? this.clientLogic.empresaSeleccionada?.coEnterprise;
+      const empresa = this.clientLogic.empresaSeleccionada
+        ?? this.clientLogic.enterpriseServ.getEnterprises()
+          .find((item) => item.idEnterprise === client.idEnterprise);
+
+      const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(coEnterprise);
 
       const doc = await this.pdfCreator.generateSummaryPdfDoc({
         title: tags.get('CLI_DETAIL_TAB_DOCUMENTO_VENTA') ?? 'Documentos de venta',
+        enterpriseHeader: {
+          name: (empresa?.naEnterprise || empresa?.lbEnterprise || client.lblEnterprise || '').trim(),
+          rif: empresa?.nuRif ?? '',
+          address: empresa?.txAddress ?? '',
+          logoBase64,
+        },
         meta: [
-          { label: `${tags.get('CLI_DETAIL_EMPRESA') ?? 'Empresa'}:`, value: client.lblEnterprise ?? '' },
           { label: `${tags.get('CLI_DETAIL_NOMBRE') ?? 'Nombre'}:`, value: client.naClient ?? '' },
           { label: `${tags.get('CLI_DETAIL_CODIGO') ?? 'Codigo'}:`, value: client.coClient ?? '' },
           { label: `${tags.get('CLI_DETAIL_LISTA_PRECIO') ?? 'Lista precio'}:`, value: client.naPriceList ?? '' },
@@ -224,7 +232,6 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
         ],
         columns: this.buildPdfColumns(showConversion),
         rows: this.buildPdfRows(showConversion),
-        logoBase64
       }, { orientation: 'landscape', format: 'letter' });
 
       const base64 = doc.output('datauristring');

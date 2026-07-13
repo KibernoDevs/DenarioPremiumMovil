@@ -11,6 +11,7 @@ import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructur
 import { ImageServicesService } from '../imageServices/image-services.service';
 import { CurrencyService } from '../currency/currency.service';
 import { PdfCreatorService } from '../pdf-creator/pdf-creator.service';
+import { EnterpriseService } from '../enterprise/enterprise.service';
 import {
   ProductReportExportFormat,
   ProductReportFilterType,
@@ -30,6 +31,7 @@ export class ProductReportsService {
   private readonly imageServices = inject(ImageServicesService);
   private readonly currencyService = inject(CurrencyService);
   private readonly pdfCreator = inject(PdfCreatorService);
+  private readonly enterpriseService = inject(EnterpriseService);
 
   isProductReportsEnabled(): boolean {
     return this.config.get('allowProductReports').toLowerCase() === 'true';
@@ -332,10 +334,18 @@ export class ProductReportsService {
   }
 
   private async sharePriceListPdf(rows: ProductReportRow[], options: ProductReportOptions): Promise<void> {
+    const enterprise = this.enterpriseService.getEntepriseById(options.idEnterprise);
+    const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(enterprise?.coEnterprise);
+
     const doc = await this.pdfCreator.generateSummaryPdfDoc({
       title: 'Lista de precios',
+      enterpriseHeader: {
+        name: (enterprise?.naEnterprise || enterprise?.lbEnterprise || options.enterpriseLabel || '').trim(),
+        rif: enterprise?.nuRif ?? '',
+        address: enterprise?.txAddress ?? '',
+        logoBase64,
+      },
       meta: [
-        { label: 'Empresa', value: options.enterpriseLabel },
         { label: 'Productos', value: String(rows.length) },
         { label: 'Orden', value: options.sortField === 'code' ? 'Codigo' : 'Descripcion' },
       ],

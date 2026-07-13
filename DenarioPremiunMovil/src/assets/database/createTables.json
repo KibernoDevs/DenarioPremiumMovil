@@ -47,7 +47,7 @@
     "name": "enterprises",
     "table": "enterprises",
     "idName": "id_enterprise",
-    "sql": "CREATE TABLE IF NOT EXISTS enterprises (id_enterprise INTEGER PRIMARY KEY, lb_enterprise VARCHAR(20), co_enterprise VARCHAR(30) NOT NULL, co_currency_default VARCHAR(20), priority_selection INTEGER DEFAULT 0 NOT NULL , enterprise_default VARCHAR(20));"
+    "sql": "CREATE TABLE IF NOT EXISTS enterprises (id_enterprise INTEGER PRIMARY KEY, lb_enterprise VARCHAR(20), co_enterprise VARCHAR(30) NOT NULL, co_currency_default VARCHAR(20), priority_selection INTEGER DEFAULT 0 NOT NULL, enterprise_default VARCHAR(20), na_enterprise VARCHAR(150), nu_rif VARCHAR(20), tx_address VARCHAR(250));"
   },
   {
     "id": 9,

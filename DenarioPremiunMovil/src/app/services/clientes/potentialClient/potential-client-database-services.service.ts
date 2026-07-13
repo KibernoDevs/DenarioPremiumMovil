@@ -187,7 +187,10 @@ export class PotentialClientDatabaseServicesService {
           coEnterprise: res.rows.item(i).co_enterprise,
           coCurrencyDefault: res.rows.item(i).co_currency_default,
           prioritySelection: res.rows.item(i).prioritySelection,
-          enterpriseDefault: res.rows.item(i).enterprise_default
+          enterpriseDefault: res.rows.item(i).enterprise_default,
+          naEnterprise: res.rows.item(i).na_enterprise ?? '',
+          nuRif: res.rows.item(i).nu_rif ?? '',
+          txAddress: res.rows.item(i).tx_address ?? '',
         })
       }
       return empresas;

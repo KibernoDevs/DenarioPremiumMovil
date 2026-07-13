@@ -1666,11 +1666,17 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(
           this.empresaSeleccionada?.coEnterprise
         );
+        const empresa = this.empresaSeleccionada;
 
         const doc = await this.pdfCreator.generateSummaryPdfDoc({
           title: `Resumen pedido`,
+          enterpriseHeader: {
+            name: (empresa?.naEnterprise || empresa?.lbEnterprise || '').trim(),
+            rif: empresa?.nuRif ?? '',
+            address: empresa?.txAddress ?? '',
+            logoBase64,
+          },
           meta: [
-            { label: 'Empresa', value: this.empresaSeleccionada?.lbEnterprise || '' },
             { label: 'Pedido', value: String(idOrder) },
             { label: 'Cliente', value: this.orderServ.cliente?.lbClient || '' },
             { label: 'Fecha', value: this.dateServ.formatComplete(this.fechaPedido) },
@@ -1685,7 +1691,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             detailLines: summaryTotalsDetailLines
           },
           fileName: `pedido_${idOrder}_${daOrder}.pdf`,
-          logoBase64
         }, { orientation: 'landscape', scale: 1, layoutScale: 1, format: 'letter' });
 
         const base64 = doc.output('datauristring');
