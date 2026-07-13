@@ -44,6 +44,7 @@ export class ClientListComponent implements OnInit {
   public precision = this.currencyService.precision;
   scrollDisable = false;
   private isSearching = false;
+  public transportista = false;
 
   public dateToday: Date = (() => {
     const d = new Date();
@@ -74,6 +75,7 @@ export class ClientListComponent implements OnInit {
     this.onChangeEnterprise();
     this.clientLogic.fromSelector = false; //indicamos que no venimos del selector de cliente, sino del listado de clientes
     this.scrollDisable = false;
+    this.checkUserStatus();
   }
 
   onIonInfinite(ev: InfiniteScrollCustomEvent) {
@@ -148,6 +150,10 @@ export class ClientListComponent implements OnInit {
     }
   }
 
+  checkUserStatus(){
+    this.clientLogic.checkUserStatus()
+    this.transportista = this.clientLogic.esTransportista;
+  }
   onChangeEnterprise() {
     this.service.clientes = [] as Client[];
     this.clientLogic.clientListPage = 0;

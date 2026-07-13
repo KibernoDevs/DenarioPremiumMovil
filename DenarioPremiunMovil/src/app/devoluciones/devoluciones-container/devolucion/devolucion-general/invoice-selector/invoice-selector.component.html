@@ -52,7 +52,7 @@
       <!-- alerta de cambio de factura -->
       <ion-alert id="alertInvoiceChange" [isOpen]="invoiceChangeOpen" header={{headerConfirm}}
         message={{mensajeInvoiceChange}} [buttons]="buttonsInvoiceChange"
-        (didDismiss)="setInvoiceChangeOpen(false)"></ion-alert>
+        (didDismiss)="onInvoiceChangeDismiss($event)"></ion-alert>
     </ion-content>
   </ng-template>
 </ion-modal>

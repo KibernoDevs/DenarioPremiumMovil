@@ -141,6 +141,22 @@ export class ClientLogicService {
 
   }
 
+
+    checkUserStatus(){
+        const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        let user = JSON.parse(userStr);
+        this.esTransportista = user.transportista;
+        //se pueden agregar los otros roles luego, de ser necesario.
+      } catch (e) {
+        this.esTransportista = false;
+      }
+    } else {
+      this.esTransportista = false;
+    }
+  }
+
   initService() {
     this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
     this.currencyModule = this.currencyService.getCurrencyModule("cli");

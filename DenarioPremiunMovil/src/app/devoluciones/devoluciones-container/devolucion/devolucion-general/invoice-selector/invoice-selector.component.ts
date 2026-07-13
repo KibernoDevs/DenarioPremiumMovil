@@ -1,7 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { IonModal } from '@ionic/angular';
-import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
-import { Client } from 'src/app/modelos/tables/client';
 import { Invoice } from 'src/app/modelos/tables/invoice';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
 
@@ -26,9 +24,22 @@ export class InvoiceSelectorComponent implements OnInit {
   mensajeInvoiceChange: string = '';
   public invoiceChangeOpen: boolean = false;
 
-  invoiceACambiar!: Invoice;
+  invoiceACambiar: Invoice | null = null;
 
   @ViewChild(IonModal) modal!: IonModal;
+
+  @Output() invoiceSeleccionado: EventEmitter<Invoice> = new EventEmitter<Invoice>();
+
+  public buttonsInvoiceChange = [
+    {
+      text: 'Aceptar',
+      role: 'confirm',
+    },
+    {
+      text: 'Cancelar',
+      role: 'cancel',
+    }
+  ];
 
   constructor() { }
 
@@ -38,85 +49,67 @@ export class InvoiceSelectorComponent implements OnInit {
     this.headerConfirm = this.returnLogic.tags.get("DEV_HEADER_ALERTA") || "";
     this.mensajeInvoiceChange = this.returnLogic.tags.get("DEV_RESET_CONFIRMA") || "";
     this.buttonsInvoiceChange = [
-
-    {
-      text: this.btnAceptar,
-      role: 'confirm',
-      handler: () => {
-        this.returnLogic.invoiceChanged.next(this.invoiceACambiar);
-        this.closeModal();
-
+      {
+        text: this.btnAceptar,
+        role: 'confirm',
       },
-    },
-    {
-      text: this.btnCancelar,
-      role: 'cancel',
-      handler: () => {
-        this.closeModal()
+      {
+        text: this.btnCancelar,
+        role: 'cancel',
       }
-    }
-  ];
+    ];
   }
-   
 
-  @Output() invoiceSeleccionado: EventEmitter<Invoice> = new EventEmitter<Invoice>();
   selectInvoice(input: Invoice) {
-    if (this.returnLogic.newReturn.idInvoice && this.returnLogic.newReturn.idInvoice != input.idInvoice) {
-      //ya hay una factura asignada diferente, no podemos cambiarla sin resetear la devolucion.
-      console.log("cambio de factura");
+    const currentInvoiceId = this.returnLogic.newReturn.idInvoice;
+    if (currentInvoiceId && currentInvoiceId !== input.idInvoice) {
+      // Guarda la factura pendiente y pide confirmación.
       this.invoiceACambiar = input;
       this.invoiceChangeOpen = true;
-
-    } else {
-      //podemos asignar la factura.
-      this.returnLogic.invoices.find(inv => {
-        if (inv.idInvoice == input.idInvoice) {
-          this.returnLogic.newReturn.coInvoice = inv.coInvoice;
-          this.returnLogic.newReturn.idInvoice = inv.idInvoice;
-          //this.returnLogic.invoiceAnterior = inv;
-        }
-      });
-      this.returnLogic.findInvoiceDetailUnits().then();
-      this.returnLogic.onReturnValid(true);
-      this.returnLogic.setChange(true, true);
-      this.invoiceSeleccionado.emit(input);
-      this.closeModal();
+      return;
     }
 
+    this.assignInvoice(input);
+  }
+
+  assignInvoice(input: Invoice): void {
+    const selectedInvoice = this.returnLogic.invoices.find(inv => inv.idInvoice === input.idInvoice) ?? input;
+    this.returnLogic.newReturn.coInvoice = selectedInvoice.coInvoice;
+    this.returnLogic.newReturn.idInvoice = selectedInvoice.idInvoice;
+    this.returnLogic.findInvoiceDetailUnits().then();
+    this.returnLogic.onReturnValid(true);
+    this.returnLogic.setChange(true, true);
+    this.invoiceSeleccionado.emit(selectedInvoice);
+    this.closeModal();
+  }
+
+  onInvoiceChangeDismiss(event: CustomEvent): void {
+    this.invoiceChangeOpen = false;
+    const pendingInvoice = this.invoiceACambiar;
+    this.invoiceACambiar = null;
+
+    if (!pendingInvoice) {
+      return;
+    }
+
+    // Solo Cancelar mantiene la factura actual.
+    if (event.detail?.role === 'cancel') {
+      return;
+    }
+
+    // Aceptar, backdrop u otro cierre fuera de Cancelar: aplica el cambio.
+    this.returnLogic.invoiceChanged.next(pendingInvoice);
+    this.closeModal();
   }
 
   closeModal() {
     this.invoiceChangeOpen = false;
+    this.invoiceACambiar = null;
     this.modal.dismiss(null, 'cancel');
-    //console.log("cerre el modal de cliente");
   }
 
   handleInput(event: any) {
     this.searchText = event.target.value.toLowerCase();
   }
-  setInvoiceChangeOpen(value: boolean) {
-    this.invoiceChangeOpen = value;
-  }
-
-  public buttonsInvoiceChange = [
-
-    {
-      text: "Aceptar",
-      role: 'confirm',
-      handler: () => {
-        this.returnLogic.invoiceChanged.next(this.invoiceACambiar);
-        this.closeModal();
-
-      },
-    },
-    {
-      text: "Cancelar",
-      role: 'cancel',
-      handler: () => {
-        this.closeModal()
-      }
-    }
-  ];
 
 }
-
