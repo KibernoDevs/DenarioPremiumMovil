@@ -114,6 +114,10 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
     return Number(first ?? 0) === Number(second ?? 0);
   };
 
+  trackByCoReturnDetail = (_index: number, product: ReturnDetail): string => {
+    return product.coReturnDetail || `${product.idProduct}-${_index}`;
+  };
+
   getTags() {
     this.tags = this.returnLogic.tags;
     this.messageService.hideLoading();
