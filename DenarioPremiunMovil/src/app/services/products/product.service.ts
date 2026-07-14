@@ -1086,6 +1086,25 @@ export class ProductService {
 
   }
 
+  getIdProductsWithProductUnits(dbServ: SQLiteObject, idProducts: number[]): Promise<Set<number>> {
+    if (!idProducts.length) {
+      return Promise.resolve(new Set<number>());
+    }
+
+    const select = `SELECT DISTINCT id_product FROM product_units WHERE id_product IN (${idProducts.join(',')})`;
+    return dbServ.executeSql(select, []).then(result => {
+      const idsWithUnits = new Set<number>();
+      for (let i = 0; i < result.rows.length; i++) {
+        idsWithUnits.add(result.rows.item(i).id_product);
+      }
+      return idsWithUnits;
+    }).catch(e => {
+      console.log('[ProductService] Error al cargar getIdProductsWithProductUnits.');
+      console.log(e);
+      return new Set<number>();
+    });
+  }
+
   getUnitsByIdProductOrderByCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
     //return this.getUnitByIdProductAndCoPrimaryUnit(idProduct);
     return this.getUnitByIdProductAndCoPrimaryUnit(dbServ, idProduct).then(() => {

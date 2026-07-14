@@ -1624,7 +1624,11 @@ export class PedidosService {
   }
 
   getGlobalDiscounts() {
-    return this.db.getGlobalDiscounts(this.database, this.getTag('PED_NO_DC'));
+    return this.db.getGlobalDiscounts(
+      this.database,
+      this.empresaSeleccionada.idEnterprise,
+      this.getTag('PED_NO_DC'),
+    );
   }
 
   resolveSavedGlobalDiscount(nuDiscount: number | null | undefined): number {
@@ -1632,7 +1636,7 @@ export class PedidosService {
     const match = this.listaGlobalDiscount.find(
       (g) => Number(g.globalDiscount) === saved,
     );
-    return match ? Number(match.globalDiscount) : saved;
+    return match ? Number(match.globalDiscount) : 0;
   }
 
   getPaymentConditions(idEnterprise: number) {

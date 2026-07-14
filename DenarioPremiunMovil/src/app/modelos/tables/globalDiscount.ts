@@ -6,7 +6,8 @@ export class GlobalDiscount {
           obj['globalDiscount'],
           obj['txDescription'],
           obj['defaultGlobalDiscount'],
-        
+          obj['idEnterprise'],
+          obj['coEnterprise'],
       );
   }
 
@@ -15,6 +16,7 @@ export class GlobalDiscount {
       public globalDiscount: number,
       public txDescription: string,
       public defaultGlobalDiscount: boolean,
-      
+      public idEnterprise?: number,
+      public coEnterprise?: string,
   ) { }
 }

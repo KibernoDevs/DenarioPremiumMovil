@@ -1,0 +1,11 @@
+[
+    {
+
+        "sql": "ALTER TABLE global_discounts ADD COLUMN id_enterprise INTEGER;",
+        "description": "Se agrega la columna 'id_enterprise' a 'global_discounts' para filtrar descuentos globales por empresa."
+    },
+    {
+        "sql": "ALTER TABLE global_discounts ADD COLUMN co_enterprise TEXT;",
+        "description": "Se agrega la columna 'co_enterprise' a 'global_discounts' para el código de empresa."
+    }
+]

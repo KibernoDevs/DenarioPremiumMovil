@@ -749,12 +749,13 @@ export class PedidosDbService {
     })
   }
 
-  getGlobalDiscounts(db: SQLiteObject, noDiscount: string) {
+  getGlobalDiscounts(db: SQLiteObject, idEnterprise: number, noDiscount: string) {
     let query = "SELECT id_global_discount as idGlobalDiscount, global_discount as globalDiscount, " +
-      "tx_description as txDescription, default_global_discount as defaultGlobalDiscount " +
-      "from global_discounts"
+      "tx_description as txDescription, default_global_discount as defaultGlobalDiscount, " +
+      "id_enterprise as idEnterprise, co_enterprise as coEnterprise " +
+      "FROM global_discounts WHERE id_enterprise = ?"
 
-    return db.executeSql(query, []).then(data => {
+    return db.executeSql(query, [idEnterprise]).then(data => {
       let list: GlobalDiscount[] = [];
       for (let i = 0; i < data.rows.length; i++) {
         const row = data.rows.item(i);
@@ -763,6 +764,8 @@ export class PedidosDbService {
           Number(row.globalDiscount),
           row.txDescription,
           row.defaultGlobalDiscount,
+          row.idEnterprise,
+          row.coEnterprise,
         ));
       }
       //descuento por defecto de 0%
