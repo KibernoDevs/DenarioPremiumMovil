@@ -1,105 +1,98 @@
-<div class="listado-product-structures" *ngIf="showReturnDetail">
+<div class="listado-product-structures" [hidden]="!showReturnDetail">
 
   <div class="product-card product-devolucion-scroll ">
-    <ion-list *ngFor="let product of productList; index as i">
-      <!-- <form [formGroup]="newProductToReturn"> -->
-      <div class="product-structure-title">
-        <ion-accordion-group expand="inset">
-          <ion-accordion>
-            <ion-item slot="header" color="light">
-              <ion-label class="textList">
-                <p>{{ product.naProduct }}</p>
-              </ion-label>
-              <ion-button color="danger" slot="end" (click)="removeProduct(i)" *ngIf="!returnLogic.returnSent">
-                <ion-icon slot="icon-only" name="trash"></ion-icon>
-              </ion-button>
-            </ion-item>
-            <div class="ion-padding" slot="content">
-              <ion-grid>
-                <ion-row>
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <div id="inputLote">
-                      <ion-input disabled="{{ this.returnLogic.returnSent }}" [ngModelOptions]="{standalone: true}"
-                        label="{{this.tags.get('DEV_LOTE')}}" label-placement="floating" fill="outline" #inputLote
-                        [(ngModel)]="product.nuLote" value="{{ product.nuLote }}" color="primary" (ionInput)="inputLote.value = cleanInput(inputLote.value);
-                        product.nuLote = cleanString(product.nuLote)"></ion-input>
-                    </div>
-                  </ion-col>
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <div id="inputDocument">
-                      <!-- <ion-input formControlName="coDocument" label="{{this.tags.get('DEV_DOC')}}" -->
-                      <!-- <ion-input disabled="{{ this.returnLogic.returnSent || this.returnLogic.validateReturn}}" -->
-                      <ion-input label="{{ tags.get('DEV_DOC') }}" #inputCoDocument label-placement="floating"
-                        [disabled]="this.returnLogic.returnSent || returnLogic.validateReturn"
-                        fill="outline" [(ngModel)]="product.coDocument" #inputDocument value="{{ product.coDocument }}"
-                        [ngClass]="{ 'inp-write': !product.coDocument && returnLogic.requeridedNroFactura }" (ionInput)="inputCoDocument.value = cleanInput(inputCoDocument.value);
-                        product.coDocument = cleanString(product.coDocument)" [required]="returnLogic.requeridedNroFactura ? true : false">
-                      </ion-input>
-                    </div>
-                  </ion-col>
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <div id="inputFechaVence">
-                      <ion-item>
-                        <ion-label>{{this.tags.get('DEV_FECHA_VENCE')}}:</ion-label>
-                        <ion-button (click)="setShowDateModal(i,true)" color="light" class="letrasFechasButton"
-                          [disabled]="this.returnLogic.returnSent">
-                          {{ formatShort(this.productList[i].daDueDate ) }}
-                        </ion-button>
-                        <ion-modal [keepContentsMounted]="true" [isOpen]="this.productList[i].showDateModal"
-                          (didDismiss)="setShowDateModal(i,false)" class="fechasModal">
-                          <ng-template>
-                            <ion-datetime [disabled]="this.returnLogic.returnSent"
-                              [formatOptions]="{ date: dateServ.dateFormatOptionsShort }" [id]="'fechaVence'+i"
-                              presentation="date" doneText="{{this.tags.get('DENARIO_BOTON_ACEPTAR')}}"
-                              cancelText="{{this.tags.get('DENARIO_BOTON_CANCELAR')}}"
-                              (ionInput)="updateSendButtonState()" [(ngModel)]="this.productList[i].daDueDate"
-                              (ionChange)="datePick(i)" [showDefaultButtons]="true"></ion-datetime>
-                          </ng-template>
-                        </ion-modal>
-                      </ion-item>
-                    </div>
-                  </ion-col>
+    <ion-list>
+      <ion-accordion-group expand="inset">
+        <ion-accordion *ngFor="let product of productList; index as i; trackBy: trackByCoReturnDetail"
+          [value]="product.coReturnDetail">
+          <ion-item slot="header" color="light">
+            <ion-label class="textList">
+              <p>{{ product.naProduct }}</p>
+            </ion-label>
+            <ion-button color="danger" slot="end" (click)="removeProduct(i)" *ngIf="!returnLogic.returnSent">
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-button>
+          </ion-item>
+          <div class="ion-padding" slot="content">
+            <ion-grid>
+              <ion-row>
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <div id="inputLote">
+                    <ion-input disabled="{{ this.returnLogic.returnSent }}" [ngModelOptions]="{standalone: true}"
+                      label="{{this.tags.get('DEV_LOTE')}}" label-placement="floating" fill="outline" #inputLote
+                      [(ngModel)]="product.nuLote" value="{{ product.nuLote }}" color="primary" (ionInput)="inputLote.value = cleanInput(inputLote.value);
+                      product.nuLote = cleanString(product.nuLote)"></ion-input>
+                  </div>
+                </ion-col>
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <div id="inputDocument">
+                    <ion-input label="{{ tags.get('DEV_DOC') }}" #inputCoDocument label-placement="floating"
+                      [disabled]="this.returnLogic.returnSent || returnLogic.validateReturn"
+                      fill="outline" [(ngModel)]="product.coDocument" #inputDocument value="{{ product.coDocument }}"
+                      [ngClass]="{ 'inp-write': !product.coDocument && returnLogic.requeridedNroFactura }" (ionInput)="inputCoDocument.value = cleanInput(inputCoDocument.value);
+                      product.coDocument = cleanString(product.coDocument)" [required]="returnLogic.requeridedNroFactura ? true : false">
+                    </ion-input>
+                  </div>
+                </ion-col>
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <div id="inputFechaVence">
+                    <ion-item>
+                      <ion-label>{{this.tags.get('DEV_FECHA_VENCE')}}:</ion-label>
+                      <ion-button (click)="setShowDateModal(i,true)" color="light" class="letrasFechasButton"
+                        [disabled]="this.returnLogic.returnSent">
+                        {{ formatShort(this.productList[i].daDueDate ) }}
+                      </ion-button>
+                      <ion-modal [keepContentsMounted]="true" [isOpen]="this.productList[i].showDateModal"
+                        (didDismiss)="setShowDateModal(i,false)" class="fechasModal">
+                        <ng-template>
+                          <ion-datetime [disabled]="this.returnLogic.returnSent"
+                            [formatOptions]="{ date: dateServ.dateFormatOptionsShort }" [id]="'fechaVence'+i"
+                            presentation="date" doneText="{{this.tags.get('DENARIO_BOTON_ACEPTAR')}}"
+                            cancelText="{{this.tags.get('DENARIO_BOTON_CANCELAR')}}"
+                            (ionInput)="updateSendButtonState()" [(ngModel)]="this.productList[i].daDueDate"
+                            (ionChange)="datePick(i)" [showDefaultButtons]="true"></ion-datetime>
+                        </ng-template>
+                      </ion-modal>
+                    </ion-item>
+                  </div>
+                </ion-col>
 
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <div id="inputQuProduct">
-                      <!-- <ion-input formControlName="quProduct" type="number" label="{{this.tags.get('DEV_QU_PRODUCT')}}" -->
-                      <ion-input disabled="{{ this.returnLogic.returnSent }}" type="number"
-                        label="{{this.tags.get('DEV_QU_PRODUCT')}}" (ionBlur)="onValidateUnitChanged(product, i)"
-                        label-placement="floating" [(ngModel)]="product.quProduct" fill="outline"
-                        (ionInput)="updateSendButtonState()" [ngClass]="{'inp-write': !product.quProduct}"
-                        value="{{ product.quProduct }}" type="number" required></ion-input>
-                    </div>
-                  </ion-col>
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <div id="inputQuProduct">
+                    <ion-input disabled="{{ this.returnLogic.returnSent }}" type="number"
+                      label="{{this.tags.get('DEV_QU_PRODUCT')}}" (ionBlur)="onValidateUnitChanged(product, i)"
+                      label-placement="floating" [(ngModel)]="product.quProduct" fill="outline"
+                      (ionInput)="updateSendButtonState()" [ngClass]="{'inp-write': !product.quProduct}"
+                      value="{{ product.quProduct }}" type="number" required></ion-input>
+                  </div>
+                </ion-col>
 
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <ion-label>{{this.tags.get('DEV_UNIT')}}</ion-label>
-                    <!-- <div class="listado-enterprise-selector ion-text-center"> -->
-                    <div class="listado-tps-selector">
-                      <ion-select disabled="{{ this.returnLogic.returnSent }}" [(ngModel)]="product.idUnit"
-                        [compareWith]="compareUnitId"
-                        (ionChange)="changeProductUnit(i, product.idUnit)" class="ion-text-center always-flip">
-                        <ion-select-option *ngFor="let pu of product.productUnits" [value]="pu.idUnit">{{ pu.naUnit || pu.coUnit
-                          }}</ion-select-option>
-                      </ion-select>
-                    </div>
-                  </ion-col>
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <ion-label>{{this.tags.get('DEV_MOTIVE')}}</ion-label>
-                    <div class="listado-tps-selector">
-                      <ion-select disabled="{{ this.returnLogic.returnSent }}" [(ngModel)]="product.idMotive"
-                        (ionInput)="updateSendButtonState()" class="ion-text-center always-flip">
-                        <ion-select-option *ngFor="let rm of returnMotives" [value]="rm.idMotive">{{ rm.naMotive
-                          }}</ion-select-option>
-                      </ion-select>
-                    </div>
-                  </ion-col>
-                </ion-row>
-              </ion-grid>
-            </div>
-          </ion-accordion>
-        </ion-accordion-group>
-      </div>
-      <!-- </form> -->
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-label>{{this.tags.get('DEV_UNIT')}}</ion-label>
+                  <div class="listado-tps-selector">
+                    <ion-select disabled="{{ this.returnLogic.returnSent }}" [(ngModel)]="product.idUnit"
+                      [compareWith]="compareUnitId"
+                      (ionChange)="changeProductUnit(i, product.idUnit)" class="ion-text-center always-flip">
+                      <ion-select-option *ngFor="let pu of product.productUnits" [value]="pu.idUnit">{{ pu.naUnit || pu.coUnit
+                        }}</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-label>{{this.tags.get('DEV_MOTIVE')}}</ion-label>
+                  <div class="listado-tps-selector">
+                    <ion-select disabled="{{ this.returnLogic.returnSent }}" [(ngModel)]="product.idMotive"
+                      (ionInput)="updateSendButtonState()" class="ion-text-center always-flip">
+                      <ion-select-option *ngFor="let rm of returnMotives" [value]="rm.idMotive">{{ rm.naMotive
+                        }}</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </div>
+        </ion-accordion>
+      </ion-accordion-group>
     </ion-list>
   </div>
 </div>

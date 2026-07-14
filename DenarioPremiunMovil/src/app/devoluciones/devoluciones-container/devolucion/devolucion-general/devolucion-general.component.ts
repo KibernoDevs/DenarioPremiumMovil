@@ -156,6 +156,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     this.returnLogic.newReturn.invoicedetailUnits = [];
     this.returnLogic.productList = [];
     this.returnLogic.validateReturnProductList = [];
+    this.returnLogic.productListCart.next(this.returnLogic.productList);
   }
 
   setClientfromSelector(cliente: Client) {
