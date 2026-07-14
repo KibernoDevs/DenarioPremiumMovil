@@ -20,6 +20,7 @@ export class UnitInfo {
             obj['quAmount'],
             obj['coPriceList'],
             obj['idPriceList'],
+            obj['quBonified'] ?? 0,
         );
     }
 
@@ -37,5 +38,7 @@ export class UnitInfo {
         public quAmount: number,
         public coPriceList: string,
         public idPriceList: number,
+        /** REQ-01: unidades bonificadas dentro de quAmount */
+        public quBonified: number = 0,
     ) { }
 }

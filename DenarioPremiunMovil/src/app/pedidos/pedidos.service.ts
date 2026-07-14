@@ -38,6 +38,7 @@ import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType
 import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from '../modelos/tables/distributionChannel';
 import { ProductMinMulFav } from '../modelos/tables/productMinMul';
+import { ProductBonusFav } from '../modelos/tables/productBonusFav';
 import { Unit } from '../modelos/tables/unit';
 import { SugerenciaPedido } from '../modelos/SugerenciaPedido';
 import { OrderDetail } from '../modelos/tables/orderDetail';
@@ -121,6 +122,8 @@ export class PedidosService {
   public listaPaymentCondition: PaymentCondition[] = [];
 
   public listaProdMinMul: ProductMinMulFav[] = []; //[productMinMul] lista de minimos y multiplos
+  public listaProdBonusFav: ProductBonusFav[] = []; // REQ-01 reglas Compra X / Regala Y
+  public prodBonusMap: Map<number, ProductBonusFav> = new Map();
 
   /* especiales para userCanSelectChannel */
   public clientChannelOrderTypes: ClientChannelOrderType[] = [];
@@ -302,10 +305,127 @@ export class PedidosService {
     });
   }
 
+  /** REQ-01 — recarga reglas de bonificación desde SQLite local. */
+  refreshProductBonusFavData(): Promise<void> {
+    const idEnterprise = this.empresaSeleccionada?.idEnterprise ?? this.catalogDataEnterpriseId;
+    if (!idEnterprise) {
+      return Promise.resolve();
+    }
+    return this.getProductBonusFavList(idEnterprise).then(data => {
+      this.applyProductBonusFavList(data);
+      this.catalogDataChanged$.next();
+    });
+  }
+
   private applyProductMinMulList(data: ProductMinMulFav[]): void {
     this.listaProdMinMul = data.filter(row => ProductMinMulFav.isFlagActive(row.flag));
     this.prodMinMulMap.clear();
     this.fillProdMinMulMap();
+  }
+
+  private applyProductBonusFavList(data: ProductBonusFav[]): void {
+    this.listaProdBonusFav = data.filter(row => ProductBonusFav.isFlagActive(row.flag));
+    this.prodBonusMap.clear();
+    this.listaProdBonusFav.forEach(row => {
+      this.prodBonusMap.set(row.idProduct, row);
+    });
+  }
+
+  getBonusRuleByProduct(idProduct: number): ProductBonusFav | null {
+    return this.prodBonusMap.get(idProduct) ?? null;
+  }
+
+  /**
+   * REQ-01 — aplica bono a la unidad seleccionada.
+   * Conserva el valor actual (o manualValue) y solo hace clamp al máximo.
+   * Nunca fuerza AUTO_MAX: la bonificación es opcional (0 válido).
+   */
+  applyBonusForSelectedUnit(
+    prod: OrderUtil,
+    isManualEdit: boolean,
+    manualValue?: number
+  ): { adjusted: boolean; previous: number; applied: number; max: number; rejectedOverMax: boolean } {
+    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    if (!unit) {
+      return { adjusted: false, previous: 0, applied: 0, max: 0, rejectedOverMax: false };
+    }
+    const rule = this.getBonusRuleByProduct(prod.idProduct);
+    const previous = Number(unit.quBonified) || 0;
+    const current = isManualEdit
+      ? (manualValue ?? previous)
+      : previous;
+    const state = this.calculateBonusState(Number(unit.quAmount) || 0, rule, current, true);
+    const rejectedOverMax = isManualEdit && current > state.quBonusMax && state.quBonusMax >= 0;
+    unit.quBonified = state.quBonifiedApplied;
+    return {
+      adjusted: previous > state.quBonifiedApplied && previous > state.quBonusMax,
+      previous,
+      applied: state.quBonifiedApplied,
+      max: state.quBonusMax,
+      rejectedOverMax
+    };
+  }
+
+  /** ¿El producto tiene regla de bonificación activa (aunque el max actual sea 0)? */
+  isProductBonifiable(prod: OrderUtil): boolean {
+    const rule = this.getBonusRuleByProduct(prod.idProduct);
+    if (!rule) {
+      return false;
+    }
+    const flagActive = ProductBonusFav.isFlagActive(rule.flag);
+    const quBuy = Number(rule.quBuy) || 0;
+    const quBonus = Number(rule.quBonus) || 0;
+    return flagActive && quBuy > 0 && quBonus > 0;
+  }
+
+  /** Estado UI del bono para la unidad seleccionada (solo lectura / binding). */
+  getBonusStateForProduct(prod: OrderUtil): {
+    mode: 'NO_BONUS' | 'AUTO_MAX' | 'MANUAL';
+    quBonusMax: number;
+    quBonifiedApplied: number;
+    enabled: boolean;
+  } {
+    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    const rule = this.getBonusRuleByProduct(prod.idProduct);
+    const state = this.calculateBonusState(
+      Number(unit?.quAmount) || 0,
+      rule,
+      Number(unit?.quBonified) || 0,
+      true
+    );
+    return {
+      ...state,
+      enabled: this.isProductBonifiable(prod) && state.quBonusMax > 0
+    };
+  }
+
+  /** Desglose visual: bruto / −bono / total a cobrar (antes de dcto ítem). */
+  getBonusPricingBreakdown(prod: OrderUtil): {
+    qty: number;
+    bonus: number;
+    unitPrice: number;
+    bruto: number;
+    descuentoBonif: number;
+    total: number;
+  } {
+    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    const qty = Number(unit?.quAmount) || 0;
+    const bonus = Number(unit?.quBonified) || 0;
+    const unitPrice = unit
+      ? this.resolveUnitNuPriceForLineTotal(prod, unit)
+      : (Number(prod.nuPrice) || 0);
+    const quUnit = Number(unit?.quUnit) || 1;
+    const pricePerSaleUnit = unitPrice * quUnit;
+    const bruto = qty * pricePerSaleUnit;
+    const descuentoBonif = bonus * pricePerSaleUnit;
+    return {
+      qty,
+      bonus,
+      unitPrice: pricePerSaleUnit,
+      bruto,
+      descuentoBonif,
+      total: Math.max(0, bruto - descuentoBonif)
+    };
   }
 
   /**
@@ -367,6 +487,12 @@ export class PedidosService {
       this.listaProdMinMul = [];
       this.prodMinMulMap.clear();
     }
+
+    catalogCritical.push(
+      this.getProductBonusFavList(idEnterprise).then(data => {
+        this.applyProductBonusFavList(data);
+      }),
+    );
 
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
@@ -1154,7 +1280,10 @@ export class PedidosService {
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         const unitNuPriceForTotal = this.resolveUnitNuPriceForLineTotal(item, unit);
-        curItem += unit.quUnit * unit.quAmount * unitNuPriceForTotal;
+        // REQ-01: facturable = físico - bonificado (stock sigue usando quAmount)
+        const bonusQty = Number(unit.quBonified) || 0;
+        const billableQty = Math.max(0, Number(unit.quAmount) - bonusQty);
+        curItem += unit.quUnit * billableQty * unitNuPriceForTotal;
         if (this.totalUnit) {
           this.totalUnidades(unit);
         }
@@ -1377,7 +1506,42 @@ export class PedidosService {
     if (Number(unit.quAmount) <= 0) {
       return 0;
     }
-    return unit.quUnit  * this.resolveUnitNuPriceForLineTotal(item, unit); //* unit.quAmount;
+    // REQ-01: base sobre unidades facturables
+    const bonusQty = Number(unit.quBonified) || 0;
+    const billableQty = Math.max(0, Number(unit.quAmount) - bonusQty);
+    return unit.quUnit * billableQty * this.resolveUnitNuPriceForLineTotal(item, unit);
+  }
+
+  /**
+   * REQ-01 — máquina de estados UI: NO_BONUS | AUTO_MAX | MANUAL
+   * Siempre conserva currentApplied y hace clamp a [0, quBonusMax].
+   * Nunca fuerza el máximo (bonificación opcional; 0 es válido).
+   */
+  calculateBonusState(
+    quOrder: number,
+    rule: { qu_buy?: number; quBuy?: number; qu_bonus?: number; quBonus?: number; flag?: number | boolean } | null,
+    currentApplied: number,
+    _isManualEdit: boolean
+  ): { mode: 'NO_BONUS' | 'AUTO_MAX' | 'MANUAL'; quBonusMax: number; quBonifiedApplied: number } {
+    const quBuy = Number(rule?.qu_buy ?? rule?.quBuy ?? 0);
+    const quBonus = Number(rule?.qu_bonus ?? rule?.quBonus ?? 0);
+    const flagActive = rule != null && (rule.flag === true || rule.flag === 1 || String(rule.flag) === '1');
+
+    if (!rule || !flagActive || quBuy <= 0 || quBonus <= 0) {
+      return { mode: 'NO_BONUS', quBonusMax: 0, quBonifiedApplied: 0 };
+    }
+
+    const quBonusMax = Math.floor(quOrder / quBuy) * quBonus;
+    if (quBonusMax === 0) {
+      return { mode: 'NO_BONUS', quBonusMax: 0, quBonifiedApplied: 0 };
+    }
+
+    const boundedApplied = Math.max(0, Math.min(Number(currentApplied) || 0, quBonusMax));
+    return {
+      mode: boundedApplied === quBonusMax ? 'AUTO_MAX' : 'MANUAL',
+      quBonusMax,
+      quBonifiedApplied: boundedApplied
+    };
   }
 
   /**
@@ -1882,6 +2046,10 @@ export class PedidosService {
   getProductMinMulList(idEnterprise: number) {
     return this.db.getProductMinMul(this.database, idEnterprise);
   }
+
+  getProductBonusFavList(idEnterprise: number) {
+    return this.db.getProductBonusFav(this.database, idEnterprise);
+  }
   /*
     getSaldosCliente(id_client: number, co_currency: string){
       return this.db.getSaldosCliente(this.database, id_client,
@@ -2018,6 +2186,7 @@ export class PedidosService {
             "idEnterprise": this.empresaSeleccionada.idEnterprise,
             "coUnit": unit.coUnit,
             "quSuggested": quSuggested,
+            "quBonified": unit.quBonified ?? 0,
             ...this.buildOrderDetailUnitPriceListFields(item, unit),
             ...this.buildOrderDetailUnitBaseTotalFields(item, unit, quSuggested),
           }

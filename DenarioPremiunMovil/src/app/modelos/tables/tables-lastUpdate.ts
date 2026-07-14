@@ -25,6 +25,7 @@ export interface TablesLastUpdate {
   globalDiscountTableLastUpdate: string,
   clientBankAccountTableLastUpdate: string,
   productMinMulFavTableLastUpdate: string,
+  bonusTableLastUpdate: string,
   userInformationTableLastUpdate: string,
   currencyEnterpriseTableLastUpdate: string,
   currencyRelationTableLastUpdate: string,

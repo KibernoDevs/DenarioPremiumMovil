@@ -296,6 +296,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   async ionViewWillEnter(): Promise<void> {
     if (this.empresaSeleccionada?.idEnterprise) {
       await this.orderServ.refreshProductMinMulData();
+      await this.orderServ.refreshProductBonusFavData();
     }
   }
 
@@ -417,6 +418,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             var unitUtil = item.unitList.find((u) => u.idProductUnit == unit.idProductUnit)!;
             if (unitUtil != undefined) {
               unitUtil.quAmount = unit.quOrder;
+              unitUtil.quBonified = unit.quBonified ?? 0;
               if (this.orderServ.unitByPriceList && unit.coPriceList) {
                 unitUtil.coPriceList = unit.coPriceList;
                 unitUtil.idPriceList = unit.idPriceList;
@@ -699,6 +701,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           unitPriceList.idPriceList,
           unitBaseTotal.nuBaseTotal,
           unitBaseTotal.nuBaseTotalConversion,
+          unit.quBonified ?? 0,
         )
 
 
