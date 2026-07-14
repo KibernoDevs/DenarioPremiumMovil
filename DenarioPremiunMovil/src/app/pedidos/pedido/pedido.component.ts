@@ -1694,18 +1694,18 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             leftLabel: 'Totales ',
             detailLines: summaryTotalsDetailLines
           },
-          fileName: `pedido_${idOrder}_${daOrder}.pdf`,
+          fileName: `cotizacion_${idOrder}_${daOrder}.pdf`,
         }, { orientation: 'landscape', scale: 1, layoutScale: 1, format: 'letter' });
 
         const base64 = doc.output('datauristring');
         const trimmed = base64.split(',')[1];
-        const fileName = `pedido_${idOrder}_${daOrder}.pdf`;
+        const fileName = `cotizacion_${idOrder}_${daOrder}.pdf`;
         const result = await this.pdfCreator.savePdf(trimmed, fileName);
 
 
         try {
           await Share.share({
-            title: `pedido_${idOrder}_${daOrder}.pdf`,
+            title: fileName,
             url: result.uri
           });
 

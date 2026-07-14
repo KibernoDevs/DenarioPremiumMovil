@@ -236,7 +236,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
 
       const base64 = doc.output('datauristring');
       const trimmed = base64.split(',')[1];
-      const filename = `invoice_${client.coClient ?? 'client'}.pdf`;
+      const filename = `estado_de_cuenta_${client.coClient ?? 'client'}.pdf`;
       const res = await this.pdfCreator.savePdf(trimmed, filename, shareDirectory);
 
       await this.message.hideLoading();
