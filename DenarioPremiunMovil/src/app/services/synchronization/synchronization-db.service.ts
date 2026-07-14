@@ -115,8 +115,10 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
+
   private CURRENT_DB_VERSION: number = 16;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
+
 
   constructor(
     private navController: NavController,
@@ -1140,14 +1142,14 @@ export class SynchronizationDBService {
   insertGlobalDiscountBatch(arr: GlobalDiscount[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO global_discounts(" +
-      'id_global_discount,global_discount,tx_description,default_global_discount' +
+      'id_global_discount,global_discount,tx_description,default_global_discount,id_enterprise,co_enterprise' +
       ') ' +
-      'VALUES(?,?,?,?)'
+      'VALUES(?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idGlobalDiscount, obj.globalDiscount,
-      obj.txDescription, obj.defaultGlobalDiscount]]);
+      obj.txDescription, obj.defaultGlobalDiscount, obj.idEnterprise, obj.coEnterprise]]);
     }
     return this.database.sqlBatch(statements).then(res => {
       // console.log(res);
