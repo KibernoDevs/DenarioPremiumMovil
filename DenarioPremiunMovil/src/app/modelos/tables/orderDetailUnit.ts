@@ -17,6 +17,7 @@ export class OrderDetailUnit {
             obj['nuBaseTotal'],
             obj['nuBaseTotalConversion'],
             obj['quBonified'] ?? 0,
+            obj['nuAmountBonus'] ?? 0,
         )
     }
 
@@ -37,6 +38,8 @@ export class OrderDetailUnit {
         public nuBaseTotalConversion: number,
         /** REQ-01 */
         public quBonified: number = 0,
+        /** REQ-01 — importe de bonificación */
+        public nuAmountBonus: number = 0,
     ) {
 
     }

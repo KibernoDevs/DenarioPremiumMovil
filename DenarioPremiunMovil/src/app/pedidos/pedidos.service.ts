@@ -399,8 +399,8 @@ export class PedidosService {
     };
   }
 
-  /** Desglose visual: bruto / −bono / total a cobrar (antes de dcto ítem). */
-  getBonusPricingBreakdown(prod: OrderUtil): {
+  /** Desglose visual por unidad: bruto / −bono / total a cobrar (antes de dcto ítem). */
+  getBonusPricingBreakdownForUnit(prod: OrderUtil, unit: UnitInfo): {
     qty: number;
     bonus: number;
     unitPrice: number;
@@ -408,7 +408,6 @@ export class PedidosService {
     descuentoBonif: number;
     total: number;
   } {
-    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
     const qty = Number(unit?.quAmount) || 0;
     const bonus = Number(unit?.quBonified) || 0;
     const unitPrice = unit
@@ -426,6 +425,62 @@ export class PedidosService {
       descuentoBonif,
       total: Math.max(0, bruto - descuentoBonif)
     };
+  }
+
+  /** Desglose visual: bruto / −bono / total a cobrar (unidad seleccionada del producto). */
+  getBonusPricingBreakdown(prod: OrderUtil): {
+    qty: number;
+    bonus: number;
+    unitPrice: number;
+    bruto: number;
+    descuentoBonif: number;
+    total: number;
+  } {
+    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    if (!unit) {
+      return { qty: 0, bonus: 0, unitPrice: 0, bruto: 0, descuentoBonif: 0, total: 0 };
+    }
+    return this.getBonusPricingBreakdownForUnit(prod, unit);
+  }
+
+  /** ¿Alguna línea del carrito tiene cantidad bonificada > 0? */
+  hasAnyBonifiedQty(): boolean {
+    return (this.carrito || []).some(prod =>
+      (prod.unitList || []).some(u =>
+        (Number(u.quAmount) || 0) > 0 && (Number(u.quBonified) || 0) > 0
+      )
+    );
+  }
+
+  /**
+   * REQ-01 — etiqueta visual: "12 · 2 bonificados · 10 a pagar".
+   * Vacío si no hay bonificado.
+   */
+  formatBonusQtyLabel(qty: number, bonus: number): string {
+    const q = Number(qty) || 0;
+    const b = Number(bonus) || 0;
+    if (b <= 0 || q <= 0) {
+      return '';
+    }
+    const billable = Math.max(0, q - b);
+    return `${q} · ${b} bonificados · ${billable} a pagar`;
+  }
+
+  /** Suma del descuento por bonificación en todo el pedido (ya incluido en totalBase). */
+  getOrderBonusDiscountTotal(): number {
+    let sum = 0;
+    for (const prod of this.carrito || []) {
+      for (const unit of prod.unitList || []) {
+        if ((Number(unit.quAmount) || 0) <= 0) {
+          continue;
+        }
+        if ((Number(unit.quBonified) || 0) <= 0) {
+          continue;
+        }
+        sum += this.getBonusPricingBreakdownForUnit(prod, unit).descuentoBonif;
+      }
+    }
+    return sum;
   }
 
   /**
@@ -2187,6 +2242,7 @@ export class PedidosService {
             "coUnit": unit.coUnit,
             "quSuggested": quSuggested,
             "quBonified": unit.quBonified ?? 0,
+            "nuAmountBonus": this.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif,
             ...this.buildOrderDetailUnitPriceListFields(item, unit),
             ...this.buildOrderDetailUnitBaseTotalFields(item, unit, quSuggested),
           }
@@ -2219,7 +2275,9 @@ export class PedidosService {
           "nuAmountTotalConversion": 0,
           "nuAmountTax": 0,
           "orderDetailUnit": detailUnits,
-          "orderDetailDiscount": []
+          "orderDetailDiscount": [],
+          "quBonified": detailUnits.reduce((s, u) => s + (Number(u.quBonified) || 0), 0),
+          "nuAmountBonus": detailUnits.reduce((s, u) => s + (Number(u.nuAmountBonus) || 0), 0),
         }
         details.push(detail);
       } else {

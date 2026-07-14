@@ -426,6 +426,18 @@
                       }
                     </ion-col>
 
+                    @if(orderServ.hasAnyBonifiedQty()){
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <span class="titulosBold">Subtotal bruto {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.totalBase + orderServ.getOrderBonusDiscountTotal()) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <span class="titulosBold">Descuento bonif. {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      -{{ formatNum(orderServ.getOrderBonusDiscountTotal()) }}
+                    </ion-col>
+                    }
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
@@ -541,16 +553,60 @@
                         <div>
                           <span class="titulosBold">{{unit.naUnit}}:</span>
                           {{unit.quAmount}}
+                          @if((unit.quBonified || 0) > 0){
+                          <span> — {{ orderServ.formatBonusQtyLabel(unit.quAmount, unit.quBonified) }}</span>
+                          }
                           - <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}}:</span>
                           {{formatNum(getUnitBaseTotal(item, unit))}}
                           {{orderServ.monedaSeleccionada.coCurrency}}
                         </div>
+                        @if((unit.quBonified || 0) > 0){
+                        <div>
+                          <span class="titulosBold">Subtotal bruto:</span>
+                          {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
+                          {{ orderServ.monedaSeleccionada.coCurrency }}
+                        </div>
+                        <div>
+                          <span class="titulosBold">Descuento bonif.:</span>
+                          -{{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif) }}
+                          {{ orderServ.monedaSeleccionada.coCurrency }}
+                        </div>
+                        <div>
+                          <span class="titulosBold">Total a cobrar:</span>
+                          {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).total) }}
+                          {{ orderServ.monedaSeleccionada.coCurrency }}
+                        </div>
+                        }
                         }
                         }
                         }@else{
                         <div *ngFor="let unit of item.unitList">
-                          <span class="titulosBold">{{unit.naUnit}}:</span>
-                          {{unit.quAmount}}
+                          @if(unit.quAmount > 0){
+                          <div>
+                            <span class="titulosBold">{{unit.naUnit}}:</span>
+                            {{unit.quAmount}}
+                            @if((unit.quBonified || 0) > 0){
+                            <div>{{ orderServ.formatBonusQtyLabel(unit.quAmount, unit.quBonified) }}</div>
+                            }
+                          </div>
+                          @if((unit.quBonified || 0) > 0){
+                          <div>
+                            <span class="titulosBold">Subtotal bruto:</span>
+                            {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
+                            {{ item.coCurrency }}
+                          </div>
+                          <div>
+                            <span class="titulosBold">Descuento bonif.:</span>
+                            -{{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif) }}
+                            {{ item.coCurrency }}
+                          </div>
+                          <div>
+                            <span class="titulosBold">Total a cobrar:</span>
+                            {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).total) }}
+                            {{ item.coCurrency }}
+                          </div>
+                          }
+                          }
                         </div>
                         }
 
@@ -755,10 +811,30 @@
                             </ion-item>
                             }
                             <ion-item *ngFor="let unit of item.unitList">
-                              @if(unit.quUnit > 0){
+                              @if(unit.quAmount > 0){
                               <div>
                                 {{unit.naUnit}}: {{unit.quAmount}}
+                                @if((unit.quBonified || 0) > 0){
+                                <div>{{ orderServ.formatBonusQtyLabel(unit.quAmount, unit.quBonified) }}</div>
+                                }
                               </div>
+                              @if((unit.quBonified || 0) > 0){
+                              <div>
+                                <span class="titulosBold">Subtotal bruto:</span>
+                                {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
+                                {{ item.coCurrency }}
+                              </div>
+                              <div>
+                                <span class="titulosBold">Descuento bonif.:</span>
+                                -{{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif) }}
+                                {{ item.coCurrency }}
+                              </div>
+                              <div>
+                                <span class="titulosBold">Total a cobrar:</span>
+                                {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).total) }}
+                                {{ item.coCurrency }}
+                              </div>
+                              }
                               }
                             </ion-item>
                             @if(item.quDiscount > 0){

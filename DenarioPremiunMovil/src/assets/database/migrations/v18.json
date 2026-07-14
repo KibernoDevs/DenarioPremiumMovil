@@ -1,0 +1,10 @@
+[
+  {
+    "sql": "ALTER TABLE order_detail_units ADD COLUMN nu_amount_bonus REAL NOT NULL DEFAULT 0;",
+    "description": "REQ-01: importe de bonificacion por unidad"
+  },
+  {
+    "sql": "ALTER TABLE order_details ADD COLUMN nu_amount_bonus REAL NOT NULL DEFAULT 0;",
+    "description": "REQ-01: importe de bonificacion por linea"
+  }
+]
