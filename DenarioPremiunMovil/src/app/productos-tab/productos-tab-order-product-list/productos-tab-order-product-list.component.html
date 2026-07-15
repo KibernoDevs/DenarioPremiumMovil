@@ -113,17 +113,28 @@
                 </ion-input>
               </ion-col>
 
-              <!-- REQ-01: Cantidad bonificada (opcional) -->
-              @if(orderServ.isProductBonifiable(product)){
+              <!-- REQ-01: Bonificación on/off (cantidad = máx, solo lectura) -->
+              @if(orderServ.productBonification && orderServ.isProductBonifiable(product)){
               <ion-col class="" size="12" size-sm="12" size-xs="12">
-                <ion-input type="number"
-                  [label]="'Cantidad bonificada (Máx: ' + orderServ.getBonusStateForProduct(product).quBonusMax + ')'"
-                  [ngModel]="orderServ.getBonusStateForProduct(product).quBonifiedApplied"
-                  (ionChange)="onBonusChange(product, $event)"
-                  [disabled]="!orderServ.getBonusStateForProduct(product).enabled"
-                  labelPlacement="floating" fill="outline"
-                  [inputmode]=quInputMode>
-                </ion-input>
+                <div class="bonus-toggle-row">
+                  <ion-checkbox
+                    labelPlacement="end"
+                    [checked]="orderServ.getBonusStateForProduct(product).active"
+                    [disabled]="!orderServ.getBonusStateForProduct(product).enabled"
+                    (ionChange)="onBonusToggle(product, $event)">
+                    Bonificar
+                    @if(orderServ.getBonusStateForProduct(product).quBonusMax > 0){
+                    (máx. {{ orderServ.getBonusStateForProduct(product).quBonusMax }})
+                    }
+                  </ion-checkbox>
+                  <ion-input class="bonus-qty-input" type="number"
+                    label="Bonif."
+                    [value]="orderServ.getBonusStateForProduct(product).quBonifiedApplied"
+                    readonly="true"
+                    [disabled]="true"
+                    labelPlacement="floating" fill="outline">
+                  </ion-input>
+                </div>
               </ion-col>
               @if(product.quAmount > 0){
               <ion-col class="" size="12" size-sm="12" size-xs="12">
@@ -386,17 +397,28 @@
                       (ionChange)="onProductQuantityChange(productoModal)"
                       (ionInput)="onProductQuantityInput(productoModal, $event)" [clearOnEdit]="true"></ion-input>
                   </ion-col>
-                  <!-- REQ-01: Cantidad bonificada (opcional) -->
-                  @if(orderServ.isProductBonifiable(productoModal)){
+                  <!-- REQ-01: Bonificación on/off (cantidad = máx, solo lectura) -->
+                  @if(orderServ.productBonification && orderServ.isProductBonifiable(productoModal)){
                   <ion-col size="12" size-sm="12" size-xs="12">
-                    <ion-input type="number"
-                      [label]="'Cantidad bonificada (Máx: ' + orderServ.getBonusStateForProduct(productoModal).quBonusMax + ')'"
-                      [ngModel]="orderServ.getBonusStateForProduct(productoModal).quBonifiedApplied"
-                      (ionChange)="onBonusChange(productoModal, $event)"
-                      [disabled]="!orderServ.getBonusStateForProduct(productoModal).enabled"
-                      labelPlacement="floating" fill="outline"
-                      [inputmode]=quInputMode>
-                    </ion-input>
+                    <div class="bonus-toggle-row">
+                      <ion-checkbox
+                        labelPlacement="end"
+                        [checked]="orderServ.getBonusStateForProduct(productoModal).active"
+                        [disabled]="!orderServ.getBonusStateForProduct(productoModal).enabled"
+                        (ionChange)="onBonusToggle(productoModal, $event)">
+                        Bonificar
+                        @if(orderServ.getBonusStateForProduct(productoModal).quBonusMax > 0){
+                        (máx. {{ orderServ.getBonusStateForProduct(productoModal).quBonusMax }})
+                        }
+                      </ion-checkbox>
+                      <ion-input class="bonus-qty-input" type="number"
+                        label="Bonif."
+                        [value]="orderServ.getBonusStateForProduct(productoModal).quBonifiedApplied"
+                        readonly="true"
+                        [disabled]="true"
+                        labelPlacement="floating" fill="outline">
+                      </ion-input>
+                    </div>
                   </ion-col>
                   @if(productoModal.quAmount > 0){
                   <ion-col size="12" size-sm="12" size-xs="12">

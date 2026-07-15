@@ -205,6 +205,8 @@ export class PedidosService {
   // GLOBAL CONFIGURATION
   public parteDecimal!: number;
   public productMinMul!: boolean;
+  /** REQ-01 — global_configuration.clave = productBonification */
+  public productBonification!: boolean;
   public conversionByPriceList!: boolean;
   public quUnitDecimals!: boolean;
   public userCanSelectGlobalDiscount!: boolean;
@@ -307,6 +309,11 @@ export class PedidosService {
 
   /** REQ-01 — recarga reglas de bonificación desde SQLite local. */
   refreshProductBonusFavData(): Promise<void> {
+    if (!this.productBonification) {
+      this.applyProductBonusFavList([]);
+      this.catalogDataChanged$.next();
+      return Promise.resolve();
+    }
     const idEnterprise = this.empresaSeleccionada?.idEnterprise ?? this.catalogDataEnterpriseId;
     if (!idEnterprise) {
       return Promise.resolve();
@@ -336,38 +343,72 @@ export class PedidosService {
   }
 
   /**
-   * REQ-01 — aplica bono a la unidad seleccionada.
-   * Conserva el valor actual (o manualValue) y solo hace clamp al máximo.
-   * Nunca fuerza AUTO_MAX: la bonificación es opcional (0 válido).
+   * REQ-01 — activa/desactiva bonificación en la unidad seleccionada.
+   * Activa → aplica siempre el máximo de la regla; desactiva → 0.
+   * El vendedor no edita la cantidad manualmente.
+   */
+  setBonusActiveForSelectedUnit(
+    prod: OrderUtil,
+    active: boolean
+  ): { applied: number; max: number; active: boolean } {
+    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    if (!unit) {
+      return { applied: 0, max: 0, active: false };
+    }
+    if (!this.productBonification || !this.isProductBonifiable(prod)) {
+      unit.bonusActive = false;
+      unit.quBonified = 0;
+      return { applied: 0, max: 0, active: false };
+    }
+    const rule = this.getBonusRuleByProduct(prod.idProduct);
+    const state = this.calculateBonusState(Number(unit.quAmount) || 0, rule, 0, true);
+    unit.bonusActive = !!active;
+    unit.quBonified = unit.bonusActive ? state.quBonusMax : 0;
+    return { applied: unit.quBonified, max: state.quBonusMax, active: unit.bonusActive };
+  }
+
+  /**
+   * REQ-01 — recalcula bono tras cambio de cantidad.
+   * Si el check está activo, reaplica el máximo; si no, deja 0.
    */
   applyBonusForSelectedUnit(
     prod: OrderUtil,
-    isManualEdit: boolean,
-    manualValue?: number
+    _isManualEdit: boolean = false,
+    _manualValue?: number
   ): { adjusted: boolean; previous: number; applied: number; max: number; rejectedOverMax: boolean } {
     const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
     if (!unit) {
       return { adjusted: false, previous: 0, applied: 0, max: 0, rejectedOverMax: false };
     }
-    const rule = this.getBonusRuleByProduct(prod.idProduct);
+    if (!this.productBonification) {
+      const previous = Number(unit.quBonified) || 0;
+      unit.bonusActive = false;
+      unit.quBonified = 0;
+      return { adjusted: previous !== 0, previous, applied: 0, max: 0, rejectedOverMax: false };
+    }
+    // Pedidos cargados con bono > 0: considerar check activo
+    if (unit.bonusActive == null && (Number(unit.quBonified) || 0) > 0) {
+      unit.bonusActive = true;
+    }
     const previous = Number(unit.quBonified) || 0;
-    const current = isManualEdit
-      ? (manualValue ?? previous)
-      : previous;
-    const state = this.calculateBonusState(Number(unit.quAmount) || 0, rule, current, true);
-    const rejectedOverMax = isManualEdit && current > state.quBonusMax && state.quBonusMax >= 0;
-    unit.quBonified = state.quBonifiedApplied;
+    const rule = this.getBonusRuleByProduct(prod.idProduct);
+    const state = this.calculateBonusState(Number(unit.quAmount) || 0, rule, 0, true);
+    const applied = unit.bonusActive ? state.quBonusMax : 0;
+    unit.quBonified = applied;
     return {
-      adjusted: previous > state.quBonifiedApplied && previous > state.quBonusMax,
+      adjusted: previous !== applied && previous > state.quBonusMax,
       previous,
-      applied: state.quBonifiedApplied,
+      applied,
       max: state.quBonusMax,
-      rejectedOverMax
+      rejectedOverMax: false
     };
   }
 
-  /** ¿El producto tiene regla de bonificación activa (aunque el max actual sea 0)? */
+  /** ¿Módulo activo + producto con regla de bonificación (aunque el max actual sea 0)? */
   isProductBonifiable(prod: OrderUtil): boolean {
+    if (!this.productBonification) {
+      return false;
+    }
     const rule = this.getBonusRuleByProduct(prod.idProduct);
     if (!rule) {
       return false;
@@ -378,14 +419,18 @@ export class PedidosService {
     return flagActive && quBuy > 0 && quBonus > 0;
   }
 
-  /** Estado UI del bono para la unidad seleccionada (solo lectura / binding). */
+  /** Estado UI del bono para la unidad seleccionada (check + cantidad solo lectura). */
   getBonusStateForProduct(prod: OrderUtil): {
     mode: 'NO_BONUS' | 'AUTO_MAX' | 'MANUAL';
     quBonusMax: number;
     quBonifiedApplied: number;
     enabled: boolean;
+    active: boolean;
   } {
     const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    if (unit && unit.bonusActive == null && (Number(unit.quBonified) || 0) > 0) {
+      unit.bonusActive = true;
+    }
     const rule = this.getBonusRuleByProduct(prod.idProduct);
     const state = this.calculateBonusState(
       Number(unit?.quAmount) || 0,
@@ -395,11 +440,12 @@ export class PedidosService {
     );
     return {
       ...state,
-      enabled: this.isProductBonifiable(prod) && state.quBonusMax > 0
+      enabled: this.isProductBonifiable(prod),
+      active: !!unit?.bonusActive
     };
   }
 
-  /** Desglose visual por unidad: bruto / −bono / total a cobrar (antes de dcto ítem). */
+  /** Desglose visual por unidad: bruto físico / valor regalo / total a cobrar (antes de dcto ítem). */
   getBonusPricingBreakdownForUnit(prod: OrderUtil, unit: UnitInfo): {
     qty: number;
     bonus: number;
@@ -408,6 +454,7 @@ export class PedidosService {
     descuentoBonif: number;
     total: number;
   } {
+    // REQ-01: qty = Compra (a pagar); bonus = Regala (adicional). No se resta del cobro.
     const qty = Number(unit?.quAmount) || 0;
     const bonus = Number(unit?.quBonified) || 0;
     const unitPrice = unit
@@ -415,15 +462,15 @@ export class PedidosService {
       : (Number(prod.nuPrice) || 0);
     const quUnit = Number(unit?.quUnit) || 1;
     const pricePerSaleUnit = unitPrice * quUnit;
-    const bruto = qty * pricePerSaleUnit;
     const descuentoBonif = bonus * pricePerSaleUnit;
+    const total = qty * pricePerSaleUnit;
     return {
       qty,
       bonus,
       unitPrice: pricePerSaleUnit,
-      bruto,
+      bruto: total + descuentoBonif,
       descuentoBonif,
-      total: Math.max(0, bruto - descuentoBonif)
+      total
     };
   }
 
@@ -443,8 +490,11 @@ export class PedidosService {
     return this.getBonusPricingBreakdownForUnit(prod, unit);
   }
 
-  /** ¿Alguna línea del carrito tiene cantidad bonificada > 0? */
+  /** ¿Alguna línea del carrito tiene cantidad bonificada > 0? (solo si el módulo está activo) */
   hasAnyBonifiedQty(): boolean {
+    if (!this.productBonification) {
+      return false;
+    }
     return (this.carrito || []).some(prod =>
       (prod.unitList || []).some(u =>
         (Number(u.quAmount) || 0) > 0 && (Number(u.quBonified) || 0) > 0
@@ -454,20 +504,48 @@ export class PedidosService {
 
   /**
    * REQ-01 — etiqueta visual: "12 · 2 bonificados · 10 a pagar".
-   * Vacío si no hay bonificado.
+   * qty = Compra (a pagar); bonus = Regala (adicional). Vacío si no hay bonificado.
    */
   formatBonusQtyLabel(qty: number, bonus: number): string {
+    if (!this.productBonification) {
+      return '';
+    }
     const q = Number(qty) || 0;
     const b = Number(bonus) || 0;
     if (b <= 0 || q <= 0) {
       return '';
     }
-    const billable = Math.max(0, q - b);
-    return `${q} · ${b} bonificados · ${billable} a pagar`;
+    const physical = q + b;
+    return `${physical} · ${b} bonificados · ${q} a pagar`;
   }
 
-  /** Suma del descuento por bonificación en todo el pedido (ya incluido en totalBase). */
+  /** REQ-01 — cantidad física = Compra + Regala. */
+  getPhysicalQty(qty: number, bonus: number = 0): number {
+    const q = Number(qty) || 0;
+    const b = this.productBonification ? (Number(bonus) || 0) : 0;
+    return q + b;
+  }
+
+  /**
+   * REQ-01 — desglose para TOTAL: "6 bonificados 30 a pagar".
+   */
+  formatBonusBreakdownLabel(qty: number, bonus: number): string {
+    if (!this.productBonification) {
+      return '';
+    }
+    const q = Number(qty) || 0;
+    const b = Number(bonus) || 0;
+    if (b <= 0 || q <= 0) {
+      return '';
+    }
+    return `${b} bonificados ${q} a pagar`;
+  }
+
+  /** Valor del regalo (informativo). totalBase ya cobra solo Compra; no está restado del cobro. */
   getOrderBonusDiscountTotal(): number {
+    if (!this.productBonification) {
+      return 0;
+    }
     let sum = 0;
     for (const prod of this.carrito || []) {
       for (const unit of prod.unitList || []) {
@@ -543,11 +621,15 @@ export class PedidosService {
       this.prodMinMulMap.clear();
     }
 
-    catalogCritical.push(
-      this.getProductBonusFavList(idEnterprise).then(data => {
-        this.applyProductBonusFavList(data);
-      }),
-    );
+    if (this.productBonification) {
+      catalogCritical.push(
+        this.getProductBonusFavList(idEnterprise).then(data => {
+          this.applyProductBonusFavList(data);
+        }),
+      );
+    } else {
+      this.applyProductBonusFavList([]);
+    }
 
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
@@ -658,6 +740,7 @@ export class PedidosService {
   getConfig() {
     //boolean
     this.productMinMul = this.config.get("productMinMul").toLowerCase() === 'true';
+    this.productBonification = this.config.get("productBonification").toLowerCase() === 'true';
     this.conversionByPriceList = this.config.get("conversionByPriceList").toLowerCase() === 'true';
     this.quUnitDecimals = this.config.get("quUnitDecimals").toLowerCase() === 'true';
     this.totalUnit = this.config.get("totalUnit").toLowerCase() === 'true';
@@ -1335,9 +1418,8 @@ export class PedidosService {
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         const unitNuPriceForTotal = this.resolveUnitNuPriceForLineTotal(item, unit);
-        // REQ-01: facturable = físico - bonificado (stock sigue usando quAmount)
-        const bonusQty = Number(unit.quBonified) || 0;
-        const billableQty = Math.max(0, Number(unit.quAmount) - bonusQty);
+        // REQ-01: facturable = Compra (quAmount); Regala es adicional y no reduce el cobro
+        const billableQty = Number(unit.quAmount) || 0;
         curItem += unit.quUnit * billableQty * unitNuPriceForTotal;
         if (this.totalUnit) {
           this.totalUnidades(unit);
@@ -1561,9 +1643,8 @@ export class PedidosService {
     if (Number(unit.quAmount) <= 0) {
       return 0;
     }
-    // REQ-01: base sobre unidades facturables
-    const bonusQty = Number(unit.quBonified) || 0;
-    const billableQty = Math.max(0, Number(unit.quAmount) - bonusQty);
+    // REQ-01: base = Compra (quAmount); bonificado no se resta
+    const billableQty = Number(unit.quAmount) || 0;
     return unit.quUnit * billableQty * this.resolveUnitNuPriceForLineTotal(item, unit);
   }
 
@@ -2057,6 +2138,7 @@ export class PedidosService {
     let units = this.totalUnidad.filter(u => u.idUnit == input.idUnit);
     if (units.length > 0) {
       units[0].quAmount += input.quAmount;
+      units[0].quBonified = (Number(units[0].quBonified) || 0) + (Number(input.quBonified) || 0);
     } else {
       // hacemos copia para evitar comportamiento anormal
       let unit = JSON.parse(JSON.stringify(input));
@@ -2241,8 +2323,10 @@ export class PedidosService {
             "idEnterprise": this.empresaSeleccionada.idEnterprise,
             "coUnit": unit.coUnit,
             "quSuggested": quSuggested,
-            "quBonified": unit.quBonified ?? 0,
-            "nuAmountBonus": this.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif,
+            "quBonified": this.productBonification ? (unit.quBonified ?? 0) : 0,
+            "nuAmountBonus": this.productBonification
+              ? this.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif
+              : 0,
             ...this.buildOrderDetailUnitPriceListFields(item, unit),
             ...this.buildOrderDetailUnitBaseTotalFields(item, unit, quSuggested),
           }
@@ -2359,7 +2443,8 @@ export class PedidosService {
         const unit = detail.orderDetailUnit[j];
         let stockToUpdate = this.listaStock.find(s => s.idWarehouse == detail.idWarehouse && s.idProduct == detail.idProduct && s.idEnterprise == detail.idEnterprise && s.coUnit == unit.coUnit);
         if (stockToUpdate) {
-          let quStock = stockToUpdate.quStock - unit.quOrder;
+          // REQ-01: despacho físico = Compra + Regala
+          let quStock = stockToUpdate.quStock - (Number(unit.quOrder) || 0) - (Number(unit.quBonified) || 0);
           if (quStock <= 0) {
             quStock = 0;
           }

@@ -996,7 +996,9 @@ export class PedidosDbService {
       nuAmountTotalConversion: detailDB.nu_amount_total_conversion,
       nuAmountTax: detailDB.nu_amount_tax == null ? 0 : detailDB.nu_amount_tax,
       orderDetailUnit: [],
-      orderDetailDiscount: []
+      orderDetailDiscount: [],
+      quBonified: detailDB.qu_bonified == null ? 0 : detailDB.qu_bonified,
+      nuAmountBonus: detailDB.nu_amount_bonus == null ? 0 : detailDB.nu_amount_bonus,
     };
     return detail;
   }

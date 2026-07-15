@@ -419,6 +419,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             if (unitUtil != undefined) {
               unitUtil.quAmount = unit.quOrder;
               unitUtil.quBonified = unit.quBonified ?? 0;
+              unitUtil.bonusActive = (unit.quBonified ?? 0) > 0;
               if (this.orderServ.unitByPriceList && unit.coPriceList) {
                 unitUtil.coPriceList = unit.coPriceList;
                 unitUtil.idPriceList = unit.idPriceList;
@@ -686,7 +687,9 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         const unit = item.unitList[j];
         const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
         const unitBaseTotal = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
-        const unitBonusAmt = this.orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif;
+        const unitBonusAmt = this.orderServ.productBonification
+          ? this.orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif
+          : 0;
         let u = new OrderDetailUnit(
           0,
           this.dateServ.generateCO((10 * i)) + 'U' + j.toString(),
@@ -702,7 +705,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           unitPriceList.idPriceList,
           unitBaseTotal.nuBaseTotal,
           unitBaseTotal.nuBaseTotalConversion,
-          unit.quBonified ?? 0,
+          this.orderServ.productBonification ? (unit.quBonified ?? 0) : 0,
           unitBonusAmt,
         )
 

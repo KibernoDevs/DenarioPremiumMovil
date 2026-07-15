@@ -464,27 +464,17 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.cd.detectChanges();
   }
 
-  onBonusChange(prod: OrderUtil, event?: Event) {
-    const raw = (event as CustomEvent)?.detail?.value;
-    const inputValue = this.parseQuantityInputValue(raw ?? 0);
-    const result = this.orderServ.applyBonusForSelectedUnit(prod, true, inputValue);
-    if (result.rejectedOverMax) {
-      this.message.transaccionMsjModalNB(
-        `La cantidad bonificada no puede superar el máximo (${result.max}).`
-      );
-    }
+  /** REQ-01 — check: activa (máx) / desactiva (0) la bonificación. */
+  onBonusToggle(prod: OrderUtil, event?: Event) {
+    const checked = !!(event as CustomEvent)?.detail?.checked;
+    this.orderServ.setBonusActiveForSelectedUnit(prod, checked);
     this.orderServ.productSummary();
     this.cd.detectChanges();
   }
 
-  /** Conserva bono; si supera el nuevo tope, ajusta y avisa. */
+  /** Si el check está activo, reaplica el máximo al cambiar cantidad. */
   private applyBonusAfterQtyChange(prod: OrderUtil): void {
-    const result = this.orderServ.applyBonusForSelectedUnit(prod, false);
-    if (result.adjusted) {
-      this.message.transaccionMsjModalNB(
-        `Se ajustó la bonificación a ${result.applied} (máx. ${result.max}) por el cambio de cantidad.`
-      );
-    }
+    this.orderServ.applyBonusForSelectedUnit(prod, false);
   }
 
   onProductQuantityInput(prod: OrderUtil, event?: Event) {
