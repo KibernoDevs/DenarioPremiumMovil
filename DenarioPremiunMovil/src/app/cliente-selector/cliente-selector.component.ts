@@ -174,9 +174,17 @@ export class ClienteSelectorComponent implements OnInit {
     });
   }
 
+  private shouldFilterCollectionIva(): boolean {
+    return this.collectLogic.userCanCollectIva && this.collectLogic.cobro25;
+  }
+
   getClients(idEnterprise: number): Promise<any> {
     this.searchMode = false;
-    return this.clientServ.getClients(idEnterprise, this.page).then(result => {
+    return this.clientServ.getClients(
+      idEnterprise,
+      this.page,
+      this.shouldFilterCollectionIva(),
+    ).then(result => {
       this.handleUpdateClientList(result);
     });
   }
@@ -184,7 +192,12 @@ export class ClienteSelectorComponent implements OnInit {
   searchClients(idEnterprise: number, searchText: string): Promise<any> {
     this.searchMode = true;
     return this.messageService.showLoading().then(() => {
-      return this.clientServ.searchClients(idEnterprise, searchText, this.page).then(result => {
+      return this.clientServ.searchClients(
+        idEnterprise,
+        searchText,
+        this.page,
+        this.shouldFilterCollectionIva(),
+      ).then(result => {
         this.handleUpdateClientList(result);
       });
     });
@@ -197,10 +210,7 @@ export class ClienteSelectorComponent implements OnInit {
       this.service.clientes = [] as Client[];
     }
 
-    let clientsToShow = result;
-    if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
-      clientsToShow = result.filter(client => client.collectionIva);
-    }
+    const clientsToShow = result;
 
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);
