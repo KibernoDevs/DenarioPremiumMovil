@@ -1222,11 +1222,19 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     this.syncDocumentPaymentPartialState(index, pos as number, true);
-    cs.amountPaid = 0;
+    this.resetOpenPartialPaymentAmountState();
+    this.disabledSaveButton = true;
+  }
+
+  /** Limpia monto parcial de UI/servicio al abrir documento nuevo o aplicar default. */
+  private resetOpenPartialPaymentAmountState(): void {
     this.valuePartialPayment = 0;
     this.centsAmountPaid = 0;
     this.displayAmountPaid = this.formatFromCents(0);
-    this.disabledSaveButton = true;
+    this.collectService.amountPaid = 0;
+    if (this.collectService.documentSaleOpen) {
+      this.collectService.documentSaleOpen.nuAmountPaid = 0;
+    }
   }
 
   private syncDocumentPaymentPartialState(
@@ -1258,9 +1266,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       : undefined;
     const doc = this.collectService.documentSales[index];
     const backup = this.collectService.documentSalesBackup[index];
-    const isPartialPersisted = this.resolveDocumentPaymentPartialFlag(detail, doc);
+    const isPartialFlag = this.resolveDocumentPaymentPartialFlag(detail, doc);
+    const isSaved = detail?.isSave === true || doc?.isSave === true;
 
-    if (!isPartialPersisted) {
+    if (!isPartialFlag) {
       return 0;
     }
 
@@ -1270,13 +1279,20 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const isPartialAmount = (amount: number): boolean =>
       amount > 0 && (docBalance <= 0 || amount < docBalance);
 
+    // Documento no guardado: no reutilizar montos stale del cobro/documento anterior.
+    // Solo respeta lo digitado en esta apertura (valuePartialPayment).
+    if (!isSaved) {
+      const fromValue = Number(this.valuePartialPayment ?? 0);
+      return isPartialAmount(fromValue) ? fromValue : 0;
+    }
+
     const fromValue = Number(this.valuePartialPayment ?? 0);
     if (isPartialAmount(fromValue)) {
       return fromValue;
     }
 
     const fromDocSaved = Number(doc?.nuAmountPaid ?? 0);
-    if (doc?.isSave && isPartialAmount(fromDocSaved)) {
+    if (isPartialAmount(fromDocSaved)) {
       return fromDocSaved;
     }
 
@@ -1296,10 +1312,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const fromDetail = Number(detail?.nuAmountPaid ?? 0);
-    if (
-      (detail?.isSave === true || this.collectService.collection.stDelivery === 3)
-      && isPartialAmount(fromDetail)
-    ) {
+    if (isPartialAmount(fromDetail)) {
       return fromDetail;
     }
 
@@ -1567,7 +1580,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.collectService.documentSales[index],
         );
         this.syncDocumentPaymentPartialState(index, positionCollecDetails, defaultPartial);
-        this.valuePartialPayment = 0;
+        this.resetOpenPartialPaymentAmountState();
       }
 
       if (this.collectService.userCanSelectCollectDiscount) {
@@ -2388,11 +2401,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         ? this.resolvePartialPaymentAmountForOpen(index, pos)
         : 0;
 
-      this.collectService.amountPaid = persistedPartial > 0 ? persistedPartial : 0;
-      this.valuePartialPayment = persistedPartial > 0 ? persistedPartial : 0;
-
-      this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
-      this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+      if (persistedPartial > 0) {
+        this.collectService.amountPaid = persistedPartial;
+        this.valuePartialPayment = persistedPartial;
+        this.centsAmountPaid = Math.round(persistedPartial * factor);
+        this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+      } else {
+        this.resetOpenPartialPaymentAmountState();
+      }
 
       if (this.collectService.collection.stDelivery != 3 && Number.isInteger(pos)) {
         this.collectService.collection.collectionDetails[pos as number]!.inPaymentPartial = true;

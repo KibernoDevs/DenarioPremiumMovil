@@ -41,37 +41,35 @@ export class CurrencyService {
       this.currencyModulesMap = await this.getCurrencyModules(db);
     }
 
-    if (this.hardCurrency != undefined && this.localCurrency != undefined) {
-      return Promise.resolve();
-    } else {
-      /* Esta funcion se debe correr al inicializar un modulo que use este servicio.
-        */
-      //console.log("[CurrencyService] SETUP");
-      var check: boolean;
-      this.multimoneda = this.globalConfig.get("multiCurrency") === "true"
-      if (this.multimoneda) {
-        check = (this.localCurrency == null || this.hardCurrency == null
-          || this.currencyRelation == null || this.localValue == null);
-      } else {
-        check = this.localCurrency == null;
-      }
+    this.multimoneda = this.globalConfig.get("multiCurrency") === "true";
 
-      if (check) {
-        //console.log("[CurrencyService] Buscamos las variables en BD")
-        this.queryLocalCurrency(db);
-        if (this.multimoneda) {
-          this.queryHardCurrency(db);
-          this.queryCurrencyRelation(db);
-          this.queryLocalValue(db);
-        }
-        //this.currencyTest();
-        return Promise.resolve();
-      } else {
-        //console.log("[CurrencyService] Ya tenemos las variables")
-        return Promise.resolve();
-      }
+    const needsLocalCurrency = this.localCurrency == null;
+    const needsHardCurrency = this.multimoneda && this.hardCurrency == null;
+    const needsRates = this.multimoneda
+      && (this.currencyRelation == null || this.localValue == null
+        || !this.isValidExchangeFactor(this.currencyRelation)
+        || !this.isValidExchangeFactor(this.localValue));
+
+    if (!needsLocalCurrency && !needsHardCurrency && !needsRates) {
+      return;
     }
 
+    if (needsLocalCurrency) {
+      await this.queryLocalCurrency(db);
+    }
+    if (this.multimoneda) {
+      const rateQueries: Promise<void>[] = [];
+      if (needsHardCurrency) {
+        rateQueries.push(this.queryHardCurrency(db));
+      }
+      if (needsRates || this.currencyRelation == null) {
+        rateQueries.push(this.queryCurrencyRelation(db));
+      }
+      if (needsRates || this.localValue == null) {
+        rateQueries.push(this.queryLocalValue(db));
+      }
+      await Promise.all(rateQueries);
+    }
   }
 
   formatNumber(input: number) {
@@ -132,36 +130,64 @@ export class CurrencyService {
     }
   }
 
+  private isValidExchangeFactor(value: unknown): boolean {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0;
+  }
+
+  private resolveExchangeFactors(): { localValue: number; currencyRelation: number } | null {
+    const localValue = Number(this.localValue);
+    const currencyRelation = Number(this.currencyRelation);
+    if (!this.isValidExchangeFactor(localValue) || !this.isValidExchangeFactor(currencyRelation)) {
+      return null;
+    }
+    return { localValue, currencyRelation };
+  }
+
   toLocalCurrency(hardAmount: number): number {
-    return (hardAmount * this.localValue) / this.currencyRelation;
+    const amount = Number(hardAmount);
+    if (!Number.isFinite(amount)) {
+      return 0;
+    }
+    const factors = this.resolveExchangeFactors();
+    if (!factors) {
+      return 0;
+    }
+    const converted = (amount * factors.localValue) / factors.currencyRelation;
+    return Number.isFinite(converted) ? converted : 0;
   }
 
   toHardCurrency(localAmount: number): number {
-    return (localAmount * this.currencyRelation) / this.localValue;
+    const amount = Number(localAmount);
+    if (!Number.isFinite(amount)) {
+      return 0;
+    }
+    const factors = this.resolveExchangeFactors();
+    if (!factors) {
+      return 0;
+    }
+    const converted = (amount * factors.currencyRelation) / factors.localValue;
+    return Number.isFinite(converted) ? converted : 0;
   }
 
   toLocalCurrencyByNuValueLocal(hardAmount: number, nuValueLocal: number): number {
-    if (nuValueLocal == null)
+    const amount = Number(hardAmount);
+    const rate = Number(nuValueLocal);
+    const relation = Number(this.currencyRelation);
+    if (!Number.isFinite(amount) || !this.isValidExchangeFactor(rate) || !this.isValidExchangeFactor(relation)) {
       return 0;
-    else
-      return this.cleanFormattedNumber(this.formatNumber((hardAmount * nuValueLocal) / this.currencyRelation)); /* if (coTypeDoc == 'NC' || coTypeDoc == 'AB') {
-      return nuValueLocal;
-    } else {
-      return (hardAmount * nuValueLocal) / this.currencyRelation;
     }
- */
+    return this.cleanFormattedNumber(this.formatNumber((amount * rate) / relation));
   }
 
   toHardCurrencyByNuValueLocal(localAmount: number, nuValueLocal: number): number {
-    if (nuValueLocal == null)
+    const amount = Number(localAmount);
+    const rate = Number(nuValueLocal);
+    const relation = Number(this.currencyRelation);
+    if (!Number.isFinite(amount) || !this.isValidExchangeFactor(rate) || !this.isValidExchangeFactor(relation)) {
       return 0;
-    else
-      return this.cleanFormattedNumber(this.formatNumber((localAmount * this.currencyRelation) / nuValueLocal)); /* if (coTypeDoc == 'NC' || coTypeDoc == 'AB') {
-      return nuValueLocal;
-    } else {
-      return (localAmount * this.currencyRelation) / nuValueLocal;
-    } */
-
+    }
+    return this.cleanFormattedNumber(this.formatNumber((amount * relation) / rate));
   }
 
   getCurrencyById(idCurrency: number | null): CurrencyEnterprise {
@@ -288,30 +314,22 @@ export class CurrencyService {
   }
 
   //========================= QUERIES =========================
-  queryLocalCurrency(db: SQLiteObject) {
-    var selectStatement = "SELECT * FROM currency_enterprises WHERE local_currency = 'true'";
-    this.queryCurrency(db, selectStatement).then((c) => {
-      if (c) {
-        this.localCurrency = c
-        localStorage.setItem("localCurrency", this.localCurrency.coCurrency)
-
-
-      }
-
-
-    });
+  async queryLocalCurrency(db: SQLiteObject): Promise<void> {
+    const selectStatement = "SELECT * FROM currency_enterprises WHERE local_currency = 'true'";
+    const currency = await this.queryCurrency(db, selectStatement);
+    if (currency) {
+      this.localCurrency = currency;
+      localStorage.setItem("localCurrency", this.localCurrency.coCurrency);
+    }
   }
 
-  queryHardCurrency(db: SQLiteObject) {
-    var selectStatement = "SELECT * FROM currency_enterprises WHERE hard_currency = 'true'";
-    this.queryCurrency(db, selectStatement).then((c) => {
-      if (c) {
-        this.hardCurrency = c
-        localStorage.setItem("hardCurrency", this.hardCurrency.coCurrency)
-      }
-
-
-    });
+  async queryHardCurrency(db: SQLiteObject): Promise<void> {
+    const selectStatement = "SELECT * FROM currency_enterprises WHERE hard_currency = 'true'";
+    const currency = await this.queryCurrency(db, selectStatement);
+    if (currency) {
+      this.hardCurrency = currency;
+      localStorage.setItem("hardCurrency", this.hardCurrency.coCurrency);
+    }
   }
 
   async queryCurrency(db: SQLiteObject, selectStatement: string) {
@@ -339,51 +357,39 @@ export class CurrencyService {
 
   }
 
-  async queryCurrencyRelation(db: SQLiteObject) {
-    var selectStatement = "SELECT nu_exchange_rate FROM currency_relations ORDER BY id_currency_relation DESC LIMIT 1";
-    //console.log("[CurrencyService] "+selectStatement);
-    return db.executeSql(selectStatement, []).then((result: any) => {
-      var relation: any;
-      var badRelation = false;
+  async queryCurrencyRelation(db: SQLiteObject): Promise<void> {
+    const selectStatement = "SELECT nu_exchange_rate FROM currency_relations ORDER BY id_currency_relation DESC LIMIT 1";
+    const result: any = await db.executeSql(selectStatement, []);
+    let relation: number | null = null;
 
-      if (result.rows.length > 0) {
-        relation = result.rows.item(0).nu_exchange_rate;
-        if(relation && !isNaN(relation)){
-          this.currencyRelation = relation;
-        }else{
-          badRelation = true;
-        }
-      }else{
-        badRelation = true;
-      }
+    if (result.rows.length > 0) {
+      relation = Number(result.rows.item(0).nu_exchange_rate);
+    }
 
-      if(badRelation){
-        console.warn("[CurrencyService] No se encontró una relación de moneda válida. Se asignará 1 por defecto.");
-        this.currencyRelation = 1;
-      }
+    if (relation != null && this.isValidExchangeFactor(relation)) {
+      this.currencyRelation = relation;
+      return;
+    }
 
-    })
+    console.warn("[CurrencyService] No se encontró una relación de moneda válida. Se asignará 1 por defecto.");
+    this.currencyRelation = 1;
   }
 
-  async queryLocalValue(db: SQLiteObject) {
-    /*
-  this.getLocalValuebyDate(db, this.dateService.onlyDateHoyISO()).then((localValue) => {
+  async queryLocalValue(db: SQLiteObject): Promise<void> {
+    const selectStatement = "SELECT nu_value_local FROM conversion_types ORDER BY date_conversion DESC LIMIT 1";
+    const result: any = await db.executeSql(selectStatement, []);
+    let localValue: number | null = null;
+    if (result.rows.length > 0) {
+      localValue = Number(result.rows.item(0).nu_value_local);
+    }
+
+    if (localValue != null && this.isValidExchangeFactor(localValue)) {
       this.localValue = localValue;
-  });
-  */
+      return;
+    }
 
-    var selectStatement = "SELECT nu_value_local FROM conversion_types ORDER BY date_conversion DESC LIMIT 1";
-    return db.executeSql(selectStatement, []).then((result: any) => {
-      var localValue: any;
-      if (result.rows.length > 0) {
-        localValue = result.rows.item(0).nu_value_local;
-        //console.log("[CurrencyService] "+selectStatement);
-
-        this.localValue = localValue;
-
-      }
-
-    })
+    console.warn("[CurrencyService] No se encontró nu_value_local válido. Se asignará 1 por defecto.");
+    this.localValue = 1;
   }
 
   getCurrencyModules(db: SQLiteObject) {

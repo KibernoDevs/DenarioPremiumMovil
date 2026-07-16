@@ -305,35 +305,46 @@ export class ClientLogicService {
   }
 
   fixClientListSaldos(clients: Client[]): Client[] {
+    const toFiniteNumber = (value: unknown): number => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    };
+
     if (this.localCurrencyDefault) {
       for (const c of clients) {
         if (c.coCurrency !== this.localCurrency.coCurrency) {
-          c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, c.saldo1);
+          c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, toFiniteNumber(c.saldo1));
           c.coCurrency = this.localCurrency.coCurrency;
-
         }
       }
     } else {
       for (const c of clients) {
         if (c.coCurrency !== this.hardCurrency.coCurrency) {
           c.coCurrency = this.hardCurrency.coCurrency;
-          c.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.saldo1);
+          c.saldo1 = this.currencyService.toOppositeCurrency(
+            this.hardCurrency.coCurrency,
+            toFiniteNumber(c.saldo1),
+          );
         }
       }
     }
     if (this.currencyService.multimoneda) {
-      let saldoCliente = 0, saldoOpuesto = 0;
       for (let c = 0; c < clients.length; c++) {
+        const saldo1 = toFiniteNumber(clients[c].saldo1);
+        const saldo2 = toFiniteNumber(clients[c].saldo2);
+        let saldoCliente = 0;
+        let saldoOpuesto = 0;
+
         if (clients[c].coCurrency == this.localCurrency.coCurrency) {
-          saldoCliente = clients[c].saldo1 + this.currencyService.toLocalCurrency(clients[c].saldo2);
+          saldoCliente = saldo1 + this.currencyService.toLocalCurrency(saldo2);
           saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
         } else {
-          saldoCliente = clients[c].saldo1 + this.currencyService.toHardCurrency(clients[c].saldo2);
+          saldoCliente = saldo1 + this.currencyService.toHardCurrency(saldo2);
           saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
         }
-        clients[c].saldo1 = saldoCliente;
-        clients[c].saldo2 = saldoOpuesto;
-        saldoCliente = saldoOpuesto = 0;
+
+        clients[c].saldo1 = toFiniteNumber(saldoCliente);
+        clients[c].saldo2 = toFiniteNumber(saldoOpuesto);
       }
     }
     return clients;

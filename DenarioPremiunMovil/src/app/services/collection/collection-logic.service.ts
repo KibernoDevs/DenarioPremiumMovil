@@ -2999,6 +2999,7 @@ export class CollectionService {
     this.igtfSelected = {} as IgtfList;
     this.alertMessageOpen = false;
     this.createAutomatedPrepaid = false;
+    this.resetPartialPaymentSessionState();
 
 
     //this.enterpriseSelected = {} as Enterprise;
@@ -3072,6 +3073,25 @@ export class CollectionService {
       collectionPayments: [] as CollectionPayment[],
 
     }
+  }
+
+  /**
+   * Reinicia el estado de sesion de pago parcial al crear un cobro nuevo.
+   * Evita que el toggle/monto del cobro anterior contaminen el siguiente.
+   */
+  resetPartialPaymentSessionState(): void {
+    this.isChangePaymentPartial = false;
+    this.isChangePaymentPartialPersistence = false;
+    this.isPaymentPartial = this.alwaysPartialPayment;
+    this.existPartialPayment = false;
+    this.allPaymentPartial = false;
+    this.amountPaymentPartial = 0;
+    this.amountPaid = 0;
+    this.amountPaidDoc = 0;
+    this.openPaymentPartial = false;
+    this.paymentPartials = [];
+    this.totalHistoricPartialPayment = 0;
+    this.coDocumentPaymentPartial = '';
   }
 
   public async convertAmount(
