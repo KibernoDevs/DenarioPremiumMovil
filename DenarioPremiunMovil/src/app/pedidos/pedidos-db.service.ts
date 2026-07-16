@@ -755,7 +755,11 @@ export class PedidosDbService {
 
   getGlobalDiscounts(db: SQLiteObject, idEnterprise: number, noDiscount: string) {
     let query = "SELECT id_global_discount as idGlobalDiscount, global_discount as globalDiscount, " +
-      "tx_description as txDescription, default_global_discount as defaultGlobalDiscount, " +
+      "tx_description as txDescription, " +
+      "CASE " +
+      "WHEN default_global_discount = 1 " +
+      "OR LOWER(CAST(default_global_discount AS TEXT)) IN ('true', '1') " +
+      "THEN 1 ELSE 0 END as defaultGlobalDiscount, " +
       "id_enterprise as idEnterprise, co_enterprise as coEnterprise " +
       "FROM global_discounts WHERE id_enterprise = ?"
 
@@ -767,15 +771,25 @@ export class PedidosDbService {
           row.idGlobalDiscount,
           Number(row.globalDiscount),
           row.txDescription,
-          row.defaultGlobalDiscount,
+          this.toBooleanFlag(row.defaultGlobalDiscount),
           row.idEnterprise,
           row.coEnterprise,
         ));
       }
-      //descuento por defecto de 0%
-      list.unshift(new GlobalDiscount(0, 0, noDiscount, true));
+      // opción UI "SIN DESCUENTO" (0%); no es default de negocio
+      list.unshift(new GlobalDiscount(0, 0, noDiscount, false));
       return list;
     });
+  }
+
+  private toBooleanFlag(value: unknown): boolean {
+    if (value === true || value === 1 || value === '1') {
+      return true;
+    }
+    if (typeof value === 'string') {
+      return value.trim().toLowerCase() === 'true';
+    }
+    return false;
   }
 
   getOrderTypeProductStructure(db: SQLiteObject, idEnterprise: number) {

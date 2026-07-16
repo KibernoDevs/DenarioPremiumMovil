@@ -645,7 +645,12 @@ export class PedidosService {
     }
     if (this.userCanSelectGlobalDiscount) {
       catalogCritical.push(
-        this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; }),
+        this.getGlobalDiscounts().then(data => {
+          this.listaGlobalDiscount = data;
+          if (!this.openOrder) {
+            this.dctoGlobal = this.resolveDefaultGlobalDiscount();
+          }
+        }),
       );
     }
     if (this.userCanSelectChannel) {
@@ -1935,6 +1940,13 @@ export class PedidosService {
     const saved = Number(nuDiscount ?? 0);
     const match = this.listaGlobalDiscount.find(
       (g) => Number(g.globalDiscount) === saved,
+    );
+    return match ? Number(match.globalDiscount) : 0;
+  }
+
+  resolveDefaultGlobalDiscount(): number {
+    const match = this.listaGlobalDiscount.find(
+      (g) => g.idGlobalDiscount !== 0 && g.defaultGlobalDiscount,
     );
     return match ? Number(match.globalDiscount) : 0;
   }
