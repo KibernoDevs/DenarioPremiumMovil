@@ -73,6 +73,7 @@ INSERT INTO public.application_tags(
 	('PED_TOTAL_BASE', 'PED', 'PEDIDOS', 'ESP', 'Total Base'),
 	('PED_TOTAL_PEDIDO', 'PED', 'PEDIDOS', 'ESP', 'Total Pedido'),
 	('PED_TOTAL_IVA', 'PED', 'PEDIDOS', 'ESP', 'Total IVA'),
+	('PED_PDF_TITULO', 'PED', 'PEDIDOS', 'ESP', 'Resumen pedido'),
 	('PED_TASA', 'PED', 'PEDIDOS', 'ESP', 'Tasa'),
 	('PED_LINEA', 'PED', 'PEDIDOS', 'ESP', 'Línea'),
 	('PED_CODIGO', 'PED', 'PEDIDOS', 'ESP', 'Código'),

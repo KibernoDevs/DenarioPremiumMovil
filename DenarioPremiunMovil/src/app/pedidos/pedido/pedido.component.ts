@@ -1703,7 +1703,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         const empresa = this.empresaSeleccionada;
 
         const doc = await this.pdfCreator.generateSummaryPdfDoc({
-          title: `Resumen pedido`,
+          title: this.orderServ.getTag('PED_PDF_TITULO') || 'Resumen pedido',
           enterpriseHeader: {
             name: (empresa?.naEnterprise || empresa?.lbEnterprise || '').trim(),
             rif: empresa?.nuRif ?? '',
