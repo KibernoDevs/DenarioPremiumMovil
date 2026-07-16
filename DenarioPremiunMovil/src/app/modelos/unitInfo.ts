@@ -20,6 +20,8 @@ export class UnitInfo {
             obj['quAmount'],
             obj['coPriceList'],
             obj['idPriceList'],
+            obj['quBonified'] ?? 0,
+            obj['bonusActive'] ?? ((obj['quBonified'] ?? 0) > 0),
         );
     }
 
@@ -37,5 +39,9 @@ export class UnitInfo {
         public quAmount: number,
         public coPriceList: string,
         public idPriceList: number,
+        /** REQ-01: unidades regaladas (adicionales a quAmount) */
+        public quBonified: number = 0,
+        /** REQ-01 UI: vendedor activó la bonificación (siempre aplica el máx). */
+        public bonusActive: boolean = false,
     ) { }
 }
