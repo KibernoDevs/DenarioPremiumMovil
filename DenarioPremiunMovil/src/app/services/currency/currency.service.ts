@@ -371,8 +371,8 @@ export class CurrencyService {
       return;
     }
 
-    console.warn("[CurrencyService] No se encontró una relación de moneda válida. Se asignará 1 por defecto.");
-    this.currencyRelation = 1;
+    console.warn("[CurrencyService] No se encontró una relación de moneda válida. Conversión = 0.");
+    this.currencyRelation = null;
   }
 
   async queryLocalValue(db: SQLiteObject): Promise<void> {
@@ -388,8 +388,13 @@ export class CurrencyService {
       return;
     }
 
-    console.warn("[CurrencyService] No se encontró nu_value_local válido. Se asignará 1 por defecto.");
-    this.localValue = 1;
+    console.warn("[CurrencyService] No se encontró nu_value_local válido. Conversión = 0.");
+    this.localValue = null;
+  }
+
+  /** True solo si hay tasa y relación válidas (> 0) para convertir. */
+  hasValidExchangeRate(): boolean {
+    return this.resolveExchangeFactors() != null;
   }
 
   getCurrencyModules(db: SQLiteObject) {

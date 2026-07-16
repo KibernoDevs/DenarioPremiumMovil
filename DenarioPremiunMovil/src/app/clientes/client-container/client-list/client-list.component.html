@@ -67,7 +67,7 @@
                         {{this.clientLogic.clientTags.get('CLI_SALDO')}} {{client.coCurrency}}:
                         {{formatNumber(client.saldo1)}}
                       </p>
-                      @if(this.clientLogic.showConversion){
+                      @if(this.clientLogic.canShowConversion()){
                       <p [ngStyle]="{ color: client.countDueDate > 0 ? 'Red' : 'Blue' }">
                         {{this.clientLogic.clientTags.get('CLI_SALDO')}}
                         {{oppositeCoCurrency(client.coCurrency)}}: {{formatNumber(client.saldo2)}}

@@ -164,6 +164,13 @@ export class ClienteSelectorComponent implements OnInit {
     }
   }
 
+  /** Solo muestra saldo convertido si hay multimoneda, config activa y tasa válida. */
+  get canShowConversion(): boolean {
+    return this.multimoneda
+      && this.showConversion
+      && this.currencyService.hasValidExchangeRate();
+  }
+
   updateClientList(idEnterprise: number): Promise<any> {
 
     return this.messageService.showLoading().then(() => {
@@ -251,41 +258,51 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   fixClientListSaldos(result: any) {
-    //mostrando los saldos correctamente
-    let saldoCliente = 0, saldoOpuesto = 0;
+    const toFiniteNumber = (value: unknown): number => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const hasRate = this.currencyService.hasValidExchangeRate();
+
     for (let c = 0; c < result.length; c++) {
-      if (result[c].coCurrency == this.localCurrency.coCurrency) {
-        saldoCliente = result[c].saldo1 + this.currencyService.toLocalCurrency(result[c].saldo2);
+      const saldo1 = toFiniteNumber(result[c].saldo1);
+      const saldo2 = toFiniteNumber(result[c].saldo2);
+      let saldoCliente = 0;
+      let saldoOpuesto = 0;
+
+      if (!hasRate) {
+        // Sin tasa: no convertir; el saldo opuesto queda en 0.
+        saldoCliente = saldo1;
+        saldoOpuesto = 0;
+      } else if (result[c].coCurrency == this.localCurrency.coCurrency) {
+        saldoCliente = saldo1 + this.currencyService.toLocalCurrency(saldo2);
         saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
       } else {
-        saldoCliente = result[c].saldo1 + this.currencyService.toHardCurrency(result[c].saldo2);
+        saldoCliente = saldo1 + this.currencyService.toHardCurrency(saldo2);
         saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
       }
-      result[c].saldo1 = saldoCliente;
-      result[c].saldo2 = saldoOpuesto;
 
-      if (this.currencySwitchEnabled && this.localCurrencyDefault) {
-        //la primera moneda es la local
-        if (result[c].coCurrency != this.localCurrency.coCurrency) {
-          //cambiamos la moneda del cliente
-          result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
-          var tempSaldo = result[c].saldo1;
-          result[c].saldo1 = result[c].saldo2;
-          result[c].saldo2 = tempSaldo;
-        }
-      } else {
-        //la primera moneda es la dura
-        if (result[c].coCurrency != this.hardCurrency.coCurrency) {
-          //cambiamos la moneda del cliente
-          result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
-          var tempSaldo = result[c].saldo1;
-          result[c].saldo1 = result[c].saldo2;
-          result[c].saldo2 = tempSaldo;
-        }
+      result[c].saldo1 = toFiniteNumber(saldoCliente);
+      result[c].saldo2 = toFiniteNumber(saldoOpuesto);
+
+      // Sin tasa no se intercambian monedas: el swap dejaría saldo1 en 0.
+      if (!hasRate) {
+        continue;
       }
 
-      saldoCliente = saldoOpuesto = 0;
-
+      if (this.currencySwitchEnabled && this.localCurrencyDefault) {
+        if (result[c].coCurrency != this.localCurrency.coCurrency) {
+          result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
+          const tempSaldo = result[c].saldo1;
+          result[c].saldo1 = result[c].saldo2;
+          result[c].saldo2 = tempSaldo;
+        }
+      } else if (result[c].coCurrency != this.hardCurrency.coCurrency) {
+        result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
+        const tempSaldo = result[c].saldo1;
+        result[c].saldo1 = result[c].saldo2;
+        result[c].saldo2 = tempSaldo;
+      }
     }
     return result;
   }

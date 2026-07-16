@@ -86,6 +86,13 @@ export class ClientLogicService {
 
   public showConversion: boolean = true;
   public multiCurrency: boolean = false;
+
+  /** Muestra saldo convertido solo con multimoneda, config activa y tasa válida. */
+  canShowConversion(): boolean {
+    return this.showConversion
+      && this.multiCurrency
+      && this.currencyService.hasValidExchangeRate();
+  }
   public transportRole: boolean = false;
   public localCurrencyDefault: boolean = false;
   public user: any = {};
@@ -309,15 +316,16 @@ export class ClientLogicService {
       const n = Number(value);
       return Number.isFinite(n) ? n : 0;
     };
+    const hasRate = this.currencyService.hasValidExchangeRate();
 
-    if (this.localCurrencyDefault) {
+    if (hasRate && this.localCurrencyDefault) {
       for (const c of clients) {
         if (c.coCurrency !== this.localCurrency.coCurrency) {
           c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, toFiniteNumber(c.saldo1));
           c.coCurrency = this.localCurrency.coCurrency;
         }
       }
-    } else {
+    } else if (hasRate) {
       for (const c of clients) {
         if (c.coCurrency !== this.hardCurrency.coCurrency) {
           c.coCurrency = this.hardCurrency.coCurrency;
@@ -335,7 +343,10 @@ export class ClientLogicService {
         let saldoCliente = 0;
         let saldoOpuesto = 0;
 
-        if (clients[c].coCurrency == this.localCurrency.coCurrency) {
+        if (!hasRate) {
+          saldoCliente = saldo1;
+          saldoOpuesto = 0;
+        } else if (clients[c].coCurrency == this.localCurrency.coCurrency) {
           saldoCliente = saldo1 + this.currencyService.toLocalCurrency(saldo2);
           saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
         } else {
