@@ -230,7 +230,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         await this.orderServ.setup();
-        this.orderServ.dctoGlobal = 0;
+        this.changeDetector.detectChanges();
         this.orderServ.order = this.createEmptyOrder(); //pedido vacio porque no puede ser null.
         this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
       }
@@ -1219,7 +1219,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     this.segmentLock();
   }
 
-  onEnterpriseSelect() {
+  async onEnterpriseSelect() {
     if (this.orderServ.carrito.length > 0 || this.adjuntoService.hasItems() || this.orderServ.cliente.idClient) {
       // el pedido tiene cosas, asi que hay que resetear
       let buttonsRevertEnterprise = [
@@ -1244,7 +1244,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             this.hasClient = false;
             this.clientRedLabel = true;
             this.empresaSeleccionada = empresa;
-            this.onEnterpriseSelect();
+            void this.onEnterpriseSelect();
 
 
 
@@ -1259,9 +1259,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
     } else {
       this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
-      this.orderServ.dctoGlobal = 0;
-      this.orderServ.setup();
-
+      await this.orderServ.setup();
 
       //Cliente
       this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
