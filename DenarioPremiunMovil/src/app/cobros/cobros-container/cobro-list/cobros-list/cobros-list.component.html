@@ -4,55 +4,54 @@
       placeholder="{{collectService.collectionTags.get('COB_NOMBRE_MODULO')}}..."
       (ionInput)="handleInput($event)"></ion-searchbar>
   </div>
-  <div class="collect-card">
-    <ion-row>
-      <ion-col class="" size="12" size-sm="12" size-xs="12">
-        @if (hasNoVisibleItems()) {
-        <p class="search-empty-state ion-text-center">
-          {{ getEmptyListLabel() }}
-        </p>
-        }
-        <ion-list *ngFor="let collect of displayedItems; index as i" button detail="false">
-          <div>
-            <ion-item button detail="true">
-              <ion-label (click)="onCollectSelect(collect.co_collection, getOriginalIndex(collect), collect.st_delivery)">
-                <p>
-                  {{this.collectService.collectionTags.get('COB_CLIENTE')}}: {{ collect.co_client }} -
-                  {{collect.lb_client}}
-                </p>
-                <p *ngIf="collect.id_collection !=0">
-                  {{this.collectService.collectionTags.get('COB_NRO_REF')}}: {{collect.id_collection}}
-                </p>
-                <p class="status-line">
-                  {{this.collectService.collectionTags.get('COB_DEV_STATUS')}}:
-                  {{ getStatusOrderName(collect.st_collection, collect.st_delivery,collect.na_status)
-                  }}
 
-                  <ion-button *ngIf="collect.tx_comment != null && collect.tx_comment !== ''" fill="clear" size="small"
-                    (click)="showCollectComment($event, collect.tx_comment)" aria-label="Ver comentario">
-                    <ion-icon name="information-circle-outline"></ion-icon>
-                  </ion-button>
-                </p>
-                <p>
-                  {{this.collectService.collectionTags.get('COB_FECHA')}}:
-                  {{collect.da_collection.replace('T', ' ') | date:"dd/MM/yyyy"}}
-                  {{getCoTypeName(collect.co_type)}}
-                </p>
-              </ion-label>
-              <ion-button *ngIf="collect.st_delivery === 3"
-                (click)="showAlertDelete(collect, getOriginalIndex(collect))" color="danger">
-                <ion-icon slot="icon-only" name="trash"> </ion-icon>
-              </ion-button>
-            </ion-item>
-          </div>
-        </ion-list>
-        <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
-          <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles">
-          </ion-infinite-scroll-content>
-        </ion-infinite-scroll>
-      </ion-col>
-    </ion-row>
-  </div>
+  <ion-content class="collect-list-content" [forceOverscroll]="false">
+    <div class="collect-card">
+      @if (hasNoVisibleItems()) {
+      <p class="search-empty-state ion-text-center">
+        {{ getEmptyListLabel() }}
+      </p>
+      }
+      <ion-list *ngFor="let collect of displayedItems; index as i" button detail="false">
+        <div>
+          <ion-item button detail="true">
+            <ion-label (click)="onCollectSelect(collect.co_collection, getOriginalIndex(collect), collect.st_delivery)">
+              <p>
+                {{this.collectService.collectionTags.get('COB_CLIENTE')}}: {{ collect.co_client }} -
+                {{collect.lb_client}}
+              </p>
+              <p *ngIf="collect.id_collection !=0">
+                {{this.collectService.collectionTags.get('COB_NRO_REF')}}: {{collect.id_collection}}
+              </p>
+              <p class="status-line">
+                {{this.collectService.collectionTags.get('COB_DEV_STATUS')}}:
+                {{ getStatusOrderName(collect.st_collection, collect.st_delivery,collect.na_status)
+                }}
+
+                <ion-button *ngIf="collect.tx_comment != null && collect.tx_comment !== ''" fill="clear" size="small"
+                  (click)="showCollectComment($event, collect.tx_comment)" aria-label="Ver comentario">
+                  <ion-icon name="information-circle-outline"></ion-icon>
+                </ion-button>
+              </p>
+              <p>
+                {{this.collectService.collectionTags.get('COB_FECHA')}}:
+                {{collect.da_collection.replace('T', ' ') | date:"dd/MM/yyyy"}}
+                {{getCoTypeName(collect.co_type)}}
+              </p>
+            </ion-label>
+            <ion-button *ngIf="collect.st_delivery === 3"
+              (click)="showAlertDelete(collect, getOriginalIndex(collect))" color="danger">
+              <ion-icon slot="icon-only" name="trash"> </ion-icon>
+            </ion-button>
+          </ion-item>
+        </div>
+      </ion-list>
+      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
+        <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles">
+        </ion-infinite-scroll-content>
+      </ion-infinite-scroll>
+    </div>
+  </ion-content>
 </div>
 
 
