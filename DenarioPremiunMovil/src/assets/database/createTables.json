@@ -176,6 +176,13 @@
     "sql": "CREATE TABLE IF NOT EXISTS product_min_muls ( id_product_min_mul INTEGER PRIMARY KEY, co_product VARCHAR(30), id_product INTEGER, qu_minimum INTEGER, qu_multiple INTEGER, flag BOOLEAN, co_enterprise  VARCHAR(50), id_enterprise INTEGER);"
   },
   {
+    "id": 84,
+    "name": "product_bonus_fav",
+    "table": "productBonusFav",
+    "idName": "id_product_bonus_fav",
+    "sql": "CREATE TABLE IF NOT EXISTS product_bonus_fav ( id_product_bonus_fav INTEGER PRIMARY KEY, co_product_bonus_fav TEXT, id_product INTEGER, co_product TEXT, id_enterprise INTEGER, co_enterprise TEXT, qu_buy INTEGER, qu_bonus INTEGER, flag INTEGER DEFAULT 1, co_operation TEXT DEFAULT 'I', da_update TEXT );"
+  },
+  {
     "id": 40,
     "name": "user_informations",
     "table": "userInformation",

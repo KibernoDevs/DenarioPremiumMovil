@@ -113,6 +113,58 @@
                 </ion-input>
               </ion-col>
 
+              <!-- REQ-01: Bonificación on/off (cantidad = máx, solo lectura) -->
+              @if(orderServ.productBonification && orderServ.isProductBonifiable(product)){
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <div class="bonus-toggle-row">
+                  <ion-checkbox
+                    labelPlacement="end"
+                    [checked]="orderServ.getBonusStateForProduct(product).active"
+                    [disabled]="!orderServ.getBonusStateForProduct(product).enabled"
+                    (ionChange)="onBonusToggle(product, $event)">
+                    Bonificar
+                    @if(orderServ.getBonusStateForProduct(product).quBonusMax > 0){
+                    (máx. {{ orderServ.getBonusStateForProduct(product).quBonusMax }})
+                    }
+                  </ion-checkbox>
+                  <ion-input class="bonus-qty-input" type="number"
+                    label="Bonif."
+                    [value]="orderServ.getBonusStateForProduct(product).quBonifiedApplied"
+                    readonly="true"
+                    [disabled]="true"
+                    labelPlacement="floating" fill="outline">
+                  </ion-input>
+                </div>
+              </ion-col>
+              @if(product.quAmount > 0){
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                @if(orderServ.getBonusPricingBreakdown(product).bonus > 0){
+                <p>
+                  <span class="titulosBold">Cantidades:</span>
+                  {{ orderServ.formatBonusQtyLabel(
+                    orderServ.getBonusPricingBreakdown(product).qty,
+                    orderServ.getBonusPricingBreakdown(product).bonus) }}
+                </p>
+                }
+                <p>
+                  <span class="titulosBold">Subtotal bruto:</span>
+                  {{ formatNum(orderServ.getBonusPricingBreakdown(product).bruto) }}
+                  {{ product.coCurrency }}
+                </p>
+                <p>
+                  <span class="titulosBold">Descuento bonif.:</span>
+                  {{ formatNum(orderServ.getBonusPricingBreakdown(product).descuentoBonif) }}
+                  {{ product.coCurrency }}
+                </p>
+                <p>
+                  <span class="titulosBold">Total a cobrar:</span>
+                  {{ formatNum(orderServ.getBonusPricingBreakdown(product).total) }}
+                  {{ product.coCurrency }}
+                </p>
+              </ion-col>
+              }
+              }
+
               <!-- LISTA DE PRECIOS -->
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
@@ -345,6 +397,57 @@
                       (ionChange)="onProductQuantityChange(productoModal)"
                       (ionInput)="onProductQuantityInput(productoModal, $event)" [clearOnEdit]="true"></ion-input>
                   </ion-col>
+                  <!-- REQ-01: Bonificación on/off (cantidad = máx, solo lectura) -->
+                  @if(orderServ.productBonification && orderServ.isProductBonifiable(productoModal)){
+                  <ion-col size="12" size-sm="12" size-xs="12">
+                    <div class="bonus-toggle-row">
+                      <ion-checkbox
+                        labelPlacement="end"
+                        [checked]="orderServ.getBonusStateForProduct(productoModal).active"
+                        [disabled]="!orderServ.getBonusStateForProduct(productoModal).enabled"
+                        (ionChange)="onBonusToggle(productoModal, $event)">
+                        Bonificar
+                        @if(orderServ.getBonusStateForProduct(productoModal).quBonusMax > 0){
+                        (máx. {{ orderServ.getBonusStateForProduct(productoModal).quBonusMax }})
+                        }
+                      </ion-checkbox>
+                      <ion-input class="bonus-qty-input" type="number"
+                        label="Bonif."
+                        [value]="orderServ.getBonusStateForProduct(productoModal).quBonifiedApplied"
+                        readonly="true"
+                        [disabled]="true"
+                        labelPlacement="floating" fill="outline">
+                      </ion-input>
+                    </div>
+                  </ion-col>
+                  @if(productoModal.quAmount > 0){
+                  <ion-col size="12" size-sm="12" size-xs="12">
+                    @if(orderServ.getBonusPricingBreakdown(productoModal).bonus > 0){
+                    <p>
+                      <span class="titulosBold">Cantidades:</span>
+                      {{ orderServ.formatBonusQtyLabel(
+                        orderServ.getBonusPricingBreakdown(productoModal).qty,
+                        orderServ.getBonusPricingBreakdown(productoModal).bonus) }}
+                    </p>
+                    }
+                    <p>
+                      <span class="titulosBold">Subtotal bruto:</span>
+                      {{ formatNum(orderServ.getBonusPricingBreakdown(productoModal).bruto) }}
+                      {{ productoModal.coCurrency }}
+                    </p>
+                    <p>
+                      <span class="titulosBold">Descuento bonif.:</span>
+                      {{ formatNum(orderServ.getBonusPricingBreakdown(productoModal).descuentoBonif) }}
+                      {{ productoModal.coCurrency }}
+                    </p>
+                    <p>
+                      <span class="titulosBold">Total a cobrar:</span>
+                      {{ formatNum(orderServ.getBonusPricingBreakdown(productoModal).total) }}
+                      {{ productoModal.coCurrency }}
+                    </p>
+                  </ion-col>
+                  }
+                  }
                   <!-- LISTA DE PRECIOS -->
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>

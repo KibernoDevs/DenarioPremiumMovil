@@ -415,7 +415,7 @@
                           <ion-col size="12" size-sm="12" size-xs="12">
                             <ion-item>
                               {{ orderServ.getTag("PED_TAB_TOTAL")}} {{unit.naUnit}}:
-                              {{unit.quAmount}}
+                              {{ orderServ.getPhysicalQty(unit.quAmount, unit.quBonified) }}
                             </ion-item>
                           </ion-col>
                         </ion-list>
@@ -443,6 +443,18 @@
                       }
                     </ion-col>
 
+                    @if(orderServ.productBonification && orderServ.hasAnyBonifiedQty()){
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <span class="titulosBold">Subtotal bruto {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.totalBase + orderServ.getOrderBonusDiscountTotal()) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <span class="titulosBold">Descuento bonif. {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.getOrderBonusDiscountTotal()) }}
+                    </ion-col>
+                    }
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
@@ -557,17 +569,61 @@
                         @if(unit.quAmount > 0){
                         <div>
                           <span class="titulosBold">{{unit.naUnit}}:</span>
-                          {{unit.quAmount}}
+                          {{ orderServ.getPhysicalQty(unit.quAmount, unit.quBonified) }}
                           - <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}}:</span>
                           {{formatNum(getUnitBaseTotal(item, unit))}}
                           {{orderServ.monedaSeleccionada.coCurrency}}
                         </div>
+                        @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                        <div>{{ orderServ.formatBonusBreakdownLabel(unit.quAmount, unit.quBonified) }}</div>
+                        }
+                        @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                        <div>
+                          <span class="titulosBold">Subtotal bruto:</span>
+                          {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
+                          {{ orderServ.monedaSeleccionada.coCurrency }}
+                        </div>
+                        <div>
+                          <span class="titulosBold">Descuento bonif.:</span>
+                          {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif) }}
+                          {{ orderServ.monedaSeleccionada.coCurrency }}
+                        </div>
+                        <div>
+                          <span class="titulosBold">Total a cobrar:</span>
+                          {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).total) }}
+                          {{ orderServ.monedaSeleccionada.coCurrency }}
+                        </div>
+                        }
                         }
                         }
                         }@else{
                         <div *ngFor="let unit of item.unitList">
-                          <span class="titulosBold">{{unit.naUnit}}:</span>
-                          {{unit.quAmount}}
+                          @if(unit.quAmount > 0){
+                          <div>
+                            <span class="titulosBold">{{unit.naUnit}}:</span>
+                            {{ orderServ.getPhysicalQty(unit.quAmount, unit.quBonified) }}
+                            @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                            <div>{{ orderServ.formatBonusBreakdownLabel(unit.quAmount, unit.quBonified) }}</div>
+                            }
+                          </div>
+                          @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                          <div>
+                            <span class="titulosBold">Subtotal bruto:</span>
+                            {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
+                            {{ item.coCurrency }}
+                          </div>
+                          <div>
+                            <span class="titulosBold">Descuento bonif.:</span>
+                            {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif) }}
+                            {{ item.coCurrency }}
+                          </div>
+                          <div>
+                            <span class="titulosBold">Total a cobrar:</span>
+                            {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).total) }}
+                            {{ item.coCurrency }}
+                          </div>
+                          }
+                          }
                         </div>
                         }
 
@@ -772,10 +828,30 @@
                             </ion-item>
                             }
                             <ion-item *ngFor="let unit of item.unitList">
-                              @if(unit.quUnit > 0){
+                              @if(unit.quAmount > 0){
                               <div>
-                                {{unit.naUnit}}: {{unit.quAmount}}
+                                {{unit.naUnit}}: {{ orderServ.getPhysicalQty(unit.quAmount, unit.quBonified) }}
+                                @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                                <div>{{ orderServ.formatBonusBreakdownLabel(unit.quAmount, unit.quBonified) }}</div>
+                                }
                               </div>
+                              @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                              <div>
+                                <span class="titulosBold">Subtotal bruto:</span>
+                                {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
+                                {{ item.coCurrency }}
+                              </div>
+                              <div>
+                                <span class="titulosBold">Descuento bonif.:</span>
+                                {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif) }}
+                                {{ item.coCurrency }}
+                              </div>
+                              <div>
+                                <span class="titulosBold">Total a cobrar:</span>
+                                {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).total) }}
+                                {{ item.coCurrency }}
+                              </div>
+                              }
                               }
                             </ion-item>
                             @if(item.quDiscount > 0){

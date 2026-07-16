@@ -299,6 +299,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   async ionViewWillEnter(): Promise<void> {
     if (this.empresaSeleccionada?.idEnterprise) {
       await this.orderServ.refreshProductMinMulData();
+      await this.orderServ.refreshProductBonusFavData();
     }
   }
 
@@ -422,6 +423,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             var unitUtil = item.unitList.find((u) => u.idProductUnit == unit.idProductUnit)!;
             if (unitUtil != undefined) {
               unitUtil.quAmount = unit.quOrder;
+              unitUtil.quBonified = unit.quBonified ?? 0;
+              unitUtil.bonusActive = (unit.quBonified ?? 0) > 0;
               if (this.orderServ.unitByPriceList && unit.coPriceList) {
                 unitUtil.coPriceList = unit.coPriceList;
                 unitUtil.idPriceList = unit.idPriceList;
@@ -689,6 +692,9 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         const unit = item.unitList[j];
         const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
         const unitBaseTotal = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
+        const unitBonusAmt = this.orderServ.productBonification
+          ? this.orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif
+          : 0;
         let u = new OrderDetailUnit(
           0,
           this.dateServ.generateCO((10 * i)) + 'U' + j.toString(),
@@ -704,6 +710,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           unitPriceList.idPriceList,
           unitBaseTotal.nuBaseTotal,
           unitBaseTotal.nuBaseTotalConversion,
+          this.orderServ.productBonification ? (unit.quBonified ?? 0) : 0,
+          unitBonusAmt,
         )
 
 
@@ -725,6 +733,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         )
       }
 
+      const lineBonusQty = units.reduce((s, u) => s + (Number(u.quBonified) || 0), 0);
+      const lineBonusAmt = units.reduce((s, u) => s + (Number(u.nuAmountBonus) || 0), 0);
       let od = new OrderDetail(
         0,
         coOrderDetail,
@@ -754,7 +764,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         item.nuAmountTax ?? 0,
         units,
         [discount],
-
+        lineBonusQty,
+        lineBonusAmt,
       );
       orderDetails.push(od);
 
@@ -1564,7 +1575,11 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
           unitList.forEach(unit => {
             if (unit.quAmount > 0 || unit.quUnit > 0) {
-              qtyStrings.push(this.formatQtyAmount(Number(unit.quAmount ?? 0)));
+              const qty = Number(unit.quAmount ?? 0);
+              const bonus = Number(unit.quBonified ?? 0);
+              // REQ-01: 12 · 2 bonificados · 10 a pagar
+              const label = this.orderServ.formatBonusQtyLabel(qty, bonus);
+              qtyStrings.push(label || this.formatQtyAmount(qty));
               unitStrings.push(String(unit.naUnit ?? '').trim());
             }
           });
@@ -1574,8 +1589,11 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           }
 
           const primary = unitList.find(u => u.idUnit === item.idUnit);
+          const qty = Number(item.quAmount ?? 0);
+          const bonus = Number(primary?.quBonified ?? 0);
+          const label = this.orderServ.formatBonusQtyLabel(qty, bonus);
           return {
-            qtyLines: this.formatQtyAmount(Number(item.quAmount ?? 0)),
+            qtyLines: label || this.formatQtyAmount(qty),
             unitLines: String(primary?.naUnit ?? '').trim()
           };
         };
@@ -1630,9 +1648,20 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         columns.push({ label: 'Importe Total', align: 'right', width: '12%', noWrap: true });
 
         const fmtMoney = (n: number): string => this.formatNum(Number.isFinite(n) ? n : 0);
-        const summaryTotalsDetailLines: string[] = [
+        const bonusDiscountTotal = this.orderServ.getOrderBonusDiscountTotal();
+        const summaryTotalsDetailLines: string[] = [];
+        // REQ-01: desglose bruto / bonif. / base (base ya es facturable)
+        if (bonusDiscountTotal > 0) {
+          summaryTotalsDetailLines.push(
+            `Subtotal bruto: ${fmtMoney(this.orderServ.totalBase + bonusDiscountTotal)} ${currency}`
+          );
+          summaryTotalsDetailLines.push(
+            `Descuento bonif.: -${fmtMoney(bonusDiscountTotal)} ${currency}`
+          );
+        }
+        summaryTotalsDetailLines.push(
           `Base: ${fmtMoney(this.orderServ.totalBase)} ${currency}`
-        ];
+        );
         if (Number(this.orderServ.totalDctoXProducto ?? 0) > 0) {
           summaryTotalsDetailLines.push(
             `Descuento Productos: ${fmtMoney(this.orderServ.totalDctoXProducto)} ${currency}`

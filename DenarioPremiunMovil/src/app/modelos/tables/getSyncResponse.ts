@@ -24,6 +24,7 @@ import { Warehouse } from "./warehouse";
 import { GlobalDiscount } from "./globalDiscount";
 import { ClientBankAccount } from "./clientBankAccount";
 import { ProductMinMulFav } from "./productMinMul";
+import { ProductBonusFav } from "./productBonusFav";
 import { UserInformation } from "./userInformation";
 import { CurrencyEnterprise } from "./currencyEnterprise";
 import { CurrencyRelation } from "./currencyRelation";
@@ -78,6 +79,7 @@ export interface syncResponse {
     globalDiscountTable: GlobalDiscountTable,
     clientBankAccountTable: ClientBankAccountTable,
     productMinMulFavTable: ProductMinMulFavTable,
+    productBonusFavTable: ProductBonusFavTable,
     userInformationTable: UserInformationTable,
     currencyEnterpriseTable: CurrencyEnterpriseTable,
     currencyRelationTable: CurrencyRelationTable,
@@ -381,6 +383,17 @@ interface ProductMinMulFavTable {
     numberOfPages: number;
     deletedRowsIds: number[];
     row: ProductMinMulFav[];
+}
+
+interface ProductBonusFavTable {
+    syncType: SyncType;
+    id: number;
+    tableName: string;
+    updateTime: string;
+    page: number;
+    numberOfPages: number;
+    deletedRowsIds: number[];
+    row: ProductBonusFav[];
 }
 
 interface UserInformationTable {

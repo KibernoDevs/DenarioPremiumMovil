@@ -430,6 +430,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ALERTA_INVENTARIO"));
       }
       unit.quAmount = quantity;
+      this.applyBonusAfterQtyChange(prod);
       this.orderServ.alCarrito(prod);
       this.cd.detectChanges();
       return;
@@ -441,6 +442,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
       unit.quAmount = 0;
+      this.applyBonusAfterQtyChange(prod);
       this.refreshRemainingStock(prod, 0);
       this.cd.detectChanges();
       return;
@@ -450,14 +452,29 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
       prod.quAmount = 0;
       unit.quAmount = 0;
+      this.applyBonusAfterQtyChange(prod);
       this.refreshRemainingStock(prod, 0);
       this.cd.detectChanges();
       return;
     }
 
     unit.quAmount = quantity;
+    this.applyBonusAfterQtyChange(prod);
     this.orderServ.alCarrito(prod);
     this.cd.detectChanges();
+  }
+
+  /** REQ-01 — check: activa (máx) / desactiva (0) la bonificación. */
+  onBonusToggle(prod: OrderUtil, event?: Event) {
+    const checked = !!(event as CustomEvent)?.detail?.checked;
+    this.orderServ.setBonusActiveForSelectedUnit(prod, checked);
+    this.orderServ.productSummary();
+    this.cd.detectChanges();
+  }
+
+  /** Si el check está activo, reaplica el máximo al cambiar cantidad. */
+  private applyBonusAfterQtyChange(prod: OrderUtil): void {
+    this.orderServ.applyBonusForSelectedUnit(prod, false);
   }
 
   onProductQuantityInput(prod: OrderUtil, event?: Event) {
@@ -472,6 +489,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     if (this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
       unit.quAmount = quantity;
+      this.orderServ.applyBonusForSelectedUnit(prod, false); // clamp silencioso en ionInput
       this.cd.detectChanges();
       return;
     }
@@ -482,9 +500,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
       unit.quAmount = 0;
+      this.orderServ.applyBonusForSelectedUnit(prod, false);
       this.refreshRemainingStock(prod, 0);
     } else {
       unit.quAmount = quantity;
+      this.orderServ.applyBonusForSelectedUnit(prod, false);
     }
     this.cd.detectChanges();
   }

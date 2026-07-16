@@ -36,6 +36,7 @@ import { IvaList } from 'src/app/modelos/tables/iva';
 import { Warehouse } from 'src/app/modelos/tables/warehouse';
 import { GlobalDiscount } from 'src/app/modelos/tables/globalDiscount';
 import { ProductMinMulFav } from 'src/app/modelos/tables/productMinMul';
+import { ProductBonusFav } from 'src/app/modelos/tables/productBonusFav';
 import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { UserInformation } from 'src/app/modelos/tables/userInformation';
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
@@ -197,7 +198,8 @@ export class SynchronizationDBService {
       { "id": 79, "nameTable": "typeDocument" },
       { "id": 80, "nameTable": "codePhoneNumber" },
       { "id": 81, "nameTable": "unitPriceListTable" },
-      { "id": 83, "nameTable": "collectRetention" }
+      { "id": 83, "nameTable": "collectRetention" },
+      { "id": 84, "nameTable": "productBonusFavTable" }
     ]
   }
 
@@ -1213,6 +1215,44 @@ export class SynchronizationDBService {
     }).catch(e => {
       console.log(e);
     })
+  }
+
+  /**
+   * REQ-01 · Tabla 84 — delta product_bonus_fav (altas/bajas/modificaciones).
+   */
+  processProductBonusFavDelta(arr: ProductBonusFav[]) {
+    const statements: any[] = [];
+    const deleteSql = 'DELETE FROM product_bonus_fav WHERE id_product_bonus_fav = ?';
+    const upsertSql =
+      'INSERT OR REPLACE INTO product_bonus_fav (' +
+      'id_product_bonus_fav, co_product_bonus_fav, id_product, co_product, id_enterprise, co_enterprise, ' +
+      'qu_buy, qu_bonus, flag, co_operation, da_update' +
+      ') VALUES (?,?,?,?,?,?,?,?,?,?,?)';
+
+    for (let i = 0; i < arr.length; i++) {
+      const row = arr[i];
+      if (row.coOperation === 'D' || ProductBonusFav.normalizeFlag(row.flag) === 0) {
+        statements.push([deleteSql, [row.idProductBonusFav]]);
+      } else {
+        statements.push([upsertSql, [
+          row.idProductBonusFav,
+          row.coProductBonusFav,
+          row.idProduct,
+          row.coProduct,
+          row.idEnterprise,
+          row.coEnterprise,
+          row.quBuy,
+          row.quBonus,
+          ProductBonusFav.normalizeFlag(row.flag),
+          row.coOperation || 'I',
+          row.daUpdate
+        ]]);
+      }
+    }
+
+    return this.database.sqlBatch(statements).then(() => undefined).catch((e: any) => {
+      console.log(e);
+    });
   }
 
   private removeDuplicateProductMinMulRows(): Promise<void> {

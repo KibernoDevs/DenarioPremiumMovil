@@ -1,14 +1,14 @@
 [
-    {
-        "sql": "ALTER TABLE enterprises ADD COLUMN na_enterprise VARCHAR(150);",
-        "description": "Nombre completo de la empresa para encabezados de documentos."
-    },
-    {
-        "sql": "ALTER TABLE enterprises ADD COLUMN nu_rif VARCHAR(20);",
-        "description": "RIF de la empresa."
-    },
-    {
-        "sql": "ALTER TABLE enterprises ADD COLUMN tx_address VARCHAR(250);",
-        "description": "Direccion fiscal de la empresa."
-    }
+  {
+    "sql": "ALTER TABLE enterprises ADD COLUMN na_enterprise VARCHAR(150);",
+    "description": "Nombre completo de la empresa para encabezados de documentos."
+  },
+  {
+    "sql": "ALTER TABLE enterprises ADD COLUMN nu_rif VARCHAR(20);",
+    "description": "RIF de la empresa."
+  },
+  {
+    "sql": "ALTER TABLE enterprises ADD COLUMN tx_address VARCHAR(250);",
+    "description": "Direccion fiscal de la empresa."
+  }
 ]

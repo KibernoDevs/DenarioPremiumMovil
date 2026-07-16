@@ -23,6 +23,7 @@ import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStr
 import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType';
 import { DistributionChannel } from '../modelos/tables/distributionChannel';
 import { ProductMinMulFav } from '../modelos/tables/productMinMul';
+import { ProductBonusFav } from '../modelos/tables/productBonusFav';
 import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { Client } from '../modelos/tables/client';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
@@ -405,13 +406,13 @@ export class PedidosDbService {
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
       "iva, nu_discount_total, co_discount, id_discount, co_price_list, id_price_list, posicion, nu_price_base_conversion, " +
-      "nu_discount_total_conversion, nu_amount_total_conversion, nu_amount_tax) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_discount_total_conversion, nu_amount_total_conversion, nu_amount_tax, qu_bonified, nu_amount_bonus) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
       "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested, co_price_list, id_price_list, " +
-      "nu_base_total, nu_base_total_conversion ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_base_total, nu_base_total_conversion, qu_bonified, nu_amount_bonus ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let dcQuery = "INSERT OR REPLACE INTO order_detail_discount ( id_order_detail_discount, co_order_detail_discount, " +
       "co_order_detail, id_order_detail, id_discount, qu_discount, nu_price_final, co_enterprise, id_enterprise ) " +
@@ -436,7 +437,8 @@ export class PedidosDbService {
       queries.push([detailQuery, [item.idOrderDetail, item.coOrderDetail, item.coOrder, item.coProduct, item.naProduct, item.idProduct, item.nuPriceBase,
       item.nuAmountTotal, item.coWarehouse, item.idWarehouse, item.quSuggested, item.coEnterprise, item.idEnterprise, item.iva,
       item.nuDiscountTotal, item.coDiscount, item.idDiscount, item.coPriceList, item.idPriceList, item.posicion,
-      item.nuPriceBaseConversion, item.nuDiscountTotalConversion, item.nuAmountTotalConversion, item.nuAmountTax,]]);
+      item.nuPriceBaseConversion, item.nuDiscountTotalConversion, item.nuAmountTotalConversion, item.nuAmountTax,
+      item.quBonified ?? 0, item.nuAmountBonus ?? 0]]);
 
       //query de discount
       if (item.orderDetailDiscount && item.orderDetailDiscount[0].quDiscount != null) {
@@ -454,7 +456,8 @@ export class PedidosDbService {
         //query de unidad
         queries.push([unitQuery, [unit.idOrderDetailUnit, unit.coOrderDetailUnit, unit.coOrderDetail, unit.coProductUnit,
         unit.idProductUnit, unit.quOrder, unit.coEnterprise, unit.idEnterprise, unit.coUnit, unit.quSuggested,
-        unit.coPriceList ?? null, unit.idPriceList ?? null, unit.nuBaseTotal ?? null, unit.nuBaseTotalConversion ?? null]]);
+        unit.coPriceList ?? null, unit.idPriceList ?? null, unit.nuBaseTotal ?? null, unit.nuBaseTotalConversion ?? null,
+        unit.quBonified ?? 0, unit.nuAmountBonus ?? 0]]);
       }
 
     }
@@ -499,8 +502,8 @@ export class PedidosDbService {
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
       "iva, nu_discount_total, co_discount, id_discount, co_price_list, id_price_list, posicion, nu_price_base_conversion, " +
-      "nu_discount_total_conversion, nu_amount_total_conversion, nu_amount_tax) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_discount_total_conversion, nu_amount_total_conversion, nu_amount_tax, qu_bonified, nu_amount_bonus) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -510,7 +513,7 @@ export class PedidosDbService {
       orderDetail.idProduct, orderDetail.nuPriceBase, orderDetail.nuAmountTotal, orderDetail.coWarehouse, orderDetail.idWarehouse, orderDetail.quSuggested,
       orderDetail.coEnterprise, orderDetail.idEnterprise, orderDetail.iva, orderDetail.nuDiscountTotal, orderDetail.coDiscount, orderDetail.idDiscount,
       orderDetail.coPriceList, orderDetail.idPriceList, orderDetail.posicion, orderDetail.nuPriceBaseConversion, orderDetail.nuDiscountTotalConversion,
-      orderDetail.nuAmountTotalConversion, orderDetail.nuAmountTax]]);
+      orderDetail.nuAmountTotalConversion, orderDetail.nuAmountTax, orderDetail.quBonified ?? 0, orderDetail.nuAmountBonus ?? 0]]);
     }
 
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
@@ -519,8 +522,8 @@ export class PedidosDbService {
   saveOrderDetailUnitBatch(db: SQLiteObject, orderDetailUnits: OrderDetailUnit[]) {
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
       "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested, co_price_list, id_price_list, " +
-      "nu_base_total, nu_base_total_conversion ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_base_total, nu_base_total_conversion, qu_bonified, nu_amount_bonus ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
     for (let o = 0; o < orderDetailUnits.length; o++) {
@@ -529,7 +532,8 @@ export class PedidosDbService {
       orderDetailUnit.coProductUnit, orderDetailUnit.idProductUnit, orderDetailUnit.quOrder, orderDetailUnit.coEnterprise,
       orderDetailUnit.idEnterprise, orderDetailUnit.coUnit, orderDetailUnit.quSuggested,
       orderDetailUnit.coPriceList ?? null, orderDetailUnit.idPriceList ?? null,
-      orderDetailUnit.nuBaseTotal ?? null, orderDetailUnit.nuBaseTotalConversion ?? null]]);
+      orderDetailUnit.nuBaseTotal ?? null, orderDetailUnit.nuBaseTotalConversion ?? null,
+      orderDetailUnit.quBonified ?? 0, orderDetailUnit.nuAmountBonus ?? 0]]);
     }
 
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
@@ -840,6 +844,30 @@ export class PedidosDbService {
     });
   }
 
+  /** REQ-01 — reglas activas Compra X / Regala Y por empresa. */
+  getProductBonusFav(db: SQLiteObject, idEnterprise: number) {
+    const query =
+      "select id_product_bonus_fav as idProductBonusFav, co_product_bonus_fav as coProductBonusFav, " +
+      "id_product as idProduct, co_product as coProduct, id_enterprise as idEnterprise, " +
+      "co_enterprise as coEnterprise, qu_buy as quBuy, qu_bonus as quBonus, flag, " +
+      "co_operation as coOperation, da_update as daUpdate " +
+      "from product_bonus_fav where id_enterprise = ? " +
+      "and (flag = 1 OR LOWER(CAST(flag AS TEXT)) IN ('true', '1')) " +
+      "and NOT (co_operation = 'D' OR LOWER(CAST(co_operation AS TEXT)) = 'd')";
+
+    return db.executeSql(query, [idEnterprise]).then(data => {
+      const list: ProductBonusFav[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        const row = data.rows.item(i);
+        if (!ProductBonusFav.isFlagActive(row.flag)) {
+          continue;
+        }
+        list.push(row);
+      }
+      return list;
+    });
+  }
+
   getClientAvgStock(db: SQLiteObject, idEnterprise: number, idClient: number, idProductUnit: number[],
     idAddressClient: number, idProduct: number[]) {
     let part1 = "SELECT id_client_avg_product as idClientAvgProduct, id_client as idClient, " +
@@ -972,7 +1000,9 @@ export class PedidosDbService {
       nuAmountTotalConversion: detailDB.nu_amount_total_conversion,
       nuAmountTax: detailDB.nu_amount_tax == null ? 0 : detailDB.nu_amount_tax,
       orderDetailUnit: [],
-      orderDetailDiscount: []
+      orderDetailDiscount: [],
+      quBonified: detailDB.qu_bonified == null ? 0 : detailDB.qu_bonified,
+      nuAmountBonus: detailDB.nu_amount_bonus == null ? 0 : detailDB.nu_amount_bonus,
     };
     return detail;
   }
@@ -995,7 +1025,8 @@ export class PedidosDbService {
       idPriceList: unitDB.id_price_list,
       nuBaseTotal: unitDB.nu_base_total == null ? 0 : unitDB.nu_base_total,
       nuBaseTotalConversion: unitDB.nu_base_total_conversion == null ? 0 : unitDB.nu_base_total_conversion,
-
+      quBonified: unitDB.qu_bonified == null ? 0 : unitDB.qu_bonified,
+      nuAmountBonus: unitDB.nu_amount_bonus == null ? 0 : unitDB.nu_amount_bonus,
     };
     return unit;
   }
