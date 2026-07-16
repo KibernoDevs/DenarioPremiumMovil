@@ -823,18 +823,20 @@ export class CobroPagosComponent implements OnInit {
       change = true;
     }
 
+    const rate = this.collectService.syncExchangeRateToCollectionHeader();
+
     switch (type) {
       case "ef": {
         this.collectService.pagoEfectivo[index].monto = monto;
 
-        this.collectService.pagoEfectivo[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.pagoEfectivo[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
 
         this.collectService.pagoEfectivo[index].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.coType = type
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.coPaymentMethod = type;
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.nuAmountPartial = monto;
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.nuAmountPartialConversion
-          = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+          = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
 
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.daCollectionPayment
           = this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.daValue
@@ -845,40 +847,40 @@ export class CobroPagosComponent implements OnInit {
 
       case "ch": {
         this.collectService.pagoCheque[index].monto = monto;
-        this.collectService.pagoCheque[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.pagoCheque[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.nuAmountPartial = monto;
         this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.nuAmountPartialConversion
-          = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+          = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.validatePayment("ch", index);
         break;
       }
 
       case "de": {
         this.collectService.pagoDeposito[index].monto = monto;
-        this.collectService.pagoDeposito[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.pagoDeposito[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuAmountPartial = monto;
         this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuAmountPartialConversion
-          = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+          = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.validatePayment("de", index);
         break
       }
 
       case "tr": {
         this.collectService.pagoTransferencia[index].monto = monto;
-        this.collectService.pagoTransferencia[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.pagoTransferencia[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuAmountPartial = monto;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuAmountPartialConversion
-          = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+          = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.validatePayment("tr", index);
         break;
       }
 
       case "pm": {
         this.collectService.pagoMovil[index].monto = monto;
-        this.collectService.pagoMovil[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.pagoMovil[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuAmountPartial = monto;
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuAmountPartialConversion
-          = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+          = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.coType = type;
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.coPaymentMethod = type;
         this.validatePayment("pm", index);
@@ -887,14 +889,14 @@ export class CobroPagosComponent implements OnInit {
 
       case "ot": {
         this.collectService.pagoOtros[index].monto = monto;
-        this.collectService.pagoOtros[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.pagoOtros[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.nuAmountPartial = monto;
 
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.coType = type
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.coPaymentMethod = type;
 
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.nuAmountPartialConversion =
-          this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+          this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
 
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.daCollectionPayment
           = this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.daValue
