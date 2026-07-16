@@ -400,8 +400,8 @@ export class PedidosDbService {
       "nu_value_local, nu_amount_total_conversion, nu_amount_final_conversion, procedencia, " +
       "nu_amount_total_base_conversion, nu_amount_discount_conversion, nu_amount_tax, nu_amount_tax_conversion, id_order_type, nu_attachments, has_attachments, " +
       "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel, " +
-      "st_delivery, id_client_stock, co_client_stock) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "st_delivery, id_client_stock, co_client_stock, payment_currency) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
@@ -429,7 +429,7 @@ export class PedidosDbService {
     order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
     order.nuAmountDiscountConversion, order.nuAmountTax ?? null, order.nuAmountTaxConversion ?? null, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
     order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel, order.stDelivery,
-    order.idClientStock ?? null, order.coClientStock ?? null]]);
+    order.idClientStock ?? null, order.coClientStock ?? null, order.paymentCurrency ?? null]]);
 
     for (let i = 0; i < order.orderDetails.length; i++) {
       const item = order.orderDetails[i];
@@ -477,8 +477,8 @@ export class PedidosDbService {
       "nu_value_local, nu_amount_total_conversion, nu_amount_final_conversion, procedencia, " +
       "nu_amount_total_base_conversion, nu_amount_discount_conversion, nu_amount_tax, nu_amount_tax_conversion, id_order_type, nu_attachments, has_attachments, " +
       "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel, " +
-      "st_delivery, id_client_stock, co_client_stock) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "st_delivery, id_client_stock, co_client_stock, payment_currency) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -493,7 +493,7 @@ export class PedidosDbService {
       order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
       order.nuAmountDiscountConversion, order.nuAmountTax ?? null, order.nuAmountTaxConversion ?? null, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
       order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel, order.stDelivery,
-      order.idClientStock ?? null, order.coClientStock ?? null]]);
+      order.idClientStock ?? null, order.coClientStock ?? null, order.paymentCurrency ?? null]]);
     }
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
   }
@@ -753,12 +753,13 @@ export class PedidosDbService {
     })
   }
 
-  getGlobalDiscounts(db: SQLiteObject, noDiscount: string) {
+  getGlobalDiscounts(db: SQLiteObject, idEnterprise: number, noDiscount: string) {
     let query = "SELECT id_global_discount as idGlobalDiscount, global_discount as globalDiscount, " +
-      "tx_description as txDescription, default_global_discount as defaultGlobalDiscount " +
-      "from global_discounts"
+      "tx_description as txDescription, default_global_discount as defaultGlobalDiscount, " +
+      "id_enterprise as idEnterprise, co_enterprise as coEnterprise " +
+      "FROM global_discounts WHERE id_enterprise = ?"
 
-    return db.executeSql(query, []).then(data => {
+    return db.executeSql(query, [idEnterprise]).then(data => {
       let list: GlobalDiscount[] = [];
       for (let i = 0; i < data.rows.length; i++) {
         const row = data.rows.item(i);
@@ -767,6 +768,8 @@ export class PedidosDbService {
           Number(row.globalDiscount),
           row.txDescription,
           row.defaultGlobalDiscount,
+          row.idEnterprise,
+          row.coEnterprise,
         ));
       }
       //descuento por defecto de 0%
@@ -962,6 +965,7 @@ export class PedidosDbService {
       stDelivery: orderDB.st_delivery == null ? 1 : orderDB.st_delivery,
       idClientStock: orderDB.id_client_stock ?? null,
       coClientStock: orderDB.co_client_stock ?? null,
+      paymentCurrency: orderDB.payment_currency == null ? null : Number(orderDB.payment_currency),
       orderDetails: []
     };
     return order;

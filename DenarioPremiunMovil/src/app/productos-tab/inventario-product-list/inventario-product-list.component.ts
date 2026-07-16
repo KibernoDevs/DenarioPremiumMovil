@@ -116,11 +116,9 @@ export class InventarioProductListComponent implements OnInit {
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
         this.page = 0;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, 0).then(async () => {
             this.noProductsAlertShown = false;
-            this.inventariosLogicService.newClientStock.productList = this.productService.productList;
-            this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
-            this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+            await this.assignFilteredProductList(this.productService.productList, true);
             this.refreshInventoriedProducts();
             /* this.inventariosLogicService.setVariablesMap(); */
           });
@@ -131,7 +129,7 @@ export class InventarioProductListComponent implements OnInit {
       this.searchText = value;
     });
 
-    this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
+    this.searchSub = this.productService.onSearchClicked.subscribe(async (data) => {
       /*this.productService.getProductsSearchedByCoProductAndNaProduct(
         this.searchText,
         this.empresaSeleccionada.idEnterprise,
@@ -140,14 +138,12 @@ export class InventarioProductListComponent implements OnInit {
       this.inventoryFilter = 'all';
       this.inventariosLogicService.showProductList = data;
       this.noProductsAlertShown = false;
-      this.inventariosLogicService.newClientStock.productList = this.productService.productList;
-      this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
-      this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+      await this.assignFilteredProductList(this.productService.productList, true);
       this.refreshInventoriedProducts();
       //  });
     });
 
-    this.inventoryTabSub = this.productService.inventoryTabClicked.subscribe(() => {
+    this.inventoryTabSub = this.productService.inventoryTabClicked.subscribe(async () => {
       const currentProducts = this.inventariosLogicService.newClientStock.productList || [];
       if (this.fullProductList.length === 0 && currentProducts.length > 0) {
         this.fullProductList = [...currentProducts];
@@ -157,7 +153,7 @@ export class InventarioProductListComponent implements OnInit {
       this.inventariosLogicService.showProductList = true;
       this.inventariosLogicService.onStockValidToSend(true);
 
-      const inventoriedProducts = this.buildInventoriedProductListFromDetails();
+      const inventoriedProducts = await this.buildInventoriedProductListFromDetails();
       if (inventoriedProducts.length > 0) {
         this.inventariosLogicService.newClientStock.productList = inventoriedProducts;
       }
@@ -173,13 +169,11 @@ export class InventarioProductListComponent implements OnInit {
         this.globalConfig.get('userCanChangeWarehouse') === 'true',
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
-        0).then(() => {
+        0).then(async () => {
           this.noProductsAlertShown = false;
           this.inventoryFilter = 'all';
           this.inventariosLogicService.showProductList = data;
-          this.inventariosLogicService.newClientStock.productList = this.productService.productList;
-          this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
-          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+          await this.assignFilteredProductList(this.productService.productList, true);
           this.refreshInventoriedProducts();
         }
         )
@@ -192,13 +186,11 @@ export class InventarioProductListComponent implements OnInit {
         this.globalConfig.get('userCanChangeWarehouse') === 'true',
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
-        0).then(() => {
+        0).then(async () => {
           this.noProductsAlertShown = false;
           this.inventoryFilter = 'all';
           this.inventariosLogicService.showProductList = true;
-          this.inventariosLogicService.newClientStock.productList = this.productService.productList;
-          this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
-          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+          await this.assignFilteredProductList(this.productService.productList, true);
           this.refreshInventoriedProducts();
         }
         )
@@ -457,12 +449,39 @@ export class InventarioProductListComponent implements OnInit {
     });
   }
 
-  private buildInventoriedProductListFromDetails(): ProductUtil[] {
+  private async filterProductsWithUnits(products: ProductUtil[]): Promise<ProductUtil[]> {
+    if (!products.length) {
+      return [];
+    }
+
+    const idProducts = products.map(product => product.idProduct);
+    const idsWithUnits = await this.productService.getIdProductsWithProductUnits(
+      this.db.getDatabase(),
+      idProducts,
+    );
+
+    return products.filter(product => idsWithUnits.has(product.idProduct));
+  }
+
+  private async assignFilteredProductList(
+    products: ProductUtil[],
+    updateFullList: boolean,
+  ): Promise<ProductUtil[]> {
+    const filtered = await this.filterProductsWithUnits(products);
+    this.inventariosLogicService.newClientStock.productList = filtered;
+    if (updateFullList) {
+      this.fullProductList = [...filtered];
+    }
+    this.noProductsAlertShown = filtered.length === 0;
+    return filtered;
+  }
+
+  private async buildInventoriedProductListFromDetails(): Promise<ProductUtil[]> {
     const details = this.inventariosLogicService.newClientStock.clientStockDetails || [];
     const currentProductList = this.inventariosLogicService.newClientStock.productList || [];
     const currentById = new Map<number, ProductUtil>(currentProductList.map(p => [p.idProduct, p]));
 
-    return details
+    const inventoriedProducts = details
       .filter(detail => (detail.clientStockDetailUnits || []).some(unit => Number(unit.quStock) > 0))
       .map(detail => {
         const existing = currentById.get(detail.idProduct);
@@ -491,6 +510,8 @@ export class InventarioProductListComponent implements OnInit {
           nuTax: 0,
         } as ProductUtil;
       });
+
+    return this.filterProductsWithUnits(inventoriedProducts);
   }
 
   private normalizeInventoryLocation(value: string | undefined | null): 'exh' | 'dep' | null {
@@ -592,10 +613,8 @@ export class InventarioProductListComponent implements OnInit {
           this.empresaSeleccionada.idEnterprise,
           this.empresaSeleccionada.coCurrencyDefault,
           0
-        ).then(() => {
-          this.inventariosLogicService.newClientStock.productList = this.productService.productList;
-          this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
-          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+        ).then(async () => {
+          await this.assignFilteredProductList(this.productService.productList, true);
         });
         return;
       }
@@ -607,17 +626,16 @@ export class InventarioProductListComponent implements OnInit {
         this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,
         0
-      ).then(() => {
-        this.inventariosLogicService.newClientStock.productList = this.productService.productList;
-        this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
-        this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+      ).then(async () => {
+        await this.assignFilteredProductList(this.productService.productList, true);
       });
       return;
     }
 
-    const inventoriedProducts = this.buildInventoriedProductListFromDetails();
-    this.inventariosLogicService.newClientStock.productList = inventoriedProducts;
-    this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+    this.buildInventoriedProductListFromDetails().then(inventoriedProducts => {
+      this.inventariosLogicService.newClientStock.productList = inventoriedProducts;
+      this.noProductsAlertShown = inventoriedProducts.length === 0;
+    });
   }
 
   getVisibleProducts(): ProductUtil[] {
@@ -662,10 +680,10 @@ export class InventarioProductListComponent implements OnInit {
       this.page++;
       if (this.searchText) {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
-
+          this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(async () => {
+            const filteredPage = await this.filterProductsWithUnits(this.productService.productList);
             this.inventariosLogicService.newClientStock.productList =
-            [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
+            [...this.inventariosLogicService.newClientStock.productList, ...filteredPage];
             if (this.inventoryFilter === 'all') {
               this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
             }
@@ -676,9 +694,9 @@ export class InventarioProductListComponent implements OnInit {
           });
       } else {
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
-
-            this.inventariosLogicService.newClientStock.productList = [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(async () => {
+            const filteredPage = await this.filterProductsWithUnits(this.productService.productList);
+            this.inventariosLogicService.newClientStock.productList = [...this.inventariosLogicService.newClientStock.productList, ...filteredPage];
             if (this.inventoryFilter === 'all') {
               this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
             }

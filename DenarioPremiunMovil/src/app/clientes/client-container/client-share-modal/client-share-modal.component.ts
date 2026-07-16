@@ -5,6 +5,7 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
+import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
@@ -19,6 +20,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
   public currencyService = inject(CurrencyService);
   private globalConfig = inject(GlobalConfigService);
   private pdfCreator = inject(PdfCreatorService);
+  private imageServices = inject(ImageServicesService);
   private message = this.clientLogic.message;
 
   public localCurrency = '';
@@ -204,10 +206,22 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
       const showConversion = this.clientLogic.multiCurrency && this.clientLogic.showConversion;
       const client = this.client!;
 
+      const coEnterprise = client.coEnterprise ?? this.clientLogic.empresaSeleccionada?.coEnterprise;
+      const empresa = this.clientLogic.empresaSeleccionada
+        ?? this.clientLogic.enterpriseServ.getEnterprises()
+          .find((item) => item.idEnterprise === client.idEnterprise);
+
+      const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(coEnterprise);
+
       const doc = await this.pdfCreator.generateSummaryPdfDoc({
         title: tags.get('CLI_DETAIL_TAB_DOCUMENTO_VENTA') ?? 'Documentos de venta',
+        enterpriseHeader: {
+          name: (empresa?.naEnterprise || empresa?.lbEnterprise || client.lblEnterprise || '').trim(),
+          rif: empresa?.nuRif ?? '',
+          address: empresa?.txAddress ?? '',
+          logoBase64,
+        },
         meta: [
-          { label: `${tags.get('CLI_DETAIL_EMPRESA') ?? 'Empresa'}:`, value: client.lblEnterprise ?? '' },
           { label: `${tags.get('CLI_DETAIL_NOMBRE') ?? 'Nombre'}:`, value: client.naClient ?? '' },
           { label: `${tags.get('CLI_DETAIL_CODIGO') ?? 'Codigo'}:`, value: client.coClient ?? '' },
           { label: `${tags.get('CLI_DETAIL_LISTA_PRECIO') ?? 'Lista precio'}:`, value: client.naPriceList ?? '' },
@@ -222,7 +236,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
 
       const base64 = doc.output('datauristring');
       const trimmed = base64.split(',')[1];
-      const filename = `invoice_${client.coClient ?? 'client'}.pdf`;
+      const filename = `estado_de_cuenta_${client.coClient ?? 'client'}.pdf`;
       const res = await this.pdfCreator.savePdf(trimmed, filename, shareDirectory);
 
       await this.message.hideLoading();

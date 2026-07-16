@@ -164,19 +164,19 @@ export class CurrencyService {
 
   }
 
-  getCurrencyById(idCurrency: number): CurrencyEnterprise {
+  getCurrencyById(idCurrency: number | null): CurrencyEnterprise {
+    if (idCurrency == null) {
+      return this.getLocalCurrency();
+    }
     if (this.multimoneda) {
       if (idCurrency === this.localCurrency.idCurrency) {
         return this.localCurrency;
-      } else {
-        if (idCurrency === this.hardCurrency.idCurrency) {
-        return this.hardCurrency;
-        }
       }
-    } 
-    //puede caer aqui si no es multimoneda o no encontro la moneda
+      if (idCurrency === this.hardCurrency.idCurrency) {
+        return this.hardCurrency;
+      }
+    }
     return this.localCurrency;
-    
   }
 
   public cleanFormattedNumber(str: string): number {

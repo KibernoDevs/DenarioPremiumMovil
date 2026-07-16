@@ -218,6 +218,8 @@ export class PedidosService {
   public userCanChangeWarehouse!: boolean;
   public showProductImages!: boolean;
   public userCanChangePaymentConditions!: boolean;
+  public paymentCurrencyEnabled!: boolean;
+  public paymentCurrencyDefault = '';
   public showCreditLimit!: boolean;
   public validStock!: boolean;
   public userCanSelectProductDiscount!: boolean;
@@ -750,6 +752,8 @@ export class PedidosService {
     this.userCanChangeWarehouse = this.config.get("userCanChangeWarehouse").toLowerCase() === 'true';
     this.showProductImages = this.config.get("showProductImages").toLowerCase() === 'true';
     this.userCanChangePaymentConditions = this.config.get("userCanChangePaymentConditions").toLowerCase() === 'true';
+    this.paymentCurrencyEnabled = this.config.get("paymentCurrency").toLowerCase() === 'true';
+    this.paymentCurrencyDefault = (this.config.get("paymentCurrencyDefault") || '').trim();
     this.showCreditLimit = this.config.get("showCreditLimit").toLowerCase() === 'true';
     this.validStock = this.config.get("validStock").toLowerCase() === 'true';
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
@@ -1920,7 +1924,11 @@ export class PedidosService {
   }
 
   getGlobalDiscounts() {
-    return this.db.getGlobalDiscounts(this.database, this.getTag('PED_NO_DC'));
+    return this.db.getGlobalDiscounts(
+      this.database,
+      this.empresaSeleccionada.idEnterprise,
+      this.getTag('PED_NO_DC'),
+    );
   }
 
   resolveSavedGlobalDiscount(nuDiscount: number | null | undefined): number {
@@ -1928,7 +1936,7 @@ export class PedidosService {
     const match = this.listaGlobalDiscount.find(
       (g) => Number(g.globalDiscount) === saved,
     );
-    return match ? Number(match.globalDiscount) : saved;
+    return match ? Number(match.globalDiscount) : 0;
   }
 
   getPaymentConditions(idEnterprise: number) {
@@ -2282,7 +2290,10 @@ export class PedidosService {
       "coClientStock": null,
       "stDelivery": DELIVERY_STATUS_NEW,
       "nuAmountTax": 0,
-      "nuAmountTaxConversion": 0
+      "nuAmountTaxConversion": 0,
+      "paymentCurrency": this.paymentCurrencyEnabled
+        ? this.currencyService.getLocalCurrency().idCurrency
+        : null,
     }
 
     for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {

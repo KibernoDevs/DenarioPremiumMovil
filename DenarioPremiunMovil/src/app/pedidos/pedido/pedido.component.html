@@ -305,6 +305,23 @@
                   </div>
                 </ion-col>
 
+                <!-- ### MONEDA DE PAGO ### -->
+                @if(orderServ.paymentCurrencyEnabled){
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_MONEDA_PAGO")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputPaymentCurrency">
+                    <ion-select interface="popover" labelPlacement="stacked" (ionChange)="onPaymentCurrencySelect()"
+                      id="paymentCurrency" [disabled]="!orderServ.pedidoModificable"
+                      [(ngModel)]="monedaPagoSeleccionada" [compareWith]="currencyCompare">
+                      <ion-select-option [value]="localCurrency">{{ localCurrency.coCurrency
+                        }}</ion-select-option>
+                      <ion-select-option [value]="hardCurrency">{{ hardCurrency.coCurrency
+                        }}</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+                }
+
                 <!-- ### CONDICION DE PAGO ###  -->
                 <ion-col size="12" size-sm="12" size-xs="12">
                   <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>

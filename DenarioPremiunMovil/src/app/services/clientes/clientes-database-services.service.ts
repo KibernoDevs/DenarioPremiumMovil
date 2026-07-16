@@ -21,6 +21,21 @@ export class ClientesDatabaseServicesService {
 
   constructor() { }
 
+  private parseSqliteBoolean(value: unknown): boolean {
+    return value === true
+      || value === 1
+      || String(value ?? '').toLowerCase() === 'true'
+      || String(value ?? '') === '1';
+  }
+
+  private collectionIvaSqlFilter(onlyCollectionIva: boolean): string {
+    if (!onlyCollectionIva) {
+      return '';
+    }
+    return " AND (c.collection_iva = 1 OR c.collection_iva = '1'"
+      + " OR LOWER(TRIM(CAST(c.collection_iva AS TEXT))) = 'true')";
+  }
+
   ClientBDtoClient(data: any): Client[] {
     let clients: Client[] = [];
     for (let i = 0; i < data.rows.length; i++) {
@@ -61,7 +76,7 @@ export class ClientesDatabaseServicesService {
         editable: data.rows.item(i).editable,
         idAddressClients: 0,
         coAddressClients: "",
-        collectionIva: data.rows.item(i).collection_iva == "true" ? true : false,
+        collectionIva: this.parseSqliteBoolean(data.rows.item(i).collection_iva),
         txDescription1: data.rows.item(i).tx_description_1,
         txDescription2: data.rows.item(i).tx_description_2,
         daDocument: data.rows.item(i).daDocument,
@@ -73,9 +88,10 @@ export class ClientesDatabaseServicesService {
     return clients;
   }
 
-  getClients(idEnterprise: number, page: number) {
+  getClients(idEnterprise: number, page: number, onlyCollectionIva = false) {
     let selectStatement = "";
     let offset = page * this.MAX_ITEMS_PER_PAGE;
+    const collectionIvaFilter = this.collectionIvaSqlFilter(onlyCollectionIva);
     if (this.globalConfig.get("multiCurrency") == 'true') {
       if (this.globalConfig.get("conversionDocument") == 'true') {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -96,7 +112,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE c.id_enterprise = ? ';
+          'WHERE c.id_enterprise = ?' + collectionIvaFilter + ' ';
 
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -114,7 +130,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE c.id_enterprise = ? ';
+          'WHERE c.id_enterprise = ?' + collectionIvaFilter + ' ';
       }
     } else {
       selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -130,7 +146,7 @@ export class ClientesDatabaseServicesService {
         'FROM clients c ' +
         'LEFT JOIN lists p ON p.id_list = c.id_list ' +
         'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-        'WHERE c.id_enterprise = ? ';
+        'WHERE c.id_enterprise = ?' + collectionIvaFilter + ' ';
     }
 
     /* selectStatement = "SELECT * FROM clients" */
@@ -153,11 +169,17 @@ export class ClientesDatabaseServicesService {
 
   }
 
-  searchClients(idEnterprise: number, searchText: string, page: number) {
+  searchClients(
+    idEnterprise: number,
+    searchText: string,
+    page: number,
+    onlyCollectionIva = false,
+  ) {
     let selectStatement = "";
     let offset = page * this.MAX_ITEMS_PER_PAGE;
     // Normalize and split search text into tokens
     const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    const collectionIvaFilter = this.collectionIvaSqlFilter(onlyCollectionIva);
 
     let orderBy = ' '
     if (this.globalConfig.get("clientsOrderBy") != '') {
@@ -178,7 +200,9 @@ export class ClientesDatabaseServicesService {
     }
 
     // always filter by enterprise
-    const whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND c.id_enterprise = ?" : "c.id_enterprise = ?";
+    const whereTokens = (tokenClauses.length
+      ? tokenClauses.join(" AND ") + " AND c.id_enterprise = ?"
+      : "c.id_enterprise = ?") + collectionIvaFilter;
     params.push(idEnterprise);
 
     //paginacion: limit y offset

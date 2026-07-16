@@ -791,8 +791,15 @@ export class SynchronizationComponent implements OnInit {
           this.imageServices.getServerImageList().then(obs => {
             obs.subscribe({
               complete: () => {
-                this.router.navigate(['home']).then(() => {
-                  this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+                this.imageServices.getServerLogoList().then(logoObs => {
+                  logoObs.subscribe({
+                    complete: () => {
+                      this.router.navigate(['home']).then(() => {
+                        this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+                        this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
+                      });
+                    }
+                  });
                 });
               }
             });

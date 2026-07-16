@@ -107,12 +107,15 @@ export class CobrosGeneralComponent implements OnInit {
       if (useSavedRate) {
         this.collectService.rateSelected = savedRate;
         this.lastManualRateValue = savedRate;
+        this.collectService.syncExchangeRateToCollectionHeader();
       } else if (!this.collectService.rateSelected || this.collectService.rateSelected === 0) {
         this.collectService.rateSelected = this.defaultDayRate;
         this.lastManualRateValue = this.defaultDayRate;
+        this.collectService.syncExchangeRateToCollectionHeader();
       } else {
-        // Mantener la tasa manual ya ingresada
+        // Mantener la tasa manual ya ingresada y reflejarla en cabecera
         this.lastManualRateValue = this.collectService.rateSelected;
+        this.collectService.syncExchangeRateToCollectionHeader();
       }
     }
 
@@ -396,6 +399,7 @@ export class CobrosGeneralComponent implements OnInit {
         if (useSavedManualRate) {
           this.collectService.rateSelected = savedRate;
           this.lastManualRateValue = savedRate;
+          this.collectService.syncExchangeRateToCollectionHeader();
         } else if (this.collectService.historicoTasa) {
           this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
             .then(() => {
@@ -404,6 +408,8 @@ export class CobrosGeneralComponent implements OnInit {
                 this.collectService.collection.daRate
               );
             });
+        } else if (this.collectService.enabledManualRate) {
+          this.collectService.syncExchangeRateToCollectionHeader();
         }
 
         this.collectService.getDocumentsSales(
@@ -798,6 +804,7 @@ export class CobrosGeneralComponent implements OnInit {
       } else if (useSavedManualRate) {
         this.collectService.rateSelected = savedRate;
         this.lastManualRateValue = savedRate;
+        this.collectService.syncExchangeRateToCollectionHeader();
       } else if (this.collectService.historicoTasa) {
         this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
           .then(() => {
@@ -806,6 +813,8 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.dateRateVisual.split("T")[0]
             );
           });
+      } else if (this.collectService.enabledManualRate) {
+        this.collectService.syncExchangeRateToCollectionHeader();
       }
 
 
@@ -1332,20 +1341,20 @@ export class CobrosGeneralComponent implements OnInit {
     const trimmed = String(rawValue ?? this.rateSelected ?? '').trim();
 
     if (trimmed === '' || trimmed === '.') {
-      this.manualRateError = 'Ingrese un valor numérico mayor a 0';
+      this.manualRateError = 'Ingrese un valor numérico mayor o igual a 1';
       return;
     }
 
     const value = this.parseManualRateInput(trimmed);
-    if (value == null || value <= 0) {
-      this.manualRateError = 'Ingrese un valor numérico mayor a 0';
+    if (!this.isValidManualRate(value)) {
+      this.manualRateError = 'Ingrese un valor numérico mayor o igual a 1';
       return;
     }
 
     this.manualRateError = '';
     if (value !== this.lastManualRateValue) {
-      this.lastManualRateValue = value;
-      void this.applySelectedRate(value);
+      this.lastManualRateValue = value!;
+      void this.applySelectedRate(value!);
     }
   }
 
@@ -1363,13 +1372,20 @@ export class CobrosGeneralComponent implements OnInit {
     }
 
     const value = this.parseManualRateInput(trimmed);
-    if (value == null || value <= 0) {
-      this.manualRateError = 'Ingrese un valor numérico mayor a 0';
+    if (!this.isValidManualRate(value)) {
+      this.manualRateError = 'Ingrese un valor numérico mayor o igual a 1';
       return;
     }
 
     this.manualRateError = '';
-    this.rateSelected = value;
+    this.rateSelected = value!;
+    // Sincronizar cabecera en vivo para que pagos (efectivo/otros) conviertan con la tasa correcta
+    // sin esperar al blur. El recálculo completo sigue en applySelectedRate (blur).
+    this.collectService.collection.nuValueLocal = value!;
+    this.collectService.haveRate = true;
+    if (this.collectService.enabledManualRate) {
+      this.collectService.historicoTasa = true;
+    }
   }
 
   private parseManualRateInput(raw: string): number | null {
@@ -1378,10 +1394,23 @@ export class CobrosGeneralComponent implements OnInit {
     return Number.isFinite(value) ? value : null;
   }
 
+  /** La tasa manual no puede ser menor a 1 (evita divisiones invalidas). */
+  private isValidManualRate(value: number | null | undefined): value is number {
+    return value != null && Number.isFinite(value) && value >= 1;
+  }
+
   private async applySelectedRate(rate: number): Promise<void> {
+    if (!this.isValidManualRate(rate)) {
+      this.manualRateError = 'Ingrese un valor numérico mayor o igual a 1';
+      return;
+    }
     this.rateSelected = rate;
     this.collectService.collection.nuValueLocal = rate;
     this.collectService.haveRate = true;
+    if (this.collectService.enabledManualRate) {
+      this.collectService.historicoTasa = true;
+    }
+    this.collectService.syncExchangeRateToCollectionHeader();
     this.collectService.updateRateDocument();
     await this.recalculateAmountsForRateChange(false);
   }
@@ -1489,8 +1518,13 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   private syncPaymentConversionsForRateChange(): void {
+    const rate = this.collectService.syncExchangeRateToCollectionHeader();
     const updatePago = (pago: { monto: number; montoConversion: number }): void => {
-      pago.montoConversion = this.collectService.convertirMonto(pago.monto, 0, this.collectService.collection.coCurrency);
+      pago.montoConversion = this.collectService.convertirMonto(
+        pago.monto,
+        rate,
+        this.collectService.collection.coCurrency,
+      );
     };
 
     this.collectService.pagoEfectivo.forEach(updatePago);
@@ -1503,7 +1537,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.collection.collectionPayments.forEach(payment => {
       payment.nuAmountPartialConversion = this.collectService.convertirMonto(
         payment.nuAmountPartial,
-        0,
+        rate,
         this.collectService.collection.coCurrency
       );
     });

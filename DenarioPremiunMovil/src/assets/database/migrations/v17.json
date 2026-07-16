@@ -1,18 +1,14 @@
 [
   {
-    "sql": "CREATE TABLE IF NOT EXISTS product_bonus_fav ( id_product_bonus_fav INTEGER PRIMARY KEY, co_product_bonus_fav TEXT, id_product INTEGER, co_product TEXT, id_enterprise INTEGER, co_enterprise TEXT, qu_buy INTEGER, qu_bonus INTEGER, flag INTEGER DEFAULT 1, co_operation TEXT DEFAULT 'I', da_update TEXT );",
-    "description": "REQ-01: catalogo local de reglas Compra X Regala Y"
+    "sql": "ALTER TABLE enterprises ADD COLUMN na_enterprise VARCHAR(150);",
+    "description": "Nombre completo de la empresa para encabezados de documentos."
   },
   {
-    "sql": "CREATE UNIQUE INDEX IF NOT EXISTS uq_product_bonus_fav_active_enterprise_product ON product_bonus_fav (id_enterprise, id_product) WHERE flag = 1 AND co_operation <> 'D';",
-    "description": "REQ-01: una regla activa por producto/empresa"
+    "sql": "ALTER TABLE enterprises ADD COLUMN nu_rif VARCHAR(20);",
+    "description": "RIF de la empresa."
   },
   {
-    "sql": "ALTER TABLE order_detail_units ADD COLUMN qu_bonified REAL NOT NULL DEFAULT 0;",
-    "description": "REQ-01: unidades bonificadas por unidad de pedido"
-  },
-  {
-    "sql": "ALTER TABLE order_details ADD COLUMN qu_bonified REAL NOT NULL DEFAULT 0;",
-    "description": "REQ-01: agregado denormalizado de bonificadas por linea"
+    "sql": "ALTER TABLE enterprises ADD COLUMN tx_address VARCHAR(250);",
+    "description": "Direccion fiscal de la empresa."
   }
 ]

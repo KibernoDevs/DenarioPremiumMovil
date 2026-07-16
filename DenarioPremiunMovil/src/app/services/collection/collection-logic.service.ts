@@ -947,22 +947,23 @@ export class CollectionService {
 
 
   updateRateDocument() {
+    const rate = this.syncExchangeRateToCollectionHeader();
     // Propagar la tasa seleccionada a documentSales y documentSalesBackup
     if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
       for (let i = 0; i < this.documentSales.length; i++) {
-        this.documentSales[i].nuValueLocal = this.rateSelected;
+        this.documentSales[i].nuValueLocal = rate;
       }
     }
 
     if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
       for (let i = 0; i < this.documentSalesBackup.length; i++) {
-        this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
+        this.documentSalesBackup[i].nuValueLocal = rate;
       }
     }
 
     if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
       for (let i = 0; i < this.documentSalesView.length; i++) {
-        this.documentSalesView[i].nuValueLocal = this.rateSelected;
+        this.documentSalesView[i].nuValueLocal = rate;
       }
     }
   }
@@ -1935,6 +1936,23 @@ export class CollectionService {
     return amountPaid - amountToPay;
   }
 
+  /**
+   * Sincroniza tasa de cabecera y recalcula nuDifference / nuDifferenceConversion
+   * para decidir y persistir anticipos automaticos con tasa manual.
+   */
+  private syncPrepaidDifferenceAmounts(): number {
+    this.syncExchangeRateToCollectionHeader();
+    const excess = this.getPaymentExcessAmount();
+    const normalizedExcess = this.cleanFormattedNumber(this.currencyService.formatNumber(excess));
+    this.collection.nuDifference = normalizedExcess;
+    this.collection.nuDifferenceConversion = this.convertirMonto(
+      normalizedExcess,
+      this.getEffectiveExchangeRate(),
+      this.collection.coCurrency,
+    );
+    return normalizedExcess;
+  }
+
   private isPositiveExcessWithinTolerance(excess: number): boolean {
     if (excess <= 0) {
       return true;
@@ -1949,14 +1967,20 @@ export class CollectionService {
   }
 
   private getPrepaidExcessAmount(): number {
-    const excess = this.getPaymentExcessAmount();
+    const excess = this.syncPrepaidDifferenceAmounts();
     if (excess <= 0 || this.isPositiveExcessWithinTolerance(excess)) {
       return 0;
     }
     if (this.prepaidRangeCurrency === this.collection.coCurrency) {
       return excess;
     }
-    const conversionExcess = Number(this.collection.nuDifferenceConversion ?? 0);
+
+    // Convertir el exceso ahora con la tasa efectiva (no depender de conversion stale).
+    const conversionExcess = this.convertirMonto(
+      excess,
+      this.getEffectiveExchangeRate(),
+      this.collection.coCurrency,
+    );
     return conversionExcess > 0 ? conversionExcess : excess;
   }
 
@@ -1976,14 +2000,22 @@ export class CollectionService {
   }
 
   refreshAutomatedPrepaidBeforeSend(): Promise<boolean> {
+    this.syncExchangeRateToCollectionHeader();
     return this.calcularMontos('', 0).then(() => {
       this.resolveAutomatedPrepaid('', 0);
+      if (
+        this.createAutomatedPrepaid
+        && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)
+      ) {
+        this.resetAutomatedPrepaid();
+      }
       return this.shouldCreateAutomatedPrepaidOnSend();
     });
   }
 
   private resolveAutomatedPrepaid(type: string, index: number, skipValidateToSend: boolean = false): void {
     this.createAutomatedPrepaid = false;
+    this.syncExchangeRateToCollectionHeader();
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
       const prepaidExcess = this.getPrepaidExcessAmount();
@@ -1995,7 +2027,11 @@ export class CollectionService {
     this.checkTiposPago();
     if (this.createAutomatedPrepaid) {
       this.setAutomatedPrepaid(type, index);
+      if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
+        this.resetAutomatedPrepaid();
+      }
     } else {
+      this.anticipoAutomatico = [];
       this.syncAddPaymentMethodDisabledState();
     }
     if (!skipValidateToSend) {
@@ -2164,6 +2200,8 @@ export class CollectionService {
       }
     });
 
+    this.anticipoAutomatico = [];
+    this.syncExchangeRateToCollectionHeader();
     const excess = this.getPrepaidExcessAmount();
     if (excess <= this.prepaidRangeAmount) {
       return;
@@ -2179,48 +2217,90 @@ export class CollectionService {
   }
 
   getNuValueLocal() {
-    return this.collection.nuValueLocal;
+    return this.getEffectiveExchangeRate();
+  }
+
+  /**
+   * Tasa efectiva para conversiones y cabecera del cobro.
+   * Prioriza nuValueLocal persistido, luego rateSelected (tasa manual) y default del dia.
+   * Solo acepta tasas >= 1 para evitar divisiones invalidas.
+   */
+  getEffectiveExchangeRate(): number {
+    const fromCollection = Number(this.collection?.nuValueLocal ?? 0);
+    if (Number.isFinite(fromCollection) && fromCollection >= 1) {
+      return fromCollection;
+    }
+
+    const fromSelected = Number(this.rateSelected ?? 0);
+    if (Number.isFinite(fromSelected) && fromSelected >= 1) {
+      return fromSelected;
+    }
+
+    const fromDefault = Number(this.defaultDayRate ?? 0);
+    if (Number.isFinite(fromDefault) && fromDefault >= 1) {
+      return fromDefault;
+    }
+
+    return 0;
+  }
+
+  /**
+   * Asegura que la cabecera del cobro conserve la tasa seleccionada/manual
+   * antes de convertir montos o persistir.
+   */
+  syncExchangeRateToCollectionHeader(): number {
+    const rate = this.getEffectiveExchangeRate();
+    if (!(rate >= 1) || !this.collection) {
+      return 0;
+    }
+
+    this.collection.nuValueLocal = rate;
+    this.rateSelected = rate;
+    this.haveRate = true;
+    if (this.enabledManualRate) {
+      this.historicoTasa = true;
+    }
+    return rate;
   }
 
   convertirMonto(monto: number, rate: number, currency: string) {
-
-    if (this.multiCurrency) {
-      //let rateReal = this.getNuValueLocal(rate);
-      let rateReal = rate;
-      if (rate == 0)
-        rateReal = this.collection.nuValueLocal;
-
-      if (monto > 0)
-        rateReal = this.collection.nuValueLocal;
-      /* if (this.currencySelected.coCurrency != currency) { */
-      if (this.currencySelected.localCurrency.toString() === "true") {
-        if (currency == this.currencyConversion.coCurrency) {
-          if (this.historicoTasa)
-            return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
-          else
-            return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
-        } else if (this.historicoTasa)
-          return this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rateReal));
-        else
-          return this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rateReal));
-      } else {
-        if (currency == this.currencyConversion.coCurrency) {
-          if (this.historicoTasa)
-            return this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rateReal));
-          else
-            return this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rateReal));
-        } else if (this.historicoTasa)
-          return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
-        else
-          return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
-      }
-    } else {
-      return 0
+    if (!this.multiCurrency) {
+      return 0;
     }
 
+    const effectiveRate = this.getEffectiveExchangeRate();
+    let rateReal = Number(rate);
+    if (!Number.isFinite(rateReal) || rateReal < 1) {
+      rateReal = effectiveRate;
+    }
+
+    // Montos positivos usan la tasa efectiva de cabecera (incluye tasa manual).
+    if (monto > 0 && effectiveRate >= 1) {
+      rateReal = effectiveRate;
+    }
+
+    if (!(rateReal >= 1)) {
+      return 0;
+    }
+
+    const selectedIsLocal = this.currencySelected?.localCurrency?.toString() === 'true';
+    const isConversionCurrency = currency == this.currencyConversion?.coCurrency;
+
+    if (selectedIsLocal) {
+      if (isConversionCurrency) {
+        return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
+      }
+      return this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rateReal));
+    }
+
+    if (isConversionCurrency) {
+      return this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rateReal));
+    }
+    return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
   }
 
   calcularMontos(type: string, index: number) {
+    this.syncExchangeRateToCollectionHeader();
     this.montoTotalPagado = 0;
     if (this.tipoPagoEfectivo) {
       this.totalEfectivo = 0;
@@ -5963,6 +6043,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       if (this.collection.nuAttachments > 0)
         this.collection.hasAttachments = true;
 
+      this.syncExchangeRateToCollectionHeader();
       this.syncCollectionIgtfFields();
       this.syncAllDetailRetentionConversionsBeforePersist();
       this.ensureCollectionIgtfAmountBeforePersist(collection);
@@ -6754,6 +6835,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   //createAnticipoCollection(collection: Collection, inserStatement: string) {
   createAnticipoCollection(dbServ: SQLiteObject, collection: Collection) {
+    this.syncExchangeRateToCollectionHeader();
+    const excessAmount = this.syncPrepaidDifferenceAmounts();
+    const excessConversion = Number(this.collection.nuDifferenceConversion ?? 0);
+    const rate = this.getEffectiveExchangeRate();
+
     let inserStatement = "INSERT OR REPLACE INTO collections (" +
       "id_collection," +
       "co_collection," +
@@ -6813,16 +6899,16 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         1, //TIPO ANTICIPO
         collection.txComment,
         collection.coordenada,
-        collection.nuValueLocal,
+        rate > 0 ? rate : collection.nuValueLocal,
         0,//collection.nuDifference,
         0,//collection.nuDifferenceConversion,
         collection.txConversion,
-        collection.nuDifference,//collection.nuAmountTotal,
-        collection.nuDifferenceConversion,//collection.nuAmountTotalConversion,
+        excessAmount,//collection.nuAmountTotal,
+        excessConversion,//collection.nuAmountTotalConversion,
         0,//collection.nuAmountIgtf,
         0,//collection.nuAmountIgtfConversion,
-        collection.nuDifference,//collection.nuAmountFinal,
-        collection.nuDifferenceConversion,//collection.nuAmountFinalConversion,
+        excessAmount,//collection.nuAmountFinal,
+        excessConversion,//collection.nuAmountFinalConversion,
         collection.nuAmountDiscountTotal,//collection.nuAmountDiscountTotal,
         collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
         collection.nuIgtf,
@@ -6831,13 +6917,25 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.hasAttachments
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
-        return this.createAnticipoCollectionPayment(dbServ, collection, newCoCollection);
+        return this.createAnticipoCollectionPayment(
+          dbServ,
+          collection,
+          newCoCollection,
+          excessAmount,
+          excessConversion,
+        );
       }).catch(e => {
         console.log(e);
       })
   }
 
-  createAnticipoCollectionPayment(dbServ: SQLiteObject, collection: Collection, newCoCollection: string) {
+  createAnticipoCollectionPayment(
+    dbServ: SQLiteObject,
+    collection: Collection,
+    newCoCollection: string,
+    excessAmount: number = Number(collection.nuDifference ?? 0),
+    excessConversion: number = Number(collection.nuDifferenceConversion ?? 0),
+  ) {
 
     let insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
       "id_collection_payment," +
@@ -6863,7 +6961,18 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       "id_code_phone_number," +
       "nu_phone_number" +
       ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+    if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
+      console.log('ERROR: anticipoAutomatico vacio al crear payment de anticipo');
+      return Promise.resolve(false);
+    }
+
     const sourcePayment = collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment];
+    if (!sourcePayment) {
+      console.log('ERROR: no se encontro payment fuente para anticipo automatico');
+      return Promise.resolve(false);
+    }
+
     return dbServ.executeSql(insertStatement,
       [
         0,
@@ -6878,8 +6987,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         sourcePayment.daValue,
         sourcePayment.daCollectionPayment,
         sourcePayment.nuCollectionPayment,
-        collection.nuDifference,
-        collection.nuDifferenceConversion,
+        excessAmount,
+        excessConversion,
         this.anticipoAutomatico[0].type,
         sourcePayment.idDifferenceCode,
         sourcePayment.coDifferenceCode,

@@ -314,6 +314,14 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       detailLines: string[];
     };
     fileName?: string;
+    /** @deprecated Usar enterpriseHeader.logoBase64 */
+    logoBase64?: string | null;
+    enterpriseHeader?: {
+      name: string;
+      rif?: string;
+      address?: string;
+      logoBase64?: string | null;
+    };
   }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number, format?: 'letter' | 'legal' }): Promise<jsPDF> {
     const doc = new jsPDF({
       format: opts?.format ?? 'letter',
@@ -349,15 +357,99 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     let cursorY = topMargin;
     let pageNumber = 1;
 
+    const resolveEnterpriseLogo = (): string | null =>
+      data.enterpriseHeader?.logoBase64 ?? data.logoBase64 ?? null;
+
+    const drawEnterpriseLetterhead = (): number => {
+      const header = data.enterpriseHeader;
+      const logoBase64 = resolveEnterpriseLogo();
+      const name = (header?.name || '').trim();
+      const rif = (header?.rif || '').trim();
+      const address = (header?.address || '').trim();
+      const hasContent = !!(name || rif || address || logoBase64);
+      if (!hasContent) {
+        return 0;
+      }
+
+      const logoSize = 52;
+      const logoGap = 12;
+      const sectionPaddingY = 8;
+      let textX = marginX;
+      let logoDrawn = false;
+
+      if (logoBase64) {
+        logoDrawn = this.drawEnterpriseLogo(
+          doc,
+          logoBase64,
+          marginX,
+          cursorY + sectionPaddingY,
+          logoSize,
+          logoSize
+        );
+        if (logoDrawn) {
+          textX = marginX + logoSize + logoGap;
+        }
+      }
+
+      const textWidth = Math.max(80, usableWidth - (textX - marginX));
+      let textY = cursorY + sectionPaddingY + 4;
+      let textBlockHeight = 0;
+
+      if (name) {
+        doc.setTextColor(32, 32, 32);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        const nameLines = doc.splitTextToSize(this.escapePdfText(name), textWidth);
+        doc.text(nameLines, textX, textY);
+        const lineCount = Array.isArray(nameLines) ? nameLines.length : 1;
+        textY += lineCount * 15;
+        textBlockHeight += lineCount * 15;
+      }
+
+      if (rif) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(this.escapePdfText(`RIF: ${rif}`), textX, textY);
+        textY += 13;
+        textBlockHeight += 13;
+      }
+
+      if (address) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const addressLines = doc.splitTextToSize(this.escapePdfText(address), textWidth);
+        doc.text(addressLines, textX, textY);
+        const lineCount = Array.isArray(addressLines) ? addressLines.length : 1;
+        textBlockHeight += lineCount * 12;
+      }
+
+      const logoBlockHeight = logoDrawn ? logoSize + sectionPaddingY * 2 : 0;
+      const textBlockTotal = textBlockHeight + sectionPaddingY * 2;
+      const letterheadHeight = Math.max(logoBlockHeight, textBlockTotal, 56);
+
+      doc.setDrawColor(216, 229, 208);
+      doc.setLineWidth(0.75);
+      doc.line(marginX, cursorY + letterheadHeight, marginX + usableWidth, cursorY + letterheadHeight);
+
+      cursorY += letterheadHeight + 12;
+      return letterheadHeight + 12;
+    };
+
     const drawPageHeader = (continued = false) => {
+      if (!continued) {
+        drawEnterpriseLetterhead();
+      }
+
+      const headerHeight = 48;
       doc.setFillColor(...headerColor);
-      doc.roundedRect(marginX, cursorY, usableWidth, 56, 8, 8, 'F');
+      doc.roundedRect(marginX, cursorY, usableWidth, headerHeight, 8, 8, 'F');
 
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(24);
-      doc.text(this.escapePdfText(data.title), marginX + 16, cursorY + 24);
-      cursorY += 74;
+      doc.setFontSize(continued ? 20 : 22);
+      const titleY = cursorY + (continued ? 20 : 22);
+      doc.text(this.escapePdfText(data.title), marginX + 16, titleY);
+      cursorY += headerHeight + 18;
     };
 
     const drawMeta = () => {
@@ -770,6 +862,42 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       path: fileName,
       directory,
     });
+  }
+
+  private drawEnterpriseLogo(
+    doc: jsPDF,
+    logoBase64: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    maxHeight: number
+  ): boolean {
+    try {
+      const format = this.resolveJsPdfImageFormat(logoBase64);
+      if (!format) {
+        return false;
+      }
+      doc.addImage(logoBase64, format, x, y, maxWidth, maxHeight);
+      return true;
+    } catch (err) {
+      console.warn('[drawEnterpriseLogo] unsupported logo format', err);
+      return false;
+    }
+  }
+
+  private resolveJsPdfImageFormat(logoBase64: string): 'PNG' | 'JPEG' | null {
+    const value = String(logoBase64 || '').toLowerCase();
+    if (value.includes('image/jpeg') || value.includes('image/jpg')) {
+      return 'JPEG';
+    }
+    if (value.includes('image/png') || value.startsWith('data:image/png')) {
+      return 'PNG';
+    }
+    if (value.includes('image/gif') || value.includes('image/svg') || value.includes('image/webp')) {
+      return null;
+    }
+    // fallback: intentar PNG (muchos logos llegan sin mime claro)
+    return 'PNG';
   }
 }
 
