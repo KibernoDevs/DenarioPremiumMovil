@@ -358,9 +358,10 @@ export class PedidosService {
       return { applied: 0, max: 0, active: false };
     }
     if (!this.productBonification || !this.isProductBonifiable(prod)) {
-      unit.bonusActive = false;
-      unit.quBonified = 0;
-      return { applied: 0, max: 0, active: false };
+      // No activar nuevas bonificaciones; preservar histórico ya cargado.
+      const existing = Number(unit.quBonified) || 0;
+      unit.bonusActive = existing > 0;
+      return { applied: existing, max: existing, active: unit.bonusActive };
     }
     const rule = this.getBonusRuleByProduct(prod.idProduct);
     const state = this.calculateBonusState(Number(unit.quAmount) || 0, rule, 0, true);
@@ -383,10 +384,10 @@ export class PedidosService {
       return { adjusted: false, previous: 0, applied: 0, max: 0, rejectedOverMax: false };
     }
     if (!this.productBonification) {
+      // Módulo off: no recalcular ni borrar bonos históricos del pedido cargado.
       const previous = Number(unit.quBonified) || 0;
-      unit.bonusActive = false;
-      unit.quBonified = 0;
-      return { adjusted: previous !== 0, previous, applied: 0, max: 0, rejectedOverMax: false };
+      unit.bonusActive = previous > 0;
+      return { adjusted: false, previous, applied: previous, max: previous, rejectedOverMax: false };
     }
     // Pedidos cargados con bono > 0: considerar check activo
     if (unit.bonusActive == null && (Number(unit.quBonified) || 0) > 0) {
@@ -492,11 +493,11 @@ export class PedidosService {
     return this.getBonusPricingBreakdownForUnit(prod, unit);
   }
 
-  /** ¿Alguna línea del carrito tiene cantidad bonificada > 0? (solo si el módulo está activo) */
+  /**
+   * ¿Alguna línea del carrito tiene cantidad bonificada > 0?
+   * Independiente del flag: el histórico debe mostrarse aunque el módulo esté off.
+   */
   hasAnyBonifiedQty(): boolean {
-    if (!this.productBonification) {
-      return false;
-    }
     return (this.carrito || []).some(prod =>
       (prod.unitList || []).some(u =>
         (Number(u.quAmount) || 0) > 0 && (Number(u.quBonified) || 0) > 0
@@ -506,12 +507,9 @@ export class PedidosService {
 
   /**
    * REQ-01 — etiqueta visual: "12 · 2 bonificados · 10 a pagar".
-   * qty = Compra (a pagar); bonus = Regala (adicional). Vacío si no hay bonificado.
+   * Basado en datos de la línea (histórico), no en el flag del módulo.
    */
   formatBonusQtyLabel(qty: number, bonus: number): string {
-    if (!this.productBonification) {
-      return '';
-    }
     const q = Number(qty) || 0;
     const b = Number(bonus) || 0;
     if (b <= 0 || q <= 0) {
@@ -521,20 +519,16 @@ export class PedidosService {
     return `${physical} · ${b} bonificados · ${q} a pagar`;
   }
 
-  /** REQ-01 — cantidad física = Compra + Regala. */
+  /** REQ-01 — cantidad física = Compra + Regala (histórico incluido). */
   getPhysicalQty(qty: number, bonus: number = 0): number {
-    const q = Number(qty) || 0;
-    const b = this.productBonification ? (Number(bonus) || 0) : 0;
-    return q + b;
+    return (Number(qty) || 0) + (Number(bonus) || 0);
   }
 
   /**
    * REQ-01 — desglose para TOTAL: "6 bonificados 30 a pagar".
+   * Basado en datos de la línea (histórico), no en el flag del módulo.
    */
   formatBonusBreakdownLabel(qty: number, bonus: number): string {
-    if (!this.productBonification) {
-      return '';
-    }
     const q = Number(qty) || 0;
     const b = Number(bonus) || 0;
     if (b <= 0 || q <= 0) {
@@ -543,11 +537,11 @@ export class PedidosService {
     return `${b} bonificados ${q} a pagar`;
   }
 
-  /** Valor del regalo (informativo). totalBase ya cobra solo Compra; no está restado del cobro. */
+  /**
+   * Valor del regalo (informativo). Se calcula si hay quBonified > 0,
+   * aunque productBonification esté en false (pedidos históricos).
+   */
   getOrderBonusDiscountTotal(): number {
-    if (!this.productBonification) {
-      return 0;
-    }
     let sum = 0;
     for (const prod of this.carrito || []) {
       for (const unit of prod.unitList || []) {

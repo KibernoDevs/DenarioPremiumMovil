@@ -443,7 +443,7 @@
                       }
                     </ion-col>
 
-                    @if(orderServ.productBonification && orderServ.hasAnyBonifiedQty()){
+                    @if(orderServ.hasAnyBonifiedQty()){
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">Subtotal bruto {{
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
@@ -574,10 +574,10 @@
                           {{formatNum(getUnitBaseTotal(item, unit))}}
                           {{orderServ.monedaSeleccionada.coCurrency}}
                         </div>
-                        @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                        @if((unit.quBonified || 0) > 0){
                         <div>{{ orderServ.formatBonusBreakdownLabel(unit.quAmount, unit.quBonified) }}</div>
                         }
-                        @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                        @if((unit.quBonified || 0) > 0){
                         <div>
                           <span class="titulosBold">Subtotal bruto:</span>
                           {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
@@ -602,11 +602,11 @@
                           <div>
                             <span class="titulosBold">{{unit.naUnit}}:</span>
                             {{ orderServ.getPhysicalQty(unit.quAmount, unit.quBonified) }}
-                            @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                            @if((unit.quBonified || 0) > 0){
                             <div>{{ orderServ.formatBonusBreakdownLabel(unit.quAmount, unit.quBonified) }}</div>
                             }
                           </div>
-                          @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                          @if((unit.quBonified || 0) > 0){
                           <div>
                             <span class="titulosBold">Subtotal bruto:</span>
                             {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}
@@ -831,11 +831,11 @@
                               @if(unit.quAmount > 0){
                               <div>
                                 {{unit.naUnit}}: {{ orderServ.getPhysicalQty(unit.quAmount, unit.quBonified) }}
-                                @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                                @if((unit.quBonified || 0) > 0){
                                 <div>{{ orderServ.formatBonusBreakdownLabel(unit.quAmount, unit.quBonified) }}</div>
                                 }
                               </div>
-                              @if(orderServ.productBonification && (unit.quBonified || 0) > 0){
+                              @if((unit.quBonified || 0) > 0){
                               <div>
                                 <span class="titulosBold">Subtotal bruto:</span>
                                 {{ formatNum(orderServ.getBonusPricingBreakdownForUnit(item, unit).bruto) }}

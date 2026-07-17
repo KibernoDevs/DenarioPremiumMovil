@@ -1654,7 +1654,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             `Subtotal bruto: ${fmtMoney(this.orderServ.totalBase + bonusDiscountTotal)} ${currency}`
           );
           summaryTotalsDetailLines.push(
-            `Descuento bonif.: -${fmtMoney(bonusDiscountTotal)} ${currency}`
+            `Descuento bonif.: ${fmtMoney(bonusDiscountTotal)} ${currency}`
           );
         }
         summaryTotalsDetailLines.push(

@@ -88,3 +88,6 @@ build
 # iOS native project (Capacitor/Xcode) - keep ignored
 /ios
 /ios/**
+
+# Local private tooling (Bruno collections, scratch files) — never commit
+.local/
