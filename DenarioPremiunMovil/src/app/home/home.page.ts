@@ -221,8 +221,10 @@ export class HomePage implements OnInit {
         }
 
         if (this.user.transportista) {
-          //Despachos, Clientes y Sincronizar
-          this.modulosTransportista = this.modulos.filter(m => m.id === 0 || m.id === 8 || m.id === 10);
+          //Despachos, Devoluciones, Clientes y Sincronizar
+          this.modulosTransportista = this.modulos.filter(m => m.id === 0 || m.id === 3 || m.id === 8 || m.id === 10);
+          const desiredOrder = [0, 3, 8, 10];
+          this.modulosTransportista.sort((a, b) => desiredOrder.indexOf(a.id) - desiredOrder.indexOf(b.id));
 
           this.imageServices.getServerPdfList().then(obs => {
             obs.subscribe({
