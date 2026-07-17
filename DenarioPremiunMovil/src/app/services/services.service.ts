@@ -152,7 +152,7 @@ export class ServicesService {
 
   insertPendingTransaction(database: SQLiteObject, pendingTransaction: PendingTransaction) {
     return database.executeSql(
-      'INSERT INTO pending_transactions(co_transaction, id_transaction, type) VALUES(?,?,?);',
+      'INSERT OR REPLACE INTO pending_transactions(co_transaction, id_transaction, type) VALUES(?,?,?);',
       [pendingTransaction.coTransaction, pendingTransaction.idTransaction, pendingTransaction.type]
     ).then(res => {
       return true;
@@ -162,7 +162,7 @@ export class ServicesService {
   }
 
   insertPendingTransactionBatch(database: SQLiteObject, pendingTransactions: PendingTransaction[]) {
-    var insert = 'INSERT INTO pending_transactions(co_transaction, id_transaction, type) VALUES(?,?,?);';
+    var insert = 'INSERT OR REPLACE INTO pending_transactions(co_transaction, id_transaction, type) VALUES(?,?,?);';
     var bat = []
     // console.log("insertando batch de transacciones")
     // console.log(pendingTransactions);

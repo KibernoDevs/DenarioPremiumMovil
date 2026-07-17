@@ -230,7 +230,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
 
           this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
             if (result) {
-              this.autoSend.ngOnInit();
+              void this.autoSend.runPendingQueue();
               this.returnLogic.returnChanged = false;
               this.onBackClicked();
             }

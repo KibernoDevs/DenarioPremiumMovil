@@ -63,7 +63,7 @@ export class CobrosComponent implements OnInit {
 
     this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
       if (result) {
-        this.autoSend.ngOnInit();
+        void this.autoSend.runPendingQueue();
         /*  this.clientLogic.clientNewPotentialClientComponent = false;
          this.clientLogic.clienteNuevoBlancoImg = true;
          this.clientLogic.clientContainerComponent = true; */

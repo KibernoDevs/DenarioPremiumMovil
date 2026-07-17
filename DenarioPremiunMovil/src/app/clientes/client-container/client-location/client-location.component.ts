@@ -294,7 +294,7 @@ export class ClientLocationComponent implements OnInit {
 
             this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
               if (result) {
-                this.autoSend.ngOnInit();
+                void this.autoSend.runPendingQueue();
                 this.clientLogic.showBackRoute('clientLocationComponent');
               }
               this.messageService.hideLoading();
