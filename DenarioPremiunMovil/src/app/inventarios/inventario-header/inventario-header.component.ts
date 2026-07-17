@@ -201,7 +201,7 @@ export class InventarioHeaderComponent implements OnInit {
 
               this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
                 if (result) {
-                  this.autoSend.ngOnInit();
+                  void this.autoSend.runPendingQueue();
                   /* this.router.navigate(['inventarios']); */
                   this.inventariosLogicService.showBackRoute('inventarios');
                   this.messageService.hideLoading();

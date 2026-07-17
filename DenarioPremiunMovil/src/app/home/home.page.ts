@@ -99,7 +99,7 @@ export class HomePage implements OnInit {
     this.esVendedor = !this.user.transportista && !this.user.cliente
       && !this.user.promotor && !this.user.soporte && !this.user.catalogo;
 
-    this.autoSend.ngOnInit();
+    void this.autoSend.runPendingQueue();
 
     if (localStorage.getItem("connected") === "false") {
       this.interval = setTimeout(() => {

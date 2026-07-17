@@ -979,7 +979,7 @@ export class VisitaComponent implements OnInit {
       this.servicesServ.insertPendingTransactionBatch(this.syncServ.getDatabase(), transactions).then(() => {
 
         //finalizamos y regresamos a la pagina de visitas
-        this.autoSend.ngOnInit();
+        void this.autoSend.runPendingQueue();
         this.message.hideLoading();
         this.router.navigate(['visitas']);
       });
