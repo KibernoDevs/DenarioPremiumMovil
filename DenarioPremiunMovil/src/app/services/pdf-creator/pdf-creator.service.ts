@@ -522,7 +522,23 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
       const metaGap = 14;
       const metaColumns = 2;
       const metaWidth = (usableWidth - metaGap) / metaColumns;
-      const labelWidth = 92;
+      const labelPadLeft = 10;
+      const labelValueGap = 8;
+      const valuePadRight = 10;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      const measuredMaxLabel = meta.reduce((maxWidth, item) => {
+        const width = doc.getTextWidth(this.escapePdfText(item.label));
+        return Math.max(maxWidth, width);
+      }, 50);
+      // Ancho de columna de label según el texto más largo (evita solapar "Lista de Precio:" etc.).
+      const labelWidth = Math.min(
+        measuredMaxLabel + labelPadLeft + labelValueGap,
+        metaWidth * 0.5,
+      );
+      const valueMaxWidth = Math.max(40, metaWidth - labelWidth - valuePadRight);
+
       const chunkedMeta: Array<Array<{ label: string; value: string } | undefined>> = [];
 
       for (let i = 0; i < meta.length; i += metaColumns) {
@@ -537,7 +553,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(12);
-          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), metaWidth - labelWidth - 22);
+          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), valueMaxWidth);
           return Math.max(28, valueLines.length * lineHeight + rowPaddingY * 2);
         });
 
@@ -563,11 +579,11 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
           doc.setTextColor(47, 58, 47);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
-          doc.text(this.escapePdfText(item.label), x + 10, cursorY + 17);
+          doc.text(this.escapePdfText(item.label), x + labelPadLeft, cursorY + 17);
 
           doc.setTextColor(32, 32, 32);
           doc.setFont('helvetica', 'normal');
-          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), metaWidth - labelWidth - 22);
+          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), valueMaxWidth);
           doc.text(valueLines, x + labelWidth, cursorY + 17);
         });
 
@@ -813,7 +829,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
     const metaRows = (data.meta ?? [])
       .map(m => `
         <div style="display:table-row;">
-          <div style="display:table-cell; width:140px; padding:8px 12px; font-weight:700; color:#2f3a2f; vertical-align:top; border-bottom:1px solid #dfe7da;">${this.escapeHtml(m.label)}</div>
+          <div style="display:table-cell; width:170px; padding:8px 12px; font-weight:700; color:#2f3a2f; vertical-align:top; border-bottom:1px solid #dfe7da; white-space:nowrap;">${this.escapeHtml(m.label)}</div>
           <div style="display:table-cell; padding:8px 12px; color:#202020; vertical-align:top; border-bottom:1px solid #dfe7da;">${this.escapeHtml(m.value)}</div>
         </div>
       `)
