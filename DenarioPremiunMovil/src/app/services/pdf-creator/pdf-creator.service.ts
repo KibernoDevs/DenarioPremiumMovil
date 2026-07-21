@@ -65,240 +65,301 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
   }
 
   /**
-   * Generate jsPDF from an element or html string, ensuring the whole content
-   * (not only visible viewport) is captured. Returns a fully rendered jsPDF.
+   * Generate a PDF from a DOM element or HTML string using html2canvas + jsPDF.
+   * Tries to preserve layout/styles by cloning and inlining computed styles.
    *
    * Usage: pass the element reference (preferred) or HTML string.
    */
-// place inside PdfCreatorService in pdf-creator.service.ts
-// ...existing class code...
-async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
-  // renderScale (pixel density) used by html2canvas:
-  let renderScale = opts?.scale ?? 3;
-
-  const doc = new jsPDF({
-    format: 'letter',
-    unit: 'pt',
-    orientation: opts?.orientation ?? 'landscape'
-  });
-
-  // compute page width in CSS px before measuring any HTML so string-based sources
-  // can be laid out at the final export width instead of their intrinsic narrow width.
-  const pageWidthPt = doc.internal.pageSize.getWidth();
-  const ptToPx = 96 / 72;
-  const pageWidthPx = Math.round(pageWidthPt * ptToPx);
-  const layoutScale = typeof opts?.layoutScale === 'number' ? opts.layoutScale : 1;
-  const targetCloneWidthPx = Math.round(pageWidthPx * layoutScale);
-
-  // prepare original element (wrap string if needed)
-  let originalElement: HTMLElement;
-  let removeOriginalWrapper = false;
-  if (typeof source === 'string') {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = source;
-    wrapper.style.width = `${targetCloneWidthPx}px`;
-    wrapper.style.maxWidth = `${targetCloneWidthPx}px`;
-    wrapper.style.boxSizing = 'border-box';
-    wrapper.style.position = 'absolute';
-    wrapper.style.left = '-20000px';
-    wrapper.style.top = '0';
-    wrapper.style.visibility = 'hidden';
-    wrapper.style.pointerEvents = 'none';
-    document.body.appendChild(wrapper);
-    originalElement = wrapper;
-    removeOriginalWrapper = true;
-  } else {
-    originalElement = source as HTMLElement;
+  async generateWithJsPDF(
+    source: HTMLElement | string,
+    opts?: { orientation?: 'portrait' | 'landscape'; scale?: number; layoutScale?: number }
+  ): Promise<jsPDF> {
+    const doc = new jsPDF({
+      format: 'letter',
+      unit: 'pt',
+      orientation: opts?.orientation ?? 'landscape'
+    });
+    return this.appendHtmlChunkToPdf(doc, source, { ...opts, addPageBefore: false });
   }
 
-  // ensure layout metrics reflect the final width before copying computed styles.
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+  /**
+   * Render an HTML/DOM chunk and append its pages to an existing jsPDF document.
+   * Used for memory-safe multi-batch exports (e.g. product catalog).
+   */
+  async appendHtmlChunkToPdf(
+    doc: jsPDF,
+    source: HTMLElement | string,
+    opts?: {
+      orientation?: 'portrait' | 'landscape';
+      scale?: number;
+      layoutScale?: number;
+      addPageBefore?: boolean;
+    }
+  ): Promise<jsPDF> {
+    let renderScale = opts?.scale ?? 3;
+    const addPageBefore = opts?.addPageBefore === true;
 
-  // clone & inline styles
-  const cloned = originalElement.cloneNode(true) as HTMLElement;
-  this.inlineAllComputedStyles(originalElement, cloned);
+    const pageWidthPt = doc.internal.pageSize.getWidth();
+    const ptToPx = 96 / 72;
+    const pageWidthPx = Math.round(pageWidthPt * ptToPx);
+    const layoutScale = typeof opts?.layoutScale === 'number' ? opts.layoutScale : 1;
+    const targetCloneWidthPx = Math.round(pageWidthPx * layoutScale);
 
-  // set cloned layout width (this affects how table columns wrap/size)
-  cloned.style.width = `${targetCloneWidthPx}px`;
-  cloned.style.minWidth = `${targetCloneWidthPx}px`;
-  cloned.style.maxWidth = `${targetCloneWidthPx}px`;
-  cloned.style.maxHeight = 'none';
-  cloned.style.overflow = 'visible';
-  cloned.style.boxSizing = 'border-box';
+    const prepared = await this.prepareHtmlCloneForCapture(source, targetCloneWidthPx);
+    const { cloned, cleanup } = prepared;
 
-  // Add a class to the clone so PDF-only CSS can be applied
-  cloned.classList.add('pdf-export-scale');
+    try {
+      const headerMetrics = this.measurePdfHeaderMetrics(cloned);
+      const canvas = await this.captureHtmlCloneToCanvas(cloned, renderScale);
+      renderScale = canvas.renderScale;
 
-  // place the clone in the document for rendering
-  cloned.style.position = 'absolute';
-  cloned.style.left = '0';
-  cloned.style.top = '0';
-  cloned.style.zIndex = '99999';
-  cloned.style.visibility = 'visible';
-  cloned.style.pointerEvents = 'none';
+      cleanup();
 
-  document.body.appendChild(cloned);
+      if (addPageBefore) {
+        doc.addPage();
+      }
 
-  // wait for fonts to be ready if possible
-  if ((document as any).fonts && (document as any).fonts.ready) {
-    try { await (document as any).fonts.ready; } catch (e) { /* ignore */ }
+      this.writeCanvasPagesToPdf(doc, canvas.element, {
+        renderScale,
+        pageWidthPt,
+        headerCssOffset: headerMetrics.offset,
+        headerCssHeight: headerMetrics.height
+      });
+
+      canvas.element.width = 0;
+      canvas.element.height = 0;
+      return doc;
+    } catch (error) {
+      cleanup();
+      throw error;
+    }
   }
 
-  // ensure a layout pass has occured (use RAF rather than arbitrary timeout)
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+  private async prepareHtmlCloneForCapture(
+    source: HTMLElement | string,
+    targetCloneWidthPx: number
+  ): Promise<{ cloned: HTMLElement; cleanup: () => void }> {
+    let originalElement: HTMLElement;
+    let removeOriginalWrapper = false;
 
-  // Now that the clone is in the DOM and laid out, find header element and measure its CSS height & offset
-  const headerEl = cloned.querySelector('thead') ?? cloned.querySelector('.cabecera');
-  let headerCssHeight = 0;
-  let headerCssOffset = 0;
-  if (headerEl && headerEl instanceof HTMLElement) {
-    headerCssHeight = headerEl.scrollHeight || headerEl.offsetHeight || 0;
+    if (typeof source === 'string') {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = source;
+      wrapper.style.width = `${targetCloneWidthPx}px`;
+      wrapper.style.maxWidth = `${targetCloneWidthPx}px`;
+      wrapper.style.boxSizing = 'border-box';
+      wrapper.style.position = 'absolute';
+      wrapper.style.left = '-20000px';
+      wrapper.style.top = '0';
+      wrapper.style.visibility = 'hidden';
+      wrapper.style.pointerEvents = 'none';
+      document.body.appendChild(wrapper);
+      originalElement = wrapper;
+      removeOriginalWrapper = true;
+    } else {
+      originalElement = source as HTMLElement;
+    }
+
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+    const cloned = originalElement.cloneNode(true) as HTMLElement;
+    this.inlineAllComputedStyles(originalElement, cloned);
+
+    cloned.style.width = `${targetCloneWidthPx}px`;
+    cloned.style.minWidth = `${targetCloneWidthPx}px`;
+    cloned.style.maxWidth = `${targetCloneWidthPx}px`;
+    cloned.style.maxHeight = 'none';
+    cloned.style.overflow = 'visible';
+    cloned.style.boxSizing = 'border-box';
+    cloned.classList.add('pdf-export-scale');
+    cloned.style.position = 'absolute';
+    cloned.style.left = '0';
+    cloned.style.top = '0';
+    cloned.style.zIndex = '99999';
+    cloned.style.visibility = 'visible';
+    cloned.style.pointerEvents = 'none';
+    document.body.appendChild(cloned);
+
+    if ((document as any).fonts?.ready) {
+      try {
+        await (document as any).fonts.ready;
+      } catch {
+        /* ignore */
+      }
+    }
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+    const cleanup = (): void => {
+      cloned.remove();
+      if (removeOriginalWrapper && originalElement.parentElement) {
+        originalElement.remove();
+      }
+    };
+
+    return { cloned, cleanup };
+  }
+
+  private measurePdfHeaderMetrics(cloned: HTMLElement): { height: number; offset: number } {
+    const headerEl = cloned.querySelector('thead') ?? cloned.querySelector('.cabecera');
+    if (!(headerEl instanceof HTMLElement)) {
+      return { height: 0, offset: 0 };
+    }
+
+    const height = headerEl.scrollHeight || headerEl.offsetHeight || 0;
+    let offset = 0;
     try {
       const clonedRect = cloned.getBoundingClientRect();
       const headerRect = headerEl.getBoundingClientRect();
-      headerCssOffset = headerRect.top - clonedRect.top;
-      if (!headerCssOffset) {
-        headerCssOffset = headerEl.offsetTop || 0;
+      offset = headerRect.top - clonedRect.top;
+      if (!offset) {
+        offset = headerEl.offsetTop || 0;
       }
-    } catch (e) {
-      headerCssOffset = headerEl.offsetTop || 0;
+    } catch {
+      offset = headerEl.offsetTop || 0;
     }
+    return { height, offset };
   }
 
-  // fetch html2canvas (use existing global or dynamic import)
-  // @ts-ignore
-  const html2canvasFn = (window as any).html2canvas ?? (await import('html2canvas')).default;
+  private async captureHtmlCloneToCanvas(
+    cloned: HTMLElement,
+    initialScale: number
+  ): Promise<{ element: HTMLCanvasElement; renderScale: number }> {
+    // @ts-ignore
+    const html2canvasFn = (window as any).html2canvas ?? (await import('html2canvas')).default;
+    const MAX_CANVAS_DIM = 32767;
+    let attemptScale = initialScale;
+    let canvas: HTMLCanvasElement | null = null;
+    let renderScale = initialScale;
 
-  // helper to try rendering canvas with scale and check max dimension limits
-  const MAX_CANVAS_DIM = 32767; // conservative cross-browser safe limit
-  let canvas: HTMLCanvasElement | null = null;
-  let attemptScale = renderScale;
-
-  while (true) {
-    // compute desired width/height for html2canvas based on clone's scrollWidth/scrollHeight
-    const targetWidthPx = cloned.scrollWidth;
-    const targetHeightPx = cloned.scrollHeight;
-
-    // html2canvas options to ensure full element is captured
-    canvas = await html2canvasFn(cloned, {
-      useCORS: true,
-      allowTaint: false,
-      scale: attemptScale,
-      logging: false,
-      width: targetWidthPx,
-      height: targetHeightPx,
-      windowWidth: targetWidthPx,
-      windowHeight: targetHeightPx
-    });
-    if (!canvas) {
-      throw new Error('html2canvas failed to produce a canvas');
-    }
-    // check if produced canvas fits within safe limits
-    if (canvas.width <= MAX_CANVAS_DIM && canvas.height <= MAX_CANVAS_DIM) {
-      // success
-      renderScale = attemptScale; // record actual renderScale used
-      break;
-    }
-
-    // if too large, reduce scale and retry
-    if (attemptScale <= 1) {
-      // Can't reduce further; accept this canvas (might be clipped by browser)
-      break;
-    }
-    attemptScale = Math.max(1, Math.floor(attemptScale / 2));
-    // free memory before next attempt
-    canvas.remove();
-  }
-
-  // compute header metrics in canvas pixels (if header exists)
-  const headerCanvasOffsetPx = Math.round(headerCssOffset * renderScale);
-  const headerCanvasHeightPx = Math.round(headerCssHeight * renderScale);
-
-  // cleanup cloned element and original wrapper (if created)
-  cloned.remove();
-  if (removeOriginalWrapper && originalElement.parentElement) {
-    originalElement.remove();
-  }
-
-  // Convert canvas to image and insert into PDF, splitting into pages as needed.
-  const imgData = canvas.toDataURL('image/png');
-
-  // Compute heights in PDF points:
-  const pxToPt = 72 / 96;
-  const cssHeightPx = canvas.height / renderScale;
-  const imgHeightPtTotal = cssHeightPx * pxToPt;
-  const imgWidthPt = pageWidthPt;
-
-  const pageHeightPt = doc.internal.pageSize.getHeight();
-
-  // If content fits on one page, just add it and return
-  if (imgHeightPtTotal <= pageHeightPt) {
-    doc.addImage(imgData, 'PNG', 0, 0, imgWidthPt, imgHeightPtTotal);
-    return doc;
-  }
-
-  // Otherwise split into pages:
-  const pageHeightCssPx = pageHeightPt * ptToPx; // page height in CSS px
-  const totalCssHeightPx = cssHeightPx;
-  let yOffsetCss = 0;
-  let pageIndex = 0;
-
-  // tmp canvas used for slicing
-  const tmpCanvas = document.createElement('canvas');
-  const tmpCtx = tmpCanvas.getContext('2d')!;
-
-  tmpCanvas.width = canvas.width; // pixel width
-  tmpCanvas.height = Math.min(Math.round(pageHeightCssPx * renderScale), canvas.height);
-
-  while (yOffsetCss < totalCssHeightPx) {
-    const yOffsetPx = Math.round(yOffsetCss * renderScale);
-    const sliceHeightPx = Math.min(Math.round(pageHeightCssPx * renderScale), canvas.height - yOffsetPx);
-
-    // prepare the slice for this page: draw slice from the full canvas
-    tmpCtx.clearRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-    tmpCanvas.height = sliceHeightPx;
-    tmpCtx.drawImage(canvas, 0, yOffsetPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
-
-    // If this is the first page, it already includes the header at the top (yOffsetCss==0)
-    if (pageIndex === 0) {
-      const sliceData = tmpCanvas.toDataURL('image/png');
-      const sliceCssHeightPx = sliceHeightPx / renderScale;
-      const sliceHeightPt = sliceCssHeightPx * pxToPt;
-      doc.addImage(sliceData, 'PNG', 0, 0, imgWidthPt, sliceHeightPt);
-    } else {
-      // Compose header + slice: create a canvas tall enough for header + slice
-      const compositeCanvas = document.createElement('canvas');
-      const compCtx = compositeCanvas.getContext('2d')!;
-
-      // composite must include header + slice
-      const compositeHeightPx = headerCanvasHeightPx + sliceHeightPx;
-      compositeCanvas.width = canvas.width;
-      compositeCanvas.height = compositeHeightPx;
-
-      // draw header portion from the full canvas using correct offset
-      if (headerCanvasHeightPx > 0) {
-        // draw header from its canvas offset:
-        compCtx.drawImage(canvas, 0, headerCanvasOffsetPx, canvas.width, headerCanvasHeightPx, 0, 0, canvas.width, headerCanvasHeightPx);
+    while (true) {
+      const targetWidthPx = cloned.scrollWidth;
+      const targetHeightPx = cloned.scrollHeight;
+      canvas = await html2canvasFn(cloned, {
+        useCORS: true,
+        allowTaint: false,
+        scale: attemptScale,
+        logging: false,
+        width: targetWidthPx,
+        height: targetHeightPx,
+        windowWidth: targetWidthPx,
+        windowHeight: targetHeightPx
+      });
+      if (!canvas) {
+        throw new Error('html2canvas failed to produce a canvas');
       }
-      // draw the current slice below the header
-      compCtx.drawImage(tmpCanvas, 0, 0, canvas.width, sliceHeightPx, 0, headerCanvasHeightPx, canvas.width, sliceHeightPx);
-
-      const compositeData = compositeCanvas.toDataURL('image/png');
-
-      // compute composite height in PDF points:
-      const compositeCssHeightPx = (headerCanvasHeightPx + sliceHeightPx) / renderScale;
-      const compositeHeightPt = compositeCssHeightPx * pxToPt;
-
-      doc.addPage();
-      doc.addImage(compositeData, 'PNG', 0, 0, imgWidthPt, compositeHeightPt);
+      if (canvas.width <= MAX_CANVAS_DIM && canvas.height <= MAX_CANVAS_DIM) {
+        renderScale = attemptScale;
+        break;
+      }
+      if (attemptScale <= 1) {
+        break;
+      }
+      attemptScale = Math.max(1, Math.floor(attemptScale / 2));
+      canvas.width = 0;
+      canvas.height = 0;
     }
 
-    yOffsetCss += pageHeightCssPx;
-    pageIndex++;
+    return { element: canvas!, renderScale };
   }
 
-  return doc;
-}
+  private writeCanvasPagesToPdf(
+    doc: jsPDF,
+    canvas: HTMLCanvasElement,
+    params: {
+      renderScale: number;
+      pageWidthPt: number;
+      headerCssOffset: number;
+      headerCssHeight: number;
+    }
+  ): void {
+    const { renderScale, pageWidthPt, headerCssOffset, headerCssHeight } = params;
+    const ptToPx = 96 / 72;
+    const pxToPt = 72 / 96;
+    const imgData = canvas.toDataURL('image/png');
+    const cssHeightPx = canvas.height / renderScale;
+    const imgHeightPtTotal = cssHeightPx * pxToPt;
+    const imgWidthPt = pageWidthPt;
+    const pageHeightPt = doc.internal.pageSize.getHeight();
+    const headerCanvasOffsetPx = Math.round(headerCssOffset * renderScale);
+    const headerCanvasHeightPx = Math.round(headerCssHeight * renderScale);
+
+    if (imgHeightPtTotal <= pageHeightPt) {
+      doc.addImage(imgData, 'PNG', 0, 0, imgWidthPt, imgHeightPtTotal);
+      return;
+    }
+
+    const pageHeightCssPx = pageHeightPt * ptToPx;
+    const totalCssHeightPx = cssHeightPx;
+    let yOffsetCss = 0;
+    let pageIndex = 0;
+
+    const tmpCanvas = document.createElement('canvas');
+    const tmpCtx = tmpCanvas.getContext('2d')!;
+    tmpCanvas.width = canvas.width;
+    tmpCanvas.height = Math.min(Math.round(pageHeightCssPx * renderScale), canvas.height);
+
+    while (yOffsetCss < totalCssHeightPx) {
+      const yOffsetPx = Math.round(yOffsetCss * renderScale);
+      const sliceHeightPx = Math.min(Math.round(pageHeightCssPx * renderScale), canvas.height - yOffsetPx);
+
+      tmpCtx.clearRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+      tmpCanvas.height = sliceHeightPx;
+      tmpCtx.drawImage(canvas, 0, yOffsetPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
+
+      if (pageIndex === 0) {
+        const sliceData = tmpCanvas.toDataURL('image/png');
+        const sliceCssHeightPx = sliceHeightPx / renderScale;
+        const sliceHeightPt = sliceCssHeightPx * pxToPt;
+        doc.addImage(sliceData, 'PNG', 0, 0, imgWidthPt, sliceHeightPt);
+      } else {
+        const compositeCanvas = document.createElement('canvas');
+        const compCtx = compositeCanvas.getContext('2d')!;
+        const compositeHeightPx = headerCanvasHeightPx + sliceHeightPx;
+        compositeCanvas.width = canvas.width;
+        compositeCanvas.height = compositeHeightPx;
+
+        if (headerCanvasHeightPx > 0) {
+          compCtx.drawImage(
+            canvas,
+            0,
+            headerCanvasOffsetPx,
+            canvas.width,
+            headerCanvasHeightPx,
+            0,
+            0,
+            canvas.width,
+            headerCanvasHeightPx
+          );
+        }
+        compCtx.drawImage(
+          tmpCanvas,
+          0,
+          0,
+          canvas.width,
+          sliceHeightPx,
+          0,
+          headerCanvasHeightPx,
+          canvas.width,
+          sliceHeightPx
+        );
+
+        const compositeData = compositeCanvas.toDataURL('image/png');
+        const compositeCssHeightPx = (headerCanvasHeightPx + sliceHeightPx) / renderScale;
+        const compositeHeightPt = compositeCssHeightPx * pxToPt;
+        doc.addPage();
+        doc.addImage(compositeData, 'PNG', 0, 0, imgWidthPt, compositeHeightPt);
+
+        compositeCanvas.width = 0;
+        compositeCanvas.height = 0;
+      }
+
+      yOffsetCss += pageHeightCssPx;
+      pageIndex++;
+    }
+
+    tmpCanvas.width = 0;
+    tmpCanvas.height = 0;
+  }
 
   async generateSummaryPdfDoc(data: {
     title: string;
@@ -461,7 +522,23 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       const metaGap = 14;
       const metaColumns = 2;
       const metaWidth = (usableWidth - metaGap) / metaColumns;
-      const labelWidth = 92;
+      const labelPadLeft = 10;
+      const labelValueGap = 8;
+      const valuePadRight = 10;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      const measuredMaxLabel = meta.reduce((maxWidth, item) => {
+        const width = doc.getTextWidth(this.escapePdfText(item.label));
+        return Math.max(maxWidth, width);
+      }, 50);
+      // Ancho de columna de label según el texto más largo (evita solapar "Lista de Precio:" etc.).
+      const labelWidth = Math.min(
+        measuredMaxLabel + labelPadLeft + labelValueGap,
+        metaWidth * 0.5,
+      );
+      const valueMaxWidth = Math.max(40, metaWidth - labelWidth - valuePadRight);
+
       const chunkedMeta: Array<Array<{ label: string; value: string } | undefined>> = [];
 
       for (let i = 0; i < meta.length; i += metaColumns) {
@@ -476,7 +553,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(12);
-          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), metaWidth - labelWidth - 22);
+          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), valueMaxWidth);
           return Math.max(28, valueLines.length * lineHeight + rowPaddingY * 2);
         });
 
@@ -502,11 +579,11 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
           doc.setTextColor(47, 58, 47);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
-          doc.text(this.escapePdfText(item.label), x + 10, cursorY + 17);
+          doc.text(this.escapePdfText(item.label), x + labelPadLeft, cursorY + 17);
 
           doc.setTextColor(32, 32, 32);
           doc.setFont('helvetica', 'normal');
-          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), metaWidth - labelWidth - 22);
+          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), valueMaxWidth);
           doc.text(valueLines, x + labelWidth, cursorY + 17);
         });
 
@@ -752,7 +829,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     const metaRows = (data.meta ?? [])
       .map(m => `
         <div style="display:table-row;">
-          <div style="display:table-cell; width:140px; padding:8px 12px; font-weight:700; color:#2f3a2f; vertical-align:top; border-bottom:1px solid #dfe7da;">${this.escapeHtml(m.label)}</div>
+          <div style="display:table-cell; width:170px; padding:8px 12px; font-weight:700; color:#2f3a2f; vertical-align:top; border-bottom:1px solid #dfe7da; white-space:nowrap;">${this.escapeHtml(m.label)}</div>
           <div style="display:table-cell; padding:8px 12px; color:#202020; vertical-align:top; border-bottom:1px solid #dfe7da;">${this.escapeHtml(m.value)}</div>
         </div>
       `)

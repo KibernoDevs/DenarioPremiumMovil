@@ -594,12 +594,19 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public openSelectShareModal(open: boolean): void {
+    if (open && this.clientLogic.esTransportista) {
+      return;
+    }
     this.clientSelectShareModalOpen = !!open;
   }
 
   public openShareModal(open: boolean): void {
     if (!open) {
       this.clientShareModalOpen = false;
+      return;
+    }
+
+    if (this.clientLogic.esTransportista) {
       return;
     }
 

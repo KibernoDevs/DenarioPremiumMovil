@@ -383,9 +383,28 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     prod.quStock = this.computeRemainingStockBase(prod, quantity);
   }
 
+  /** Cantidad física comprometida = compra + regaladas de la unidad seleccionada. */
+  private getCommittedPhysicalQty(prod: OrderUtil, quantity?: number): number {
+    const qty = Number(quantity ?? prod.quAmount ?? 0);
+    const unit = prod.unitList?.find(u => u.idUnit === prod.idUnit);
+    const bonus = Number(unit?.quBonified ?? 0);
+    return qty + bonus;
+  }
+
   private computeRemainingStockBase(prod: OrderUtil, quantity?: number): number {
-    const amount = Number(quantity ?? prod.quAmount ?? 0);
-    return Math.max(0, prod.quStockAux - amount);
+    const physical = this.getCommittedPhysicalQty(prod, quantity);
+    return Math.max(0, prod.quStockAux - physical);
+  }
+
+  /** REQ-01 — label carrito: "30+ 6 bonificadas". */
+  formatCartBonusQtyLabel(prod: OrderUtil): string {
+    const breakdown = this.orderServ.getBonusPricingBreakdown(prod);
+    const qty = Number(breakdown.qty) || 0;
+    const bonus = Number(breakdown.bonus) || 0;
+    if (bonus <= 0 || qty <= 0) {
+      return '';
+    }
+    return `${qty}+ ${bonus} bonificadas`;
   }
 
   private formatStockByUnit(prod: OrderUtil, stockBaseUnits: number): string {
@@ -431,19 +450,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       }
       unit.quAmount = quantity;
       this.applyBonusAfterQtyChange(prod);
+      this.refreshRemainingStock(prod);
       this.orderServ.alCarrito(prod);
-      this.cd.detectChanges();
-      return;
-    }
-
-    this.refreshRemainingStock(prod, quantity);
-
-    if (this.shouldEnforceStockLimit() && quantity > prod.quStockAux) {
-      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
-      prod.quAmount = 0;
-      unit.quAmount = 0;
-      this.applyBonusAfterQtyChange(prod);
-      this.refreshRemainingStock(prod, 0);
       this.cd.detectChanges();
       return;
     }
@@ -460,6 +468,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     unit.quAmount = quantity;
     this.applyBonusAfterQtyChange(prod);
+
+    // REQ-01: tope de inventario = compra + regaladas
+    if (this.shouldEnforceStockLimit() && this.getCommittedPhysicalQty(prod) > prod.quStockAux) {
+      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
+      prod.quAmount = 0;
+      unit.quAmount = 0;
+      this.applyBonusAfterQtyChange(prod);
+      this.refreshRemainingStock(prod, 0);
+      this.cd.detectChanges();
+      return;
+    }
+
+    this.refreshRemainingStock(prod);
     this.orderServ.alCarrito(prod);
     this.cd.detectChanges();
   }
@@ -468,7 +489,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onBonusToggle(prod: OrderUtil, event?: Event) {
     const checked = !!(event as CustomEvent)?.detail?.checked;
     this.orderServ.setBonusActiveForSelectedUnit(prod, checked);
+
+    if (
+      checked &&
+      this.shouldEnforceStockLimit() &&
+      this.getCommittedPhysicalQty(prod) > prod.quStockAux
+    ) {
+      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
+      this.orderServ.setBonusActiveForSelectedUnit(prod, false);
+    }
+
+    this.refreshRemainingStock(prod);
     this.orderServ.productSummary();
+    this.orderServ.alCarrito(prod);
     this.cd.detectChanges();
   }
 
@@ -489,22 +522,23 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     if (this.allowsOrderingWithoutStock() && this.hasZeroWarehouseStock(prod)) {
       unit.quAmount = quantity;
-      this.orderServ.applyBonusForSelectedUnit(prod, false); // clamp silencioso en ionInput
+      this.orderServ.applyBonusForSelectedUnit(prod, false);
+      this.refreshRemainingStock(prod);
       this.cd.detectChanges();
       return;
     }
 
-    this.refreshRemainingStock(prod, quantity);
+    unit.quAmount = quantity;
+    this.orderServ.applyBonusForSelectedUnit(prod, false);
 
-    if (this.shouldEnforceStockLimit() && quantity > prod.quStockAux) {
+    if (this.shouldEnforceStockLimit() && this.getCommittedPhysicalQty(prod) > prod.quStockAux) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
       unit.quAmount = 0;
       this.orderServ.applyBonusForSelectedUnit(prod, false);
       this.refreshRemainingStock(prod, 0);
     } else {
-      unit.quAmount = quantity;
-      this.orderServ.applyBonusForSelectedUnit(prod, false);
+      this.refreshRemainingStock(prod);
     }
     this.cd.detectChanges();
   }
