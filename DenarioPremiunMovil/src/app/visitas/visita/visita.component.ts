@@ -819,7 +819,9 @@ export class VisitaComponent implements OnInit {
     var idVisit = null;
     var stVisit = VISIT_STATUS_SAVED;
     if (willSend) {
-      stVisit = VISIT_STATUS_TO_SEND;
+      stVisit = this.visitServ.visit.isVisited
+        ? VISIT_STATUS_TO_SEND
+        : VISIT_STATUS_NOT_VISITED;
     }
     var coVisit = this.dateServ.generateCO(0);
     if (this.visitServ.editVisit) {

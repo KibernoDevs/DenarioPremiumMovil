@@ -16,7 +16,7 @@ import { InventariosLogicService } from '../inventarios/inventarios-logic.servic
 import { PotentialClientDatabaseServicesService } from '../clientes/potentialClient/potential-client-database-services.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { VISIT_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, VISIT_STATUS_NOT_VISITED } from 'src/app/utils/appConstants';
 
 describe('AutoSendService', () => {
   let service: AutoSendService;
@@ -222,5 +222,49 @@ describe('AutoSendService', () => {
     ]);
 
     expect(callCount).toBe(1);
+  });
+
+  it('updateTransaction visit with is_visited false persists NOT_VISITED', async () => {
+    const coVisit = 'VIS-REAG-001';
+    executeSqlSpy.and.callFake((sql: string) => {
+      if (typeof sql === 'string' && sql.includes('SELECT is_visited')) {
+        return Promise.resolve({
+          rows: {
+            length: 1,
+            item: () => ({ isVisited: false }),
+          },
+        });
+      }
+      return Promise.resolve({ rows: { length: 0, item: () => null } });
+    });
+
+    await service.updateTransaction(coVisit, 101, 'visit');
+
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?',
+      [101, VISIT_STATUS_NOT_VISITED, coVisit],
+    );
+  });
+
+  it('updateTransaction visit with is_visited true and is_reassigned true persists VISITED', async () => {
+    const coVisit = 'VIS-REAG-002';
+    executeSqlSpy.and.callFake((sql: string) => {
+      if (typeof sql === 'string' && sql.includes('SELECT is_visited')) {
+        return Promise.resolve({
+          rows: {
+            length: 1,
+            item: () => ({ isVisited: true, isReassigned: true }),
+          },
+        });
+      }
+      return Promise.resolve({ rows: { length: 0, item: () => null } });
+    });
+
+    await service.updateTransaction(coVisit, 202, 'visit');
+
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?',
+      [202, VISIT_STATUS_VISITED, coVisit],
+    );
   });
 });

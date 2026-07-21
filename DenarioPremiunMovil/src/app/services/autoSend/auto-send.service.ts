@@ -12,7 +12,7 @@ import { ServicesService } from '../services.service';
 import { MessageService } from '../messageService/message.service';
 import { Response } from 'src/app/modelos/response';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, DEPOSITO_STATUS_SENT } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, VISIT_STATUS_NOT_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, DEPOSITO_STATUS_SENT } from 'src/app/utils/appConstants'
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { UserAddresClients } from 'src/app/modelos/tables/userAddresClients';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';
@@ -926,9 +926,17 @@ export class AutoSendService implements OnInit {
 
       case 'visit': {
         await db.executeSql('UPDATE incidences SET id_visit = ? WHERE co_visit = ?', [idTransaction, coTransaction]);
+        const visitRow = await db.executeSql(
+          'SELECT is_visited AS isVisited FROM visits WHERE co_visit = ?',
+          [coTransaction],
+        );
+        const isVisited = visitRow.rows.length > 0
+          ? this.parseIsVisitedFlag(visitRow.rows.item(0).isVisited)
+          : true;
+        const stVisit = isVisited ? VISIT_STATUS_VISITED : VISIT_STATUS_NOT_VISITED;
         await db.executeSql(
           'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?',
-          [idTransaction, VISIT_STATUS_VISITED, coTransaction],
+          [idTransaction, stVisit, coTransaction],
         );
         console.log('UPDATE EXITOSO visit', coTransaction);
         await this.adjuntoService.sendPhotos(db, idTransaction, 'visitas', coTransaction);
@@ -1116,5 +1124,9 @@ export class AutoSendService implements OnInit {
 
     }
       */
+
+  private parseIsVisitedFlag(value: unknown): boolean {
+    return value === true || value === 1 || value === '1' || value === 'true';
+  }
 
 }
