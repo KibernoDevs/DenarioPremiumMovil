@@ -2288,6 +2288,8 @@ export class PedidosService {
       "nuDetails": 0,
       "nuAmountTotalProductDiscount": 0,
       "nuAmountTotalProductDiscountConversion": 0,
+      "nuAmountGlobalDiscount": 0,
+      "nuAmountGlobalDiscountConversion": 0,
       "hasAttachments": false,
       "nuAttachments": 0,
       "idDistributionChannel": null,

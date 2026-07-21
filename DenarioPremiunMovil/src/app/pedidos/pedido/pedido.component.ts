@@ -815,6 +815,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       nuDetails: orderDetails.length,
       nuAmountTotalProductDiscount: this.orderServ.totalDctoXProducto,
       nuAmountTotalProductDiscountConversion: this.orderServ.totalDctoXProductoConv,
+      nuAmountGlobalDiscount: this.orderServ.totalGlobalDc,
+      nuAmountGlobalDiscountConversion: this.currencyServ.multimoneda
+        ? this.orderServ.totalGlobalDcConv
+        : 0,
       hasAttachments: this.adjuntoService.hasItems(),
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
@@ -1870,6 +1874,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       nuDetails: 0,
       nuAmountTotalProductDiscount: 0,
       nuAmountTotalProductDiscountConversion: 0,
+      nuAmountGlobalDiscount: 0,
+      nuAmountGlobalDiscountConversion: 0,
       hasAttachments: false,
       nuAttachments: 0,
       idDistributionChannel: null,

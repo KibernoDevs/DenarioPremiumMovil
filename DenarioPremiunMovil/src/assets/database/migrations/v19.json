@@ -1,0 +1,10 @@
+[
+  {
+    "sql": "ALTER TABLE orders ADD COLUMN nu_amount_global_discount NUMERIC(29,4);",
+    "description": "Monto descuento global del pedido."
+  },
+  {
+    "sql": "ALTER TABLE orders ADD COLUMN nu_amount_global_discount_conversion NUMERIC(29,4);",
+    "description": "Monto descuento global convertido."
+  }
+]
