@@ -814,6 +814,13 @@ export class VisitaComponent implements OnInit {
     }
   }
 
+  private buildDaInitial(isReassigned: boolean): string {
+    if (isReassigned) {
+      return '';
+    }
+    return this.fechaInitial ? this.fechaInitial.replace("T", " ") : this.fechaInitial;
+  }
+
   async saveVisit(willSend: boolean) {
 
     var idVisit = null;
@@ -845,7 +852,7 @@ export class VisitaComponent implements OnInit {
       coEnterprise: this.empresaSeleccionada.coEnterprise,
       idEnterprise: this.empresaSeleccionada.idEnterprise,
       daReal: willSend ? this.dateServ.hoyISOFullTime() : "", //solo se agrega daReal si se va a enviar
-      daInitial: this.fechaInitial ? this.fechaInitial.replace("T", " ") : this.fechaInitial,
+      daInitial: this.buildDaInitial(!!this.visitServ.visit.isReassigned),
       idAddressClient: this.cliente.idAddressClients,
       coAddressClient: this.cliente.coAddressClients,
       visitDetails: [],
@@ -1268,34 +1275,6 @@ export class VisitaComponent implements OnInit {
     this.motivoReagendo = this.visitServ.visit.txReassignedMotive;
     this.fechaReagendo = this.visitServ.visit.daReassign;
     this.showReagendarModal = true;
-    if (this.visitServ.userMustActivateGPS) {
-      //en este caso no se puede continuar si no hay coordenadas
-      this.geoServ.getCurrentPosition().then(coords => {
-        if (coords.length > 0) {
-          this.setCoordinates(coords);
-          this.segment = 'actividades';
-          this.visitServ.coordenadas = coords;
-        } else {
-          console.log("no hay coordenadas, locacion debe estar inactiva");
-          this.initialLock = true;
-          this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
-          this.initVisitRedLabel = true;
-        }
-      });
-    } else {
-      //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.
-      this.initialLock = false;
-      this.segment = 'actividades';
-      this.geoServ.getCurrentPosition().then(coords => {
-        if (coords.length > 0) {
-          this.visitServ.coordenadas = coords;
-          this.setCoordinates(coords);
-        }
-      });
-
-    }
-
-
   }
 
 
