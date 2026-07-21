@@ -437,7 +437,7 @@
     </div>
   </div>
   @if(!clientLogic.fromSelector){
-  @if(this.clientLogic.datos.document.length){
+  @if(!clientLogic.esTransportista && this.clientLogic.datos.document.length){
   <ion-fab size="small" slot="fixed" vertical="bottom" horizontal="start">
     <ion-fab-button (click)="openSelectShareModal(true)">
       <ion-icon name="share-social-outline"></ion-icon>
