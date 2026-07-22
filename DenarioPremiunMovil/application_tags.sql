@@ -141,7 +141,9 @@ INSERT INTO public.application_tags(
   ('PED_RESET_ORDERTYPE_ITEMS_LIMIT', 'PED', 'PEDIDOS', 'ESP', 'El tipo de pedido seleccionado admite menos productos distintos que los actuales. El pedido se reiniciará. ¿Desea continuar?'),
   ('PED_RESET_ORDERTYPE_ITEMS_LIMIT', 'PED', 'PEDIDOS', 'ENG', 'The selected order type allows fewer distinct products than the current order. The order will be reset. Do you wish to continue?'),
   ('PED_LIMITE_ITEMS_TOPE_ALCANZADO', 'PED', 'PEDIDOS', 'ESP', 'Alcanzó el máximo de productos distintos para este tipo de pedido: '),
-  ('PED_LIMITE_ITEMS_TOPE_ALCANZADO', 'PED', 'PEDIDOS', 'ENG', 'You reached the maximum distinct products for this order type: ');
+  ('PED_LIMITE_ITEMS_TOPE_ALCANZADO', 'PED', 'PEDIDOS', 'ENG', 'You reached the maximum distinct products for this order type: '),
+  ('PED_MONEDA_PAGO', 'PED', 'PEDIDOS', 'ESP', 'Moneda de Pago'),
+  ('PED_MONEDA_PAGO', 'PED', 'PEDIDOS', 'ENG', 'Payment Currency');
 
 
 
