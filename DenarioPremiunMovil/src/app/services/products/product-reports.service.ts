@@ -200,8 +200,22 @@ export class ProductReportsService {
         p.id_product,
         p.co_product,
         p.na_product,
-        COALESCE(p.tx_description, '') AS tx_description,
-        COALESCE(p.tx_packing, '') AS tx_packing,
+        COALESCE(
+          CASE
+            WHEN TRIM(COALESCE(p.tx_description, '')) = '' THEN NULL
+            WHEN LOWER(TRIM(p.tx_description)) IN ('null', 'undefined', 'n/a', 'na') THEN NULL
+            ELSE TRIM(p.tx_description)
+          END,
+          ''
+        ) AS tx_description,
+        COALESCE(
+          CASE
+            WHEN TRIM(COALESCE(p.tx_packing, '')) = '' THEN NULL
+            WHEN LOWER(TRIM(p.tx_packing)) IN ('null', 'undefined', 'n/a', 'na') THEN NULL
+            ELSE TRIM(p.tx_packing)
+          END,
+          ''
+        ) AS tx_packing,
         COALESCE(u.na_unit, '') AS na_unit,
         COALESCE(u.co_unit, p.co_primary_unit, '') AS co_unit,
         COALESCE(ps.na_product_structure, '') AS na_product_structure,
@@ -239,15 +253,24 @@ export class ProductReportsService {
             AND NOT (pmm.flag = 0 OR LOWER(CAST(pmm.flag AS TEXT)) IN ('false', '0'))
           LIMIT 1
         ), 1) AS qu_multiple,
-        COALESCE((
-          SELECT CAST(pu.qu_unit AS TEXT)
-          FROM product_units pu
-          JOIN units u2 ON pu.id_unit = u2.id_unit
-          WHERE pu.id_product = p.id_product
-            AND u2.co_unit != p.co_primary_unit
-          ORDER BY pu.qu_unit DESC
-          LIMIT 1
-        ), COALESCE(p.tx_packing, '')) AS bulk_units
+        COALESCE(
+          (
+            SELECT CAST(pu.qu_unit AS TEXT)
+            FROM product_units pu
+            JOIN units u2 ON pu.id_unit = u2.id_unit
+            WHERE pu.id_product = p.id_product
+              AND u2.co_unit != p.co_primary_unit
+              AND pu.qu_unit IS NOT NULL
+            ORDER BY pu.qu_unit DESC
+            LIMIT 1
+          ),
+          CASE
+            WHEN TRIM(COALESCE(p.tx_packing, '')) = '' THEN NULL
+            WHEN LOWER(TRIM(p.tx_packing)) IN ('null', 'undefined', 'n/a', 'na') THEN NULL
+            ELSE TRIM(p.tx_packing)
+          END,
+          ''
+        ) AS bulk_units
       FROM products p
       LEFT JOIN product_structures ps ON p.id_product_structure = ps.id_product_structure
       LEFT JOIN units u ON p.co_primary_unit = u.co_unit AND p.id_enterprise = u.id_enterprise
@@ -256,26 +279,50 @@ export class ProductReportsService {
     `;
   }
 
+  private sanitizeDisplayValue(value: unknown): string {
+    if (value == null) {
+      return '';
+    }
+
+    const text = String(value).trim();
+    if (!text) {
+      return '';
+    }
+
+    const normalized = text.toLowerCase();
+    if (normalized === 'null' || normalized === 'undefined' || normalized === 'n/a' || normalized === 'na') {
+      return '';
+    }
+
+    return text;
+  }
+
+  private displayOrNa(value: string): string {
+    return value.trim() ? value : 'N/A';
+  }
+
   private mapReportRow(row: Record<string, unknown>): ProductReportRow {
-    const coProduct = String(row['co_product'] ?? '');
+    const coProduct = this.sanitizeDisplayValue(row['co_product']);
     const imageFromService = this.imageServices.getImgForProduct(coProduct);
     const fallbackImage = this.imageServices.mapImagesFiles.get(coProduct)?.[0]
       ?? '../../../assets/images/nodisponible.png';
+    const bulkUnits = this.sanitizeDisplayValue(row['bulk_units']);
+    const txPacking = this.sanitizeDisplayValue(row['tx_packing']);
 
     return {
       idProduct: Number(row['id_product'] ?? 0),
       coProduct,
-      naProduct: String(row['na_product'] ?? ''),
-      txDescription: String(row['tx_description'] ?? ''),
-      txPacking: String(row['tx_packing'] ?? ''),
-      naUnit: String(row['na_unit'] ?? ''),
-      coUnit: String(row['co_unit'] ?? ''),
+      naProduct: this.sanitizeDisplayValue(row['na_product']),
+      txDescription: this.sanitizeDisplayValue(row['tx_description']),
+      txPacking,
+      naUnit: this.sanitizeDisplayValue(row['na_unit']),
+      coUnit: this.sanitizeDisplayValue(row['co_unit']),
       nuPrice: row['nu_price'] == null ? null : Number(row['nu_price']),
-      coCurrency: String(row['co_currency'] ?? ''),
+      coCurrency: this.sanitizeDisplayValue(row['co_currency']),
       quMinimum: Number(row['qu_minimum'] ?? 1),
       quMultiple: Number(row['qu_multiple'] ?? 1),
-      bulkUnits: String(row['bulk_units'] ?? ''),
-      naProductStructure: String(row['na_product_structure'] ?? ''),
+      bulkUnits: bulkUnits || txPacking,
+      naProductStructure: this.sanitizeDisplayValue(row['na_product_structure']),
       imageSrc: imageFromService ?? fallbackImage,
     };
   }
@@ -304,9 +351,9 @@ export class ProductReportsService {
       row.coProduct,
       row.naProduct,
       row.nuPrice == null ? 'N/A' : this.currencyService.formatNumber(row.nuPrice),
-      row.coCurrency || 'N/A',
-      row.naUnit || row.coUnit || 'N/A',
-      row.naProductStructure,
+      this.displayOrNa(row.coCurrency),
+      this.displayOrNa(row.naUnit || row.coUnit),
+      this.displayOrNa(row.naProductStructure),
     ]);
   }
 
@@ -318,7 +365,7 @@ export class ProductReportsService {
       Moneda: row.coCurrency,
       Unidad: row.naUnit || row.coUnit,
       Estructura: row.naProductStructure,
-      Embalaje: row.txPacking,
+      Embalaje: row.txPacking || row.bulkUnits,
       VentaMinima: row.quMinimum > 1 ? row.quMinimum : '',
       Multiplo: row.quMultiple > 1 ? row.quMultiple : '',
       Notas: row.txDescription,
@@ -453,10 +500,10 @@ export class ProductReportsService {
       row.coProduct,
       row.naProduct,
       this.formatPrice(row.nuPrice, row.coCurrency),
-      row.naUnit || row.coUnit || 'N/A',
-      row.bulkUnits || row.txPacking || 'N/A',
+      this.displayOrNa(row.naUnit || row.coUnit),
+      this.displayOrNa(row.bulkUnits || row.txPacking),
       row.quMinimum > 1 ? String(row.quMinimum) : 'N/A',
-      row.txDescription || 'N/A',
+      this.displayOrNa(row.txDescription),
     ]);
   }
 
