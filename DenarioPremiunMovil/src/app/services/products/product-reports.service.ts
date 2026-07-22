@@ -12,7 +12,6 @@ import { ImageServicesService } from '../imageServices/image-services.service';
 import { CurrencyService } from '../currency/currency.service';
 import { PdfCreatorService } from '../pdf-creator/pdf-creator.service';
 import { EnterpriseService } from '../enterprise/enterprise.service';
-import jsPDF from 'jspdf';
 import {
   ProductReportExportFormat,
   ProductReportFilterType,
@@ -26,11 +25,6 @@ import {
   providedIn: 'root',
 })
 export class ProductReportsService {
-  private static readonly CATALOG_BATCH_SIZE = 10;
-  private static readonly CATALOG_IMAGE_CONCURRENCY = 3;
-  private static readonly CATALOG_IMAGE_SIZE_PX = 110;
-  private static readonly CATALOG_PDF_SCALE = 1.5;
-
   private readonly config = inject(GlobalConfigService);
   private readonly dbService = inject(SynchronizationDBService);
   private readonly structureService = inject(ProductStructureService);
@@ -340,17 +334,11 @@ export class ProductReportsService {
   }
 
   private async sharePriceListPdf(rows: ProductReportRow[], options: ProductReportOptions): Promise<void> {
-    const enterprise = this.enterpriseService.getEntepriseById(options.idEnterprise);
-    const logoBase64 = await this.imageServices.getLogoBase64ForEnterprise(enterprise?.coEnterprise);
+    const enterpriseHeader = await this.buildEnterprisePdfHeader(options);
 
     const doc = await this.pdfCreator.generateSummaryPdfDoc({
       title: 'Lista de precios',
-      enterpriseHeader: {
-        name: (enterprise?.naEnterprise || enterprise?.lbEnterprise || options.enterpriseLabel || '').trim(),
-        rif: enterprise?.nuRif ?? '',
-        address: enterprise?.txAddress ?? '',
-        logoBase64,
-      },
+      enterpriseHeader,
       meta: [
         { label: 'Productos', value: String(rows.length) },
         { label: 'Orden', value: options.sortField === 'code' ? 'Codigo' : 'Descripcion' },
@@ -360,185 +348,124 @@ export class ProductReportsService {
       fileName: this.buildFileName('lista_precios', 'pdf', options),
     }, { orientation: 'landscape', format: 'letter' });
 
-    const base64 = doc.output('datauristring').split(',')[1];
+    const dataUri = doc.output('datauristring');
+    const base64 = dataUri.includes(',') ? dataUri.split(',')[1] : dataUri;
+    if (!base64) {
+      throw new Error('PDF de lista de precios vacio');
+    }
+
     const fileName = this.buildFileName('lista_precios', 'pdf', options);
     const saved = await this.pdfCreator.savePdf(base64, fileName, Directory.Cache);
     await this.shareFile(saved.uri, fileName);
   }
 
   private async shareCatalogPdf(rows: ProductReportRow[], options: ProductReportOptions): Promise<void> {
-    const doc = new jsPDF({
-      format: 'letter',
-      unit: 'pt',
-      orientation: 'portrait',
-    });
+    const enterpriseHeader = await this.buildEnterprisePdfHeader(options);
 
-    const batchSize = ProductReportsService.CATALOG_BATCH_SIZE;
-    let isFirstChunk = true;
+    const doc = await this.pdfCreator.generateSummaryPdfDoc({
+      title: 'Catalogo de productos',
+      enterpriseHeader,
+      meta: [
+        { label: 'Productos', value: String(rows.length) },
+        { label: 'Empresa', value: options.enterpriseLabel || enterpriseHeader.name || '' },
+      ],
+      columns: this.buildCatalogColumns(),
+      rows: this.mapCatalogPdfRows(rows),
+      fileName: this.buildFileName('catalogo_productos', 'pdf', options),
+    }, { orientation: 'landscape', format: 'letter' });
 
-    for (let offset = 0; offset < rows.length; offset += batchSize) {
-      const batch = rows.slice(offset, offset + batchSize);
-      const html = await this.buildCatalogHtml(batch, options, { includeHeader: isFirstChunk });
-      await this.pdfCreator.appendHtmlChunkToPdf(doc, html, {
-        orientation: 'portrait',
-        scale: ProductReportsService.CATALOG_PDF_SCALE,
-        layoutScale: 1,
-        addPageBefore: !isFirstChunk,
-      });
-      isFirstChunk = false;
+    const dataUri = doc.output('datauristring');
+    const base64 = dataUri.includes(',') ? dataUri.split(',')[1] : dataUri;
+    if (!base64) {
+      throw new Error('PDF de catalogo vacio');
     }
 
-    if (rows.length === 0) {
-      const emptyHtml = await this.buildCatalogHtml([], options, { includeHeader: true });
-      await this.pdfCreator.appendHtmlChunkToPdf(doc, emptyHtml, {
-        orientation: 'portrait',
-        scale: ProductReportsService.CATALOG_PDF_SCALE,
-        layoutScale: 1,
-        addPageBefore: false,
-      });
-    }
-
-    const base64 = doc.output('datauristring').split(',')[1];
     const fileName = this.buildFileName('catalogo_productos', 'pdf', options);
     const saved = await this.pdfCreator.savePdf(base64, fileName, Directory.Cache);
     await this.shareFile(saved.uri, fileName);
   }
 
-  private async buildCatalogHtml(
-    rows: ProductReportRow[],
-    options: ProductReportOptions,
-    opts: { includeHeader: boolean },
-  ): Promise<string> {
-    const cards = await this.mapWithConcurrency(
-      rows,
-      ProductReportsService.CATALOG_IMAGE_CONCURRENCY,
-      (row) => this.buildCatalogCardHtml(row),
+  /**
+   * Cabecera de empresa con logo (mismo patrón que clientes/pedidos).
+   */
+  private async buildEnterprisePdfHeader(options: ProductReportOptions): Promise<{
+    name: string;
+    rif: string;
+    address: string;
+    logoBase64: string | null;
+  }> {
+    await this.ensureEnterprisesLoaded();
+    const enterprise = this.resolveEnterprise(options);
+    const coEnterprise = (options.coEnterprise || enterprise?.coEnterprise || '').trim();
+    const logoBase64 = coEnterprise
+      ? await this.imageServices.getLogoBase64ForEnterprise(coEnterprise)
+      : null;
+
+    return {
+      name: (
+        enterprise?.naEnterprise
+        || enterprise?.lbEnterprise
+        || options.enterpriseLabel
+        || ''
+      ).trim(),
+      rif: enterprise?.nuRif ?? '',
+      address: enterprise?.txAddress ?? '',
+      logoBase64,
+    };
+  }
+
+  private resolveEnterprise(options: ProductReportOptions) {
+    const enterprises = this.enterpriseService.getEnterprises() ?? [];
+    const byId = enterprises.find(
+      (item) => Number(item.idEnterprise) === Number(options.idEnterprise),
     );
-
-    const header = opts.includeHeader
-      ? `
-        <div style="background: #430197; color: #fff; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px;">
-          <div style="font-size: 22px; font-weight: 700;">Catalogo de productos</div>
-          <div style="font-size: 13px; margin-top: 6px;">${this.escapeHtml(options.enterpriseLabel)}</div>
-        </div>
-      `
-      : '';
-
-    return `
-      <div style="font-family: Arial, sans-serif; color: #222; width: 100%; box-sizing: border-box; padding: 16px; background: #fff;">
-        ${header}
-        ${cards.join('')}
-      </div>
-    `;
-  }
-
-  private async buildCatalogCardHtml(row: ProductReportRow): Promise<string> {
-    const imageSrc = await this.resolveImageDataUri(row);
-    const minSale = row.quMinimum > 1 ? String(row.quMinimum) : 'N/A';
-    const bulk = row.bulkUnits || row.txPacking || 'N/A';
-    const size = ProductReportsService.CATALOG_IMAGE_SIZE_PX;
-
-    return `
-      <div style="display: flex; gap: 14px; border: 1px solid #e0d5ef; border-radius: 12px; padding: 14px; margin-bottom: 14px; page-break-inside: avoid;">
-        <div style="width: 120px; min-width: 120px;">
-          <img src="${imageSrc}" alt="${this.escapeHtml(row.coProduct)}" style="width: ${size}px; height: ${size}px; object-fit: contain; border-radius: 8px; background: #f7f4fb;" />
-        </div>
-        <div style="flex: 1; min-width: 0;">
-          <div style="font-size: 16px; font-weight: 700; color: #430197; margin-bottom: 6px;">${this.escapeHtml(row.naProduct)}</div>
-          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Codigo:</strong> ${this.escapeHtml(row.coProduct)}</div>
-          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Precio:</strong> ${this.escapeHtml(this.formatPrice(row.nuPrice, row.coCurrency))}</div>
-          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Unidad:</strong> ${this.escapeHtml(row.naUnit || row.coUnit || 'N/A')}</div>
-          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Bulto:</strong> ${this.escapeHtml(bulk)}</div>
-          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Venta minima:</strong> ${this.escapeHtml(minSale)}</div>
-          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Notas:</strong> ${this.escapeHtml(row.txDescription || 'N/A')}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  private async resolveImageDataUri(row: ProductReportRow): Promise<string> {
-    const fallback = row.imageSrc;
-    if (fallback.includes('nodisponible.png')) {
-      return fallback;
+    if (byId) {
+      return byId;
     }
 
-    let sourceUri = fallback;
-    if (!fallback.startsWith('data:')) {
-      try {
-        const base64 = await this.imageServices.getImageBase64(`${row.coProduct}.jpg`);
-        if (base64) {
-          sourceUri = `data:image/jpeg;base64,${base64}`;
-        }
-      } catch {
-        return fallback;
-      }
-    }
-
-    try {
-      return await this.compressImageDataUri(
-        sourceUri,
-        ProductReportsService.CATALOG_IMAGE_SIZE_PX,
+    const coEnterprise = (options.coEnterprise || '').trim().toLowerCase();
+    if (coEnterprise) {
+      const byCode = enterprises.find(
+        (item) => String(item.coEnterprise ?? '').trim().toLowerCase() === coEnterprise,
       );
-    } catch {
-      return sourceUri;
-    }
-  }
-
-  private async compressImageDataUri(sourceUri: string, maxSizePx: number): Promise<string> {
-    const image = await this.loadHtmlImage(sourceUri);
-    const scale = Math.min(1, maxSizePx / Math.max(image.width, image.height, 1));
-    const width = Math.max(1, Math.round(image.width * scale));
-    const height = Math.max(1, Math.round(image.height * scale));
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      return sourceUri;
-    }
-
-    ctx.fillStyle = '#f7f4fb';
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(image, 0, 0, width, height);
-    const compressed = canvas.toDataURL('image/jpeg', 0.72);
-    canvas.width = 0;
-    canvas.height = 0;
-    return compressed;
-  }
-
-  private loadHtmlImage(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('Failed to load catalog image'));
-      image.src = src;
-    });
-  }
-
-  private async mapWithConcurrency<T, R>(
-    items: T[],
-    concurrency: number,
-    mapper: (item: T, index: number) => Promise<R>,
-  ): Promise<R[]> {
-    if (items.length === 0) {
-      return [];
-    }
-
-    const results: R[] = new Array(items.length);
-    let nextIndex = 0;
-    const workerCount = Math.min(concurrency, items.length);
-
-    const workers = Array.from({ length: workerCount }, async () => {
-      while (nextIndex < items.length) {
-        const index = nextIndex;
-        nextIndex += 1;
-        results[index] = await mapper(items[index], index);
+      if (byCode) {
+        return byCode;
       }
-    });
+    }
 
-    await Promise.all(workers);
-    return results;
+    return enterprises[0];
+  }
+
+  private buildCatalogColumns(): Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string }> {
+    return [
+      { label: 'Codigo', width: '12%' },
+      { label: 'Nombre', width: '28%' },
+      { label: 'Precio', align: 'right', width: '12%' },
+      { label: 'Unidad', width: '10%' },
+      { label: 'Bulto', width: '12%' },
+      { label: 'Min.', align: 'right', width: '8%' },
+      { label: 'Notas', width: '18%' },
+    ];
+  }
+
+  private mapCatalogPdfRows(rows: ProductReportRow[]): string[][] {
+    return rows.map((row) => [
+      row.coProduct,
+      row.naProduct,
+      this.formatPrice(row.nuPrice, row.coCurrency),
+      row.naUnit || row.coUnit || 'N/A',
+      row.bulkUnits || row.txPacking || 'N/A',
+      row.quMinimum > 1 ? String(row.quMinimum) : 'N/A',
+      row.txDescription || 'N/A',
+    ]);
+  }
+
+  private async ensureEnterprisesLoaded(): Promise<void> {
+    const enterprises = this.enterpriseService.getEnterprises();
+    if (Array.isArray(enterprises) && enterprises.length > 0) {
+      return;
+    }
+    await this.enterpriseService.setup(this.dbService.getDatabase());
   }
 
   private buildFileName(prefix: string, extension: string, options: ProductReportOptions): string {
@@ -552,14 +479,5 @@ export class ProductReportsService {
     } catch (error) {
       console.error('[ProductReportsService] Error sharing report file', error);
     }
-  }
-
-  private escapeHtml(input: string): string {
-    return String(input ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
   }
 }

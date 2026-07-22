@@ -148,11 +148,14 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
       wrapper.style.width = `${targetCloneWidthPx}px`;
       wrapper.style.maxWidth = `${targetCloneWidthPx}px`;
       wrapper.style.boxSizing = 'border-box';
-      wrapper.style.position = 'absolute';
-      wrapper.style.left = '-20000px';
+      // Fuera de pantalla sin visibility:hidden: si se copia visibility a los hijos,
+      // html2canvas captura un canvas en blanco.
+      wrapper.style.position = 'fixed';
+      wrapper.style.left = '-10000px';
       wrapper.style.top = '0';
-      wrapper.style.visibility = 'hidden';
       wrapper.style.pointerEvents = 'none';
+      wrapper.style.opacity = '1';
+      wrapper.style.background = '#ffffff';
       document.body.appendChild(wrapper);
       originalElement = wrapper;
       removeOriginalWrapper = true;
@@ -164,20 +167,8 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
     const cloned = originalElement.cloneNode(true) as HTMLElement;
     this.inlineAllComputedStyles(originalElement, cloned);
+    this.sanitizeCloneForPdfCapture(cloned, targetCloneWidthPx);
 
-    cloned.style.width = `${targetCloneWidthPx}px`;
-    cloned.style.minWidth = `${targetCloneWidthPx}px`;
-    cloned.style.maxWidth = `${targetCloneWidthPx}px`;
-    cloned.style.maxHeight = 'none';
-    cloned.style.overflow = 'visible';
-    cloned.style.boxSizing = 'border-box';
-    cloned.classList.add('pdf-export-scale');
-    cloned.style.position = 'absolute';
-    cloned.style.left = '0';
-    cloned.style.top = '0';
-    cloned.style.zIndex = '99999';
-    cloned.style.visibility = 'visible';
-    cloned.style.pointerEvents = 'none';
     document.body.appendChild(cloned);
 
     if ((document as any).fonts?.ready) {
@@ -188,6 +179,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
       }
     }
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    await new Promise<void>(resolve => setTimeout(resolve, 50));
 
     const cleanup = (): void => {
       cloned.remove();
@@ -197,6 +189,37 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
     };
 
     return { cloned, cleanup };
+  }
+
+  /**
+   * Tras inlinear estilos computados, fuerza visibilidad/opacidad en el clon.
+   * Evita PDF en blanco cuando el original estaba oculto o fuera de pantalla.
+   */
+  private sanitizeCloneForPdfCapture(cloned: HTMLElement, targetCloneWidthPx: number): void {
+    cloned.style.width = `${targetCloneWidthPx}px`;
+    cloned.style.minWidth = `${targetCloneWidthPx}px`;
+    cloned.style.maxWidth = `${targetCloneWidthPx}px`;
+    cloned.style.maxHeight = 'none';
+    cloned.style.overflow = 'visible';
+    cloned.style.boxSizing = 'border-box';
+    cloned.classList.add('pdf-export-scale');
+    cloned.style.position = 'fixed';
+    cloned.style.left = '0';
+    cloned.style.top = '0';
+    cloned.style.zIndex = '99999';
+    cloned.style.visibility = 'visible';
+    cloned.style.opacity = '1';
+    cloned.style.pointerEvents = 'none';
+    cloned.style.background = '#ffffff';
+    cloned.style.color = '#222222';
+
+    cloned.querySelectorAll<HTMLElement>('*').forEach((el) => {
+      el.style.visibility = 'visible';
+      const opacity = el.style.getPropertyValue('opacity');
+      if (opacity === '0') {
+        el.style.opacity = '1';
+      }
+    });
   }
 
   private measurePdfHeaderMetrics(cloned: HTMLElement): { height: number; offset: number } {

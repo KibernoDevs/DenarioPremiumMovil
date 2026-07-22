@@ -113,6 +113,7 @@ export class ProductosReportsComponent implements OnInit {
       exportFormat,
       idEnterprise: this.empresaSeleccionada.idEnterprise,
       enterpriseLabel: this.empresaSeleccionada.lbEnterprise,
+      coEnterprise: this.empresaSeleccionada.coEnterprise,
     };
   }
 }

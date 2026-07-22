@@ -816,28 +816,47 @@ export class ImageServicesService {
     }
 
     const filename = this.findLogoFilename(coEnterprise);
-    if (!filename) {
-      return null;
-    }
-
-    if (this.mapLogosByFilename.has(filename)) {
-      return this.mapLogosByFilename.get(filename)!;
-    }
-
-    try {
-      const path = this.mapLogos.get(coEnterprise.toLowerCase()) ?? this.mapLogos.get(coEnterprise);
-      if (path) {
-        const raw = await this.readFileResultToBase64(this.normalizeFileUri(path));
-        const base64 = this.buildDataUri(filename, raw);
-        this.mapLogosByFilename.set(filename, base64);
-        return base64;
+    if (filename) {
+      if (this.mapLogosByFilename.has(filename)) {
+        return this.mapLogosByFilename.get(filename)!;
       }
-      await this.downloadSingleLogo(filename);
-      return this.mapLogosByFilename.get(filename) ?? null;
-    } catch (err) {
-      console.warn('[getLogoBase64ForEnterprise] failed for', coEnterprise, err);
-      return null;
+
+      try {
+        const path = this.mapLogos.get(coEnterprise.toLowerCase()) ?? this.mapLogos.get(coEnterprise);
+        if (path) {
+          const raw = await this.readFileResultToBase64(this.normalizeFileUri(path));
+          const base64 = this.buildDataUri(filename, raw);
+          this.mapLogosByFilename.set(filename, base64);
+          return base64;
+        }
+        await this.downloadSingleLogo(filename);
+        const downloaded = this.mapLogosByFilename.get(filename);
+        if (downloaded) {
+          return downloaded;
+        }
+      } catch (err) {
+        console.warn('[getLogoBase64ForEnterprise] failed for', coEnterprise, err);
+      }
     }
+
+    // Fallback: intentar descargar por codigo de empresa + extension comun.
+    for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
+      const candidate = `${coEnterprise}.${ext}`;
+      try {
+        if (this.mapLogosByFilename.has(candidate)) {
+          return this.mapLogosByFilename.get(candidate)!;
+        }
+        await this.downloadSingleLogo(candidate);
+        const downloaded = this.mapLogosByFilename.get(candidate);
+        if (downloaded) {
+          return downloaded;
+        }
+      } catch {
+        /* continuar con siguiente extension */
+      }
+    }
+
+    return null;
   }
 
   private async downloadSingleLogo(logoName: string): Promise<void> {

@@ -161,8 +161,13 @@ export class ProductosComponent implements OnInit, OnDestroy {
   }
 
   openProductReports(): void {
-    if (!this.empresaSeleccionada?.idEnterprise && this.productService.empresaSeleccionada) {
-      this.empresaSeleccionada = this.productService.empresaSeleccionada;
+    const enterprise = this.productService.empresaSeleccionada
+      ?? this.enterpriseService.getEnterprises()?.[0]
+      ?? this.empresaSeleccionada;
+
+    if (enterprise) {
+      this.empresaSeleccionada = enterprise;
+      this.productService.empresaSeleccionada = enterprise;
     }
 
     this.showProductDetail = false;

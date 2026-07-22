@@ -14,6 +14,7 @@ export interface ProductReportOptions {
   exportFormat: ProductReportExportFormat;
   idEnterprise: number;
   enterpriseLabel: string;
+  coEnterprise?: string;
 }
 
 export interface ProductReportRow {
