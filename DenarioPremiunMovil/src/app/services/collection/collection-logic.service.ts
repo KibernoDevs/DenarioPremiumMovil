@@ -4184,14 +4184,35 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   getStatusOrderName(stCollection: number, stDelivery: number, naStatus: any) {
-    if (stCollection != 0) {
-      if (naStatus == null || naStatus === undefined) {
-        return this.getStatus(stDelivery, naStatus);
-      }
-      return naStatus;
-    } else {
-      this.getStatus(stDelivery, naStatus);
+    const delivery = Number(stDelivery);
+    const collection = Number(stCollection);
+    const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
+
+    // Misma regla que la lista de cobros: si hay status de historial real, usarlo;
+    // si no, derivar de st_delivery.
+    if (collection !== 0 && resolvedNaStatus) {
+      return resolvedNaStatus;
     }
+    return this.getStatus(delivery, resolvedNaStatus);
+  }
+
+  private resolveNaStatusLabel(naStatus: any): string {
+    if (naStatus == null) {
+      return '';
+    }
+    if (typeof naStatus === 'string') {
+      const trimmed = naStatus.trim();
+      // Fallbacks de getStatusTransaction cuando no hay fila en transaction_statuses.
+      if (!trimmed || trimmed === 'Enviado' || trimmed.startsWith('Error')) {
+        return '';
+      }
+      return trimmed;
+    }
+    if (typeof naStatus === 'object') {
+      const fromObject = String(naStatus.na_status ?? '').trim();
+      return fromObject;
+    }
+    return String(naStatus).trim();
   }
 
   getStatus(status: number, naStatus: any): string {
@@ -4199,10 +4220,12 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       case 3: return this.collectionTags.get("COB_STATUS_SAVED")!;
       case COLLECT_STATUS_TO_SEND: return this.collectionTags.get("COB_STATUS_TO_SEND")!;
       case 1:
-        return naStatus == null ? this.collectionTags.get("COB_STATUS_SENT")! : naStatus;
+        return naStatus == null || String(naStatus).trim() === ''
+          ? this.collectionTags.get("COB_STATUS_SENT")!
+          : String(naStatus);
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'Enviado';
+        if (naStatus == null || String(naStatus).trim() === '') return 'Enviado';
         if (typeof naStatus === 'string') {
           return naStatus;
         }
@@ -4930,9 +4953,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         const row = data.rows.item(i);
         const statusRow = await this.historyTransaction
           .getStatusTransaction(dbServ, 3, row.id_collection);
-        const naStatus = typeof statusRow === 'string'
-          ? statusRow
-          : (statusRow?.na_status ?? '');
+        // Solo aceptar na_status de una fila real. El string "Enviado" es fallback
+        // de getStatusTransaction cuando no hay historial y NO debe forzar el label.
+        const naStatus = (statusRow && typeof statusRow === 'object')
+          ? String(statusRow.na_status ?? '').trim()
+          : '';
         rows.push({
           idCollection: row.id_collection,
           daCollection: row.da_collection,

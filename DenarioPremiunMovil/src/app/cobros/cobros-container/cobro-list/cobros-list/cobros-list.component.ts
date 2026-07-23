@@ -313,36 +313,11 @@ export class CobrosListComponent implements OnInit {
   }
 
   getStatusOrderName(stCollection: number, stDelivery: number, naStatus: any) {
-    if (stCollection != 0) {
-      if (naStatus == null || naStatus === undefined) {
-        return this.getStatus(stDelivery, naStatus);
-      }
-      return naStatus;
-    } else {
-      this.getStatus(stDelivery, naStatus);
-    }
+    return this.collectService.getStatusOrderName(stCollection, stDelivery, naStatus);
   }
 
   getStatus(status: number, naStatus: any): string {
-    switch (status) {
-      case 3: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
-      case COLLECT_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case 1:
-        return naStatus == null ? this.collectService.collectionTags.get("COB_STATUS_SENT")! : naStatus;
-      case 6:
-        // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'Enviado';
-        if (typeof naStatus === 'string') {
-          return naStatus;
-        }
-        if (typeof naStatus === 'object') {
-          // intenta varias propiedades comunes
-          return naStatus.na_status;
-        }
-        return String(naStatus);
-
-      default: return '';
-    }
+    return this.collectService.getStatus(status, naStatus);
   }
 
   getCoTypeName(coType: string | number): string {
