@@ -72,12 +72,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       this.lists = this.priceListService.productlists;
       this.listSeleccionada = this.lists[0];
     });
-    if(this.productService.catalogValidateWarehouses && !this.hideProductWarehouse){
-    this.stockService.getWarehousesByIdProduct(this.pSeleccionado.idProduct).then(() => {
-      this.warehouses = this.stockService.productWarehouses;
-      this.warehouseSeleccionado = this.warehouses[0];
-    });
-    }
+    void this.loadWarehousesAndStockForSelectedProduct();
 
     if(this.productService.catalogUnitByPriceList){
       this.listPrices = this.productService.listPrices;
@@ -92,6 +87,9 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['pSeleccionado'] && this.pSeleccionado?.coProduct) {
       this.loadProductImages();
+      if (!changes['pSeleccionado'].firstChange) {
+        void this.loadWarehousesAndStockForSelectedProduct();
+      }
     }
   }
 
@@ -108,6 +106,41 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       console.warn('[ProductDetail] failed loading product images for', productId, err);
       this.productImages = [];
     }
+  }
+
+  /**
+   * Carga almacenes del producto y deja el inventario del almacén seleccionado
+   * (no la suma de todos los almacenes que viene en pSeleccionado.stock).
+   */
+  private async loadWarehousesAndStockForSelectedProduct(): Promise<void> {
+    if (!this.pSeleccionado?.idProduct) {
+      this.warehouses = [];
+      return;
+    }
+
+    if (!this.productService.catalogValidateWarehouses || this.hideProductWarehouse) {
+      return;
+    }
+
+    await this.stockService.getWarehousesByIdProduct(this.pSeleccionado.idProduct);
+    this.warehouses = this.stockService.productWarehouses ?? [];
+    this.warehouseSeleccionado = this.warehouses[0];
+
+    if (this.warehouseSeleccionado?.idWarehouse != null) {
+      await this.refreshStockForWarehouse(this.warehouseSeleccionado.idWarehouse);
+    }
+  }
+
+  private async refreshStockForWarehouse(idWarehouse: number): Promise<void> {
+    if (!this.pSeleccionado?.idProduct || idWarehouse == null) {
+      return;
+    }
+
+    const stock = await this.stockService.getStockByIdWarehousesAndIdProduct(
+      idWarehouse,
+      this.pSeleccionado.idProduct,
+    );
+    this.pSeleccionado.stock = Number(stock ?? 0);
   }
 
   onListChanged(idList: number) {
@@ -149,9 +182,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   
 
   onWarehouseChanged(idWarehouse: number) {
-    this.stockService.getStockByIdWarehousesAndIdProduct(idWarehouse, this.pSeleccionado.idProduct).then((data: number) => {
-      this.pSeleccionado.stock = data;
-    });
+    void this.refreshStockForWarehouse(idWarehouse);
   }
   formatNumber(num: number) {
     return this.productService.formatNumber(num);
