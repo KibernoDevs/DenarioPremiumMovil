@@ -1570,33 +1570,63 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           )
           || Number(this.orderServ.totalDctoXProducto ?? 0) > 0;
 
-        const buildQtyUnits = (item: OrderUtil): { qtyLines: string; unitLines: string } => {
+        const showBonifiedColumn = this.orderServ.productBonification === true;
+        const formatBonusCell = (bonus: number): string => {
+          const b = Number(bonus) || 0;
+          return b > 0 ? this.formatQtyAmount(b) : '—';
+        };
+
+        const buildQtyUnits = (item: OrderUtil): {
+          qtyLines: string;
+          bonusLines: string;
+          unitLines: string;
+        } => {
           const unitList = item.unitList ?? [];
           const qtyStrings: string[] = [];
+          const bonusStrings: string[] = [];
           const unitStrings: string[] = [];
 
           unitList.forEach(unit => {
             if (unit.quAmount > 0 || unit.quUnit > 0) {
               const qty = Number(unit.quAmount ?? 0);
               const bonus = Number(unit.quBonified ?? 0);
-              // REQ-01: 12 · 2 bonificados · 10 a pagar
-              const label = this.orderServ.formatBonusQtyLabel(qty, bonus);
-              qtyStrings.push(label || this.formatQtyAmount(qty));
+              if (showBonifiedColumn) {
+                qtyStrings.push(this.formatQtyAmount(qty));
+                bonusStrings.push(formatBonusCell(bonus));
+              } else {
+                // Histórico: embeber desglose en Cantidad si hay bonificados
+                const label = this.orderServ.formatBonusQtyLabel(qty, bonus);
+                qtyStrings.push(label || this.formatQtyAmount(qty));
+                bonusStrings.push('');
+              }
               unitStrings.push(String(unit.naUnit ?? '').trim());
             }
           });
 
           if (qtyStrings.length > 0) {
-            return { qtyLines: qtyStrings.join('\n'), unitLines: unitStrings.join('\n') };
+            return {
+              qtyLines: qtyStrings.join('\n'),
+              bonusLines: bonusStrings.join('\n'),
+              unitLines: unitStrings.join('\n'),
+            };
           }
 
           const primary = unitList.find(u => u.idUnit === item.idUnit);
           const qty = Number(item.quAmount ?? 0);
           const bonus = Number(primary?.quBonified ?? 0);
+          if (showBonifiedColumn) {
+            return {
+              qtyLines: this.formatQtyAmount(qty),
+              bonusLines: formatBonusCell(bonus),
+              unitLines: String(primary?.naUnit ?? '').trim(),
+            };
+          }
+
           const label = this.orderServ.formatBonusQtyLabel(qty, bonus);
           return {
             qtyLines: label || this.formatQtyAmount(qty),
-            unitLines: String(primary?.naUnit ?? '').trim()
+            bonusLines: '',
+            unitLines: String(primary?.naUnit ?? '').trim(),
           };
         };
 
@@ -1635,16 +1665,23 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           return `${this.formatNum(pct)}%`;
         };
 
+        const productWidth = showBonifiedColumn ? '26%' : '32%';
+        const discountWidth = showBonifiedColumn ? '18%' : '23%';
         const columns: SummaryPdfColumn[] = [
           { label: 'Código', align: 'center', width: '8%', noWrap: true, maxLines: 1 },
-          { label: 'Producto', align: 'left', width: '32%', noWrap: false, maxLines: 3 },
+          { label: 'Producto', align: 'left', width: productWidth, noWrap: false, maxLines: 3 },
           { label: 'Cantidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
-          { label: 'Unidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
-          { label: 'Precio Base', align: 'right', width: '10%', noWrap: true }
         ];
+        if (showBonifiedColumn) {
+          columns.push({ label: 'Bonificados', align: 'center', width: '7%', noWrap: false, maxLines: 4 });
+        }
+        columns.push(
+          { label: 'Unidad', align: 'center', width: '8%', noWrap: false, maxLines: 4 },
+          { label: 'Precio Base', align: 'right', width: '10%', noWrap: true },
+        );
 
         if (hasDiscountColumn) {
-          columns.push({ label: 'Descuento', align: 'right', width: '23%', noWrap: false, maxLines: 10 });
+          columns.push({ label: 'Descuento', align: 'right', width: discountWidth, noWrap: false, maxLines: 10 });
         }
         columns.push({ label: 'IVA %', align: 'center', width: '7%', noWrap: true });
         columns.push({ label: 'Importe Total', align: 'right', width: '12%', noWrap: true });
@@ -1682,14 +1719,19 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         );
 
         const rows = items.map((item) => {
-          const { qtyLines, unitLines } = buildQtyUnits(item);
+          const { qtyLines, bonusLines, unitLines } = buildQtyUnits(item);
           const row: string[] = [
             String(item.coProduct ?? ''),
             String(item.naProduct ?? ''),
             qtyLines,
-            unitLines,
-            this.formatNum(Number(item.nuPrice ?? 0))
           ];
+          if (showBonifiedColumn) {
+            row.push(bonusLines);
+          }
+          row.push(
+            unitLines,
+            this.formatNum(Number(item.nuPrice ?? 0)),
+          );
 
           if (hasDiscountColumn) {
             row.push(buildDiscountCell(item));
