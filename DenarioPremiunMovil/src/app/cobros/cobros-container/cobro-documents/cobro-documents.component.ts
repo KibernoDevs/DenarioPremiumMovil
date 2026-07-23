@@ -934,16 +934,29 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.recalculateOpenDocumentAmountAndIgtf(index);
   }
 
+  private shouldValidateRetentionAgainstBalance(): boolean {
+    const cs = this.collectService;
+    if (cs.indexDocumentSaleOpen < 0) {
+      return false;
+    }
+    // Tipo retención siempre valida montos vs saldo.
+    if (cs.coTypeModule === '2') {
+      return true;
+    }
+    // Tipo cobro: solo si retenciones están habilitadas y no marcadas como faltantes.
+    return cs.retencion && !cs.missingRetentionValue;
+  }
+
   private validateOpenDocumentRetentionTotals(showAlert: boolean = false): boolean {
-    const index = this.collectService.indexDocumentSaleOpen;
-    if (index < 0 || !this.collectService.retencion) {
+    if (!this.shouldValidateRetentionAgainstBalance()) {
       return true;
     }
 
     const cs = this.collectService;
+    const index = cs.indexDocumentSaleOpen;
     const liveRetentions = this.resolveOpenDocumentLiveRetentionTotals();
-    const retentionIva = liveRetentions.retention;
-    const retentionIslr = liveRetentions.retention2;
+    const retentionIva = Number(liveRetentions.retention ?? 0);
+    const retentionIslr = Number(liveRetentions.retention2 ?? 0);
     const retentionSum = retentionIva + retentionIslr;
     if (retentionSum <= 0) {
       return true;
@@ -2023,6 +2036,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
             return;
           }
         }
+        if (!this.validateRetentionAmountsBeforeSave()) {
+          return;
+        }
         if (this.collectService.coTypeModule === '2' && this.collectService.dynamicRetentions) {
           this.flushCollectRetentionLinesBeforeSave();
           if (!this.collectService.missingRetentionValue) {
@@ -2513,6 +2529,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (!cs.validNuRetention || !cs.validateDaVoucher) {
         this.disabledSaveButton = true;
       }
+      if (this.isEmptyOrZeroRetention()) {
+        this.disabledSaveButton = true;
+      }
+      if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.cdr.detectChanges();
+        return;
+      }
       cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
       return;
@@ -2520,6 +2543,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (cs.retencion && !cs.missingRetentionValue && cs.dynamicRetentions && this.documentRetentionLines.length > 0) {
       this.syncAllRetentionLinesValidation();
+      if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.cdr.detectChanges();
+        return;
+      }
       if (!cs.validNuRetention || !cs.validateDaVoucher) {
         this.disabledSaveButton = true;
         this.cdr.detectChanges();
@@ -2529,6 +2556,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     // Si es pago parcial
     if (cs.isPaymentPartial) {
+      if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.cdr.detectChanges();
+        return;
+      }
       const montoDoc = maxAmountToPay;
       if (!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) >= this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(montoDoc))) {
         cs.mensaje = cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!;
@@ -4484,17 +4515,46 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         Number(cs.documentSaleOpen?.nuAmountRetention ?? 0),
         Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0),
       );
+    } else if (cs.dynamicRetentions) {
+      this.syncOpenRetentionFromLines();
     }
 
-    const retentionTotal = Number(cs.documentSaleOpen?.nuAmountRetention ?? 0)
-      + Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+    const retentionTotal = this.getDocumentRetentionTotal();
     if (retentionTotal <= 0) {
       cs.mensaje = 'Debe ingresar al menos un monto de retenci\u00f3n.';
       this.alertMessageOpen = true;
       return false;
     }
 
+    if (!this.validateOpenDocumentRetentionTotals(true)) {
+      return false;
+    }
+
     return true;
+  }
+
+  /** Valida montos de retención vs saldo antes de guardar (cobro o retención). */
+  private validateRetentionAmountsBeforeSave(): boolean {
+    if (!this.shouldValidateRetentionAgainstBalance()) {
+      return true;
+    }
+
+    const cs = this.collectService;
+    if (this.usesLegacyRetentionInputs()) {
+      this.syncLegacyRetentionToOpenDetail(
+        Number(cs.documentSaleOpen?.nuAmountRetention ?? 0),
+        Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0),
+      );
+    } else if (cs.dynamicRetentions) {
+      this.syncOpenRetentionFromLines();
+    }
+
+    const retentionTotal = this.getDocumentRetentionTotal();
+    if (retentionTotal <= 0) {
+      return true;
+    }
+
+    return this.validateOpenDocumentRetentionTotals(true);
   }
 
   private async ensureCollectRetentionsCatalog(): Promise<void> {
