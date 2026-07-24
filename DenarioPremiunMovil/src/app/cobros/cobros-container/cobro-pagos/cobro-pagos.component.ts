@@ -817,11 +817,9 @@ export class CobroPagosComponent implements OnInit {
   }
 
   setMonto(monto: number, index: number, type: string) {
-    let change = false;
-    if (!this.collectService.disableSendButton) {
-      this.collectService.disableSendButton = true;
-      change = true;
-    }
+    // Deshabilitar de inmediato; solo validateToSend (monto/tolerancia) puede volver a habilitar.
+    // Antes se reactivaba aquí si el botón ya estaba ON, y montos menores quedaban enviables.
+    this.collectService.disableSendButton = true;
 
     const rate = this.collectService.syncExchangeRateToCollectionHeader();
 
@@ -905,10 +903,6 @@ export class CobroPagosComponent implements OnInit {
         this.validatePayment("ot", index);
         break;
       }
-    }
-
-    if (change) {
-      this.collectService.disableSendButton = false;
     }
   }
 
