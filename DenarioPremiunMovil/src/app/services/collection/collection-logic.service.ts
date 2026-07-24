@@ -2764,16 +2764,22 @@ export class CollectionService {
   private isTransferenciaPaymentComplete(pago: PagoTransferencia): boolean {
     if (!this.isPositivePaymentAmount(pago?.monto)
       || !this.hasPaymentText(pago?.fecha)
-      || !this.hasPaymentText(pago?.nombreBanco)) {
+      || !this.hasPaymentText(pago?.nombreBanco)
+      || !this.hasPaymentText(pago?.numeroTransferencia)
+      || !this.hasPaymentText(pago?.numeroCuenta)) {
       return false;
     }
 
-    if (this.clientBankAccount) {
-      return this.hasPaymentText(pago?.nuevaCuenta)
-        && this.hasPaymentText(pago?.numeroTransferencia);
+    if (!this.clientBankAccount) {
+      return true;
     }
 
-    return this.hasPaymentText(pago?.numeroTransferencia);
+    // Nueva Cuenta solo exige el campo nuevaCuenta; cuenta existente usa numeroCuentaCliente.
+    if (pago.showNuevaCuenta) {
+      return this.hasPaymentText(pago?.nuevaCuenta);
+    }
+
+    return this.hasPaymentText(pago?.numeroCuentaCliente);
   }
 
   private isPagoMovilPaymentComplete(pago: PagoMovil): boolean {
