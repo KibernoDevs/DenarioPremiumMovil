@@ -794,25 +794,34 @@ export class SynchronizationComponent implements OnInit {
         if (this.user.transportista) {
           this.router.navigate(['home']);
           return;
-        } else {
-          this.imageServices.getServerImageList().then(obs => {
-            obs.subscribe({
+        }
+
+        const navigateHomeWithLogos = () => {
+          this.imageServices.getServerLogoList().then(logoObs => {
+            logoObs.subscribe({
               complete: () => {
-                this.imageServices.getServerLogoList().then(logoObs => {
-                  logoObs.subscribe({
-                    complete: () => {
-                      this.router.navigate(['home']).then(() => {
-                        this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
-                        this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
-                      });
-                    }
-                  });
+                this.router.navigate(['home']).then(() => {
+                  if (!this.imageServices.isProductImagesFromDatabase()) {
+                    this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+                  }
+                  this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
                 });
               }
             });
           });
+        };
+
+        if (this.imageServices.isProductImagesFromDatabase()) {
+          void this.imageServices.hydrateDbProductImagesCache().then(() => navigateHomeWithLogos());
           return;
         }
+
+        this.imageServices.getServerImageList().then(obs => {
+          obs.subscribe({
+            complete: () => navigateHomeWithLogos()
+          });
+        });
+        return;
       }
 
       // Filtra las tablas si el usuario es transportista

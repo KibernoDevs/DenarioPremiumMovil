@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Injector } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
 import { NavController } from '@ionic/angular';
@@ -85,6 +85,7 @@ import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
+import { ImageServicesService } from '../imageServices/image-services.service';
 
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
@@ -112,6 +113,7 @@ export class SynchronizationDBService {
   private returnService = inject(ReturnDatabaseService);
   private clientStockService = inject(InventariosLogicService);
   private depositService = inject(DepositService);
+  private injector = inject(Injector);
   private databaseReady!: BehaviorSubject<boolean>;
   private tables: any[] = [];
   public tablaSincronizando: string = "";
@@ -981,7 +983,9 @@ export class SynchronizationDBService {
     }
 
     return this.database.sqlBatch(statements).then(res => {
-
+      if (arr.length > 0) {
+        this.injector.get(ImageServicesService).cacheDbProductImagesFromSync(arr);
+      }
     }).catch(e => {
       console.log(e);
     })
