@@ -17,6 +17,7 @@ export class Product {
             obj['coEnterprise'],
             obj['idEnterprise'],
             obj['nuTax'],
+            obj['image'] ?? null,
           
         );
     }
@@ -37,6 +38,7 @@ export class Product {
         public coEnterprise: string,
         public idEnterprise: number,
         public nuTax: number,
+        public image: string | null = null,
         
     ) { }
 }

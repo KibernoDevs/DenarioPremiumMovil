@@ -75,7 +75,7 @@
     "name": "products",
     "table": "products",
     "idName": "id_product",
-    "sql": "CREATE TABLE IF NOT EXISTS products ( id_product INTEGER PRIMARY KEY, co_product VARCHAR(30) NOT NULL, na_product VARCHAR(120) NOT NULL, co_primary_unit VARCHAR(30), co_product_structure VARCHAR (30), id_product_structure INTEGER, tx_dimension VARCHAR(120), tx_packing VARCHAR(120), points NUMERIC, nu_priority INTEGER, featured_product BOOLEAN DEFAULT false, tx_description TEXT, co_enterprise VARCHAR(50), id_enterprise INTEGER, nu_tax DECIMAL(10,5));"
+    "sql": "CREATE TABLE IF NOT EXISTS products ( id_product INTEGER PRIMARY KEY, co_product VARCHAR(30) NOT NULL, na_product VARCHAR(120) NOT NULL, co_primary_unit VARCHAR(30), co_product_structure VARCHAR (30), id_product_structure INTEGER, tx_dimension VARCHAR(120), tx_packing VARCHAR(120), points NUMERIC, nu_priority INTEGER, featured_product BOOLEAN DEFAULT false, tx_description TEXT, co_enterprise VARCHAR(50), id_enterprise INTEGER, nu_tax DECIMAL(10,5), image TEXT);"
   },
   {
     "id": 16,

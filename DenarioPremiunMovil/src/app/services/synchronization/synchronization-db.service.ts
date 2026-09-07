@@ -116,7 +116,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 23;
+  private CURRENT_DB_VERSION: number = 24;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
 
@@ -968,16 +968,16 @@ export class SynchronizationDBService {
     let insertStatement = "INSERT OR REPLACE INTO products(" +
       'id_product,co_product,na_product,co_primary_unit,co_product_structure,' +
       'id_product_structure,tx_dimension,tx_packing,points,nu_priority,' +
-      'featured_product,tx_description, co_enterprise, id_enterprise, nu_tax' +
+      'featured_product,tx_description, co_enterprise, id_enterprise, nu_tax, image' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idProduct, obj.coProduct, obj.naProduct,
       obj.coPrimaryUnit, obj.coProductStructure, obj.idProductStructure, obj.txDimension,
       obj.txPacking, obj.points, obj.nuPriority, obj.featuredProduct,
-      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax]]);
+      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax, obj.image ?? null]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
