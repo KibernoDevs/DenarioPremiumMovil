@@ -112,6 +112,7 @@ export class VisitaComponent implements OnInit {
 
   disableSaveButton = true;
   disableSendButton = true;
+  private hydratingPersistedVisit = false;
   disabledButtonEvent = false;
   actividadRequiereEvento = false;
   actividadRequiereFirma = false;
@@ -263,6 +264,8 @@ export class VisitaComponent implements OnInit {
       if (this.visitServ.editVisit) {
         //poblamos la data con lo que esta en la visita guardada
         var visita = this.visitServ.visit;
+        this.visitServ.pauseVisitDirtyTracking();
+        this.hydratingPersistedVisit = true;
 
 
         if (this.multiempresa) {
@@ -278,6 +281,14 @@ export class VisitaComponent implements OnInit {
         this.fechaVisita = this.fechaMinima = this.dateServ.toISOString(visita.daVisit);
         this.fechaInitial = visita.daInitial;
         this.visitServ.coordenadas = visita.coordenada;
+        this.nuSequence = visita.nuSequence;
+        this.viewOnly = (visita.stVisit == VISIT_STATUS_VISITED);
+        this.fromWeb = (visita.stVisit == VISIT_STATUS_NOT_VISITED);
+        this.initialLock = this.fromWeb;
+        this.seedVisitGeneralFromPersisted(visita);
+        this.adjuntoService.setup(this.syncServ.getDatabase(), this.visitServ.signatureVisit, this.viewOnly, COLOR_LILA);
+        this.adjuntoService.getSavedPhotos(this.syncServ.getDatabase(), visita.coVisit, 'visitas');
+
         this.clientDBServ.getClientById(visita.idClient).then(client => {
           this.cliente = client;
           this.setClientfromSelector(this.cliente);
@@ -288,20 +299,9 @@ export class VisitaComponent implements OnInit {
             this.selectorCliente?.setup(this.empresaSeleccionada.idEnterprise,
               this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false, 'vis');
 
+        }).catch(() => {
+          this.finishPersistedVisitHydration();
         });
-        /*
-        this.cliente.idClient = visita.idClient;
-        this.cliente.coClient = visita.coClient;
-        this.cliente.lbClient = this.nombreCliente = visita.naClient;
-        this.cliente.idAddressClients = visita.idAddressClient;
-        this.cliente.coAddressClients = visita.coAddressClient;
-        */
-        this.nuSequence = visita.nuSequence;
-        this.viewOnly = (visita.stVisit == VISIT_STATUS_VISITED);
-        this.fromWeb = (visita.stVisit == VISIT_STATUS_NOT_VISITED);
-        this.initialLock = this.fromWeb;
-        this.adjuntoService.setup(this.syncServ.getDatabase(), this.visitServ.signatureVisit, this.viewOnly, COLOR_LILA);
-        this.adjuntoService.getSavedPhotos(this.syncServ.getDatabase(), visita.coVisit, 'visitas');
 
         // y las incidencias tambien:
         for (let i = 0; i < visita.visitDetails.length; i++) {
@@ -536,7 +536,7 @@ export class VisitaComponent implements OnInit {
         }
         ///************* */
 
-        if (this.visitServ.coordenadas != "" && this.direccionCliente.coordenada != "") {
+        if (this.visitServ.coordenadas != "" && this.direccionCliente?.coordenada != "") {
           this.disabledButtonViewRoute = false;
         } else {
           this.disabledButtonViewRoute = true;
@@ -545,9 +545,16 @@ export class VisitaComponent implements OnInit {
         this.direccionAnterior = this.direccionCliente;
         this.refreshVisitGeneralValid();
         this.syncVisitEditContext();
+        if (this.hydratingPersistedVisit) {
+          this.finishPersistedVisitHydration();
+        }
         this.onAddressSelect();
 
-      })
+      }).catch(() => {
+        if (this.hydratingPersistedVisit) {
+          this.finishPersistedVisitHydration();
+        }
+      });
 
 
     }
@@ -555,6 +562,9 @@ export class VisitaComponent implements OnInit {
       console.log("cliente vacio");
       this.nombreCliente = "";
       this.hasClient = false;
+      if (this.hydratingPersistedVisit) {
+        this.finishPersistedVisitHydration();
+      }
     }
   }
 
@@ -691,8 +701,15 @@ export class VisitaComponent implements OnInit {
   }
 
   private isVisitStarted(): boolean {
+    if (this.fromWeb && this.initialLock) {
+      return false;
+    }
+    if (!this.fromWeb && this.visitServ.editVisit) {
+      return true;
+    }
     const daInitial = (this.fechaInitial || this.visitServ.visit?.daInitial || '').trim();
-    return daInitial.length > 0 && !(this.fromWeb && this.initialLock);
+    const daVisit = (this.visitServ.visit?.daVisit || this.fechaVisita || '').trim();
+    return daInitial.length > 0 || daVisit.length > 0;
   }
 
   resetEventSelect() {
@@ -1230,6 +1247,46 @@ export class VisitaComponent implements OnInit {
       && this.direccionCliente != null
       && this.isVisitStarted();
     this.visitServ.onVisitGeneralValid(valid);
+    this.syncVisitEditContext();
+  }
+
+  private seedVisitGeneralFromPersisted(visita: Visit): void {
+    this.cliente = {
+      ...this.cliente,
+      idClient: visita.idClient,
+      coClient: visita.coClient,
+      lbClient: visita.naClient,
+      naClient: visita.naClient,
+      idAddressClients: visita.idAddressClient,
+      coAddressClients: visita.coAddressClient,
+    } as Client;
+    this.hasClient = Number(visita.idClient) > 0;
+    this.nombreCliente = visita.naClient || '';
+    this.direccionCliente = {
+      idAddress: visita.idAddressClient,
+      coAddress: visita.coAddressClient ?? '',
+      naAddress: '',
+      idClient: visita.idClient,
+      idAddressType: 0,
+      coAddressType: '',
+      txAddress: '',
+      nuPhone: '',
+      naResponsible: '',
+      coEnterpriseStructure: '',
+      idEnterpriseStructure: 0,
+      coClient: visita.coClient,
+      coEnterprise: visita.coEnterprise,
+      idEnterprise: visita.idEnterprise,
+      coordenada: '',
+      editable: false,
+    } as AddresClient;
+  }
+
+  private finishPersistedVisitHydration(): void {
+    this.hydratingPersistedVisit = false;
+    this.refreshVisitGeneralValid();
+    this.visitServ.markVisitOpenedFromPersistedCopy();
+    this.visitServ.resumeVisitDirtyTracking();
     this.syncVisitEditContext();
   }
 

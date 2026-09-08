@@ -67,6 +67,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Guardar/Enviar: Guardar solo General al pulsar; Enviar actividades/GPS/firma transportista al click — `VIS-SAVE-001` / `VIS-SEND-001`.
 - Guardar tras persistir: OFF hasta `markVisitDirty` / edición de usuario — `VIS-SAVE-002`.
 - Enviar: General OK habilita; tras fallo apaga y al editar reactiva; alerta local + salto a pestaña; `signatureVisit` solo UI — `VIS-SEND-001`.
+- Reabrir SAVED: sembrar cliente/sucursal antes de General; Enviar ON / Guardar OFF; `daReal` no implica read-only — `VIS-REOPEN-001`.
 - Comentario de actividad: máx. 120 (`incidences.tx_description`); motivo reagendo máx. 200; no depender de editar tras Enviar (`TO_SEND` es readonly) — `VIS-COMMENT-001`.
 
 ## Clientes potenciales

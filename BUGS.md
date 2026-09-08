@@ -503,6 +503,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [VIS-REOPEN-001] Al reabrir visita guardada Enviar/Guardar quedan OFF
+
+- **Síntoma:** Abrir una visita `SAVED` no siempre habilita Enviar (y a veces tampoco Guardar tras editar). Intermitente según hidratación de cliente/sucursal.
+- **Causa:** `refreshVisitGeneralValid()` corría con `cliente`/`direccionCliente` vacíos; `isVisitStarted()` exigía `daInitial`; `isVisitReadOnlyForEdit()` usaba `daReal` como enviado. Adjuntos al abrir marcaban dirty o corrían con General falsa.
+- **Fix:** Sembrar cliente/sucursal desde la visita persistida; visita local `editVisit` cuenta como iniciada; read-only solo TO_SEND/VISITED/`viewOnly`; pause dirty en hidratación y `markVisitOpenedFromPersistedCopy` al terminar.
+- **Evitar:** No evaluar General antes de ids persistidos. No tratar `daReal` como status de envío.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts`, specs + smoke Visitas.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [ATTACH-SEND-001] `signature*` no debe exigir adjuntos al Enviar
 
 - **Síntoma:** Enviar bloqueaba sin fotos/firma en Devoluciones, Inventarios, Depósitos, Pedidos, Visitas y Cliente potencial aunque no existiera un flag `required*Attachments`.
