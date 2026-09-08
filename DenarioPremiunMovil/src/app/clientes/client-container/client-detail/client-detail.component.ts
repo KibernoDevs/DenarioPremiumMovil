@@ -682,7 +682,7 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   showDocVentasTab() {
-    if (this.clientLogic.esTransportista) {
+    if (this.clientLogic.esTransportista || this.clientLogic.isFinanceHiddenForUser) {
       return false;
     }
     /*

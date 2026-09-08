@@ -404,8 +404,8 @@
                 }
                 }
 
-                @if(orderServ.showCreditLimit && orderServ.order.stDelivery != DELIVERY_STATUS_SENT ||
-                orderServ.order.stDelivery == null){
+                @if(!clientLogic.isFinanceHiddenForUser && orderServ.showCreditLimit && (orderServ.order.stDelivery != DELIVERY_STATUS_SENT ||
+                orderServ.order.stDelivery == null)){
                 <div [ngClass]="{ 'text-green': orderServ.cliente.nuCreditLimit > orderServ.totalPedido,
                                 'text-red': orderServ.cliente.nuCreditLimit <= orderServ.totalPedido }">
                   <h3 class="titulototalesPedidos">{{ orderServ.getTag("PED_LIMITE_CREDITO")}}:
@@ -1003,6 +1003,7 @@
                       orderServ.cliente.nuPhone }}
 
                     </ion-col>
+                    @if(!clientLogic.isFinanceHiddenForUser){
                     <ion-col size="12" size-sm="12" size-xs="12">
 
                       <span class="titulosBold">{{ orderServ.getTag("PED_SALDO")}}:</span>
@@ -1027,6 +1028,7 @@
                       ,orderServ.cliente.nuCreditLimit))}}
 
                     </ion-col>
+                    }
                     }
                     <ion-col size="12" size-sm="12" size-xs="12">
 
