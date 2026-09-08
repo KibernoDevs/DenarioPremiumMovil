@@ -10,6 +10,7 @@ const fs   = require('fs');
 const yaml = require('js-yaml');
 const { chromium } = require('playwright');
 const { conectar, volverAHome } = require('./connect');
+const { contrastarVGs } = require('./contraste-vgs');
 
 // ── Parsear args ──────────────────────────────────────────────────────────────
 const rawArgs = process.argv.slice(2);
@@ -48,7 +49,15 @@ const MODULOS = {
   visitas:     require('./modules/visitas').runVisitas,
   productos:   require('./modules/productos').runProductos,
   vendedores:  require('./modules/vendedores').runVendedores,
+  // ── Módulo ESPECIAL, no entra en la corrida completa ──────────────────────
+  // Solo aplica a clientes con `suggestedOrderByDispatchAndReturn = true` (hoy,
+  // solo hidroponias). Se pide a mano:
+  //     node automation/playwright/run.js hidroponias --modulo=sugerido
+  // Va DESPUÉS de los normales: el sugerido nace de un inventario y termina en
+  // un pedido, así que si el piso está roto este módulo falla sin decir por qué.
+  sugerido:    require('./modules/sugerido').runSugerido,
 };
+
 
 // `pedidos` va al final: es el módulo que más escribe y el que más tarda.
 // `cobros` sigue fuera del orden por defecto — se corre con --modulo=cobros.
@@ -123,6 +132,17 @@ function dataParaModulo(modulo) {
         retentionDocTypeCR:            vgs.retentionDocTypeCR === true,
         metodoPago:                    mod.metodo_pago || 'efectivo',
         mockCamaraFunciona:            mod.mock_camara_funciona,   // undefined = probar el mock
+      };
+    case 'sugerido':
+      return {
+        aplica: mod.aplica !== false,
+        // 🔑 El oráculo se calcula en runtime desde la BD del equipo; aquí NO
+        //    van números de negocio. Solo lo que gobierna si el módulo aplica.
+        suggestedOrderByDispatchAndReturn: vgs.suggestedOrderByDispatchAndReturn === true,
+        // Días hasta la próxima visita. Con 1, la guarda `stock >= sugerido`
+        // deja TODOS los sugeridos en 0 y parece que no calcula: no es un
+        // hallazgo, es la guarda. Se teclea 10 para que salgan mayores que 0.
+        diasHasta: Number(mod.dias_hasta_proxima) || 10,
       };
     case 'pedidos':
       return {
@@ -229,6 +249,30 @@ if (invalidos.length) {
     console.error(`ERR: no se pudo conectar al CDP: ${e.message}`);
     console.error('Verificar: adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>');
     process.exit(1);
+  }
+
+  // ── Contraste NUBE ↔ EQUIPO, antes de medir nada ──────────────────────────
+  // 🔑 Si la web dice una cosa y el equipo otra, TODOS los casos que dependan de
+  //    esa variable van a medir contra el valor viejo. Enterarse aquí cuesta
+  //    cinco segundos; enterarse tres pasos después costó dos corridas el 07/09
+  //    y estuvo a punto de convertir un aviso correcto en un defecto reportado.
+  let contraste = null;
+  try {
+    contraste = await contrastarVGs(pg, QA_CLIENTE);
+    contraste.lineas.forEach(l => console.log('  ' + l));
+    console.log('');
+    const md = [
+      `# Contraste de variables globales · ${QA_CLIENTE}`,
+      '',
+      '**NUBE** = `global_configuration` (lo configurado en la web)',
+      '**EQUIPO** = `localStorage.globalConfiguration` (lo que la app usa de verdad)',
+      '',
+      ...contraste.lineas,
+      '',
+    ];
+    fs.writeFileSync(path.join(RUN_DIR, '_vgs-contraste.md'), md.join('\n'));
+  } catch (e) {
+    console.warn(`  WARN contraste de VGs: ${e.message}\n`);
   }
 
   const totalStart = Date.now();

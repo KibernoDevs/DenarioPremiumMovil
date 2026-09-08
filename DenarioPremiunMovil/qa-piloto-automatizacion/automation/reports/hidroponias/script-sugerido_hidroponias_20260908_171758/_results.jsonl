@@ -1,0 +1,32 @@
+{"modulo":"sugerido","id":"DM-SUG-002","descripcion":"VG suggestedOrderByDispatchAndReturn activa","resultado":"PASS","nota":"leída del equipo","ms":0,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-001","descripcion":"Migración v22 → tablas del sugerido creadas","resultado":"PASS","nota":"17 clientes · 167 facturas · última: 2026-09-07","ms":969,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-011","descripcion":"Despacho SUMA un producto repetido entre facturas del mismo día","resultado":"BLOCKED","nota":"ningún cliente del equipo tiene un producto en 2+ facturas de su última fecha. Escenario elegido: 100113 con 3 facturas y 0 repetidos. Se desbloquea asignando a este vendedor un cliente que sí lo tenga (ver automation/db/sql/hidroponias-asignar-corneteria-a-v3.sql)","ms":1902,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-003","descripcion":"Escenario elegido desde el equipo","resultado":"PASS","nota":"100113 HIPERMERCADO PARAMO, C.A (suc 680) · 2026-09-07 · 3 facturas · 9 producto(s) que el bug ocultaba · 5 de control","ms":1902,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-019","descripcion":"days_since_last se calcula, no se teclea","resultado":"BLOCKED","nota":"no se llegó a la pestaña General de un inventario en curso","ms":3286,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-021","descripcion":"days_until_next tecleado (10) se respeta","resultado":"BLOCKED","nota":"sin campo","ms":3286,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-003b","descripcion":"Resumen → «Pedido Sugerido» abre la vista previa","resultado":"BLOCKED","nota":"no abrió — ¿hay un inventario en curso con productos cargados?","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-010","descripcion":"DM-SUG-010","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-012","descripcion":"DM-SUG-012","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-013","descripcion":"DM-SUG-013","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-022","descripcion":"DM-SUG-022","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-023","descripcion":"DM-SUG-023","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-026","descripcion":"DM-SUG-026","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-030","descripcion":"DM-SUG-030","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-031","descripcion":"DM-SUG-031","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-032","descripcion":"DM-SUG-032","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-034","descripcion":"DM-SUG-034","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-035","descripcion":"DM-SUG-035","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-036","descripcion":"DM-SUG-036","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-040","descripcion":"DM-SUG-040","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-041","descripcion":"DM-SUG-041","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-042","descripcion":"DM-SUG-042","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-043","descripcion":"DM-SUG-043","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-050","descripcion":"DM-SUG-050","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-052","descripcion":"DM-SUG-052","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-053","descripcion":"DM-SUG-053","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-060","descripcion":"DM-SUG-060","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-061","descripcion":"DM-SUG-061","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-062","descripcion":"DM-SUG-062","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-063","descripcion":"DM-SUG-063","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-070","descripcion":"DM-SUG-070","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}
+{"modulo":"sugerido","id":"DM-SUG-071","descripcion":"DM-SUG-071","resultado":"BLOCKED","nota":"no se pudo abrir la vista previa del sugerido","ms":5257,"runner":"playwright-standalone"}

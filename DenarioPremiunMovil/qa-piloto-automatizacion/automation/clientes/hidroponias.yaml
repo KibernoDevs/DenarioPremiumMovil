@@ -82,6 +82,20 @@ modules:
   vendedores:
     aplica: true
 
+  # ── Módulo ESPECIAL — solo hidroponias ────────────────────────────────────
+  # Se pide a mano y va DESPUÉS de los normales:
+  #   node automation/playwright/run.js hidroponias --modulo=sugerido
+  # 🔑 Aquí NO van números de negocio: el oráculo se calcula en cada corrida
+  #    leyendo la BD del propio equipo (automation/sugerido/oraculo.js). Los
+  #    datos de hidroponias cambian solos y un oráculo escrito a mano nace
+  #    vencido — produce FAILs que no son defectos, o PASSes que no probaron nada.
+  sugerido:
+    aplica: true
+    # Días hasta la próxima visita. Con 1, la guarda `stock actual >= sugerido`
+    # deja TODOS los sugeridos en 0 y parece que el cálculo no funciona: NO es
+    # un hallazgo, es la guarda. Con 10 salen mayores que 0 y son medibles.
+    dias_hasta_proxima: 10
+
 ultima_corrida:
   run_id: 20260710_084522_smoke-completo
   fecha: "2026-07-10"
