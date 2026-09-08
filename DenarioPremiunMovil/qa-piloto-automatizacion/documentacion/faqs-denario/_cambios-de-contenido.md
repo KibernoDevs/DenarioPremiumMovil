@@ -7,6 +7,16 @@ preparó el pasante (`FAQs_Denario`). El **diseño** cambió por completo y eso 
 se agregó o se reordenó respecto del original. Así, quien conozca las piezas originales puede
 ver qué se tocó y por qué, y discutirlo si no está de acuerdo.
 
+## Dónde está cada cosa
+
+| Carpeta | Qué contiene |
+|---|---|
+| `documentacion/faqs-denario/` | las **fuentes**: el HTML de cada pieza, la hoja de estilo, el medidor y este registro |
+| `documentacion/FAQs_Denario_v2/` | los **11 PDF**, listos para subir al Drive |
+
+⚠ El generador deja el PDF **junto al HTML**. Si se rehace una pieza, hay que **moverlo** a
+`FAQs_Denario_v2/` para que la carpeta de entrega quede al día.
+
 ## Reglas que seguimos
 
 1. **Todo cabe en una página.** Cuando el contenido se pasa, **se recorta** — no se achica la
