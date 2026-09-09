@@ -2350,8 +2350,8 @@ export class CollectionService {
 
   /**
    * Excedente para anticipo automático (misma moneda que prepaidRangeAmount).
-   * El umbral de activación suma tolerancia positiva + prepaidRangeAmount
-   * (`getAutomatedPrepaidActivationThreshold`).
+   * El umbral de activación es solo `prepaidRangeAmount`
+   * (`getAutomatedPrepaidActivationThreshold` / COB-PREPAID-005).
    */
   private getPrepaidExcessAmount(): number {
     const excess = this.syncPrepaidDifferenceAmounts();
@@ -2372,44 +2372,13 @@ export class CollectionService {
   }
 
   /**
-   * Techo de tolerancia positiva en moneda del cobro (0 si tolerancia0 off).
-   * Misma base que Enviar (`computeIsWithinTolerancia` / COB-TOL-001).
-   */
-  private getPositiveToleranceCeilingInCollectionCurrency(): number {
-    if (!this.tolerancia0) {
-      return 0;
-    }
-    if (this.TipoTolerancia == 0) {
-      return this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
-    }
-    const base = Math.abs(Number(this.montoTotalPagar) || 0);
-    return (base * this.parseConfigDecimal(this.RangoToleranciaPositiva)) / 100;
-  }
-
-  /**
-   * Umbral mínimo de exceso para activar anticipo automático:
-   * techo tolerancia positiva + prepaidRangeAmount (ej. 10 + 5 = 15).
-   * Moneda alineada con `getPrepaidExcessAmount` / prepaidRangeCurrency.
+   * Umbral mínimo de exceso para activar anticipo automático = prepaidRangeAmount
+   * (monto mínimo excedido configurado; no se suma a tolerancia positiva).
+   * COB-PREPAID-001 / COB-PREPAID-005. Redondeo a decimales de moneda (COB-TOL-DEC-002).
    */
   private getAutomatedPrepaidActivationThreshold(): number {
-    let positiveCeiling = this.getPositiveToleranceCeilingInCollectionCurrency();
     const prepaidMin = this.parseConfigDecimal(this.prepaidRangeAmount);
-
-    if (
-      this.prepaidRangeCurrency
-      && this.collection?.coCurrency
-      && this.prepaidRangeCurrency !== this.collection.coCurrency
-    ) {
-      const converted = this.convertirMonto(
-        positiveCeiling,
-        this.getEffectiveExchangeRate(),
-        this.collection.coCurrency,
-      );
-      positiveCeiling = converted > 0 ? converted : positiveCeiling;
-    }
-
-    const decimals = this.getMoneyDecimalPlaces();
-    return Number((positiveCeiling + prepaidMin).toFixed(decimals));
+    return Number(prepaidMin.toFixed(this.getMoneyDecimalPlaces()));
   }
 
   shouldCreateAutomatedPrepaidOnSend(): boolean {
