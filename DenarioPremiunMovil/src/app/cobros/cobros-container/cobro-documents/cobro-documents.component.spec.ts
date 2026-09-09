@@ -309,6 +309,29 @@ describe('CobrosDocumentComponent', () => {
       expect(collectServiceMock.mensaje).toContain('2');
     });
 
+    it('destilda el último descuento que excede maxCollectDiscount (20% + 65% con tope 80%)', () => {
+      collectServiceMock.maxCollectDiscount = 80;
+      collectServiceMock.collectDiscounts = [
+        { idCollectDiscount: 10, nuCollectDiscount: 20, naCollectDiscount: 'D20', requireInput: false },
+        { idCollectDiscount: 11, nuCollectDiscount: 65, naCollectDiscount: 'D65', requireInput: false },
+      ];
+
+      component.toggleTempSelection(10);
+      expect(collectServiceMock.tempSelectedCollectDiscounts.map((d: any) => d.idCollectDiscount))
+        .toEqual([10]);
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(20);
+
+      const checkbox = { checked: true } as HTMLIonCheckboxElement;
+      const event = { detail: { checked: true }, target: checkbox } as unknown as CustomEvent;
+      component.toggleTempSelection(11, event);
+
+      expect(collectServiceMock.tempSelectedCollectDiscounts.map((d: any) => d.idCollectDiscount))
+        .toEqual([10]);
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(20);
+      expect(checkbox.checked).toBeFalse();
+      expect(component.alertMessageOpen).toBeTrue();
+    });
+
     it('setNu que excede quita el descuento y muestra disponible', () => {
       collectServiceMock.tempSelectedCollectDiscounts = [
         { idCollectDiscount: 1, nuCollectDiscount: 8, naCollectDiscount: 'D8', requireInput: false },

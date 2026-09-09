@@ -4158,34 +4158,42 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.cdr.detectChanges();
   }
 
-  toggleTempSelection(id: number) {
+  toggleTempSelection(id: number, event?: CustomEvent) {
     const d = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
     if (!d) return;
     const maxPercent = this.getMaxCollectDiscountPercent();
     const idx = this.collectService.tempSelectedCollectDiscounts.findIndex(x => x.idCollectDiscount === id);
-    if (idx >= 0) {
-      // quitar selección
-      this.collectService.tempSelectedCollectDiscounts.splice(idx, 1);
-      // Recalcular y actualizar flag de bloqueo
-      const totalAfterRemoval = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
-      this.collectService.totalCollectDiscountsSelected = totalAfterRemoval;
-      this.disableDiscountCheckboxes = totalAfterRemoval >= maxPercent;
-      this.cdr.detectChanges();
+    const wantsChecked = event?.detail != null
+      ? !!event.detail.checked
+      : idx < 0;
+
+    if (!wantsChecked) {
+      if (idx >= 0) {
+        this.collectService.tempSelectedCollectDiscounts.splice(idx, 1);
+        const totalAfterRemoval = this.collectService.tempSelectedCollectDiscounts
+          .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
+        this.collectService.totalCollectDiscountsSelected = totalAfterRemoval;
+        this.disableDiscountCheckboxes = totalAfterRemoval >= maxPercent;
+        this.cdr.detectChanges();
+      }
       return;
     }
 
-    // Añadir: validar que no supere maxCollectDiscount
-    const currentTotal = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount || 0), 0);
+    if (idx >= 0) {
+      return;
+    }
+
+    const currentTotal = this.collectService.tempSelectedCollectDiscounts
+      .reduce((acc, t) => acc + Number(t.nuCollectDiscount || 0), 0);
     const toAdd = Number(d.nuCollectDiscount ?? 0);
     const candidateTotal = currentTotal + toAdd;
     const remaining = Math.max(0, maxPercent - currentTotal);
 
     if (candidateTotal > maxPercent) {
-      this.notifyCollectDiscountLimitExceeded(remaining);
+      this.revertCollectDiscountCheckboxSelection(id, remaining, event);
       return;
     }
 
-    // añadir copia del descuento (guardar todos los campos)
     let na: any, nu: any;
     if (d.requireInput) {
       na = null;
@@ -4196,9 +4204,35 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
     this.collectService.tempSelectedCollectDiscounts.push({ ...d, nuCollectDiscount: nu, naCollectDiscount: na } as any);
 
-    // Si llega exactamente al tope, bloquear los checkboxes
     this.disableDiscountCheckboxes = candidateTotal >= maxPercent;
     this.collectService.totalCollectDiscountsSelected = candidateTotal;
+    this.cdr.detectChanges();
+  }
+
+  /** Destilda el último descuento que excedió maxCollectDiscount y sincroniza la UI. */
+  private revertCollectDiscountCheckboxSelection(
+    idCollectDiscount: number,
+    availablePercent: number,
+    event?: CustomEvent,
+  ): void {
+    const removeIdx = this.collectService.tempSelectedCollectDiscounts
+      .findIndex(x => x.idCollectDiscount === idCollectDiscount);
+    if (removeIdx >= 0) {
+      this.collectService.tempSelectedCollectDiscounts.splice(removeIdx, 1);
+    }
+
+    const maxPercent = this.getMaxCollectDiscountPercent();
+    const totalAfter = this.collectService.tempSelectedCollectDiscounts
+      .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
+    this.collectService.totalCollectDiscountsSelected = totalAfter;
+    this.disableDiscountCheckboxes = totalAfter >= maxPercent;
+
+    const checkbox = event?.target as HTMLIonCheckboxElement | null;
+    if (checkbox) {
+      checkbox.checked = false;
+    }
+
+    this.notifyCollectDiscountLimitExceeded(availablePercent);
     this.cdr.detectChanges();
   }
 

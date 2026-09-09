@@ -418,67 +418,57 @@ export class CollectionService {
     //this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
     this.disabledClient = false;
 
-    //SETEAMOS LAS VARIABLES PARA COBROS
-    this.parteDecimal = Number(this.globalConfig.get('parteDecimal'));
-    this.enterpriseEnabled = this.globalConfig.get('enterpriseEnabled') === 'true' ? true : false;
-    this.sizeRetention = Number(this.globalConfig.get('sizeRetention'));
-    this.retentionDocTypeCR = this.globalConfig.get('retentionDocTypeCR') === "true" ? true : false;
-    this.clientBankAccount = this.globalConfig.get('clientBankAccount') === "true" ? true : false;
-    this.userCanSelectIGTF = this.globalConfig.get('userCanSelectIGTF') === "true" ? true : false;
-    this.retencion = this.globalConfig.get('retencion') === "true" ? true : false;
-    this.historicoTasa = this.globalConfig.get('historicoTasa') === "true" ? true : false;
-    this.validateCollectionDate = this.globalConfig.get('validateCollectionDate') === "true" ? true : false;
-    this.historicPartialPayment = this.globalConfig.get('historicPartialPayment') === "true" ? true : false;
-    this.userCanCollectIva = this.globalConfig.get('userCanCollectIva') === "true" ? true : false;
-    //this.conversionDocument = this.globalConfig.get('conversionDocument') === "true" ? true : false;
-    this.currencyBank = this.globalConfig.get('currencyBank') == "true" ? true : false;
-    this.disableCheckIGTF = this.globalConfig.get('disableCheckIGTF') == "true" ? true : false;
-    this.tolerancia0 = this.globalConfig.get('tolerancia0') == "true" ? true : false;
-    this.TipoTolerancia = Number(this.globalConfig.get('TipoTolerancia'));
-    this.RangoTolerancia = Number(this.globalConfig.get('RangoTolerancia'));
-    this.MonedaTolerancia = this.globalConfig.get('MonedaTolerancia');
-    this.multiCurrency = this.globalConfig.get('multiCurrency') === 'true' ? true : false;
-    this.prepaidRangeCurrency = this.globalConfig.get('prepaidRangeCurrency');
-    this.prepaidCurrency = this.globalConfig.get('prepaidCurrency');
+    // Config cobros desde globalConfig (orden cronológico de introducción)
+    this.parteDecimal = this.parseConfigNumber('parteDecimal');
+    this.enterpriseEnabled = this.parseConfigBoolean('enterpriseEnabled');
+    this.sizeRetention = this.parseConfigNumber('sizeRetention');
+    this.retentionDocTypeCR = this.parseConfigBoolean('retentionDocTypeCR');
+    this.clientBankAccount = this.parseConfigBoolean('clientBankAccount');
+    this.userCanSelectIGTF = this.parseConfigBoolean('userCanSelectIGTF');
+    this.retencion = this.parseConfigBoolean('retencion');
+    this.historicoTasa = this.parseConfigBoolean('historicoTasa');
+    this.validateCollectionDate = this.parseConfigBoolean('validateCollectionDate');
+    this.historicPartialPayment = this.parseConfigBoolean('historicPartialPayment');
+    this.userCanCollectIva = this.parseConfigBoolean('userCanCollectIva');
+    //this.conversionDocument = this.parseConfigBoolean('conversionDocument');
+    this.currencyBank = this.parseConfigBoolean('currencyBank');
+    this.disableCheckIGTF = this.parseConfigBoolean('disableCheckIGTF');
+    this.tolerancia0 = this.parseConfigBoolean('tolerancia0');
+    this.TipoTolerancia = this.parseConfigNumber('TipoTolerancia');
+    this.RangoTolerancia = this.parseConfigNumber('RangoTolerancia');
+    this.MonedaTolerancia = this.parseConfigString('MonedaTolerancia');
+    this.multiCurrency = this.parseConfigBoolean('multiCurrency');
+    this.prepaidRangeCurrency = this.parseConfigString('prepaidRangeCurrency');
     this.prepaidRangeAmount = this.parseConfigDecimal(this.globalConfig.get('prepaidRangeAmount'));
-    this.igtfDefault = this.globalConfig.get('igtfDefault') === 'true' ? true : false;
-    this.automatedPrepaid = this.globalConfig.get('automatedPrepaid') === 'true' ? true : false;
+    this.igtfDefault = this.parseConfigBoolean('igtfDefault');
+    this.automatedPrepaid = this.parseConfigBoolean('automatedPrepaid');
     this.RangoToleranciaNegativa = this.parseConfigDecimal(this.globalConfig.get('RangoToleranciaNegativa'));
     this.RangoToleranciaPositiva = this.parseConfigDecimal(this.globalConfig.get('RangoToleranciaPositiva'));
-    if (this.globalConfig.get("currencyModule") == "true" ? true : false) {
-      this.showConversion = this.currencyService.getCurrencyModule("cob").showConversion.toString() === "true" ? true : false;
-      this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
-      this.disabledCurrency = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? false : true;
+    if (this.parseConfigBoolean('currencyModule')) {
+      const cobCurrencyModule = this.currencyService.getCurrencyModule('cob');
+      this.showConversion = this.parseConfigBoolean(String(cobCurrencyModule?.showConversion ?? ''));
+      this.currencySelector = this.parseConfigBoolean(String(cobCurrencyModule?.currencySelector ?? ''));
+      this.disabledCurrency = !this.currencySelector;
     }
-    this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
-    this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
-    const userCanSelectCollectDiscountValue = (this.globalConfig.get('userCanSelectCollectDiscount') || '').trim();
-    this.userCanSelectCollectDiscount = userCanSelectCollectDiscountValue === 'true' ? true : false;
+    this.userCanAddRetention = this.parseConfigBoolean('userCanAddRetention');
+    this.enableDifferenceCodes = this.parseConfigBoolean('enableDifferenceCodes');
+    this.userCanSelectCollectDiscount = this.parseConfigBoolean('userCanSelectCollectDiscount');
+    this.missingRetention = this.parseConfigBoolean('missingRetention');
+    this.canChangeRate = this.parseConfigBoolean('canChangeRate');
+    this.alwaysRetention = this.parseConfigBoolean('alwaysRetention');
+    this.alwaysPartialPayment = this.parseConfigBoolean('alwaysPartialPayment');
+    this.enablePartialPayment = this.parseConfigBooleanDefaultTrue('enablePartialPayment');
+    this.requiredCollectionAttachments = this.parseConfigBooleanDefaultTrue('requiredCollectionAttachments');
+    this.enabledManualRate = this.parseConfigBooleanDefaultTrue('enabledManualRate');
+    this.requiredAnticipoAttachments = this.parseConfigBooleanDefaultTrue('requiredAnticipoAttachments');
+    this.requiredRetentionAttachments = this.parseConfigBooleanDefaultTrue('requiredRetentionAttachments');
+    this.multiCurrencyCollection = this.parseConfigBoolean('multiCurrencyCollection');
+    this.dynamicRetentions = this.parseConfigBoolean('dynamicRetentions');
+    this.prepaidCurrency = this.parseConfigString('prepaidCurrency');
     this.maxCollectDiscount = this.parseConfigDecimal(this.globalConfig.get('maxCollectDiscount'));
-    if (!Number.isFinite(this.maxCollectDiscount) || this.maxCollectDiscount <= 0) {
+    if (this.maxCollectDiscount <= 0) {
       this.maxCollectDiscount = 100;
     }
-    const canChangeRateValue = (this.globalConfig.get('canChangeRate') || '').trim();
-    this.canChangeRate = canChangeRateValue === 'true' ? true : false;
-    const missingRetentionValue = (this.globalConfig.get('missingRetention') || '').trim();
-    this.missingRetention = missingRetentionValue === 'true' ? true : false;
-    const alwaysRetentionValue = (this.globalConfig.get('alwaysRetention') || '').trim();
-    this.alwaysRetention = alwaysRetentionValue === 'true' ? true : false;
-    const alwaysPartialPaymentValue = (this.globalConfig.get('alwaysPartialPayment') || '').trim();
-    this.alwaysPartialPayment = alwaysPartialPaymentValue === 'true' ? true : false;
-    const enablePartialPaymentValue = (this.globalConfig.get('enablePartialPayment') || '').trim();
-    this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
-    const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
-    this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
-    const requiredAnticipoAttachmentsValue = (this.globalConfig.get('requiredAnticipoAttachments') || '').trim();
-    this.requiredAnticipoAttachments = requiredAnticipoAttachmentsValue === '' ? true : requiredAnticipoAttachmentsValue === 'true' ? true : false;
-    const requiredRetentionAttachmentsValue = (this.globalConfig.get('requiredRetentionAttachments') || '').trim();
-    this.requiredRetentionAttachments = requiredRetentionAttachmentsValue === '' ? true : requiredRetentionAttachmentsValue === 'true' ? true : false;
-    const enabledManualRateValue = (this.globalConfig.get('enabledManualRate') || '').trim();
-    this.enabledManualRate = enabledManualRateValue === '' ? true : enabledManualRateValue === 'true' ? true : false;
-    const dynamicRetentionsValue = (this.globalConfig.get('dynamicRetentions') || '').trim();
-    this.dynamicRetentions = dynamicRetentionsValue === 'true';
-    this.multiCurrencyCollection = this.globalConfig.get('multiCurrencyCollection') === 'true' ? true : false;
 
     //this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -3819,6 +3809,31 @@ export class CollectionService {
       return false;
     }
     return false;
+  }
+
+  /** Lee flag booleano de globalConfig (`'true'` → true; resto → false). */
+  private parseConfigBoolean(key: string): boolean {
+    return String(this.globalConfig.get(key) ?? '').trim().toLowerCase() === 'true';
+  }
+
+  /** Booleano de config: vacío → defaultTrue; explícito `'true'`/`'false'`. */
+  private parseConfigBooleanDefaultTrue(key: string): boolean {
+    const raw = String(this.globalConfig.get(key) ?? '').trim();
+    if (raw === '') {
+      return true;
+    }
+    return raw.toLowerCase() === 'true';
+  }
+
+  /** Entero/número de config vía `Number(globalConfig.get(key))`. */
+  private parseConfigNumber(key: string): number {
+    return Number(this.globalConfig.get(key));
+  }
+
+  /** Texto de config; null/undefined → cadena vacía. */
+  private parseConfigString(key: string): string {
+    const value = this.globalConfig.get(key);
+    return value == null ? '' : String(value);
   }
 
   /**
