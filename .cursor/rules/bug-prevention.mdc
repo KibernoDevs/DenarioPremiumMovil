@@ -48,6 +48,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Guardar tras persistir: OFF hasta `markStockDirty` / edición de usuario — `INV-SAVE-002`.
 - Enviar: General OK habilita; tras fallo apaga y al editar reactiva; productos → GPS al click; adjuntos no obligatorios (`signatureStock` solo UI) — `INV-SEND-001`.
 - Comentario Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
+- Tras `{} as ClientStocks` (cambio de cliente): reponer `daysUntilNext`/`daysSinceLast` (default 1); Pedido Sugerido no usa `undefined` — `INV-DAYS-001`.
 
 ## Depósitos
 

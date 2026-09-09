@@ -386,6 +386,21 @@ describe('InventariosLogicService', () => {
     });
   });
 
+  describe('INV-DAYS-001 resolvePositiveInventoryDays', () => {
+    it('defaults undefined, NaN and values < 1 to 1', () => {
+      expect(service.resolvePositiveInventoryDays(undefined)).toBe(1);
+      expect(service.resolvePositiveInventoryDays(null)).toBe(1);
+      expect(service.resolvePositiveInventoryDays(Number.NaN)).toBe(1);
+      expect(service.resolvePositiveInventoryDays(0)).toBe(1);
+      expect(service.resolvePositiveInventoryDays(-2)).toBe(1);
+    });
+
+    it('keeps valid horizon days', () => {
+      expect(service.resolvePositiveInventoryDays(1)).toBe(1);
+      expect(service.resolvePositiveInventoryDays(7)).toBe(7);
+    });
+  });
+
   describe('refreshSuggestedOrdersIfEnabled', () => {
     const dbMock = {} as any;
 

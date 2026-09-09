@@ -248,6 +248,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-DAYS-001] Pedido Sugerido NaN tras cambio de cliente
+
+- **Síntoma:** Tras cambiar de cliente en Inventarios, General muestra “Días para siguiente Inventario” = 1. Al inventariar productos y pulsar Pedido Sugerido el cálculo da NaN. Al volver a General el campo queda vacío.
+- **Causa:** `applyClientChangeReset` hace `newClientStock = {} as ClientStocks` (no llama al constructor) y solo reasigna ids/status/fecha. `daysUntilNext`/`daysSinceLast` quedan `undefined`. La UI local sigue en 1; `calcularTotalesSugerenciaPedido` multiplica por `undefined` → NaN. `ngOnInit` al reentrar copia el `undefined` al input.
+- **Fix:** Reset de cliente restaura días a 1 y sincroniza UI. Hidratación/setters y Pedido Sugerido usan `resolvePositiveInventoryDays` (`undefined`/`NaN`/`< 1` → 1).
+- **Evitar:** No recrear `{} as ClientStocks` sin reponer `daysUntilNext`/`daysSinceLast`. No escribir `undefined` al servicio desde `ionChange` (`undefined < 1` es `false`).
+- **Tests:** `inventario-general.component.spec.ts` y `inventarios-logic.service.spec.ts` describe `INV-DAYS-001`.
+- **Archivos:** `inventario-general.component.ts`, `inventarios-logic.service.ts` (+ specs); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-SEARCH-001] Buscador Inventarios sensible a tildes
 
 - **Síntoma:** Buscar “Azucar” vs “Azúcar” (o “Calorias” vs “Calorías”) en Inventarios devuelve conteos distintos; a veces “No hay productos” con tilde o menos resultados sin tilde.

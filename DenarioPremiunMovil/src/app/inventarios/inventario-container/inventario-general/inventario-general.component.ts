@@ -125,8 +125,12 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
     }
     this.txComment = this.inventariosLogicService.newClientStock.txComment;
-    this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
-    this.daysUntilNextInventory = this.inventariosLogicService.newClientStock.daysUntilNext;
+    this.daysSinceLastInventory = this.inventariosLogicService.resolvePositiveInventoryDays(
+      this.inventariosLogicService.newClientStock.daysSinceLast
+    );
+    this.daysUntilNextInventory = this.inventariosLogicService.resolvePositiveInventoryDays(
+      this.inventariosLogicService.newClientStock.daysUntilNext
+    );
   }
 
 
@@ -169,8 +173,12 @@ export class InventarioGeneralComponent implements OnInit {
       await this.orderServ.setup();
         //ESTO ES PARA CUANDO CAMBIE DE PESTANAS, RECUPERAR LA INFORMACION YA COLOCADA
         this.txComment = this.inventariosLogicService.newClientStock.txComment;
-        this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
-        this.daysUntilNextInventory = this.inventariosLogicService.newClientStock.daysUntilNext;
+        this.daysSinceLastInventory = this.inventariosLogicService.resolvePositiveInventoryDays(
+          this.inventariosLogicService.newClientStock.daysSinceLast
+        );
+        this.daysUntilNextInventory = this.inventariosLogicService.resolvePositiveInventoryDays(
+          this.inventariosLogicService.newClientStock.daysUntilNext
+        );
         if (this.inventariosLogicService.newClientStock.idClient == undefined) {
 
           //ESTOY REALIZANDO UN INVENTARIO DESDE 0
@@ -283,23 +291,17 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   setDaysSinceLastInventory(){
-    if(this.daysSinceLastInventory < 1){
-      this.inventariosLogicService.newClientStock.daysSinceLast = 1;
-      this.daysSinceLastInventory = 1;
-    }else{
-      this.inventariosLogicService.newClientStock.daysSinceLast = this.daysSinceLastInventory;
-    }
+    const days = this.inventariosLogicService.resolvePositiveInventoryDays(this.daysSinceLastInventory);
+    this.daysSinceLastInventory = days;
+    this.inventariosLogicService.newClientStock.daysSinceLast = days;
     void this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.dbServ.getDatabase());
     this.inventariosLogicService.notifyStockEdited();
   }
 
   setDaysUntilNextInventory(){
-    if(this.daysUntilNextInventory < 1){
-      this.inventariosLogicService.newClientStock.daysUntilNext = 1;
-      this.daysUntilNextInventory = 1;
-    }else{
-      this.inventariosLogicService.newClientStock.daysUntilNext = this.daysUntilNextInventory;
-    }
+    const days = this.inventariosLogicService.resolvePositiveInventoryDays(this.daysUntilNextInventory);
+    this.daysUntilNextInventory = days;
+    this.inventariosLogicService.newClientStock.daysUntilNext = days;
     void this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.dbServ.getDatabase());
     this.inventariosLogicService.notifyStockEdited();
   }
@@ -537,6 +539,10 @@ export class InventarioGeneralComponent implements OnInit {
     this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
     this.inventariosLogicService.newClientStock.productList = [] as ProductUtil[];
     Object.assign(this.inventariosLogicService.newClientStock, preservedTransaction);
+    this.inventariosLogicService.newClientStock.daysSinceLast = 1;
+    this.inventariosLogicService.newClientStock.daysUntilNext = 1;
+    this.daysSinceLastInventory = 1;
+    this.daysUntilNextInventory = 1;
     this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
     this.inventariosLogicService.typeStocks = [] as Inventarios[];
     this.inventariosLogicService.initInventario = false;

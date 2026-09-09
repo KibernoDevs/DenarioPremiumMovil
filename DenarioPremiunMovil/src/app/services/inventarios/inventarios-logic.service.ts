@@ -446,6 +446,15 @@ export class InventariosLogicService {
     this.suggestedOrderByDispatchAndReturn = this.globalConfig.get('suggestedOrderByDispatchAndReturn')?.toLowerCase() === 'true';
   }
 
+  /** INV-DAYS-001: {} as ClientStocks no aplica defaults del constructor. */
+  resolvePositiveInventoryDays(value: number | null | undefined): number {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 1) {
+      return 1;
+    }
+    return n;
+  }
+
   initClientStockDetails() {
     this.initInventario = true;
     this.selectedClient = false;
@@ -732,8 +741,9 @@ export class InventariosLogicService {
 
   
     if(this.suggestedOrderByDispatchAndReturn){
-    let daysSinceLastInventory = this.newClientStock.daysSinceLast;
-    let daysUntilNextInventory = this.newClientStock.daysUntilNext;
+    let daysSinceLastInventory = this.resolvePositiveInventoryDays(this.newClientStock.daysSinceLast);
+    let daysUntilNextInventory = this.resolvePositiveInventoryDays(this.newClientStock.daysUntilNext);
+    this.newClientStock.daysUntilNext = daysUntilNextInventory;
 
     //inventario anterior
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient, this.newClientStock.coClientStock);
