@@ -1531,21 +1531,13 @@ export class DepositService {
           item.nuAmountDoc = Number.isFinite(rawAmt) ? rawAmt : 0;
           this.listDeposits.push(item);
           let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
-
-
-            item.stDelivery == null ? 0 : item.stDelivery;
-            if (item.idDeposit == 0) {
-              item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
-              item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
-            }
-
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,
               coDeposit: item.coDeposit,
               stDeposit: item.stDeposit,
               stDelivery: item.stDelivery,
               daDeposit: this.normalizeDaDeposit(item.daDeposit),
-              naStatus: status,
+              naStatus: this.resolveDepositListNaStatus(item, status),
               nuAmountDoc: item.nuAmountDoc.toFixed(this.parteDecimal),
               coCurrency: item.coCurrency,
               coBank: item.coBank
@@ -1970,10 +1962,59 @@ export class DepositService {
     const deposit = Number(stDeposit);
     const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
 
-    if (deposit !== 0 && resolvedNaStatus) {
+    if (resolvedNaStatus) {
       return resolvedNaStatus;
     }
-    return this.getStatusLabel(delivery, resolvedNaStatus);
+
+    if (typeof naStatus === 'string') {
+      const trimmed = naStatus.trim();
+      if (trimmed && trimmed !== 'Enviado' && !trimmed.startsWith('Error')) {
+        return trimmed;
+      }
+    }
+
+    const fromDelivery = this.getStatusLabel(delivery, resolvedNaStatus);
+    if (fromDelivery) {
+      return fromDelivery;
+    }
+
+    if (
+      deposit !== DEPOSITO_STATUS_NEW &&
+      (deposit === DEPOSITO_STATUS_SENT ||
+        deposit === DEPOSITO_STATUS_SAVED ||
+        deposit === DEPOSITO_STATUS_TO_SEND ||
+        deposit === DEPOSIT_APPROVAL_STATUS_REJECTED)
+    ) {
+      return this.depositTags.get('DEP_DEV_SENDED') ?? 'Enviado';
+    }
+
+    return '';
+  }
+
+  private resolveDepositListNaStatus(item: Deposit, status: unknown): string {
+    const idDeposit = Number(item.idDeposit ?? 0);
+    if (idDeposit === 0) {
+      if (item.stDeposit === this.DEPOSITO_STATUS_SAVED) {
+        return 'Guardado';
+      }
+      if (item.stDeposit === this.DEPOSITO_STATUS_TO_SEND) {
+        return 'Por Enviar';
+      }
+    }
+
+    const fromHistory = this.resolveNaStatusLabel(status);
+    if (fromHistory) {
+      return fromHistory;
+    }
+
+    if (typeof status === 'string') {
+      const trimmed = status.trim();
+      if (trimmed && trimmed !== 'Enviado' && !trimmed.startsWith('Error')) {
+        return trimmed;
+      }
+    }
+
+    return '';
   }
 
   private resolveNaStatusLabel(naStatus: unknown): string {
@@ -1988,8 +2029,8 @@ export class DepositService {
       return trimmed;
     }
     if (typeof naStatus === 'object') {
-      const fromObject = String((naStatus as { na_status?: string }).na_status ?? '').trim();
-      return fromObject;
+      const row = naStatus as Record<string, unknown>;
+      return String(row['na_status'] ?? row['naStatus'] ?? '').trim();
     }
     return String(naStatus).trim();
   }
