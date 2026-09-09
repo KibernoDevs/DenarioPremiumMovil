@@ -2444,6 +2444,36 @@ describe('CollectionService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('documentos');
     });
 
+    it('COB-DOC-NEG-002: NC con nuAmountPaid negativo no bloquea Enviar por monto a pagar', () => {
+      service.collection = {
+        coType: '0',
+        collectionDetails: [
+          { coDocument: 'FACT-1', nuAmountPaid: 120690.52, inPaymentPartial: true },
+          { coDocument: 'NCR-1', nuAmountPaid: -5000, coTypeDoc: 'NCR' },
+          { coDocument: 'NCR-2', nuAmountPaid: -2775.75, coTypeDoc: 'NCR' },
+          { coDocument: 'FACT-2', nuAmountPaid: 5000 },
+        ],
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 54000 }],
+      } as any;
+      service.hideDocuments = false;
+
+      expect(service.hasIncompleteDocumentAmountToPay()).toBeFalse();
+    });
+
+    it('COB-DOC-NEG-002: factura con nuAmountPaid 0 sigue incompleta', () => {
+      service.collection = {
+        coType: '0',
+        collectionDetails: [
+          { coDocument: 'FACT-1', nuAmountPaid: 100 },
+          { coDocument: 'NCR-1', nuAmountPaid: -20 },
+          { coDocument: 'FACT-2', nuAmountPaid: 0 },
+        ],
+      } as any;
+      service.hideDocuments = false;
+
+      expect(service.hasIncompleteDocumentAmountToPay()).toBeTrue();
+    });
+
     it('hasIncompletePersistedPaymentMethods: transferencia sin cuenta receptor', () => {
       service.collection = {
         coType: '0',

@@ -3179,8 +3179,10 @@ export class CollectionService {
   }
 
   /**
-   * Documento asignado sin monto a pagar (> 0). Cubre cobro reabierto desde General
+   * Documento asignado sin monto a pagar. Cubre cobro reabierto desde General
    * antes de abrir el modal del documento (COB-SEND-UX-001 / monto a pagar).
+   * Notas de crédito / saldos a favor usan monto negativo: eso es válido.
+   * Solo bloquea null/NaN/0 (factura sin monto o parcial en 0).
    */
   public hasIncompleteDocumentAmountToPay(): boolean {
     const coType = String(this.collection?.coType ?? '0');
@@ -3196,7 +3198,13 @@ export class CollectionService {
       return false;
     }
 
-    return assigned.some(d => !this.isPositivePaymentAmount(d?.nuAmountPaid));
+    return assigned.some(d => !this.isAssignedDocumentAmountReady(d?.nuAmountPaid));
+  }
+
+  /** Monto de documento listo para Enviar: distinto de 0 (permite NC negativas). */
+  private isAssignedDocumentAmountReady(value: unknown): boolean {
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount !== 0;
   }
 
   /**
