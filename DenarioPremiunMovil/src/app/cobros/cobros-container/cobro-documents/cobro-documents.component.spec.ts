@@ -266,4 +266,43 @@ describe('CobrosDocumentComponent', () => {
     collectServiceMock.sendValidationAttempted = false;
     expect(component.shouldShowDocumentRetentionSendError(0)).toBeFalse();
   });
+
+  describe('COB-PARTIAL-001 pago parcial por documento', () => {
+    it('documento nuevo no hereda el toggle parcial del documento anterior', () => {
+      collectServiceMock.alwaysPartialPayment = false;
+      collectServiceMock.isChangePaymentPartialPersistence = true;
+      collectServiceMock.isPaymentPartial = true;
+
+      const result = (component as any).resolvePartialPaymentForOpenDocument(
+        { inPaymentPartial: false, isSave: false },
+        { inPaymentPartial: false, isSave: false },
+      );
+
+      expect(result).toBeFalse();
+    });
+
+    it('documento con parcial editado conserva su propio flag', () => {
+      collectServiceMock.alwaysPartialPayment = false;
+      collectServiceMock.isChangePaymentPartialPersistence = false;
+      collectServiceMock.isPaymentPartial = false;
+
+      const result = (component as any).resolvePartialPaymentForOpenDocument(
+        { inPaymentPartial: true, isSave: false },
+        { inPaymentPartial: true, isSave: false },
+      );
+
+      expect(result).toBeTrue();
+    });
+
+    it('documento guardado usa inPaymentPartial persistido', () => {
+      collectServiceMock.alwaysPartialPayment = false;
+
+      const result = (component as any).resolvePartialPaymentForOpenDocument(
+        { inPaymentPartial: true, isSave: true },
+        { inPaymentPartial: false, isSave: true },
+      );
+
+      expect(result).toBeTrue();
+    });
+  });
 });

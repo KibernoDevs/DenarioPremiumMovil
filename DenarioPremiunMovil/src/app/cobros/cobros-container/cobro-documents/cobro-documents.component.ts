@@ -1285,23 +1285,20 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (isPersisted) {
       return this.resolveDocumentPaymentPartialFlag(detail, doc);
     }
-    if (cs.isChangePaymentPartialPersistence) {
-      return cs.isPaymentPartial;
+    // COB-PARTIAL-001: no heredar isPaymentPartial global entre documentos.
+    if (this.resolveDocumentPaymentPartialFlag(detail, doc)) {
+      return true;
     }
     return cs.alwaysPartialPayment;
   }
 
   private restoreCollectionPartialPaymentPreference(): void {
-    const cs = this.collectService;
-    if (cs.isChangePaymentPartialPersistence) {
-      return;
-    }
-    cs.isPaymentPartial = cs.alwaysPartialPayment;
+    this.collectService.isChangePaymentPartialPersistence = false;
   }
 
   private applyDefaultPartialPaymentIfNeeded(index: number): void {
     const cs = this.collectService;
-    if (!cs.alwaysPartialPayment || cs.isChangePaymentPartialPersistence) {
+    if (!cs.alwaysPartialPayment) {
       return;
     }
 
@@ -1641,6 +1638,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       }
 
       this.indexDocumentSaleOpen = index;
+      this.collectService.isChangePaymentPartialPersistence = false;
       // COB-DISC-001: limpiar buffers compartidos antes de hidratar este documento.
       this.clearDocumentDiscountUiState();
 
@@ -1887,9 +1885,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.collectService.documentSales[index].inPaymentPartial = true;
         this.collectService.documentSalesBackup[index].inPaymentPartial = true;
         this.collectService.documentSalesView[index].inPaymentPartial = true;
-        if (!this.collectService.isChangePaymentPartialPersistence) {
-          this.collectService.isPaymentPartial = true;
-        }
+        this.collectService.isPaymentPartial = true;
       }
 
       this.initCollectionDetail(documentSale, index);
@@ -2535,7 +2531,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   partialPay(event: any) {
     this.collectService.isChangePaymentPartial = true;
-    this.collectService.isChangePaymentPartialPersistence = true;
     const isPartialEnabled = event.detail?.checked ?? event.target?.checked;
     this.collectService.isPaymentPartial = isPartialEnabled;
     const factor = this.centsFactor();

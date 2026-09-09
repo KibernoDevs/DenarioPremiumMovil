@@ -237,6 +237,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PARTIAL-001] Pago parcial heredado al abrir otro documento (bloquea Enviar)
+
+- **Síntoma:** Al marcar pago parcial en un documento, al abrir otros el toggle ya viene ON; varios `collectionDetails` quedan con `inPaymentPartial=true` y Enviar no completa (mensaje de pago parcial / montos no cuadran).
+- **Causa:** `partialPay` activaba `isChangePaymentPartialPersistence` (global) y `resolvePartialPaymentForOpenDocument` devolvía `isPaymentPartial` del doc anterior para details no guardados; `syncDocumentPaymentPartialState` escribía el flag en el doc recién abierto. En rebuild de details, `cobro-general` también heredaba de `documentSaleOpen.inPaymentPartial`.
+- **Fix:** Resolver parcial solo por `inPaymentPartial` del detail/doc (o `alwaysPartialPayment`); no propagar flag global entre docs; al abrir/cancelar limpiar persistence; al restaurar estado usar el flag del detail; al recrear detail usar `doc.inPaymentPartial`, no `documentSaleOpen`.
+- **Evitar:** No usar flags de sesión globales para heredar parcial entre documentos. Cada doc lleva su `inPaymentPartial` en `collectionDetails` / `documentSales`.
+- **Archivos:** `cobro-documents.component.ts` (+ spec), `collection-logic.service.ts` (`restoreDocumentSaleState`), `cobro-general.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-SEARCH-001] Buscador Inventarios sensible a tildes
 
 - **Síntoma:** Buscar “Azucar” vs “Azúcar” (o “Calorias” vs “Calorías”) en Inventarios devuelve conteos distintos; a veces “No hay productos” con tilde o menos resultados sin tilde.

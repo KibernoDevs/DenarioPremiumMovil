@@ -1826,7 +1826,7 @@ export class CobrosGeneralComponent implements OnInit {
 
       const inPaymentPartial = previousDetail?.inPaymentPartial
         ?? (this.collectService.coTypeModule != "2"
-          ? this.collectService.alwaysPartialPayment || !!this.collectService.documentSaleOpen?.inPaymentPartial
+          ? this.collectService.alwaysPartialPayment || !!doc.inPaymentPartial
           : false);
       const missingRetention = previousDetail?.missingRetention
         ?? (this.collectService.coTypeModule != "2"
