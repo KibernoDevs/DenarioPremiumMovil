@@ -4707,10 +4707,8 @@ export class CollectionService {
 
     /*  } */
 
-    if (!this.isChangePaymentPartialPersistence) {
-      this.isPaymentPartial = inPaymentPartial === true
-        || String(inPaymentPartial ?? '').toLowerCase() === 'true';
-    }
+    this.isPaymentPartial = inPaymentPartial === true
+      || String(inPaymentPartial ?? '').toLowerCase() === 'true';
 
     this.calculatePayment("", 0);
   }
