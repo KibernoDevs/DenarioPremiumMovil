@@ -671,6 +671,7 @@ describe('CollectionService', () => {
       service.collection = { coCurrency: 'USD' } as any;
       service.MonedaTolerancia = 'USD';
       service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
       service.RangoToleranciaPositiva = 10;
       service.RangoToleranciaNegativa = 100000;
       service.alwaysPartialPayment = false;
@@ -719,7 +720,7 @@ describe('CollectionService', () => {
 
     it('DM-COB-012: overpayment within positive absolute tolerance enables send', () => {
       const spy = setupToleranceBase();
-      // amount = 5 < RangoToleranciaPositiva(10) → Enviar ON
+      // amount = 5 <= RangoToleranciaPositiva(10) → Enviar ON
       service.montoTotalPagado = 105;
 
       service.checkTolerancia();
@@ -727,10 +728,20 @@ describe('CollectionService', () => {
       expect(spy).toHaveBeenCalledWith(true);
     });
 
-    it('DM-COB-012: overpayment at or beyond positive absolute tolerance disables send', () => {
+    it('DM-COB-012: overpayment at positive absolute tolerance ceiling enables send', () => {
       const spy = setupToleranceBase();
-      // amount = 10 is NOT < 10 → Enviar OFF (comparación estricta)
+      // amount = 10 <= 10 → Enviar ON (comparador inclusivo, COB-TOL-DEC-002)
       service.montoTotalPagado = 110;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('DM-COB-012: overpayment beyond positive absolute tolerance disables send', () => {
+      const spy = setupToleranceBase();
+      service.montoTotalPagado = 110.01;
+      service.parteDecimal = 2;
 
       service.checkTolerancia();
 
@@ -753,6 +764,7 @@ describe('CollectionService', () => {
       service.collection = { coCurrency: 'USD' } as any;
       service.MonedaTolerancia = 'USD';
       service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
       service.RangoToleranciaPositiva = 0.5;
       service.RangoToleranciaNegativa = 0.5;
       service.alwaysPartialPayment = false;
@@ -768,7 +780,12 @@ describe('CollectionService', () => {
       spy.calls.reset();
       service.montoTotalPagado = 100.5;
       service.checkTolerancia();
-      // amount = 0.5 is NOT < 0.5 → OFF
+      // amount = 0.5 <= 0.5 → ON (inclusivo)
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 100.51;
+      service.checkTolerancia();
       expect(spy).toHaveBeenCalledWith(false);
 
       spy.calls.reset();
@@ -811,6 +828,53 @@ describe('CollectionService', () => {
       expect(service.prepaidRangeAmount).toBe(0.5);
       expect(service.RangoToleranciaPositiva).toBe(1.25);
       expect(service.RangoToleranciaNegativa).toBe(0.75);
+    });
+  });
+
+  describe('COB-TOL-DEC-002 redondeo e inclusividad en tolerancia absoluta', () => {
+    function setupQaToleranceCase(): jasmine.Spy {
+      service.collection = { coCurrency: 'USD' } as any;
+      service.MonedaTolerancia = 'USD';
+      service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
+      service.RangoToleranciaPositiva = 49.99;
+      service.RangoToleranciaNegativa = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.montoTotalPagar = 672;
+      return spyOn(service, 'onCollectionValidToSend');
+    }
+
+    it('acepta diferencia exactamente en el tope 49.99 (caso QA 721.99 - 672)', () => {
+      const spy = setupQaToleranceCase();
+      service.montoTotalPagado = 721.99;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+      expect((service as any).getRoundedPaymentDelta()).toBe(49.99);
+    });
+
+    it('redondea delta flotante 49.99000000000001 antes de comparar', () => {
+      const spy = setupQaToleranceCase();
+      // Fuerza valores que en IEEE-754 producen residuo > 49.99 sin redondeo
+      service.montoTotalPagar = 672;
+      service.montoTotalPagado = 672 + 49.99000000000001;
+
+      service.checkTolerancia();
+
+      expect((service as any).getRoundedPaymentDelta()).toBe(49.99);
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('rechaza exceso por encima del tope tras redondeo', () => {
+      const spy = setupQaToleranceCase();
+      service.montoTotalPagado = 722;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(false);
     });
   });
 
@@ -1686,6 +1750,7 @@ describe('CollectionService', () => {
         service.existPartialPayment = false;
         service.prepaidRangeAmount = opts?.prepaidRangeAmount ?? 1;
         service.prepaidRangeCurrency = 'USD';
+        service.parteDecimal = 2;
         service.tolerancia0 = opts?.tolerancia0 ?? true;
         service.TipoTolerancia = 0;
         service.RangoToleranciaPositiva = opts?.rangoPositiva ?? 100000;
@@ -1760,6 +1825,20 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeFalse();
 
         (service as any).syncPrepaidDifferenceAmounts.and.returnValue(1);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-TOL-DEC-002: tol+ 49.99 + prepaid 0.01 → umbral 50; exceso 49.99 no crea; 50 sí', () => {
+        service.parteDecimal = 2;
+        setupUsdPrepaidScenario(49.99, { prepaidRangeAmount: 0.01, rangoPositiva: 49.99 });
+
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(50);
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });

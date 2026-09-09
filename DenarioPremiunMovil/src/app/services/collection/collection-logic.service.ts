@@ -2408,7 +2408,8 @@ export class CollectionService {
       positiveCeiling = converted > 0 ? converted : positiveCeiling;
     }
 
-    return positiveCeiling + prepaidMin;
+    const decimals = this.getMoneyDecimalPlaces();
+    return Number((positiveCeiling + prepaidMin).toFixed(decimals));
   }
 
   shouldCreateAutomatedPrepaidOnSend(): boolean {
@@ -3856,6 +3857,25 @@ export class CollectionService {
   }
 
   /**
+   * Decimales monetarios para redondeo (COB-TOL-DEC-002).
+   * Si `parteDecimal` aún no está cargado (0/NaN), usa 2 para no destruir centavos.
+   */
+  private getMoneyDecimalPlaces(): number {
+    const decimals = Number(this.parteDecimal);
+    return Number.isFinite(decimals) && decimals > 0 ? decimals : 2;
+  }
+
+  /**
+   * Diferencia pagado − a pagar redondeada a decimales de moneda (COB-TOL-DEC-002).
+   * Evita falsos rechazos por coma flotante (ej. 721.99 − 672 → 49.99000000000001).
+   */
+  private getRoundedPaymentDelta(): number {
+    const paid = Number(this.montoTotalPagado) || 0;
+    const toPay = Number(this.montoTotalPagar) || 0;
+    return Number((paid - toPay).toFixed(this.getMoneyDecimalPlaces()));
+  }
+
+  /**
    * Convierte un rango de tolerancia (en `MonedaTolerancia`) a la moneda del cobro.
    * COB-TOL-001: no usar `convertirMonto(rango, 0, collection.coCurrency)` — con cobro local
    * y tolerancia hard eso divide por la tasa y deja el rango ~0 (bloqueo falso).
@@ -3903,21 +3923,21 @@ export class CollectionService {
       return false;
     }
 
+    const delta = this.getRoundedPaymentDelta();
+
     if (this.TipoTolerancia == 0) {
-      const amount = this.montoTotalPagado - this.montoTotalPagar;
       const positiveLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
       const negativeLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaNegativa);
-      if (amount > 0) {
-        return amount < positiveLimit;
+      if (delta > 0) {
+        return delta <= positiveLimit;
       }
-      if (amount < 0) {
-        return Math.abs(amount) <= negativeLimit;
+      if (delta < 0) {
+        return Math.abs(delta) <= negativeLimit;
       }
       return true;
     }
 
     // Tolerancia porcentual
-    const delta = Number(((Number(this.montoTotalPagado) || 0) - (Number(this.montoTotalPagar) || 0)).toFixed(this.parteDecimal));
     const base = Math.abs(Number(this.montoTotalPagar) || 0);
     if (base === 0) {
       return Math.abs(delta) === 0;
