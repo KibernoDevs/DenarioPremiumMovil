@@ -122,7 +122,12 @@
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_1")}}:</ion-col>
           @if (htmlClientDescription) {
-          <ion-col [innerHTML]="client.txDescription1"></ion-col>
+          <ion-col>
+            <ion-button class="botonAddVerde" size="small" (click)="openDescriptionModal(1)">
+              <ion-icon slot="start" name="eye-outline"></ion-icon>
+              Ver
+            </ion-button>
+          </ion-col>
           } @else {
           <ion-col>{{client.txDescription1}}</ion-col>
           }
@@ -132,7 +137,12 @@
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_2")}}:</ion-col>
           @if (htmlClientDescription) {
-          <ion-col [innerHTML]="client.txDescription2"></ion-col>
+          <ion-col>
+            <ion-button class="botonAddVerde" size="small" (click)="openDescriptionModal(2)">
+              <ion-icon slot="start" name="eye-outline"></ion-icon>
+              Ver
+            </ion-button>
+          </ion-col>
           } @else {
           <ion-col>{{client.txDescription2}}</ion-col>
           }
@@ -457,6 +467,22 @@
   </ion-fab>
   }
   }
+  <ion-modal [isOpen]="descriptionModalOpen" (didDismiss)="closeDescriptionModal()"
+    class="clientDescriptionModal">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ descriptionModalTitle }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeDescriptionModal()">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding client-description-modal-body">
+        <div class="client-description-html" [innerHTML]="descriptionModalHtml"></div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
   <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="onShareModalDismiss()" class="compartirDoc compartirDocPreview">
     <ng-template>
       @if(clientShareModalOpen && shareDocuments.length){
