@@ -145,6 +145,32 @@ describe('ClientLogicService', () => {
       (currencyService.hasValidExchangeRate as jasmine.Spy).and.returnValue(false);
       expect(service.canShowConversion()).toBeFalse();
     });
+
+    it('CLI-CURRENCY-001: localCurrencyDefault=false muestra USD primero en etiquetas y saldos', () => {
+      service.localCurrencyDefault = false;
+      service.localCurrency = { coCurrency: 'BS' } as any;
+      service.hardCurrency = { coCurrency: 'USD' } as any;
+
+      expect(service.getPrimaryCurrencyLabel()).toBe('USD');
+      expect(service.getSecondaryCurrencyLabel()).toBe('BS');
+
+      const client = { saldo1: 1000, saldo2: 50 } as any;
+      expect(service.getPrimarySaldo(client)).toBe(50);
+      expect(service.getSecondarySaldo(client)).toBe(1000);
+      expect(service.pickPrimaryFromLocalHard(1000, 50)).toBe(50);
+      expect(service.pickSecondaryFromLocalHard(1000, 50)).toBe(1000);
+    });
+
+    it('CLI-CURRENCY-001: localCurrencyDefault=true muestra BS primero', () => {
+      service.localCurrencyDefault = true;
+
+      expect(service.getPrimaryCurrencyLabel()).toBe('BS');
+      expect(service.getSecondaryCurrencyLabel()).toBe('USD');
+
+      const client = { saldo1: 1000, saldo2: 50 } as any;
+      expect(service.getPrimarySaldo(client)).toBe(1000);
+      expect(service.getSecondarySaldo(client)).toBe(50);
+    });
   });
 
   describe('DM-CLT-002 / isDueSoon', () => {

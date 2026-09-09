@@ -19,15 +19,33 @@ Aplica a:
 ## Formato
 
 - Conventional Commits: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`
-- Subject en espanol, 1-2 oraciones, explica el **por que** (no un listado de archivos)
-- Body opcional, tambien en espanol
+- Subject en espanol: 1 linea, explica el **por que** (no un listado de archivos); scope opcional (`fix(pedidos): ...`)
+- **Body obligatorio** en cambios no triviales (bugs, features, cambios de comportamiento), tambien en espanol
+- El body debe tener el **mismo nivel explicativo** que un buen commit autogenerado en ingles:
+  - Sintoma o problema visible para el usuario
+  - Causa o intencion del cambio
+  - Que evita / que queda garantizado
+- Body omitible solo en chores minimos (typo, rename, whitespace)
 
 ## Ejemplos validos
 
 ```text
+fix(pedidos): el selector de clientes respeta moneda fuerte y conversiones OFF de currency_modules.
+
+Sin esto, con localCurrencyDefault=false y showConversion=false solo se veia saldo en BS.
+Se normaliza el lookup ped/PED y se inicializa moneda antes del selector.
+```
+
+```text
 fix: Guardar y Enviar en Inventarios siguen el patron de Cobros con validacion al pulsar.
 
+Guardar solo exige General; Enviar valida productos/GPS al click y se apaga tras fallo hasta editar.
+```
+
+```text
 feat: se pueden dar de alta bancos y cuentas desde Datos Maestros.
+
+El alta queda disponible en Datos Maestros sin salir del flujo de cobros/depositos.
 ```
 
 ## Ejemplos invalidos (no usar)
@@ -35,10 +53,15 @@ feat: se pueden dar de alta bancos y cuentas desde Datos Maestros.
 ```text
 fix: update save button logic in inventory module
 feat: add validation before send
+fix: se actualiza el boton guardar
 ```
+
+(Demasiado cortos o en ingles; falta el porque y el contexto del body.)
 
 ## Al generar desde el diff
 
-1. Leer los cambios y resumir el proposito en espanol.
-2. Si el subject sale en ingles, reescribirlo antes de mostrarlo o commitear.
-3. Mantener el estilo de commits recientes del repo (`git log`).
+1. Leer los cambios y resumir proposito + sintoma en espanol.
+2. Redactar subject (por que) + body (contexto / causa / garantia).
+3. Si el subject o body salen en ingles, reescribirlos antes de mostrar o commitear.
+4. Preferir subject + body frente a una sola linea, salvo cambio trivial.
+5. Mantener el estilo Conventional Commits del repo (`git log`).

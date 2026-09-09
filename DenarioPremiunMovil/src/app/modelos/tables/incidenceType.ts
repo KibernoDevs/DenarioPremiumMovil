@@ -5,7 +5,8 @@ export class IncidenceType {
             obj['idType'],
             obj['naType'],
             obj['requiredEvent'],
-            obj['requiredSignature']
+            obj['requiredSignature'],
+            obj['active'] !== undefined && obj['active'] !== null ? obj['active'] : true
         );
     }
 
@@ -13,6 +14,7 @@ export class IncidenceType {
         public idType: number,
         public naType: string,
         public requiredEvent: boolean,
-        public requiredSignature: boolean
+        public requiredSignature: boolean,
+        public active: boolean | number = true
     ) { }
 }

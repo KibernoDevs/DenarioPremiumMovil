@@ -47,8 +47,11 @@ export class InventarioComponent implements OnInit, OnDestroy {
   shouldShowSendErrorHintOnTab(
     tab: 'default' | 'inventario' | 'actividades' | 'adjuntos',
   ): boolean {
-    return this.inventariosLogicService.sendValidationAttempted
-      && this.inventariosLogicService.resolveSendValidationFocusTab() === tab;
+    if (!this.inventariosLogicService.sendValidationAttempted) {
+      return false;
+    }
+    const focus = this.inventariosLogicService.resolveSendValidationFocusTab();
+    return focus != null && focus === tab;
   }
 
   onChangeTab(tab: string) {

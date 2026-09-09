@@ -34,7 +34,15 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
   public exporting = false;
 
   get showConversion(): boolean {
-    return this.clientLogic.multiCurrency && this.clientLogic.showConversion;
+    return this.clientLogic.canShowConversion();
+  }
+
+  get primaryCurrencyLabel(): string {
+    return this.clientLogic.getPrimaryCurrencyLabel();
+  }
+
+  get secondaryCurrencyLabel(): string {
+    return this.clientLogic.getSecondaryCurrencyLabel();
   }
 
   ngOnInit(): void {
@@ -113,6 +121,20 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     return this.formatNumber(this.currencyService.toHardCurrencyByNuValueLocal(localAmount, doc.nuValueLocal));
   }
 
+  /** Monto en moneda primaria según currency_modules.localCurrencyDefault (CLI). */
+  toPrimaryCurrency(amount: number, doc: DocumentSale): string {
+    return this.clientLogic.localCurrencyDefault
+      ? this.toLocalCurrency(amount, doc)
+      : this.toHardCurrency(amount, doc);
+  }
+
+  /** Monto en moneda secundaria (columna de conversión). */
+  toSecondaryCurrency(amount: number, doc: DocumentSale): string {
+    return this.clientLogic.localCurrencyDefault
+      ? this.toHardCurrency(amount, doc)
+      : this.toLocalCurrency(amount, doc);
+  }
+
   private buildPdfColumns(showConversion: boolean) {
     const tags = this.clientLogic.clientTags;
     const columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean }> = [
@@ -127,12 +149,12 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     }
 
     columns.push(
-      { label: `${tags.get('CLI_DETAIL_MONTO') ?? 'Monto'} ${this.localCurrency}`, align: 'center', width: '9%', noWrap: true },
+      { label: `${tags.get('CLI_DETAIL_MONTO') ?? 'Monto'} ${this.primaryCurrencyLabel}`, align: 'center', width: '9%', noWrap: true },
     );
 
     if (showConversion) {
       columns.push({
-        label: `${tags.get('CLI_DETAIL_MONTO') ?? 'Monto'} ${this.hardCurrency}`,
+        label: `${tags.get('CLI_DETAIL_MONTO') ?? 'Monto'} ${this.secondaryCurrencyLabel}`,
         align: 'center',
         width: '9%',
         noWrap: true,
@@ -140,12 +162,12 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     }
 
     columns.push(
-      { label: `${tags.get('CLI_DETAIL_SALDO') ?? 'Saldo'} ${this.localCurrency}`, align: 'center', width: '9%', noWrap: true },
+      { label: `${tags.get('CLI_DETAIL_SALDO') ?? 'Saldo'} ${this.primaryCurrencyLabel}`, align: 'center', width: '9%', noWrap: true },
     );
 
     if (showConversion) {
       columns.push({
-        label: `${tags.get('CLI_DETAIL_SALDO') ?? 'Saldo'} ${this.hardCurrency}`,
+        label: `${tags.get('CLI_DETAIL_SALDO') ?? 'Saldo'} ${this.secondaryCurrencyLabel}`,
         align: 'center',
         width: '9%',
         noWrap: true,
@@ -173,16 +195,16 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
         row.push(this.formatNumber(documento.nuValueLocal));
       }
 
-      row.push(this.toLocalCurrency(documento.nuAmountTotal, documento));
+      row.push(this.toPrimaryCurrency(documento.nuAmountTotal, documento));
 
       if (showConversion) {
-        row.push(this.toHardCurrency(documento.nuAmountTotal, documento));
+        row.push(this.toSecondaryCurrency(documento.nuAmountTotal, documento));
       }
 
-      row.push(this.toLocalCurrency(documento.nuBalance, documento));
+      row.push(this.toPrimaryCurrency(documento.nuBalance, documento));
 
       if (showConversion) {
-        row.push(this.toHardCurrency(documento.nuBalance, documento));
+        row.push(this.toSecondaryCurrency(documento.nuBalance, documento));
       }
 
       row.push(String(documento.daDocument ?? ''), String(documento.daDueDate ?? ''));
@@ -203,7 +225,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
 
     try {
       const tags = this.clientLogic.clientTags;
-      const showConversion = this.clientLogic.multiCurrency && this.clientLogic.showConversion;
+      const showConversion = this.clientLogic.canShowConversion();
       const client = this.client!;
 
       const coEnterprise = client.coEnterprise ?? this.clientLogic.empresaSeleccionada?.coEnterprise;

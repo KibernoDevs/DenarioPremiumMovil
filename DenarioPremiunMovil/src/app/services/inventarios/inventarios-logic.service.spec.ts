@@ -225,7 +225,20 @@ describe('InventariosLogicService', () => {
       service.typeStocks = [{ validateCantidad: true, validateLote: true } as unknown as Inventarios];
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.resolveSendValidationFocusTab()).toBe('inventario');
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+    });
+
+    it('SEND-TAB-001: sin errores resolve es null y request no emite', () => {
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.hideTab = true;
+      service.typeStocks = [{ validateCantidad: true, validateLote: true } as unknown as Inventarios];
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
     });
 
     it('requestSendValidationTabFocus emite la pestaña resuelta', () => {

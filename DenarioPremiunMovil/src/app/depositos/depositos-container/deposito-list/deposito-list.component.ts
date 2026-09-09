@@ -3,7 +3,7 @@ import { InfiniteScrollCustomEvent } from '@ionic/angular';
 import { Deposit } from 'src/app/modelos/tables/deposit';
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_SAVED } from 'src/app/utils/appConstants';
 import { ItemListaDepositos } from '../../item-lista-depositos';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
@@ -141,38 +141,34 @@ export class DepositoListComponent implements OnInit {
   openDeposit(coDeposit: string, index: number) {
     console.log("OPEN", coDeposit, index);
     this.messageService.hideLoading();
-    //si el estado es por enviar o enviado entonces no se pueden editar cobros
-    if (this.depositService.listDeposits[index].stDeposit == 1 && this.depositService.listDeposits[index].stDelivery != 3) {
-      //por enviar o enviado entones ocultamos la pestaña de cobros
-      this.depositService.hideDeposit = true;
-      this.depositService.deposit = this.depositService.listDeposits[index];
-      this.depositService.getDepositCollect(this.db.getDatabase(), this.depositService.deposit.coDeposit).then(resp => {
-        this.depositService.initOpenDeposit(this.db.getDatabase(),).then(r => {
+    this.depositService.deposit = this.depositService.listDeposits[index];
+    const readOnly = this.depositService.isDepositReadOnlyForEdit()
+      || (this.depositService.deposit.stDeposit === 1
+        && this.depositService.deposit.stDelivery !== DELIVERY_STATUS_SAVED);
+    this.depositService.hideDeposit = readOnly;
+
+    if (readOnly) {
+      this.depositService.getDepositCollect(this.db.getDatabase(), this.depositService.deposit.coDeposit).then(() => {
+        this.depositService.initOpenDeposit(this.db.getDatabase()).then(() => {
           this.depositService.depositListComponent = false;
           this.depositService.depositNewComponent = true;
-
           this.depositService.dateDeposit = this.depositService.deposit.daDeposit;
-        })
-      })
-
-    } else {
-      //nuevo o guardado mostramos la pestaña cobros
-      this.depositService.hideDeposit = false;
-      this.depositService.deposit = this.depositService.listDeposits[index];
-      if (this.depositService.coordenadas.length > 0) {
-        this.depositService.deposit.coordenada = this.depositService.coordenadas;
-      }
-      this.depositService.getDepositCollect(this.db.getDatabase(), this.depositService.deposit.coDeposit).then(resp => {
-        this.depositService.initOpenDeposit(this.db.getDatabase(),).then(r => {
-          this.depositService.dateDeposit = this.depositService.deposit.daDeposit;
-          this.depositService.depositListComponent = false;
-          this.depositService.depositNewComponent = true;
-          this.depositService.showHeaderButtons = true;
-        })
-      })
+        });
+      });
+      return;
     }
 
-
+    if (this.depositService.coordenadas.length > 0) {
+      this.depositService.deposit.coordenada = this.depositService.coordenadas;
+    }
+    this.depositService.getDepositCollect(this.db.getDatabase(), this.depositService.deposit.coDeposit).then(() => {
+      this.depositService.initOpenDeposit(this.db.getDatabase()).then(() => {
+        this.depositService.dateDeposit = this.depositService.deposit.daDeposit;
+        this.depositService.depositListComponent = false;
+        this.depositService.depositNewComponent = true;
+        this.depositService.showHeaderButtons = true;
+      });
+    });
   }
 
 
@@ -209,39 +205,7 @@ export class DepositoListComponent implements OnInit {
     this.resetListPagination();
   }
 
-  getStatusOrderName(stDeposito: number, stDelivery: number, naStatus: any) {
-    if (typeof naStatus === 'object') {
-      return naStatus.na_status;
-    } else
-      if (stDeposito != 0) {
-        if (naStatus == null || naStatus === undefined) {
-          return this.getStatus(stDelivery, naStatus);
-        }
-        return naStatus;
-      } else {
-        this.getStatus(stDelivery, naStatus);
-      }
-  }
-
-  getStatus(status: number, naStatus: any): string {
-    switch (status) {
-      case DELIVERY_STATUS_SAVED: return this.depositService.depositTags.get("DEP_DEV_SAVED")!;
-      case DELIVERY_STATUS_TO_SEND: return this.depositService.depositTags.get("DEP_DEV_TO_BE_SENDED")!;
-      case DELIVERY_STATUS_SENT:
-        return naStatus == null ? this.depositService.depositTags.get("DEP_DEV_SENDED")! : naStatus;
-      case 6:
-        // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'Enviado';
-        if (typeof naStatus === 'string') {
-          return naStatus;
-        }
-        if (typeof naStatus === 'object') {
-          // intenta varias propiedades comunes
-          return naStatus.na_status;
-        }
-        return String(naStatus);
-
-      default: return '';
-    }
+  getStatusOrderName(stDeposito: number, stDelivery: number, naStatus: unknown): string {
+    return this.depositService.getStatusOrderName(stDeposito, stDelivery, naStatus);
   }
 }

@@ -19,6 +19,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Completitud TR != tolerancia. Revisar `clientBankAccount`, `nuevaCuenta` vs cuenta existente.
 - Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
+- Tolerancia absoluta cross-currency: rango en `MonedaTolerancia` → cobro local = `× tasa` (no `convertirMonto(..., coCurrency)`); ver `COB-TOL-001`.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
 - Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
 - Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
@@ -26,6 +27,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
 - Retención multi-doc (`coType` 2): Enviar exige completitud por documento, no solo suma > 0 (`COB-RET-001`); Guardar tras General válida (`COB-SAVE-001`).
 - Total General = `nuAmountTotal` (no `montoTotalPagado`); al reabrir no pisar con `forceRecalc` si UI de pagos aún vacía (`COB-TOTAL-001`).
+- Total Monto Doc. = bruto (`nuBalanceDocOriginal`); Monto Saldo = bruto − pagado; no mutar `nuBalanceDoc` UI con remaining de parcial (`COB-TOTAL-002`).
 - Faltante (`nuAmountDiscount`) → 0 en Guardado: refrescar `montoTotalPagar` (no exigir faltante > 0 para Guardar; no congelar con `paid < net` / preserve) — `COB-FALT-001`.
 - Guardar Cobros: habilitado tras General válida (`generalTabValidForSave`); no acoplar a pagos/docs/retención — `COB-SAVE-001`.
 - Tras guardar/reabrir persistido: Guardar OFF hasta `markCollectionDirty` / edición de usuario — `COB-SAVE-002`.
@@ -33,6 +35,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Enviar: colector `collectCollectionSendIssues` evalúa TODAS las reglas aplicables (campos, tolerancia, refs, adjuntos); modal = primer issue, UI pinta todos — `COB-SEND-ALL-001`.
 - Monto a pagar (`nuAmountPaid`) y montos de pago en SQLite: validar en `hasSendFieldErrors` aunque la UI de Pagos aún no esté hidratada — `COB-SEND-UX-001`.
 - `enableDifferenceCodes`: selector de código en Otros obligatorio al Enviar (rojo + mensaje) — `COB-DIFF-001`.
+- Pago Móvil: teléfono (prefijo + 7 dígitos) obligatorio en Enviar como el resto de campos PM — `COB-PM-PHONE-001`.
 - `createAutomatedPrepaid`: no forzar Enviar ON si hay errores de campos; solo omite bloqueo por exceso/tolerancia positiva — `COB-SEND-ALL-001`.
 - `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
 - Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.

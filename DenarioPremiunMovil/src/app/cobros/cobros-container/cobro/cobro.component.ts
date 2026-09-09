@@ -96,8 +96,11 @@ export class CobroComponent implements OnInit, OnDestroy {
   shouldShowSendErrorHintOnTab(
     tab: 'default' | 'documentos' | 'pagos' | 'adjuntos',
   ): boolean {
-    return this.collectService.sendValidationAttempted
-      && this.collectService.resolveSendValidationFocusTab() === tab;
+    if (!this.collectService.sendValidationAttempted) {
+      return false;
+    }
+    const focus = this.collectService.resolveSendValidationFocusTab();
+    return focus != null && focus === tab;
   }
 
   onSegmentChange(event: CustomEvent): void {

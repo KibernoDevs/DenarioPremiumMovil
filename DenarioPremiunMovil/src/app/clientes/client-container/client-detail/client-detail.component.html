@@ -14,7 +14,7 @@
   </ion-segment>
   <div [ngSwitch]="this.clientLogic.segment">
     <div *ngSwitchCase="'default'">
-      @if(!this.clientLogic.esTransportista){
+      @if(!this.clientLogic.esTransportista && !this.clientLogic.isFinanceHiddenForUser){
       <div class="saldo-legend">
         <span class="legend-item">
           <span class="legend-dot legend-blue" aria-hidden="true"></span>
@@ -57,42 +57,42 @@
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
           <ion-col>{{client.nuPhone}}</ion-col>
         </ion-row>
-        @if(!this.clientLogic.esTransportista){
+        @if(!this.clientLogic.esTransportista && !this.clientLogic.isFinanceHiddenForUser){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
+            {{clientLogic.getPrimaryCurrencyLabel()}}:</ion-col>
+          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(clientLogic.pickPrimaryFromLocalHard(saldoLocal, saldoFuerte))}}</ion-col>
         </ion-row>
         }
-        @if(this.clientLogic.showConversion && !this.clientLogic.esTransportista){
+        @if(this.clientLogic.canShowConversion() && !this.clientLogic.esTransportista && !this.clientLogic.isFinanceHiddenForUser){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
+            {{clientLogic.getSecondaryCurrencyLabel()}}:</ion-col>
+          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(clientLogic.pickSecondaryFromLocalHard(saldoLocal, saldoFuerte))}}</ion-col>
         </ion-row>
         }
-        @if(!this.clientLogic.esTransportista){
+        @if(!this.clientLogic.esTransportista && !this.clientLogic.isFinanceHiddenForUser){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.creditoLocal)}} </ion-col>
+            {{clientLogic.getPrimaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickPrimaryFromLocalHard(creditoLocal, creditoFuerte))}} </ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.availableCreditLocal)}}</ion-col>
+            {{clientLogic.getPrimaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickPrimaryFromLocalHard(availableCreditLocal, availableCreditFuerte))}}</ion-col>
         </ion-row>
         }
-        @if(this.clientLogic.showConversion && !this.clientLogic.esTransportista){
+        @if(this.clientLogic.canShowConversion() && !this.clientLogic.esTransportista && !this.clientLogic.isFinanceHiddenForUser){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.creditoFuerte)}}</ion-col>
+            {{clientLogic.getSecondaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickSecondaryFromLocalHard(creditoLocal, creditoFuerte))}}</ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.availableCreditFuerte)}}</ion-col>
+            {{clientLogic.getSecondaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickSecondaryFromLocalHard(availableCreditLocal, availableCreditFuerte))}}</ion-col>
         </ion-row>
         }
         @if(!this.clientLogic.esTransportista){
@@ -118,14 +118,36 @@
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DIRECCION")}}:</ion-col>
           <ion-col>{{client.txAddress}}</ion-col>
         </ion-row>
+        @if (client.txDescription1) {
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_1")}}:</ion-col>
+          @if (htmlClientDescription) {
+          <ion-col>
+            <ion-button class="botonAddVerde" size="small" (click)="openDescriptionModal(1)">
+              <ion-icon slot="start" name="eye-outline"></ion-icon>
+              Ver
+            </ion-button>
+          </ion-col>
+          } @else {
           <ion-col>{{client.txDescription1}}</ion-col>
+          }
         </ion-row>
+        }
+        @if (client.txDescription2) {
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_2")}}:</ion-col>
+          @if (htmlClientDescription) {
+          <ion-col>
+            <ion-button class="botonAddVerde" size="small" (click)="openDescriptionModal(2)">
+              <ion-icon slot="start" name="eye-outline"></ion-icon>
+              Ver
+            </ion-button>
+          </ion-col>
+          } @else {
           <ion-col>{{client.txDescription2}}</ion-col>
+          }
         </ion-row>
+        }
         @if(client.editable){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
@@ -445,6 +467,22 @@
   </ion-fab>
   }
   }
+  <ion-modal [isOpen]="descriptionModalOpen" (didDismiss)="closeDescriptionModal()"
+    class="clientDescriptionModal">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ descriptionModalTitle }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeDescriptionModal()">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding client-description-modal-body">
+        <div class="client-description-html" [innerHTML]="descriptionModalHtml"></div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
   <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="onShareModalDismiss()" class="compartirDoc compartirDocPreview">
     <ng-template>
       @if(clientShareModalOpen && shareDocuments.length){

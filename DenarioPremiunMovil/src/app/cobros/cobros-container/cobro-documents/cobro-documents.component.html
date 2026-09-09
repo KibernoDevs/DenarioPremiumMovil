@@ -200,7 +200,7 @@
   <ion-row class="tabladocumentSalesVenta tablaDocVentas row" [class.documents-row-selected]="documentSale.isSelected">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
-      <ion-button (click)="openDocumentSale(getSourceIndex(documentSale), $event)" size="small" disabled="{{!documentSale.isSelected}}">
+      <ion-button (click)="openDocumentSale(documentSale, $event)" size="small" [disabled]="!documentSale.isSelected">
         <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
         <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
       </ion-button>
@@ -624,7 +624,7 @@
                                 <ion-badge color="primary">{{order}}</ion-badge>
                                 }
                                 <ion-checkbox [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
-                                  (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
+                                  (ionChange)="toggleTempSelection(d.idCollectDiscount, $event)"></ion-checkbox>
                               </div>
                             </ion-item>
 
@@ -636,12 +636,11 @@
                                   position="floating">{{this.collectService.collectionTags.get('COB_TASA_%')}}</ion-label>
                                 <ion-input type="number" [ngModel]="getNuCollectDiscount(d.idCollectDiscount)"
                                   (ngModelChange)="setNuCollectDiscount(d.idCollectDiscount, $event)" required
-                                  max="{{100 - this.collectService.totalCollectDiscountsSelected}}">
+                                  max="{{ getAllowedCollectDiscountPercentForEdit(d.idCollectDiscount) }}">
                                 </ion-input>
                               </ion-item>
                               <div style="padding:4px 16px; font-size:0.9em; color:var(--ion-color-medium);">
-                                {{this.collectService.collectionTags.get('COB_DISPONIBLE')}}: {{ 100 -
-                                (this.collectService.totalCollectDiscountsSelected || 0) }}%
+                                {{this.collectService.collectionTags.get('COB_DISPONIBLE')}}: {{ getRemainingCollectDiscountPercent() }}%
                               </div>
                               <ion-item lines="none"
                                 [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'naCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'naCollectDiscount')}">
@@ -1546,5 +1545,10 @@
 
 <ion-alert [isOpen]="alertMessageOpen2" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
   message={{this.collectService.mensaje}} [buttons]="alertButtons2" (didDismiss)="setResult2($event)"></ion-alert>
+
+<ion-alert [isOpen]="alertDiscountRemnantOpen"
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
+  message={{this.collectService.mensaje}} [buttons]="alertButtonsDiscountRemnant"
+  (didDismiss)="setResultDiscountRemnant($event)"></ion-alert>
 
 <!-- <ion-button (click)="print()"></ion-button> -->

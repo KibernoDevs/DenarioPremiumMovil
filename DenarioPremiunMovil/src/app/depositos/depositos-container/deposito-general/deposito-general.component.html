@@ -52,7 +52,8 @@
           (ionChange)="onChangeCurrencyMsj($event)" disabled="{{this.depositService.disabledCurrency}}"> -->
         <ion-select class="ion-text-center always-flip selectbanco" interface="popover" labelPlacement="stacked"
           placeholder="{{this.depositService.depositTags.get('DEP_PLACEHOLDER_LISTBANK')}}" (ionChange)="onBankSelect()"
-          [(ngModel)]="this.depositService.bankSelected" [disabled]="this.depositService.hideDeposit">
+          [(ngModel)]="this.depositService.bankSelected"
+          [disabled]="this.depositService.hideDeposit || this.depositService.isDepositReadOnlyForEdit()">
           <ion-select-option *ngFor="let bank of this.depositService.bankList" [value]="bank">
             {{bank.naBank}} - *** {{bank.nuAccount.substring(13)}}
           </ion-select-option>
@@ -73,7 +74,7 @@
       <ion-input label="{{this.depositService.depositTags.get('DEP_NRO_PLANTILLA')}}:"
         [(ngModel)]="this.depositService.nuDocument" label-placement="floating" fill="outline"
         value="this.depositService.nuDocument" type="text" (ionInput)="onNuDocumentInput()"
-        [disabled]="this.depositService.hideDeposit" #inputNuDocument>
+        [disabled]="this.depositService.hideDeposit || this.depositService.isDepositReadOnlyForEdit()" #inputNuDocument>
       </ion-input>
     </ion-col>
 
@@ -85,7 +86,8 @@
           {{this.depositService.depositTags.get('DEP_FECHA_DOC')}}:
         </ion-label>
         <a>
-          <ion-button (click)="setShowDateModal(true)" color="light" [disabled]="this.depositService.hideDeposit"
+          <ion-button (click)="setShowDateModal(true)" color="light"
+            [disabled]="this.depositService.hideDeposit || this.depositService.isDepositReadOnlyForEdit()"
             class="letrasFechasButton">
             {{ dateServ.formatShort(this.depositService.daDocument) }}
           </ion-button>
@@ -99,7 +101,7 @@
         [(ngModel)]="this.depositService.txComment" label-placement="floating" fill="outline"
         value="this.depositService.txComment" (ionInput)="onTxCommentInput()"
         [maxlength]="textCommentMaxLength"
-        [disabled]="this.depositService.hideDeposit">
+        [disabled]="this.depositService.hideDeposit || this.depositService.isDepositReadOnlyForEdit()">
       </ion-input>
       <app-text-comment-counter [value]="this.depositService.txComment" [minLength]="textCommentMinLength"
         [maxLength]="textCommentMaxLength"></app-text-comment-counter>

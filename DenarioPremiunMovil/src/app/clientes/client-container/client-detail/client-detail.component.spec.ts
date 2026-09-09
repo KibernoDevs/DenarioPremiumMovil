@@ -16,10 +16,12 @@ describe('ClienteComponent (client-detail)', () => {
   beforeEach(waitForAsync(() => {
     clientLogicMock = {
       initService: jasmine.createSpy('initService'),
+      refreshCliCurrencyModule: jasmine.createSpy('refreshCliCurrencyModule').and.returnValue(Promise.resolve()),
       checkUserStatus: jasmine.createSpy('checkUserStatus'),
       esTransportista: false,
       multiCurrency: true,
       fromSelector: false,
+      clientTags: new Map<string, string>(),
       localCurrency: { coCurrency: 'BS' },
       hardCurrency: { coCurrency: 'USD' },
       datos: {
@@ -33,6 +35,7 @@ describe('ClienteComponent (client-detail)', () => {
           txDescription2: '',
           nuCreditLimit: 5000,
         },
+        document: [],
       },
       listaDirecciones: [
         {
@@ -58,6 +61,11 @@ describe('ClienteComponent (client-detail)', () => {
       clientDetailComponent: true,
       clientDocumentSaleComponent: false,
       opendDocClick: false,
+      segment: 'default',
+      showConversion: false,
+      closeClientShareModal: {
+        subscribe: () => ({ unsubscribe: () => undefined }),
+      },
     };
 
     currencyServiceMock = {
@@ -97,7 +105,11 @@ describe('ClienteComponent (client-detail)', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
-    expect(clientLogicMock.initService).toHaveBeenCalled();
+  });
+
+  it('CLI-CURRENCY-SYNC: ngOnInit recarga currency_modules CLI desde SQLite', async () => {
+    await component.ngOnInit();
+    expect(clientLogicMock.refreshCliCurrencyModule).toHaveBeenCalled();
   });
 
   it('DM-CLT-009 / CLI-SALDOS-001: initializeClientBalances usa buckets docs (local/hard)', () => {
@@ -141,6 +153,59 @@ describe('ClienteComponent (client-detail)', () => {
 
     clientLogicMock.esTransportista = false;
     expect(component.showDocVentasTab()).toBeTrue();
+  });
+
+  it('htmlClientDescription false por defecto si la clave no viene', () => {
+    component.ngOnInit();
+    expect(component.htmlClientDescription).toBeFalse();
+  });
+
+  it('htmlClientDescription true solo con clave htmlClientDescription (no infoVendedores)', () => {
+    globalConfigMock.get.and.callFake((key: string) => {
+      if (key === 'htmlClientDescription') {
+        return 'true';
+      }
+      if (key === 'infoVendedores') {
+        return 'true';
+      }
+      return key === 'conversionDocument' ? 'true' : '';
+    });
+
+    component.ngOnInit();
+
+    expect(component.htmlClientDescription).toBeTrue();
+    expect(globalConfigMock.get).toHaveBeenCalledWith('htmlClientDescription');
+  });
+
+  it('sanitizeDescription limpia null y deja HTML para innerHTML', () => {
+    expect((component as any).sanitizeDescription(null)).toBe('');
+    expect((component as any).sanitizeDescription('null')).toBe('');
+    expect((component as any).sanitizeDescription('<b>Importante</b><br>Linea 2'))
+      .toBe('<b>Importante</b><br>Linea 2');
+  });
+
+  it('openDescriptionModal carga título y HTML de la descripción pedida', () => {
+    component.client = {
+      ...component.client,
+      txDescription1: '<p>Uno</p>',
+      txDescription2: '<p>Dos</p>',
+    } as any;
+    clientLogicMock.clientTags = new Map([
+      ['CLI_DETAIL_DESCRIPTION_1', 'Descripción 1'],
+      ['CLI_DETAIL_DESCRIPTION_2', 'Descripción 2'],
+    ]);
+
+    component.openDescriptionModal(1);
+    expect(component.descriptionModalOpen).toBeTrue();
+    expect(component.descriptionModalTitle).toBe('Descripción 1');
+    expect(component.descriptionModalHtml).toBe('<p>Uno</p>');
+
+    component.openDescriptionModal(2);
+    expect(component.descriptionModalTitle).toBe('Descripción 2');
+    expect(component.descriptionModalHtml).toBe('<p>Dos</p>');
+
+    component.closeDescriptionModal();
+    expect(component.descriptionModalOpen).toBeFalse();
   });
 
   it('DM-CLT-014: openDoc navega a pantalla de documento', () => {

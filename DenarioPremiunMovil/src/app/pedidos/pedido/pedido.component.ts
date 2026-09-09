@@ -17,7 +17,7 @@ import { PaymentCondition } from 'src/app/modelos/tables/paymentCondition';
 import { ProductosTabComponent } from 'src/app/productos-tab/productos-tab.component';
 import { ProductService } from 'src/app/services/products/product.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
-import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { Subscription } from 'rxjs';
 import { Location } from '@angular/common'
 import { COLOR_VERDE, DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
@@ -86,6 +86,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
 
   public geoServ = inject(GeolocationService);
+  public clientLogic = inject(ClientLogicService);
 
   public changeDetector = inject(ChangeDetectorRef);
 
@@ -245,14 +246,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           console.error('Tipo de orden original no encontrado: ' + this.orderServ.order.idOrderType);
         }
 
-        this.orderServ.getClient(this.orderServ.order.idClient).then(c => {
-          this.setClientfromSelector(c);
-          if (!this.viewOnly) {
-            this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-              "Pedidos", 'fondoVerde', c, true, 'ped');
-          }
-        });
-
         /*//removido temporalmente
         //SI EL STORDER ES 6, NO DEBO MOSTRAR LA PESTAÑA ADJUNTOS
         if (this.orderServ.order.stOrder == 6) {
@@ -272,13 +265,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       }
 
       this.multiempresa = this.enterpriseServ.esMultiempresa();
-      if (!this.viewOnly) {
-        this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-          "Pedidos", 'fondoVerde', null, false, 'ped');
-      }
 
-
-      //setup monedas
+      //setup monedas antes del selector (PED-CURRENCY-001)
       await this.currencyServ.setup(this.dbServ.getDatabase());
       this.multimoneda = this.currencyServ.multimoneda;
       this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
@@ -309,6 +297,18 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         this.hardCurrency = this.currencyServ.getHardCurrency();
       }
 
+      // selector de clientes con currency_modules ya cargado
+      if (!this.viewOnly) {
+        if (this.orderServ.openOrder) {
+          const c = await this.orderServ.getClient(this.orderServ.order.idClient);
+          this.setClientfromSelector(c);
+          this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            "Pedidos", 'fondoVerde', c, true, 'ped');
+        } else {
+          this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            "Pedidos", 'fondoVerde', null, false, 'ped');
+        }
+      }
 
       if (this.orderServ.openOrder) {
         await this.abrirPedido();
@@ -861,7 +861,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
-        const unitBaseTotal = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
+        const unitBaseFields = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
         const unitBonusAmt = this.orderServ.productBonification
           ? this.orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif
           : 0;
@@ -878,8 +878,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           0,
           unitPriceList.coPriceList,
           unitPriceList.idPriceList,
-          unitBaseTotal.nuBaseTotal,
-          unitBaseTotal.nuBaseTotalConversion,
+          unitBaseFields.nuBase,
+          unitBaseFields.nuBaseConversion,
+          unitBaseFields.nuBaseTotal,
+          unitBaseFields.nuBaseTotalConversion,
           this.orderServ.productBonification ? (unit.quBonified ?? 0) : 0,
           unitBonusAmt,
         )
@@ -1562,7 +1564,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         return;
       }
 
-      if (!skipDebtValidation && !this.orderServ.openOrder
+      if (!skipDebtValidation && !this.clientLogic.isFinanceHiddenForUser && !this.orderServ.openOrder
         && Number((cliente.saldo1 ?? 0) + (cliente.saldo2 ?? 0)) > 0
         && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
         && this.orderServ.order?.stDelivery !== null
@@ -1707,7 +1709,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       */
 
       //saldos si es pedido guardado/enviado
-      if (this.orderServ.openOrder) {
+      if (this.orderServ.openOrder && !this.clientLogic.isFinanceHiddenForUser) {
         if (this.currencyServ.multimoneda) {
           let saldoCliente = 0, saldoOpuesto = 0;
           if (cliente.coCurrency == this.localCurrency.coCurrency) {
@@ -1820,7 +1822,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           const unitStrings: string[] = [];
 
           unitList.forEach(unit => {
-            if (unit.quAmount > 0 || unit.quUnit > 0) {
+            // Solo unidades pedidas/bonificadas (quUnit es factor de empaque, no cantidad).
+            if (unit.quAmount > 0 || (Number(unit.quBonified) || 0) > 0) {
               const qty = Number(unit.quAmount ?? 0);
               const bonus = Number(unit.quBonified ?? 0);
               if (showBonifiedColumn) {

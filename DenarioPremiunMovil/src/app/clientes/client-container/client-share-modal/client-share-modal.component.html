@@ -80,13 +80,13 @@
               @if (showConversion) {
               <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_TASA') }}</th>
               }
-              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONTO') }} {{ localCurrency }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONTO') }} {{ primaryCurrencyLabel }}</th>
               @if (showConversion) {
-              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONTO') }} {{ hardCurrency }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_MONTO') }} {{ secondaryCurrencyLabel }}</th>
               }
-              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_SALDO') }} {{ localCurrency }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_SALDO') }} {{ primaryCurrencyLabel }}</th>
               @if (showConversion) {
-              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_SALDO') }} {{ hardCurrency }}</th>
+              <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_SALDO') }} {{ secondaryCurrencyLabel }}</th>
               }
               <th class="titulosBold col">{{ clientLogic.clientTags.get('CLI_DETAIL_FECHA_DOCUMENTO') }}</th>
               <th class="titulosBold col borderSuperiorDerecho">
@@ -115,20 +115,20 @@
               </td>
               }
               <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-                {{ toLocalCurrency(documento.nuAmountTotal, documento) }}
+                {{ toPrimaryCurrency(documento.nuAmountTotal, documento) }}
               </td>
               @if (showConversion) {
               <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-                {{ toHardCurrency(documento.nuAmountTotal, documento) }}
+                {{ toSecondaryCurrency(documento.nuAmountTotal, documento) }}
               </td>
               }
               <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-                {{ toLocalCurrency(documento.nuBalance, documento) }}
+                {{ toPrimaryCurrency(documento.nuBalance, documento) }}
               </td>
               @if (showConversion) {
               <td class="ion-text-center col borderInferiorDerecho"
                 [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-                {{ toHardCurrency(documento.nuBalance, documento) }}
+                {{ toSecondaryCurrency(documento.nuBalance, documento) }}
               </td>
               }
               <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">

@@ -90,8 +90,11 @@ export class DevolucionComponent implements OnInit, OnDestroy {
   shouldShowSendErrorHintOnTab(
     tab: 'default' | 'productos' | 'adjuntos',
   ): boolean {
-    return this.returnLogic.sendValidationAttempted
-      && this.returnLogic.resolveSendValidationFocusTab() === tab;
+    if (!this.returnLogic.sendValidationAttempted) {
+      return false;
+    }
+    const focus = this.returnLogic.resolveSendValidationFocusTab();
+    return focus != null && focus === tab;
   }
 
   onChangeTab(tab: string) {

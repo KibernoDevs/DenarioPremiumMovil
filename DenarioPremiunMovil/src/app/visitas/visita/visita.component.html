@@ -202,7 +202,7 @@
                   <ion-select class="ion-text-center always-flip" labelPlacement="stacked" interface="popover"
                     [interfaceOptions]="popoverOptions" (ionChange)="onSelectActivity($event)"
                     placeholder="Seleccione Actividad" [value]="actividadSeleccionada">
-                    <ion-select-option *ngFor="let act of listaActividades" [value]="act">{{ act.naType
+                    <ion-select-option *ngFor="let act of listaActividadesActivas" [value]="act">{{ act.naType
                       }}</ion-select-option>
                   </ion-select>
                 </div>
@@ -228,9 +228,14 @@
 
                 <ion-input label='{{ getTag("VIS_COMENTARIO") }}' #comentarioInput [(ngModel)]="comentario"
                   (ionInput)="onCommentInput()" labelPlacement="floating" fill="outline"
-                  placeholder='{{ getTag("VIS_COMENTARIO") }}' [maxlength]="activityCommentMaxLength"></ion-input>
+                  placeholder='{{ getTag("VIS_COMENTARIO") }}' [maxlength]="activityCommentMaxLength"
+                  [required]="comentarioRequerido"
+                  [ngClass]="{'inp-write': shouldHighlightRequiredComment()}"></ion-input>
                 <app-text-comment-counter [value]="comentario" [minLength]="textCommentMinLength"
                   [maxLength]="activityCommentMaxLength"></app-text-comment-counter>
+                <ion-label *ngIf="shouldShowRequiredCommentError()" color="danger" class="campoObligatorio">
+                  {{ getTag("DENARIO_CAMPO_OBLIGATORIO") || 'Este campo es requerido' }}
+                </ion-label>
 
               </ion-col>
               <!-- <ion-col class="" size="12" size-sm="12" size-xs="12"> -->

@@ -299,14 +299,85 @@ ion-title {
 
 .fondoVerde {
     background: $fondoVerde;
+    --background: #{$fondoVerde};
+    color: #fff !important;
 }
 
 .fondoLila {
     background: $fondoLila;
+    --background: #{$fondoLila};
 }
 
 .fondoAmarillo {
     background: $fondoAmarillo;
+    --background: #{$fondoAmarillo};
+    color: #fff !important;
+}
+
+ion-modal.product-image-zoom-modal ion-toolbar.fondoAmarillo,
+ion-modal.product-image-zoom-modal ion-title.fondoAmarillo {
+    --background: #{$fondoAmarillo};
+    background: $fondoAmarillo !important;
+    color: #fff !important;
+}
+
+/* Carrusel de fotos en detalle (Productos / Pedidos): puntos visibles */
+swiper-container.mySwiper {
+    padding-bottom: 20px;
+}
+
+swiper-container.mySwiper .swiper-pagination {
+    position: relative;
+    bottom: 0;
+    margin-top: 4px;
+}
+
+swiper-container.mySwiper .swiper-pagination-bullet {
+    opacity: 0.35;
+}
+
+swiper-container.mySwiper .swiper-pagination-bullet-active {
+    opacity: 1;
+}
+
+ion-modal.product-image-zoom-modal--productos swiper-container.mySwiper .swiper-pagination-bullet,
+product-detail swiper-container.mySwiper .swiper-pagination-bullet {
+    background: #430197;
+}
+
+ion-modal.product-image-zoom-modal--pedidos swiper-container.mySwiper .swiper-pagination-bullet,
+.productDetailImage swiper-container.mySwiper .swiper-pagination-bullet {
+    background: #59b02d;
+}
+
+/* En Pedidos el detalle vive en modal: asegurar color de bullets */
+ion-modal .productDetailImage swiper-container.mySwiper .swiper-pagination-bullet {
+    background: #59b02d;
+}
+
+ion-modal.product-image-zoom-modal .product-image-zoom-content {
+    --background: #ffffff;
+    color-scheme: only light;
+}
+
+ion-modal.product-image-zoom-modal--productos .product-image-zoom-swiper .swiper-pagination-bullet {
+    background: #430197;
+    opacity: 0.35;
+}
+
+ion-modal.product-image-zoom-modal--pedidos .product-image-zoom-swiper .swiper-pagination-bullet {
+    background: #59b02d;
+    opacity: 0.35;
+}
+
+ion-modal.product-image-zoom-modal .product-image-zoom-swiper .swiper-pagination-bullet-active {
+    opacity: 1;
+}
+
+ion-modal.product-image-zoom-modal .product-image-zoom-img {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #ffffff;
 }
 
 .tituloModulos {

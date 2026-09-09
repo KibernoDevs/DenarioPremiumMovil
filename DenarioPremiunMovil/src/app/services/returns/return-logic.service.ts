@@ -434,8 +434,8 @@ export class ReturnLogicService {
       ?? 'Complete los campos obligatorios de la devolución.';
   }
 
-  /** Pestaña del primer error (misma prioridad que getReturnValidationMessage). */
-  public resolveSendValidationFocusTab(): 'default' | 'productos' | 'adjuntos' {
+  /** Pestaña del primer error (misma prioridad que getReturnValidationMessage). Null = sin error (SEND-TAB-001). */
+  public resolveSendValidationFocusTab(): 'default' | 'productos' | 'adjuntos' | null {
     if (!this.generalTabValidForSave || !this.hasClientSelected()
       || !this.hasInvoiceSelectedWhenRequired()) {
       return 'default';
@@ -451,13 +451,17 @@ export class ReturnLogicService {
     if (this.hasMissingGpsCoordinate()) {
       return 'default';
     }
-    return 'default';
+    return null;
   }
 
   public requestSendValidationTabFocus(
-    tab?: 'default' | 'productos' | 'adjuntos',
+    tab?: 'default' | 'productos' | 'adjuntos' | null,
   ): void {
-    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+    const focus = tab === undefined ? this.resolveSendValidationFocusTab() : tab;
+    if (focus == null) {
+      return;
+    }
+    this.focusSendValidationTab.next(focus);
   }
 
   public isReturnProductLineIncomplete(index: number): boolean {

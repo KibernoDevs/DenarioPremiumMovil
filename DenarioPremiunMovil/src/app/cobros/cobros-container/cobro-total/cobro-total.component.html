@@ -16,7 +16,8 @@
       </ion-row>
       }
 
-      @if (this.collectService.multiCurrency && this.collectService.showConversion && shouldShowTotalizationIgtfSummary()) {
+      @if (this.collectService.multiCurrency && this.collectService.showConversion &&
+      shouldShowTotalizationIgtfSummary()) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
           {{this.collectService.currencyConversion.coCurrency}}</ion-col>
@@ -118,7 +119,7 @@
           size="4">{{this.collectService.collectionTags.get('COB_TIPO')}}</ion-col>
         <ion-col class="titulosBold col" size="7">{{this.collectService.collectionTags.get('COB_NRO_DOC')}}</ion-col>
         <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_MONTO_DOC')}}</ion-col>
-       
+
         @if (hasTotalizationColumnAmount('discount')) {
         <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_DEV_FALT')}}</ion-col>
         }
@@ -149,11 +150,10 @@
           {{this.collectService.collectionTags.get('COB_DESC')}}
         </ion-col>
         }
-        <ion-col class="titulosBold col"
-          size="4">{{this.collectService.collectionTags.get('COB_MONTO_PAGO')}}</ion-col>
+        <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_MONTO_PAGO')}}</ion-col>
 
-          <ion-col class="titulosBold col borderSuperiorDerecho" size="4">
-            {{this.collectService.collectionTags.get('COB_MONTO_SALDO')}}</ion-col>
+        <ion-col class="titulosBold col borderSuperiorDerecho" size="4">
+          {{this.collectService.collectionTags.get('COB_MONTO_SALDO')}}</ion-col>
       </ion-row>
 
       @for (collectionDetails of this.collectService.collection.collectionDetails; track $index; let i = $index) {
@@ -163,8 +163,8 @@
         <ion-col class="ion-text-center col" size="7">
           {{collectionDetails.coDocument}}</ion-col>
         <ion-col class="ion-text-center col"
-          size="4">{{this.currencyService.formatNumber(collectionDetails.nuBalanceDoc)}}</ion-col>
-         
+          size="4">{{this.currencyService.formatNumber(resolveDetailDocumentBalance(collectionDetails))}}</ion-col>
+
         @if (hasTotalizationColumnAmount('discount')) {
         <ion-col class="ion-text-center col"
           size="4">{{formatTotalizationAmount(collectionDetails.nuAmountDiscount)}}</ion-col>
@@ -173,7 +173,8 @@
         @for (retentionCol of getTotalizationRetentionColumns(); track retentionCol.idCollectRetention) {
         @if (hasDynamicRetentionColumnAmount(retentionCol.idCollectRetention)) {
         <ion-col class="ion-text-center col" size="4">
-          {{formatTotalizationAmount(getDetailDynamicRetentionAmount(collectionDetails, retentionCol.idCollectRetention))}}
+          {{formatTotalizationAmount(getDetailDynamicRetentionAmount(collectionDetails,
+          retentionCol.idCollectRetention))}}
         </ion-col>
         }
         }
@@ -204,8 +205,8 @@
 
         <ion-col class="ion-text-center col borderInferiorDerecho"
           size="4">{{this.currencyService.formatNumber(resolveDetailRemainingBalance(collectionDetails))}}</ion-col>
-          
-      
+
+
       </ion-row>
       }
     </ion-grid>
@@ -604,7 +605,8 @@
           </ion-item>
 
           @if (usesDynamicRetentionTotalization()) {
-          @for (retentionLine of getDetailRetentionDisplayLines(retentionDetails); track retentionLine.idCollectRetention) {
+          @for (retentionLine of getDetailRetentionDisplayLines(retentionDetails); track
+          retentionLine.idCollectRetention) {
           <ion-item>
             {{getRetentionLineDisplayLabel(retentionLine)}}
             {{this.collectService.collection.coCurrency}}:
@@ -708,8 +710,7 @@
           <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
             <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_DOC')}}" label-placement="floating"
               fill="outline" value="{{collectService.retention.coDocument}}" color="primary"
-              [(ngModel)]="collectService.retention.coDocument"
-              (ionChange)="validate()"
+              [(ngModel)]="collectService.retention.coDocument" (ionChange)="validate()"
               [ngClass]="{'inp-write': collectService.retention.coDocument, 'input-rojo': !collectService.retention.coDocument}">
             </ion-input>
           </ion-col>
@@ -726,8 +727,7 @@
               <div class="listado-enterprise-selector ion-text-center retention-selector-box">
                 <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
                   placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR') || 'Seleccione'}}"
-                  [(ngModel)]="selectedManualRetentionId"
-                  [disabled]="!hasAvailableManualCollectRetentions()"
+                  [(ngModel)]="selectedManualRetentionId" [disabled]="!hasAvailableManualCollectRetentions()"
                   (ionChange)="onManualCollectRetentionSelectionChange($event)">
                   @for(retention of getAvailableManualCollectRetentions(); track retention.idCollectRetention){
                   <ion-select-option [value]="retention.idCollectRetention">
@@ -748,7 +748,8 @@
           @for(retentionDetail of manualRetentionLines; track retentionDetail.idCollectRetention){
           <ion-col size="12" size-xs="12" size-sm="12" size-md="12" class="retention-line-block">
             <ion-label class="retention-detail-title">
-              {{retentionDetail.coCollectRetention}} - {{getManualCollectRetentionName(retentionDetail.coCollectRetention)}}
+              {{retentionDetail.coCollectRetention}} -
+              {{getManualCollectRetentionName(retentionDetail.coCollectRetention)}}
             </ion-label>
 
             @if(shouldUseManualNumericRetentionVoucherInput(retentionDetail.idCollectRetention)){
@@ -769,11 +770,9 @@
             }
 
             <ion-input label="{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}:"
-              [(ngModel)]="retentionDetail.daVoucherRetention"
-              (ngModelChange)="validate()"
-              label-placement="floating" fill="outline" type="date_event"
-              [id]="getManualRetentionCalendarTriggerId(retentionDetail.idCollectRetention)"
-              [ngClass]="{
+              [(ngModel)]="retentionDetail.daVoucherRetention" (ngModelChange)="validate()" label-placement="floating"
+              fill="outline" type="date_event"
+              [id]="getManualRetentionCalendarTriggerId(retentionDetail.idCollectRetention)" [ngClass]="{
                 'inp-write': shouldShowManualRetentionLineDateValidBorder(retentionDetail.idCollectRetention),
                 'input-rojo': shouldShowManualRetentionLineDateInvalidBorder(retentionDetail.idCollectRetention)
               }">
@@ -782,8 +781,7 @@
               [trigger]="getManualRetentionCalendarTriggerId(retentionDetail.idCollectRetention)"
               [initialBreakpoint]="0.65">
               <ng-template>
-                <ion-datetime presentation="date"
-                  [value]="retentionDetail.daVoucherRetention || fechaHoy"
+                <ion-datetime presentation="date" [value]="retentionDetail.daVoucherRetention || fechaHoy"
                   locale="es-ES" min="2000-01-01T00:00:00" max="{{fechaHoy}}"
                   (ionChange)="setManualRetentionLineDaVoucher(retentionDetail.idCollectRetention, $event)"
                   [showDefaultButtons]="true" [ngModelOptions]="{standalone: true}"
@@ -797,9 +795,7 @@
               <ion-input
                 label="{{this.collectService.collectionTags.get('COB_MONTO')}} {{this.collectService.collection.coCurrency}}"
                 label-placement="floating" fill="outline" color="primary" type="number"
-                [(ngModel)]="retentionDetail.nuAmountRetention"
-                (ionChange)="validate()"
-                [ngClass]="{
+                [(ngModel)]="retentionDetail.nuAmountRetention" (ionChange)="validate()" [ngClass]="{
                   'inp-write': shouldShowManualCollectRetentionAmountValidBorder(retentionDetail.idCollectRetention),
                   'input-rojo': shouldShowManualCollectRetentionAmountInvalidBorder(retentionDetail.idCollectRetention)
                 }">
@@ -816,8 +812,7 @@
             <ion-input
               label="{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}} {{this.collectService.collection.coCurrency}}"
               label-placement="floating" fill="outline"
-              [value]="currencyService.formatNumber(getManualRetentionTotal())" color="primary"
-              [readonly]="true"
+              [value]="currencyService.formatNumber(getManualRetentionTotal())" color="primary" [readonly]="true"
               [ngClass]="{'inp-write': getManualRetentionTotal() > 0}">
             </ion-input>
           </ion-col>

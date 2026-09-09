@@ -2,6 +2,7 @@ import { Component, OnInit, Input, inject } from '@angular/core';
 
 import { Retention } from 'src/app/modelos/retention';
 import { CollectionDetail, CollectionDetailRetentions } from 'src/app/modelos/tables/collection';
+import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
@@ -129,6 +130,7 @@ export class CobroTotalComponent implements OnInit {
     });
     this.selectedManualRetentionId = undefined;
     this.validate();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   removeManualCollectRetention(idCollectRetention: number): void {
@@ -136,6 +138,7 @@ export class CobroTotalComponent implements OnInit {
       line => line.idCollectRetention !== idCollectRetention,
     );
     this.validate();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   getManualCollectRetentionName(coCollectRetention: string): string {
@@ -361,6 +364,29 @@ export class CobroTotalComponent implements OnInit {
       ),
     );
     this.collectService.collection.collectionDetails.push(detail);
+    this.syncDocumentSalesAfterRetentionDetailSave(coDocument, detailIndex);
+  }
+
+  private syncDocumentSalesAfterRetentionDetailSave(coDocument: string, detailIndex: number): void {
+    const normalized = String(coDocument ?? '').trim();
+    if (!normalized) {
+      return;
+    }
+    const markSelected = (list: DocumentSale[] | undefined): void => {
+      if (!Array.isArray(list)) {
+        return;
+      }
+      const doc = list.find(item => item.coDocument === normalized);
+      if (!doc) {
+        return;
+      }
+      doc.isSelected = true;
+      doc.positionCollecDetails = detailIndex;
+      doc.isSave = true;
+    };
+    markSelected(this.collectService.documentSales);
+    markSelected(this.collectService.documentSalesBackup);
+    markSelected(this.collectService.documentSalesView);
   }
 
   deleteRetention(index: number) {
@@ -564,13 +590,24 @@ export class CobroTotalComponent implements OnInit {
     return this.currencyService.formatNumber(this.normalizeTotalizationAmount(amount));
   }
 
-  resolveDetailRemainingBalance(detail: CollectionDetail): number {
-    const balance = this.normalizeTotalizationAmount(detail?.nuBalanceDoc);
-    const paid = this.normalizeTotalizationAmount(detail?.nuAmountPaid);
-    if (detail?.inPaymentPartial === true) {
-      return balance;
+  /**
+   * Monto Doc.: saldo bruto del documento (contra el que se cobra).
+   * Usa original si existe; no el restante tras pago parcial.
+   */
+  resolveDetailDocumentBalance(detail: CollectionDetail): number {
+    const original = this.normalizeTotalizationAmount(detail?.nuBalanceDocOriginal);
+    if (original > 0) {
+      return original;
     }
-    return balance - paid;
+    return this.normalizeTotalizationAmount(detail?.nuBalanceDoc);
+  }
+
+  /**
+   * Monto Saldo: lo que quedará por pagar del documento tras este cobro.
+   * Parcial: bruto − pagado; completo: neto (bruto − deducciones) − pagado.
+   */
+  resolveDetailRemainingBalance(detail: CollectionDetail): number {
+    return this.collectService.resolveCollectionDetailRemainingBalance(detail);
   }
 
   hasTotalizationColumnAmount(

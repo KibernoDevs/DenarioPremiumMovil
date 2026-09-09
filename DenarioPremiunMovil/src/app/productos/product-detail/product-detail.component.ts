@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { ProductDetail } from 'src/app/modelos/ProductDetail';
 import { List } from 'src/app/modelos/tables/list';
 import { PriceListService } from 'src/app/services/priceLists/price-list.service';
@@ -15,6 +15,8 @@ import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { TextService } from 'src/app/services/text/text.service';
 import { UnitInfo } from 'src/app/modelos/unitInfo';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+
+register();
 
 @Component({
     selector: 'product-detail',
@@ -58,6 +60,11 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   selectedIdUnit = 0;
   basePriceLocal = 0;
   basePriceHard: number | null = null;
+  imageZoomOpen = false;
+  /** Índice del carrusel al abrir el zoom (foto visible/pulsada). */
+  imageZoomStartIndex = 0;
+
+  @ViewChild('zoomSwiper') zoomSwiper?: ElementRef<HTMLElement & { swiper?: { slideTo: (i: number, speed?: number) => void } }>;
 
   public swiper!: Swiper;
 
@@ -174,6 +181,41 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       return 0;
     }
     return this.productService.resolveDisplayPriceForUnit(this.basePriceHard, this.getSelectedUnit());
+  }
+
+  hasConversionRate(): boolean {
+    const rate = this.pSeleccionado?.conversion;
+    return rate != null && String(rate).trim().length > 0;
+  }
+
+  openImageZoom(index = 0): void {
+    const max = Math.max(this.getZoomImages().length - 1, 0);
+    this.imageZoomStartIndex = Math.min(Math.max(0, Number(index) || 0), max);
+    this.imageZoomOpen = true;
+  }
+
+  closeImageZoom(): void {
+    this.imageZoomOpen = false;
+  }
+
+  /** Tras abrir el modal, fuerza el slide del zoom a la foto pulsada. */
+  onZoomModalPresented(): void {
+    const apply = () => {
+      const swiper = this.zoomSwiper?.nativeElement?.swiper;
+      swiper?.slideTo(this.imageZoomStartIndex, 0);
+    };
+    apply();
+    setTimeout(apply, 50);
+  }
+
+  getZoomImages(): string[] {
+    if (this.productImages.length > 0) {
+      return this.productImages;
+    }
+    const fallback = this.pSeleccionado?.coProduct
+      ? this.imageServices.getImgForProduct(this.pSeleccionado.coProduct)
+      : '../../../assets/images/nodisponible.png';
+    return [fallback || '../../../assets/images/nodisponible.png'];
   }
 
   private syncBasePricesFromDetail(): void {

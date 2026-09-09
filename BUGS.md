@@ -8,6 +8,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PM-PHONE-001] Pago Móvil: teléfono obligatorio en Enviar
+
+- **Síntoma:** En Pagos / Pago Móvil, Nº de Teléfono vacío no marcaba error (rojo + "Campo Obligatorio") aunque el resto de campos sí.
+- **Causa:** `getPagoMovilFieldErrors` no incluía `numeroTelefono`/`codigoTelefono`; el HTML no aplicaba `shouldShowPaymentFieldError` en ese input.
+- **Fix:** Validar prefijo + al menos 7 dígitos; UI con `inp-write` + mensaje; persistido PM exige `nuPhoneNumber` (y `nuDocument`).
+- **Evitar:** No omitir el teléfono al validar completitud de PM.
+- **Archivos:** `collection-logic.service.ts` (+ spec), `cobro-pagos.component.html`, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-TR-001] Transferencia: Enviar OFF con monto exacto (`clientBankAccount`)
 
 - **Síntoma:** Con Transferencia y monto exacto, Enviar no se habilitaba; con exceso sí (anticipo automático).
@@ -49,6 +60,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Evitar:** No diagnosticar como bug de Transferencia/completitud sin revisar `tolerancia0` y rangos. Recordar bypass de `createAutomatedPrepaid` en exceso.
 - **Archivos:** `collection-logic.service.ts` (`checkTolerancia`, `validateToSend`, `onCollectionValidToSend`).
 - **Estado:** documented (comportamiento por config).
+
+---
+
+## [COB-TOL-001] Tolerancia negativa falla en moneda local (mensaje de “pago parcial”)
+
+- **Síntoma:** Cobro en BS, documento sin pago parcial (toggle OFF), se paga menos que el total; con `MonedaTolerancia` en moneda fuerte y `RangoToleranciaNegativa` alto (ej. 100000) el Enviar muestra *“Todos los documentos están marcados como pago parcial…”*. En moneda fuerte el mismo faltante sí pasa.
+- **Causa:** (1) `computeIsWithinTolerancia` convertía el rango con `convertirMonto(rango, 0, collection.coCurrency)` → con cobro local divide por tasa y deja un límite ridículo (o 0). El arreglo `81604a79` (pasar `MonedaTolerancia`) se perdió en el refactor del colector. (2) El issue `TOLERANCIA` reutilizaba el tag `COB_ERROR_PARTIAL_PAY`, texto engañoso.
+- **Fix:** Convertir rango hard→local con `× tasa` (y local→hard con `÷ tasa`) vía `convertToleranceRangeToCollectionCurrency`. Mensaje de `TOLERANCIA` separado (`COB_ERROR_TOLERANCIA` / fallback claro).
+- **Evitar:** No usar `convertirMonto(rango, 0, coCurrency del cobro)` para rangos expresados en `MonedaTolerancia`. No confundir diferencia de Pagos con `inPaymentPartial`.
+- **Tests:** `collection-logic.service.spec.ts` — `COB-TOL-001`.
+- **Archivos:** `collection-logic.service.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
 
 ---
 
@@ -256,6 +279,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Fix:** Fallback a suma de `collectionPayments.nuAmountPartial` si UI=0; `syncNuAmountTotalFromPaidAmounts` en preserve y full recalc; `saveCollection` (cobro normal) alinea `nuAmountTotal` al pagado antes de INSERT. Retención (`coType` 2) no se toca.
 - **Evitar:** No asumir que arrays UI de pago están hidratados cuando `getDocumentsSales` hace `forceRecalc`. Total General = `nuAmountTotal` ≠ `montoTotalPagado` runtime.
 - **Archivos:** `collection-logic.service.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-TOTAL-002] Monto Doc. muestra restante tras pago parcial (Total)
+
+- **Síntoma:** Pago parcial (ej. 57 de saldo 157.75): en Total, Monto Doc. = Monto Saldo = restante (100.75) en lugar de Monto Doc. = bruto (157.75) y Monto Saldo = restante. Al apagar Pago Parcial, Monto Doc. no vuelve al bruto.
+- **Causa:** `applyRemainingBalanceDocAfterPartialPayment` mutaba `nuBalanceDoc` en memoria para UI; Total bindeaba `nuBalanceDoc` como Monto Doc. y `resolveDetailRemainingBalance` en parcial devolvía ese valor ya restante → ambas columnas iguales. Al desactivar parcial no se restauraba el bruto desde `nuBalanceDocOriginal`.
+- **Fix:** UI: Monto Doc. = `nuBalanceDocOriginal` (bruto); Monto Saldo = bruto − pagado siempre. En memoria `nuBalanceDoc` permanece bruto (`restoreGrossBalanceDocForDisplay`); remaining solo en copia de envío (`prepareCollectionDetailsForSend`). Al apagar parcial, restaurar bruto.
+- **Evitar:** No mutar `nuBalanceDoc` de UI con remaining tras parcial; remaining solo en payload de envío.
+- **Archivos:** `collection-logic.service.ts`, `cobro-total.component.ts/html`, `cobro-documents.component.ts`, `cobro-general.component.ts` (+ specs).
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---

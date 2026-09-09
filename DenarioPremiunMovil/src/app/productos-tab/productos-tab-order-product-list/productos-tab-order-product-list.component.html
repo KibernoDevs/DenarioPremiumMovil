@@ -282,36 +282,58 @@
   <!-- modal de detalle de producto -->
   <ion-modal [isOpen]="detailModal" (didDismiss)="showDetailModal(false)">
     <ng-template>
-      <ion-toolbar>
-        <ion-title class="fondoVerde">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="1" size-sm="1" size-xs="2">
-                <a (click)="showDetailModal(false)">
-                  <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-                </a>
-              </ion-col>
-              <ion-col size="11" size-sm="11" size-xs="10">
-                <h1 class="tituloModulos"> {{ orderServ.getTag("PED_NOMBRE_MODULO")}} </h1>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </ion-title>
-      </ion-toolbar>
+      <ion-header>
+        <ion-toolbar class="fondoVerde">
+          <ion-title class="fondoVerde">
+            <ion-grid>
+              <ion-row>
+                <ion-col size="1" size-sm="1" size-xs="2">
+                  <a (click)="showDetailModal(false)">
+                    <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                  </a>
+                </ion-col>
+                <ion-col size="11" size-sm="11" size-xs="10">
+                  <h1 class="tituloModulos"> {{ orderServ.getTag("PED_NOMBRE_MODULO")}} </h1>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </ion-title>
+        </ion-toolbar>
+      </ion-header>
 
       <ion-content fullscreen>
         <ion-card>
           <ion-card-content>
             <ion-grid>
               <ion-row>
-                <!-- IMAGEN DE PRODUCTO -->
+                <!-- IMAGEN DE PRODUCTO (carrusel como en módulo Productos) -->
                 <ion-col class="" size="12" size-sm="12" size-xs="12">
-                  <ion-label *ngIf="orderServ.showProductImages">
-                    <ion-img class="imgProductInvent" alt="" loading="lazy"
-                      (ionError)="productoModal.imagenProduct = orderServ.imgNoDisponible"
-                      [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'">
-                    </ion-img>
-                  </ion-label>
+                  @if(orderServ.showProductImages){
+                  <div class="productDetailImage">
+                    <swiper-container
+                      class="mySwiper"
+                      navigation="false"
+                      [loop]="false"
+                      [watchOverflow]="true"
+                      [rewind]="productImages.length > 1"
+                      [pagination]="productImages.length > 1"
+                      pagination-clickable="true">
+                      @if(productImages.length > 0){
+                      @for(imgSrc of productImages; track imgSrc; let i = $index){
+                      <swiper-slide class="swiperSlide">
+                        <img class="sizeImgProduct" [src]="imgSrc" (click)="openImageZoom(i, $event)" />
+                      </swiper-slide>
+                      }
+                      } @else {
+                      <swiper-slide class="swiperSlide">
+                        <img class="sizeImgProduct"
+                          [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'"
+                          (click)="openImageZoom(0, $event)" />
+                      </swiper-slide>
+                      }
+                    </swiper-container>
+                  </div>
+                  }
                 </ion-col>
                 <!-- NOMBRE, CODIGO, PRECIO, STOCK, PUNTOS, MINIMO, MULTIPLO, IVA -->
                 <ion-col class="" size="12" size-sm="12" size-xs="12">
@@ -515,6 +537,53 @@
         </ion-card>
       </ion-content>
 
+    </ng-template>
+  </ion-modal>
+
+  <!-- modal zoom de imagen de producto (header verde = Pedidos; Productos usa fondoAmarillo) -->
+  <ion-modal [isOpen]="imageZoomOpen" (didPresent)="onZoomModalPresented()" (didDismiss)="closeImageZoom()"
+    class="product-image-zoom-modal product-image-zoom-modal--pedidos">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar class="fondoVerde">
+          <ion-title class="fondoVerde">
+            <ion-grid>
+              <ion-row>
+                <ion-col size="1" size-sm="1" size-xs="2">
+                  <a (click)="closeImageZoom()">
+                    <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                  </a>
+                </ion-col>
+                <ion-col size="11" size-sm="11" size-xs="10">
+                  <h1 class="tituloModulos">{{ orderServ.getTag("PED_NOMBRE_MODULO") }}</h1>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="product-image-zoom-content">
+        <swiper-container
+          #zoomSwiper
+          class="product-image-zoom-swiper"
+          navigation="false"
+          zoom="true"
+          [loop]="false"
+          [watchOverflow]="true"
+          [rewind]="getZoomImages().length > 1"
+          [pagination]="getZoomImages().length > 1"
+          pagination-clickable="true"
+          [attr.initial-slide]="imageZoomStartIndex"
+          [initialSlide]="imageZoomStartIndex">
+          @for(imgSrc of getZoomImages(); track imgSrc){
+          <swiper-slide>
+            <div class="swiper-zoom-container">
+              <img class="product-image-zoom-img" [src]="imgSrc" />
+            </div>
+          </swiper-slide>
+          }
+        </swiper-container>
+      </ion-content>
     </ng-template>
   </ion-modal>
 

@@ -25,7 +25,8 @@ describe('CobroTotalComponent', () => {
       },
       collectionTags: new Map(),
       shouldDisplayIgtfInTotals: () => false,
-      resolveCollectionDetailPaymentDisplay: () => ({ igtfAmount: 0 }),
+      resolveCollectionDetailPaymentDisplay: () => ({ igtfAmount: 0, amountToPay: 0 }),
+      resolveCollectionDetailRemainingBalance: () => 0,
       convertirMonto: (amount: number) => amount,
     };
 
@@ -73,6 +74,16 @@ describe('CobroTotalComponent', () => {
 
     expect(component.hasTotalizationColumnAmount('retentionIva')).toBeTrue();
     expect(component.hasTotalizationColumnAmount('discount')).toBeFalse();
+  });
+
+  it('P2: resolveDetailRemainingBalance delegates to collection service', () => {
+    collectServiceMock.resolveCollectionDetailRemainingBalance = jasmine
+      .createSpy('resolveCollectionDetailRemainingBalance')
+      .and.returnValue(12.5);
+    const detail = { nuAmountPaid: 400 } as any;
+
+    expect(component.resolveDetailRemainingBalance(detail)).toBe(12.5);
+    expect(collectServiceMock.resolveCollectionDetailRemainingBalance).toHaveBeenCalledWith(detail);
   });
 
   it('P2: calculateDifDocsNegativos accumulates negative document balances', () => {

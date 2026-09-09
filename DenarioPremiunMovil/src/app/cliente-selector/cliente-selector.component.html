@@ -41,7 +41,7 @@
 
           </ion-col>
         </ion-row>
-        @if(!this.transportista){
+        @if(!this.transportista && !clientLogic.isFinanceHiddenForUser){
         <ion-row>
           <ion-col>
             <div class="saldo-legend" aria-label="Leyenda de colores">
@@ -72,14 +72,14 @@
             <ion-label>
               <p>{{ client.lbClient }}</p>
               <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
-              @if(!this.transportista){
+              @if(!this.transportista && !clientLogic.isFinanceHiddenForUser){
               <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                {{this.getTag('CLI_SALDO')}} {{localCurrency?.coCurrency}}: {{formatNum(client.saldo1)}}
+                {{this.getTag('CLI_SALDO')}} {{getPrimaryCurrencyLabel()}}: {{formatNum(getPrimarySaldo(client))}}
               </p>
               @if(canShowConversion){
               <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                {{this.getTag('CLI_SALDO')}} {{hardCurrency?.coCurrency}}:
-                {{formatNum(client.saldo2)}}
+                {{this.getTag('CLI_SALDO')}} {{getSecondaryCurrencyLabel()}}:
+                {{formatNum(getSecondarySaldo(client))}}
               </p>
               }
               }

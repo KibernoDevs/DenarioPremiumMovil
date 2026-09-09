@@ -50,6 +50,7 @@ describe('VisitaComponent', () => {
     rolTransportista: boolean;
     listaActividades: IncidenceType[];
     listaMotivos: IncidenceMotive[];
+    getLists: jasmine.Spy<() => Promise<void>>;
   };
 
   const buildVisit = (overrides: Partial<Visit> = {}): Visit => ({
@@ -114,6 +115,7 @@ describe('VisitaComponent', () => {
       rolTransportista: false,
       listaActividades: [],
       listaMotivos: [],
+      getLists: jasmine.createSpy('getLists').and.returnValue(Promise.resolve()),
     };
 
     const adjuntoServiceMock = {
@@ -243,6 +245,50 @@ describe('VisitaComponent', () => {
 
       expect(component.reassignedMotiveMaxLength).toBe(200);
       expect(component.motivoReagendo.length).toBe(200);
+    });
+  });
+
+  describe('VIS-INC-001 active activities and required comment', () => {
+    it('refreshActiveIncidenceLists oculta actividades inactivas', () => {
+      visitServ.listaActividades = [
+        { idType: 1, naType: 'Activa', requiredEvent: false, requiredSignature: false, active: true },
+        { idType: 2, naType: 'Inactiva', requiredEvent: false, requiredSignature: false, active: false },
+        { idType: 3, naType: 'InactivaStr', requiredEvent: false, requiredSignature: false, active: 'false' as unknown as boolean },
+      ] as IncidenceType[];
+      visitServ.listaMotivos = [];
+
+      (component as any).refreshActiveIncidenceLists();
+
+      expect(component.listaActividadesActivas.map((a) => a.idType)).toEqual([1]);
+    });
+
+    it('onSelectMotive marca comentario obligatorio según requiredComment del motivo', () => {
+      const motive = {
+        idMotive: 10,
+        idType: 1,
+        naMotive: 'Con comentario',
+        active: true,
+        requiredComment: 'true',
+      } as unknown as IncidenceMotive;
+
+      component.onSelectMotive({ detail: { value: motive } });
+
+      expect(component.comentarioRequerido).toBeTrue();
+      expect(component.shouldHighlightRequiredComment()).toBeTrue();
+    });
+
+    it('onSelectMotive no exige comentario si requiredComment es false', () => {
+      const motive = {
+        idMotive: 11,
+        idType: 1,
+        naMotive: 'Sin comentario',
+        active: true,
+        requiredComment: false,
+      } as IncidenceMotive;
+
+      component.onSelectMotive({ detail: { value: motive } });
+
+      expect(component.comentarioRequerido).toBeFalse();
     });
   });
 });

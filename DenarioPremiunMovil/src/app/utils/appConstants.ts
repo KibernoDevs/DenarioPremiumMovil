@@ -22,6 +22,9 @@ export const DEPOSITO_STATUS_SAVED = 3;
 export const DEPOSITO_STATUS_TO_SEND = 2;
 export const DEPOSITO_STATUS_SENT = 1;
 
+/** status_action del catálogo status (dep002) cuando el depósito fue rechazado en Web */
+export const DEPOSIT_APPROVAL_STATUS_REJECTED = 2;
+
 //FIN VALORES ENVIO
 
 //Valores de status de collection

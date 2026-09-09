@@ -22,11 +22,7 @@ log.txt
 /www
 /platforms
 /plugins
-/android
-!/android/app/src/main/AndroidManifest.xml
-!/android/app/src/main/res/
-/android/app/src/main/res/xml/
-/android/app/src/main/res/xml/network_security_config.xml
+# Android native project is tracked; build outputs/local SDK path stay in android/.gitignore
 
 # iOS generated artifacts
 /ios/DerivedData/

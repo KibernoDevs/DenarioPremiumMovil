@@ -465,7 +465,9 @@ INSERT INTO public.application_tags(
 	('VND_CLIENTES_NUEVOSACT', 'VND', 'VENDEDOR', 'ESP', 'Clientes Nuevos Activados'),
 	('VND_TIPO_PLAN', 'VND', 'VENDEDOR', 'ESP', 'Plan por'),
 	('VND_CUOTA_MES', 'VND', 'VENDEDOR', 'ESP', 'Cuota Mes'),
-	('VND_VENTA_REAL', 'VND', 'VENDEDOR', 'ESP', 'Venta Real Mes');
+	('VND_VENTA_REAL', 'VND', 'VENDEDOR', 'ESP', 'Venta Real Mes'),
+	('VND_VENTA_PEDIDO', 'VND', 'VENDEDOR', 'ESP', 'Venta por Pedido'),
+	('VND_VENTA_FACTURADA', 'VND', 'VENDEDOR', 'ESP', 'Venta Facturada');
 
 --TAGS INVENTARIO
 DELETE FROM public.application_tags WHERE co_module = 'INV';
@@ -985,12 +987,12 @@ INSERT INTO public.application_tags(
 	('DENARIO_SIN_RESULTADOS', 'DEN', 'DENARIO', 'ENG','No products available'),
 	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar'),
 	('DENARIO_DOC_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Documento vencido'),
-  ('DENARIO_DOC_VENCIDO', 'DEN', 'DENARIO', 'ENG', 'Expired document'),
+  	('DENARIO_DOC_VENCIDO', 'DEN', 'DENARIO', 'ENG', 'Expired document'),
 	('DENARIO_DOC_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Documento vigente'),
-  ('DENARIO_DOC_VIGENTE', 'DEN', 'DENARIO', 'ENG', 'Valid document'),
-  ('DENARIO_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Vigente'),
-  ('DENARIO_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Vencido'),
-  ('DENARIO_FAVOR', 'DEN', 'DENARIO', 'ESP', 'A favor'),
-  ('DENARIO_HINT_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Documentos vigentes: El documento aún tiene días de vigencia.'),
-  ('DENARIO_HINT_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Documentos vencidos: El documento ha superado los días de vigencia.'),
-  ('DENARIO_HINT_FAVOR', 'DEN', 'DENARIO', 'ESP', 'Saldo a favor: El cliente tiene crédito disponible.');
+	('DENARIO_DOC_VIGENTE', 'DEN', 'DENARIO', 'ENG', 'Valid document'),
+	('DENARIO_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Vigente'),
+	('DENARIO_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Vencido'),
+	('DENARIO_FAVOR', 'DEN', 'DENARIO', 'ESP', 'A favor'),
+	('DENARIO_HINT_VIGENTE', 'DEN', 'DENARIO', 'ESP', 'Documentos vigentes: El documento aún tiene días de vigencia.'),
+	('DENARIO_HINT_VENCIDO', 'DEN', 'DENARIO', 'ESP', 'Documentos vencidos: El documento ha superado los días de vigencia.'),
+	('DENARIO_HINT_FAVOR', 'DEN', 'DENARIO', 'ESP', 'Saldo a favor: El cliente tiene crédito disponible.');

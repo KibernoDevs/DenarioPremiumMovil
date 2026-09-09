@@ -1,0 +1,10 @@
+[
+  {
+    "sql": "ALTER TABLE incidence_types ADD COLUMN active INTEGER NOT NULL DEFAULT 1;",
+    "description": "Soft-delete flag for actividades (incidence_types)."
+  },
+  {
+    "sql": "ALTER TABLE incidence_motives ADD COLUMN active INTEGER NOT NULL DEFAULT 1;",
+    "description": "Soft-delete flag for motivos (incidence_motives)."
+  }
+]

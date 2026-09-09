@@ -215,7 +215,7 @@ export class VisitasService {
   }
 
   getIncidenceMotives() {
-    var query = 'SELECT id_type as idType, id_motive as idMotive, na_motive as naMotive from incidence_motives';
+    var query = 'SELECT id_type as idType, id_motive as idMotive, na_motive as naMotive, active, required_comment as requiredComment from incidence_motives';
     return this.dbServ.getDatabase().executeSql(query, []).then(data => {
       let lists: IncidenceMotive[] = [];
       for (let i = 0; i < data.rows.length; i++) {
@@ -226,7 +226,7 @@ export class VisitasService {
   }
 
   getIncidenceTypes() {
-    var query = 'SELECT id_type as idType, na_type as naType, required_event as requiredEvent, required_signature as requiredSignature FROM incidence_types';
+    var query = 'SELECT id_type as idType, na_type as naType, required_event as requiredEvent, required_signature as requiredSignature, active FROM incidence_types';
     return this.dbServ.getDatabase().executeSql(query, []).then(data => {
       let lists = [];
       for (let i = 0; i < data.rows.length; i++) {

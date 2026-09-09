@@ -57,8 +57,11 @@ export class DepositoComponent implements OnInit, OnDestroy {
   shouldShowSendErrorHintOnTab(
     tab: 'default' | 'cobros' | 'total' | 'adjuntos',
   ): boolean {
-    return this.depositService.sendValidationAttempted
-      && this.depositService.resolveSendValidationFocusTab() === tab;
+    if (!this.depositService.sendValidationAttempted) {
+      return false;
+    }
+    const focus = this.depositService.resolveSendValidationFocusTab();
+    return focus != null && focus === tab;
   }
 
   onChangeTab(tab: string) {

@@ -1,0 +1,6 @@
+[
+  {
+    "sql": "ALTER TABLE incidence_motives ADD COLUMN required_comment INTEGER NOT NULL DEFAULT 0;",
+    "description": "Flag Comentario Requerido en motivos de visita."
+  }
+]

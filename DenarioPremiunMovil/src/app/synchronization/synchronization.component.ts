@@ -15,8 +15,11 @@ import { MessageAlert } from '../modelos/tables/messageAlert';
 import { StraightSwap } from '../modelos/tables/straightSwap';
 import { PedidosService } from '../pedidos/pedidos.service';
 import { AutoSendService } from '../services/autoSend/auto-send.service';
+import { isPromoterHideFinanceActive } from '../guards/promoter-hide-finance.guard';
 
 const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81, 84];
+/** Omitidas por WS si promoterHideFinance: Bank, docs, invoices, cobros, depósitos. */
+const TABLAS_FINANZAS_PROMOTOR = [2, 6, 20, 56, 57, 58, 65, 68, 76, 83];
 
 @Component({
   selector: 'app-synchronization',
@@ -307,6 +310,10 @@ export class SynchronizationComponent implements OnInit {
 
     if (this.user.catalogo) {
       this.tableKeyOrder = this.tableKeyOrder.filter(id => TABLAS_CATALOGO.includes(id));
+    }
+
+    if (isPromoterHideFinanceActive(this.globalConfig)) {
+      this.tableKeyOrder = this.tableKeyOrder.filter(id => !TABLAS_FINANZAS_PROMOTOR.includes(id));
     }
 
     this.recomputeProgressStep();
@@ -834,6 +841,11 @@ export class SynchronizationComponent implements OnInit {
         this.BUFF = 1 / this.N;
       }
 
+      if (isPromoterHideFinanceActive(this.globalConfig)) {
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => !TABLAS_FINANZAS_PROMOTOR.includes(id));
+        this.recomputeProgressStep();
+      }
+
       const tableId = this.tableKeyOrder[this.currentTableIndex];
       const key = this.tableKeyMap[tableId];
 
@@ -865,7 +877,10 @@ export class SynchronizationComponent implements OnInit {
               const sqlInfo = this.sqlTableMapById[tableId];
 
               if (!resTable) {
-                console.error(`[sync] No se recibió data para la tabla con key=${key} (tableId=${tableId})`);
+                this.initProgress(this.PROGRESS, this.BUFF);
+                table.page = 0;
+                resolve(rowKey);
+                return;
               }
 
               // 1. Borra filas si corresponde
@@ -952,6 +967,10 @@ export class SynchronizationComponent implements OnInit {
       }
       return false; // por defecto consideramos deshabilitado si no está presente
     };
+
+    if (TABLAS_FINANZAS_PROMOTOR.includes(tableId) && isPromoterHideFinanceActive(this.globalConfig)) {
+      return false;
+    }
 
     // Validaciones por grupos de tablas (mismo comportamiento que tenías antes,
     // pero centralizado y robusto frente a tipos).

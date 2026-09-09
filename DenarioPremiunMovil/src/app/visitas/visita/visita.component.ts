@@ -84,6 +84,7 @@ export class VisitaComponent implements OnInit {
   clienteAnterior = {} as Client;
   nombreCliente: string = "";
   listaActividades!: IncidenceType[];
+  listaActividadesActivas!: IncidenceType[];
   listaMotivos!: IncidenceMotive[];
   listaMotivosFiltrados!: IncidenceMotive[];
   listaDirecciones: AddresClient[] = [];
@@ -95,6 +96,8 @@ export class VisitaComponent implements OnInit {
   actividadSeleccionada!: IncidenceType | null;
   motivoSeleccionado!: IncidenceMotive | null;
   comentario: string = "";
+  comentarioRequerido = false;
+  comentarioValidationAttempted = false;
   multiempresa = false;
   listaEmpresa: Enterprise[] = [];
   empresaSeleccionada!: Enterprise;
@@ -251,6 +254,7 @@ export class VisitaComponent implements OnInit {
       this.rolTransportista = this.visitServ.rolTransportista;
       this.listaActividades = this.visitServ.listaActividades;
       this.listaMotivos = this.visitServ.listaMotivos;
+      this.listaActividadesActivas = (this.listaActividades || []).filter((a) => this.isActiveFlag(a.active));
       this.listaEventos = [];
       this.onDateSelect(false);
       this.visitServ.resetVisitExitBaseline();
@@ -704,6 +708,8 @@ export class VisitaComponent implements OnInit {
     this.motivoSeleccionado = null;
     this.motiveLock = true;
     this.comentario = "";
+    this.comentarioRequerido = false;
+    this.comentarioValidationAttempted = false;
     this.showEventModal = false;
 
   }
@@ -719,11 +725,13 @@ export class VisitaComponent implements OnInit {
     })
   }
 
-  onSelectActivity(e: any) {
+  onSelectActivity(e: any, includeMotiveId?: number) {
     //console.log(e.detail.value);
     this.listaMotivos = this.visitServ.listaMotivos;
     this.actividadSeleccionada = e.detail.value;
     this.motivoSeleccionado = null;
+    this.comentarioRequerido = false;
+    this.comentarioValidationAttempted = false;
     if (this.actividadSeleccionada != null) {
       if (e.detail.value.requiredEvent == "true") {
         this.actividadRequiereEvento = true;
@@ -737,7 +745,10 @@ export class VisitaComponent implements OnInit {
       }
 
       this.listaMotivosFiltrados =
-        this.listaMotivos.filter((mot) => mot.idType === this.actividadSeleccionada!.idType)
+        this.listaMotivos.filter((mot) =>
+          mot.idType === this.actividadSeleccionada!.idType
+          && (this.isActiveFlag(mot.active)
+            || (includeMotiveId != null && mot.idMotive == includeMotiveId)));
       this.motiveLock = this.actividadRequiereEvento;
     }
 
@@ -750,8 +761,40 @@ export class VisitaComponent implements OnInit {
     }
   }
 
+  private isActiveFlag(value: boolean | number | string | null | undefined): boolean {
+    return value === true || value === 1 || value === '1';
+  }
+
   onSelectMotive(e: any) {
     this.motivoSeleccionado = e.detail.value;
+    this.comentarioValidationAttempted = false;
+    this.comentarioRequerido = this.isRequiredCommentFlag(this.motivoSeleccionado?.requiredComment);
+  }
+
+  private isRequiredCommentFlag(value: boolean | number | string | null | undefined): boolean {
+    return value === true || value === 1 || value === '1';
+  }
+
+  shouldShowRequiredCommentError(): boolean {
+    return this.comentarioRequerido
+      && this.comentarioValidationAttempted
+      && !(this.comentario || '').trim();
+  }
+
+  shouldHighlightRequiredComment(): boolean {
+    return this.comentarioRequerido || this.shouldShowRequiredCommentError();
+  }
+
+  private validateRequiredComment(): boolean {
+    if (!this.comentarioRequerido) {
+      return true;
+    }
+    if ((this.comentario || '').trim().length > 0) {
+      this.comentarioValidationAttempted = false;
+      return true;
+    }
+    this.comentarioValidationAttempted = true;
+    return false;
   }
 
   closeMapModal() {
@@ -798,9 +841,16 @@ export class VisitaComponent implements OnInit {
     if (this.viewOnly) {
 
     } else {
-      this.onSelectActivity({ detail: { value: input.actividad } })
+      if (input.actividad
+        && !(this.listaActividadesActivas || []).some((a) => a.idType === input.actividad.idType)) {
+        this.listaActividadesActivas = [...(this.listaActividadesActivas || []), input.actividad];
+      }
+      const motiveId = input.evento ? input.evento.idMotive : undefined;
+      this.onSelectActivity({ detail: { value: input.actividad } }, motiveId);
       this.motivoSeleccionado = input.evento;
       this.comentario = input.comentario;
+      this.comentarioRequerido = this.isRequiredCommentFlag(input.evento?.requiredComment);
+      this.comentarioValidationAttempted = false;
       this.eventoAEditar = input.pos;
 
       this.showEventModal = true;
@@ -814,21 +864,8 @@ export class VisitaComponent implements OnInit {
 
   saveEventChanges() {
     var evento = this.listaEventos[this.eventoAEditar];
-    /*  if (this.actividadSeleccionada != null && this.motivoSeleccionado != null) {
-
-       evento.evento = this.motivoSeleccionado;
-       evento.actividad = this.actividadSeleccionada;
-       evento.comentario = this.comentario;
-       this.eventoAEditar = -1;
-       this.notifyVisitEdited();
-       this.resetEventSelect();
-       this.showEventModal = false;
-     } else {
-       this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
-     } */
     let saveEventChanges = false;
     if (this.actividadRequiereEvento) {
-      // Se cumple si requiredEvent es boolean true o string "true"
       if (this.motivoSeleccionado != null) {
         saveEventChanges = true;
       } else {
@@ -836,6 +873,10 @@ export class VisitaComponent implements OnInit {
       }
     } else {
       saveEventChanges = true;
+    }
+
+    if (saveEventChanges && !this.validateRequiredComment()) {
+      return;
     }
 
     if (saveEventChanges) {
@@ -875,8 +916,14 @@ export class VisitaComponent implements OnInit {
       this.motivoSeleccionado = {
         idType: 0,
         naMotive: "",
-        idMotive: 0
+        idMotive: 0,
+        active: true,
+        requiredComment: false
       }
+    }
+
+    if (saveEvent && !this.validateRequiredComment()) {
+      return;
     }
 
     if (saveEvent) {
@@ -1292,6 +1339,9 @@ export class VisitaComponent implements OnInit {
       if (this.comentarioInput && this.comentarioInput.value !== cleaned) {
         this.comentarioInput.value = cleaned;
       }
+    }
+    if ((this.comentario || '').trim().length > 0) {
+      this.comentarioValidationAttempted = false;
     }
   }
 

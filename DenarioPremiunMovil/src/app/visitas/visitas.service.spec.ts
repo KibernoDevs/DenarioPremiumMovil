@@ -207,6 +207,21 @@ describe('VisitasService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('actividades');
     });
 
+    it('SEND-TAB-001: visita completa resolve es null y request no emite', () => {
+      service.generalTabValidForSave = true;
+      service.userMustActivateGPS = false;
+      service.signatureVisit = false;
+      const ctx = baseContext();
+      ctx.listaEventos = [buildEvent()];
+      service.setVisitEditContext(ctx);
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
+    });
+
     it('sendBlockedByFields se limpia al editar (notifyVisitEdited)', () => {
       service.generalTabValidForSave = true;
       service.setVisitEditContext(baseContext());

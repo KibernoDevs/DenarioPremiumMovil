@@ -51,6 +51,12 @@ describe('CobrosHeaderComponent', () => {
         // Por defecto: sin issues y válido (los tests reconfiguran lastValidToSend / lastSendIssues).
         return;
       }),
+      canProceedSendAfterValidation: jasmine.createSpy('canProceedSendAfterValidation').and.callFake(function (this: typeof collectServiceMock) {
+        return this.lastValidToSend === true && this.lastSendIssues.length === 0;
+      }),
+      evaluateSendReadiness: jasmine.createSpy('evaluateSendReadiness').and.callFake(async function (this: typeof collectServiceMock) {
+        return this.lastSendIssues;
+      }),
       resetSendValidationUx: jasmine.createSpy('resetSendValidationUx'),
       isCollectionReadOnlyForEdit: jasmine.createSpy('isCollectionReadOnlyForEdit').and.returnValue(false),
       getTagsDenario: jasmine.createSpy('getTagsDenario').and.returnValue(Promise.resolve(false)),
@@ -177,5 +183,47 @@ describe('CobrosHeaderComponent', () => {
     expect(collectServiceMock.retentionSendFocusDocIndex).toBe(0);
     expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalledWith('documentos');
     expect(component.alertMessageOpenSend).toBeFalse();
+  });
+
+  it('COB-SEND-ATTACH-001: sendCollect blocks when attachments missing even if lastValidToSend true', async () => {
+    collectServiceMock.lastValidToSend = true;
+    collectServiceMock.lastSendIssues = [{
+      code: 'NO_ATTACHMENTS',
+      message: 'Faltan adjuntos',
+      tab: 'adjuntos',
+    }];
+    collectServiceMock.canProceedSendAfterValidation.and.returnValue(false);
+
+    component.sendCollect();
+    await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
+    await Promise.resolve();
+
+    expect(component.alertMessageOpenValidation).toBeTrue();
+    expect(component.validationFailureMessage).toBe('Faltan adjuntos');
+    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalledWith('adjuntos');
+    expect(component.alertMessageOpenSend).toBeFalse();
+  });
+
+  it('COB-SEND-ATTACH-001: sendOrSave revalidates and does not persist when attachments missing', async () => {
+    collectServiceMock.lastValidToSend = false;
+    collectServiceMock.lastSendIssues = [{
+      code: 'NO_ATTACHMENTS',
+      message: 'Faltan adjuntos',
+      tab: 'adjuntos',
+    }];
+    collectServiceMock.evaluateSendReadiness.and.resolveTo(collectServiceMock.lastSendIssues);
+    collectServiceMock.canProceedSendAfterValidation.and.returnValue(false);
+    collectServiceMock.saveCollection = jasmine.createSpy('saveCollection');
+    collectServiceMock.collectionIsSave = false;
+
+    component.sendOrSave(true);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(collectServiceMock.evaluateSendReadiness).toHaveBeenCalled();
+    expect(component.alertMessageOpenValidation).toBeTrue();
+    expect(component.validationFailureMessage).toBe('Faltan adjuntos');
+    expect(collectServiceMock.saveCollection).not.toHaveBeenCalled();
+    expect(collectServiceMock.collectionIsSave).toBeFalse();
   });
 });

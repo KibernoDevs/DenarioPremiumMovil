@@ -271,6 +271,31 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(350);
     });
 
+    it('COB-DOC-NEG-001: negative balance document subtracts from montoTotalPagar', async () => {
+      setupEditableCollection([
+        makeDetail({
+          idDocument: 10,
+          coDocument: 'FAC-10',
+          nuBalanceDoc: 1000,
+          nuBalanceDocOriginal: 1000,
+          nuAmountPaid: 1000,
+          nuAmountPaidConversion: 1000,
+        }),
+        makeDetail({
+          idDocument: 20,
+          coDocument: 'NC-20',
+          nuBalanceDoc: -200,
+          nuBalanceDocOriginal: -200,
+          nuAmountPaid: -200,
+          nuAmountPaidConversion: -200,
+        }),
+      ]);
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(800);
+    });
+
     it('COB-DOCS-001: partials from all details even if documentSales has only current page', async () => {
       setupEditableCollection([
         makeDetail({
@@ -511,6 +536,8 @@ describe('CollectionService', () => {
             naBank: 'Banco QA',
             nuPaymentDoc: 'REF-PM-1',
             nuBankAccount: '0102-001',
+            nuDocument: 'V12345678',
+            nuPhoneNumber: '1234567',
           } as any,
         ],
       } as any;
@@ -614,11 +641,13 @@ describe('CollectionService', () => {
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
     });
 
-    it('DM-COB-039: pago movil requires amount, date, banks, document and reference', () => {
+    it('DM-COB-039: pago movil requires amount, date, banks, document, phone and reference', () => {
       service.tipoPagoPagoMovil = true;
       service.pagoMovil = [{
         monto: 80,
         fecha: '2026-08-04',
+        codigoTelefono: '0414',
+        numeroTelefono: '1234567',
         nombreBancoEmisor: 'Banco Emisor',
         nombreBancoDestino: 'Banco Destino',
         numeroDocumento: '12345678',
@@ -629,6 +658,11 @@ describe('CollectionService', () => {
 
       service.pagoMovil[0].numeroReferencia = '';
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
+
+      service.pagoMovil[0].numeroReferencia = 'PM-REF-001';
+      service.pagoMovil[0].numeroTelefono = '';
+      expect(service.hasIncompletePaymentMethods()).toBeTrue();
+      expect(service.getIndexedPaymentFieldErrors('pm', 0)).toContain('numeroTelefono');
     });
   });
 
@@ -637,6 +671,7 @@ describe('CollectionService', () => {
       service.collection = { coCurrency: 'USD' } as any;
       service.MonedaTolerancia = 'USD';
       service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
       service.RangoToleranciaPositiva = 10;
       service.RangoToleranciaNegativa = 100000;
       service.alwaysPartialPayment = false;
@@ -685,7 +720,7 @@ describe('CollectionService', () => {
 
     it('DM-COB-012: overpayment within positive absolute tolerance enables send', () => {
       const spy = setupToleranceBase();
-      // amount = 5 < RangoToleranciaPositiva(10) → Enviar ON
+      // amount = 5 <= RangoToleranciaPositiva(10) → Enviar ON
       service.montoTotalPagado = 105;
 
       service.checkTolerancia();
@@ -693,10 +728,149 @@ describe('CollectionService', () => {
       expect(spy).toHaveBeenCalledWith(true);
     });
 
-    it('DM-COB-012: overpayment at or beyond positive absolute tolerance disables send', () => {
+    it('DM-COB-012: overpayment at positive absolute tolerance ceiling enables send', () => {
       const spy = setupToleranceBase();
-      // amount = 10 is NOT < 10 → Enviar OFF (comparación estricta)
+      // amount = 10 <= 10 → Enviar ON (comparador inclusivo, COB-TOL-DEC-002)
       service.montoTotalPagado = 110;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('DM-COB-012: overpayment beyond positive absolute tolerance disables send', () => {
+      const spy = setupToleranceBase();
+      service.montoTotalPagado = 110.01;
+      service.parteDecimal = 2;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe('COB-TOL-DEC-001 decimales en tolerancia / anticipo config', () => {
+    it('parseConfigDecimal acepta punto, coma y rechaza inválidos', () => {
+      const parse = (service as any).parseConfigDecimal.bind(service);
+      expect(parse('0.5')).toBe(0.5);
+      expect(parse('1,5')).toBe(1.5);
+      expect(parse(2.25)).toBe(2.25);
+      expect(parse('')).toBe(0);
+      expect(parse('abc')).toBe(0);
+      expect(parse(-1)).toBe(0);
+    });
+
+    it('tolerancia absoluta con rangos 0.5 valida dentro/fuera', () => {
+      service.collection = { coCurrency: 'USD' } as any;
+      service.MonedaTolerancia = 'USD';
+      service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
+      service.RangoToleranciaPositiva = 0.5;
+      service.RangoToleranciaNegativa = 0.5;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.montoTotalPagar = 100;
+      const spy = spyOn(service, 'onCollectionValidToSend');
+
+      service.montoTotalPagado = 100.4;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 100.5;
+      service.checkTolerancia();
+      // amount = 0.5 <= 0.5 → ON (inclusivo)
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 100.51;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(false);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 99.5;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 99.4;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(false);
+    });
+
+    it('initLogicService carga prepaid/rangos decimales desde globalConfig (coma)', () => {
+      const cfg = (service as any).globalConfig;
+      spyOn(cfg, 'get').and.callFake((key: string) => {
+        if (key === 'prepaidRangeAmount') {
+          return '0,5';
+        }
+        if (key === 'RangoToleranciaPositiva') {
+          return '1.25';
+        }
+        if (key === 'RangoToleranciaNegativa') {
+          return '0,75';
+        }
+        if (key === 'parteDecimal') {
+          return '2';
+        }
+        if (key === 'TipoTolerancia' || key === 'RangoTolerancia' || key === 'sizeRetention') {
+          return '0';
+        }
+        if (key === 'currencyModule') {
+          return 'false';
+        }
+        return 'false';
+      });
+
+      service.initLogicService();
+
+      expect(service.prepaidRangeAmount).toBe(0.5);
+      expect(service.RangoToleranciaPositiva).toBe(1.25);
+      expect(service.RangoToleranciaNegativa).toBe(0.75);
+    });
+  });
+
+  describe('COB-TOL-DEC-002 redondeo e inclusividad en tolerancia absoluta', () => {
+    function setupQaToleranceCase(): jasmine.Spy {
+      service.collection = { coCurrency: 'USD' } as any;
+      service.MonedaTolerancia = 'USD';
+      service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
+      service.RangoToleranciaPositiva = 49.99;
+      service.RangoToleranciaNegativa = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.montoTotalPagar = 672;
+      return spyOn(service, 'onCollectionValidToSend');
+    }
+
+    it('acepta diferencia exactamente en el tope 49.99 (caso QA 721.99 - 672)', () => {
+      const spy = setupQaToleranceCase();
+      service.montoTotalPagado = 721.99;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+      expect((service as any).getRoundedPaymentDelta()).toBe(49.99);
+    });
+
+    it('redondea delta flotante 49.99000000000001 antes de comparar', () => {
+      const spy = setupQaToleranceCase();
+      // Fuerza valores que en IEEE-754 producen residuo > 49.99 sin redondeo
+      service.montoTotalPagar = 672;
+      service.montoTotalPagado = 672 + 49.99000000000001;
+
+      service.checkTolerancia();
+
+      expect((service as any).getRoundedPaymentDelta()).toBe(49.99);
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('rechaza exceso por encima del tope tras redondeo', () => {
+      const spy = setupQaToleranceCase();
+      service.montoTotalPagado = 722;
 
       service.checkTolerancia();
 
@@ -801,23 +975,95 @@ describe('CollectionService', () => {
     });
 
     it('DM-COB-012: cross-currency absolute tolerance uses converted positive range', () => {
-      service.collection = { coCurrency: 'USD' } as any;
+      service.collection = { coCurrency: 'USD', nuValueLocal: 40 } as any;
       service.MonedaTolerancia = 'VES';
       service.MonedaToleranciaIsLocal = true;
+      service.localCurrency = { coCurrency: 'VES', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = false;
       service.TipoTolerancia = 0;
-      service.RangoToleranciaPositiva = 10;
+      service.RangoToleranciaPositiva = 400; // VES → 400/40 = 10 USD
       service.RangoToleranciaNegativa = 100;
       service.alwaysPartialPayment = false;
       service.enablePartialPayment = true;
       service.existPartialPayment = false;
       service.montoTotalPagar = 100;
       service.montoTotalPagado = 105;
-      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'VES',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
       const spy = spyOn(service, 'onCollectionValidToSend');
 
       service.checkTolerancia();
 
       expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-TOL-001: underpayment in local currency vs hard MonedaTolerancia converts range × rate', () => {
+      // Caso real: cobro BS, tolerancia $ 100000, faltante ~4382 BS (toggle parcial OFF).
+      service.collection = { coCurrency: 'BS', nuValueLocal: 795 } as any;
+      service.MonedaTolerancia = 'USD';
+      service.MonedaToleranciaIsLocal = false;
+      service.MonedaToleranciaIsHard = true;
+      service.localCurrency = { coCurrency: 'BS', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = true;
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 100000;
+      service.RangoToleranciaNegativa = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.allPaymentPartial = false;
+      service.montoTotalPagar = 5382.08;
+      service.montoTotalPagado = 1000; // faltante 4382.08 BS << 100000*795
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'BS',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      const spy = spyOn(service, 'onCollectionValidToSend');
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-TOL-001: issueAmountOrTolerancia no usa mensaje de pago parcial', async () => {
+      service.tolerancia0 = true;
+      service.TipoTolerancia = 0;
+      service.collection = {
+        coType: '0',
+        coCurrency: 'BS',
+        nuValueLocal: 795,
+        collectionDetails: [{ inPaymentPartial: false, isSave: true, idDocument: 1, coDocument: 'F1' }],
+        collectionPayments: [{ coType: 'de', coPaymentMethod: 'de', nuAmountPartial: 1000 }],
+      } as any;
+      service.MonedaTolerancia = 'USD';
+      service.localCurrency = { coCurrency: 'BS', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = true;
+      service.RangoToleranciaNegativa = 100000;
+      service.RangoToleranciaPositiva = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.hidePayments = false;
+      service.createAutomatedPrepaid = false;
+      service.montoTotalPagar = 5382.08;
+      service.montoTotalPagado = 1000;
+      service.collectionTags.set('COB_ERROR_PARTIAL_PAY', 'Todos los documentos estan marcados como pago parcial');
+      service.collectionTags.set('COB_ERROR_TOLERANCIA', 'Fuera de tolerancia');
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'BS',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      spyOn(service as any, 'hasAddedPaymentMethodForSendUx').and.returnValue(true);
+
+      const issue = (service as any).issueAmountOrTolerancia();
+      expect(issue).toBeNull();
     });
   });
 
@@ -887,7 +1133,9 @@ describe('CollectionService', () => {
       expect(service.documentSales[0].inPaymentPartial).toBeTrue();
       expect(service.documentSales[0].nuAmountPaid).toBe(40);
       expect(service.documentSales[0].positionCollecDetails).toBe(0);
-      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(60);
+      // UI: nuBalanceDoc = bruto del documento; remaining solo al enviar (COB-TOTAL-002).
+      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(100);
+      expect(service.collection.collectionDetails[0].nuBalanceDocOriginal).toBe(100);
     });
 
     it('applyRemainingBalanceDocAfterPartialPayment sets remaining balance from original minus paid', () => {
@@ -908,7 +1156,21 @@ describe('CollectionService', () => {
       expect(detail.nuBalanceDocOriginal).toBe(500);
     });
 
-    it('copyDocumentSaleOpenToSalesAndDetails sets nuBalanceDoc to remaining after partial save', () => {
+    it('restoreGrossBalanceDocForDisplay restores nuBalanceDoc from original', () => {
+      const detail = {
+        nuBalanceDoc: 400,
+        nuBalanceDocConversion: 400,
+        nuBalanceDocOriginal: 500,
+        nuBalanceDocOriginalConversion: 500,
+      } as CollectionDetail;
+
+      service.restoreGrossBalanceDocForDisplay(detail);
+
+      expect(detail.nuBalanceDoc).toBe(500);
+      expect(detail.nuBalanceDocConversion).toBe(500);
+    });
+
+    it('copyDocumentSaleOpenToSalesAndDetails keeps gross nuBalanceDoc after partial save', () => {
       spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
       spyOn(service, 'shouldApplyIgtfToCollection').and.returnValue(false);
       service.collection = {
@@ -961,7 +1223,7 @@ describe('CollectionService', () => {
 
       service.copyDocumentSaleOpenToSalesAndDetails();
 
-      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(400);
+      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(500);
       expect(service.collection.collectionDetails[0].nuBalanceDocOriginal).toBe(500);
       expect(service.collection.collectionDetails[0].nuAmountPaid).toBe(100);
     });
@@ -1065,7 +1327,46 @@ describe('CollectionService', () => {
       expect(service.hasMissingOtrosDifferenceCodes()).toBeFalse();
     });
 
-    it('COB-SEND-ALL-001: colector acumula varios issues sin anularse', async () => {
+    it('COB-SEND-GENERAL-001: comentario obligatorio solo si requiredComment y vacío', () => {
+      service.requiredComment = false;
+      service.collection = { txComment: 'Ttt' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeFalse();
+
+      service.requiredComment = true;
+      service.collection = { txComment: 'Ttt' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeFalse();
+
+      service.collection = { txComment: '' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeTrue();
+
+      service.syncCommentValidityFromCollection();
+      expect(service.validComment).toBeFalse();
+
+      service.requiredComment = false;
+      service.syncCommentValidityFromCollection();
+      expect(service.validComment).toBeTrue();
+    });
+
+    it('COB-SEND-GENERAL-001: tasa manual y motivo de cambio solo si config activa', () => {
+      service.enabledManualRate = false;
+      service.collection = { nuValueLocal: 0 } as any;
+      expect(service.hasManualRateFieldError()).toBeFalse();
+
+      service.enabledManualRate = true;
+      expect(service.hasManualRateFieldError()).toBeTrue();
+
+      service.requiresTxConversionReason = false;
+      service.collection = { txConversion: '' } as any;
+      expect(service.hasTxConversionFieldError()).toBeFalse();
+
+      service.requiresTxConversionReason = true;
+      expect(service.hasTxConversionFieldError()).toBeTrue();
+
+      service.collection = { txConversion: 'Cambio de tasa' } as any;
+      expect(service.hasTxConversionFieldError()).toBeFalse();
+    });
+
+    it('COB-SEND-ALL-001: colector fail-fast devuelve solo el primer issue', async () => {
       service.hideDocuments = false;
       service.hidePayments = false;
       service.requiredComment = true;
@@ -1115,15 +1416,18 @@ describe('CollectionService', () => {
         positionCollecDetails: 0,
       } as DocumentSale];
 
-      const issues = await service.collectCollectionSendIssues();
-      const codes = issues.map(i => i.code);
+      const attachmentsSpy = spyOn(service as any, 'issueMissingAttachments').and.callThrough();
+      const refsSpy = spyOn(service as any, 'issueInvalidPaymentReferences').and.callThrough();
 
-      expect(codes).toContain('NO_COMMENT');
-      expect(codes).toContain('NO_DIFFERENCE_CODE');
-      expect(codes).toContain('NO_ATTACHMENTS');
-      expect(codes.length).toBeGreaterThanOrEqual(3);
+      const issues = await service.collectCollectionSendIssues();
+
+      expect(issues.length).toBe(1);
+      expect(issues[0].code).toBe('NO_DIFFERENCE_CODE');
+      expect(issues[0].message).toBe('Falta código diferencia');
       expect(service.getCollectionSendValidationMessage()).toBe(issues[0].message);
       expect(service.resolveSendValidationFocusTab()).toBe(issues[0].tab);
+      expect(attachmentsSpy).not.toHaveBeenCalled();
+      expect(refsSpy).not.toHaveBeenCalled();
     });
 
     it('COB-SEND-ALL-001: createAutomatedPrepaid no oculta issues de campos', () => {
@@ -1135,6 +1439,127 @@ describe('CollectionService', () => {
       service.onCollectionValidToSend(false);
 
       expect(service.lastValidToSend).toBeFalse();
+    });
+
+    it('COB-SEND-ATTACH-001: prepaid no fuerza Enviar ON si faltan adjuntos', async () => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.requiredComment = false;
+      service.requiredCollectionAttachments = true;
+      service.createAutomatedPrepaid = true;
+      spyOn(service.adjuntoService, 'hasItems').and.returnValue(false);
+      service.collectionTags.set('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'Faltan adjuntos');
+      service.collection = {
+        coType: '0',
+        coCurrency: 'USD',
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuAmountPaid: 100,
+          inPaymentPartial: false,
+        }],
+        collectionPayments: [{
+          coType: 'ef',
+          coPaymentMethod: 'ef',
+          nuAmountPartial: 150,
+        }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        isSelected: true,
+        isSave: true,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.pagoEfectivo = [{ monto: 150 } as any];
+      service.montoTotalPagar = 100;
+      service.montoTotalPagado = 150;
+      service.tolerancia0 = true;
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 100000;
+      service.MonedaTolerancia = 'USD';
+      spyOn(service as any, 'validateReferencePaymentForCollect').and.resolveTo(true);
+      spyOn(service as any, 'hasValidDocumentSalesForSend').and.returnValue(true);
+      spyOn(service as any, 'hasIncompletePaymentMethods').and.returnValue(false);
+      spyOn(service as any, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service as any, 'hasIncompletePersistedPaymentAmounts').and.returnValue(false);
+      spyOn(service as any, 'hasIncompleteDocumentAmountToPay').and.returnValue(false);
+
+      await service.validateToSend();
+
+      expect(service.lastValidToSend).toBeFalse();
+      expect(service.lastSendIssues.some(i => i.code === 'NO_ATTACHMENTS')).toBeTrue();
+      expect(service.canProceedSendAfterValidation()).toBeFalse();
+    });
+
+    it('COB-SEND-ATTACH-001: prepaid con exceso y adjuntos OK permite Enviar', async () => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.requiredComment = false;
+      service.requiredCollectionAttachments = true;
+      service.createAutomatedPrepaid = true;
+      spyOn(service.adjuntoService, 'hasItems').and.returnValue(true);
+      service.collection = {
+        coType: '0',
+        coCurrency: 'USD',
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuAmountPaid: 100,
+          inPaymentPartial: false,
+        }],
+        collectionPayments: [{
+          coType: 'ef',
+          coPaymentMethod: 'ef',
+          nuAmountPartial: 150,
+        }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        isSelected: true,
+        isSave: true,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.pagoEfectivo = [{ monto: 150 } as any];
+      service.montoTotalPagar = 100;
+      service.montoTotalPagado = 150;
+      service.tolerancia0 = false;
+      spyOn(service as any, 'validateReferencePaymentForCollect').and.resolveTo(true);
+      spyOn(service as any, 'hasValidDocumentSalesForSend').and.returnValue(true);
+      spyOn(service as any, 'hasIncompletePaymentMethods').and.returnValue(false);
+      spyOn(service as any, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service as any, 'hasIncompletePersistedPaymentAmounts').and.returnValue(false);
+      spyOn(service as any, 'hasIncompleteDocumentAmountToPay').and.returnValue(false);
+      spyOn(service as any, 'isWithinToleranciaOrExactOrPartialRules').and.returnValue(false);
+
+      const blocking = await service.evaluateSendReadiness();
+
+      expect(blocking.length).toBe(0);
+      expect(service.lastValidToSend).toBeTrue();
+      expect(service.canProceedSendAfterValidation()).toBeTrue();
+    });
+
+    it('COB-SEND-ATTACH-002: notifyCollectionEdited desbloquea Enviar tras adjunto aunque dirty tracking esté pausado', () => {
+      service.hideDocuments = false;
+      service.hidePayments = true;
+      service.sendBlockedByFields = true;
+      service.disableSendButton = true;
+      service.pauseCollectionDirtyTracking();
+      service.collection = {
+        coType: '0',
+        collectionDetails: [{ idDocument: 1, coDocument: 'FAC-1' }],
+        collectionPayments: [],
+      } as any;
+      const validateSpy = spyOn(service, 'validateToSend').and.resolveTo();
+
+      service.notifyCollectionEdited();
+
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.disableSendButton).toBeFalse();
+      expect(validateSpy).toHaveBeenCalled();
     });
 
     it('COB-PREPAID-003: collectCollectionSendIssues no pisa mensaje global con adjuntos', async () => {
@@ -1295,13 +1720,14 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(103);
     });
 
-    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= prepaid range', () => {
+    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= activation threshold', () => {
       service.automatedPrepaid = true;
       service.coTypeModule = '0';
       service.existPartialPayment = false;
       service.createAutomatedPrepaid = true;
       service.anticipoAutomatico = [{ type: 'ef' } as any];
       service.prepaidRangeAmount = 10;
+      service.tolerancia0 = false;
       spyOn(service as any, 'getPrepaidExcessAmount').and.returnValue(50);
 
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
@@ -1313,16 +1739,21 @@ describe('CollectionService', () => {
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeFalse();
     });
 
-    describe('COB-PREPAID-001 automated prepaid vs tolerancia', () => {
-      function setupUsdPrepaidScenario(excess: number): void {
+    describe('COB-PREPAID-001 / COB-PREPAID-005 automated prepaid vs tolerancia', () => {
+      function setupUsdPrepaidScenario(excess: number, opts?: {
+        prepaidRangeAmount?: number;
+        rangoPositiva?: number;
+        tolerancia0?: boolean;
+      }): void {
         service.automatedPrepaid = true;
         service.coTypeModule = '0';
         service.existPartialPayment = false;
-        service.prepaidRangeAmount = 1;
+        service.prepaidRangeAmount = opts?.prepaidRangeAmount ?? 1;
         service.prepaidRangeCurrency = 'USD';
-        service.tolerancia0 = true;
+        service.parteDecimal = 2;
+        service.tolerancia0 = opts?.tolerancia0 ?? true;
         service.TipoTolerancia = 0;
-        service.RangoToleranciaPositiva = 100000;
+        service.RangoToleranciaPositiva = opts?.rangoPositiva ?? 100000;
         service.MonedaTolerancia = 'USD';
         service.collection = { coCurrency: 'USD' } as any;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(excess);
@@ -1335,7 +1766,7 @@ describe('CollectionService', () => {
         spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
       }
 
-      it('USD: exceso 1.54 con rango+ tolerancia alto sigue contando para anticipo', () => {
+      it('USD: exceso 1.54 con prepaidRangeAmount=1 crea anticipo (umbral = solo prepaid)', () => {
         setupUsdPrepaidScenario(1.54);
 
         const prepaidExcess = (service as any).getPrepaidExcessAmount();
@@ -1345,18 +1776,84 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
+      it('COB-PREPAID-005: umbral = prepaidRangeAmount; exceso bajo mínimo no crea', () => {
+        setupUsdPrepaidScenario(14, { prepaidRangeAmount: 50, rangoPositiva: 10 });
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(50);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-PREPAID-005: tolerancia0 false → umbral sigue siendo solo prepaidRangeAmount', () => {
+        setupUsdPrepaidScenario(1, {
+          prepaidRangeAmount: 1,
+          rangoPositiva: 100000,
+          tolerancia0: false,
+        });
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
       it('umbral exacto: exceso = prepaidRangeAmount crea anticipo', () => {
-        setupUsdPrepaidScenario(1);
+        setupUsdPrepaidScenario(50, { prepaidRangeAmount: 50, rangoPositiva: 10 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
       it('bajo umbral: exceso 0.5 con mínimo 1 no crea anticipo', () => {
-        setupUsdPrepaidScenario(0.5);
+        setupUsdPrepaidScenario(0.5, { prepaidRangeAmount: 1, rangoPositiva: 0 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
+      });
+
+      it('COB-TOL-DEC-001: prepaidRangeAmount 0.5 → exceso 0.5 crea anticipo', () => {
+        setupUsdPrepaidScenario(0.5, { prepaidRangeAmount: 0.5, rangoPositiva: 0 });
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-TOL-DEC-001: prepaid 0.5; exceso 0.4 no crea; 0.5 sí (tol+ no suma al umbral)', () => {
+        setupUsdPrepaidScenario(0.4, { prepaidRangeAmount: 0.5, rangoPositiva: 0.5 });
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(0.5);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(0.5);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-PREPAID-005: tol+ 49.99 + prepaid 50; exceso 50 crea anticipo (caso QA)', () => {
+        service.parteDecimal = 2;
+        setupUsdPrepaidScenario(50, { prepaidRangeAmount: 50, rangoPositiva: 49.99 });
+
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-TOL-DEC-002: prepaid 0.01 redondeado; exceso 0.01 crea; 0.009 no', () => {
+        service.parteDecimal = 2;
+        setupUsdPrepaidScenario(0.009, { prepaidRangeAmount: 0.01, rangoPositiva: 49.99 });
+
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(0.01);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(0.01);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
       it('COB-PREPAID-003: buildAutomatedPrepaidMessage usa prepaidCurrency y monto formateado', () => {
@@ -1368,15 +1865,54 @@ describe('CollectionService', () => {
         service.multiCurrency = true;
         service.currencySelected = { localCurrency: 'true' } as any;
         service.currencyConversion = { coCurrency: 'Bs' } as any;
+        service.discountRemnantPrepaidAmount = 0;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(150.5);
         spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
         spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
         spyOn(service, 'convertirMonto').and.returnValue(150.5);
+        spyOn(service, 'getAutomatedPrepaidExcessAmount').and.returnValue(150.5);
         spyOn((service as any).currencyService, 'formatNumber').and.returnValue('150.50');
 
         expect(service.buildAutomatedPrepaidMessage()).toBe(
           'Se creará un anticipo automático por el monto excedente de $ 150.50. Se enviará un anticipo junto al cobro.',
         );
+      });
+
+      it('COB-DISC-003: remanente se suma al monto de anticipo en prepaidCurrency', () => {
+        service.prepaidCurrency = 'USD';
+        service.collection = { coCurrency: 'USD', nuDifference: 0, nuDifferenceConversion: 0 } as any;
+        service.discountRemnantPrepaidAmount = 50;
+        spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(10);
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+
+        const amounts = service.resolveAutomatedPrepaidDocumentAmounts();
+        expect(amounts.coCurrency).toBe('USD');
+        expect(amounts.nuAmount).toBe(60);
+      });
+
+      it('COB-DISC-003: shouldCreateAutomatedPrepaidOnSend true solo con remanente confirmado', () => {
+        service.coTypeModule = '0';
+        service.existPartialPayment = false;
+        service.automatedPrepaid = false;
+        service.createAutomatedPrepaid = false;
+        service.discountRemnantPrepaidAmount = 50;
+        service.anticipoAutomatico = [];
+        spyOn(service, 'ensureAutomatedPrepaidPaymentTemplate').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: -1, synthetic: true }];
+        });
+
+        expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+        expect(service.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      });
+
+      it('COB-DISC-003: convertCollectionAmountToPrepaidCurrency respeta prepaidCurrency', () => {
+        service.prepaidCurrency = 'Bs';
+        service.collection = { coCurrency: 'USD' } as any;
+        service.multiCurrency = true;
+        spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
+        spyOn(service, 'convertirMonto').and.returnValue(1800);
+
+        expect(service.convertCollectionAmountToPrepaidCurrency(50)).toBe(1800);
       });
 
       it('COB-PREPAID-003: createAnticipoCollection persiste moneda prepaidCurrency', async () => {
@@ -2031,6 +2567,18 @@ describe('CollectionService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('default');
     });
 
+    it('SEND-TAB-001: sin issues resolve es null y request no emite', () => {
+      service.collection = { coType: '0' } as any;
+      service.lastSendIssues = [];
+      spyOn(service as any, 'collectSyncFieldSendIssues').and.returnValue([]);
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
+    });
+
     it('getCollectionSendValidationMessage: pago incompleto enfoca Pagos', () => {
       service.collection = { coType: '0' } as any;
       service.hidePayments = false;
@@ -2116,6 +2664,134 @@ describe('CollectionService', () => {
       service.requestSendValidationTabFocus();
 
       expect(focused).toBe('pagos');
+    });
+  });
+
+  describe('COB-SEND-FLUSH-001 flush pre-envío sin bucle validateToSend', () => {
+    it('notifyCollectionEdited durante syncPendingInputs no dispara validateToSend', () => {
+      service.collection = { coType: '0' } as any;
+      const validateSpy = spyOn(service, 'validateToSend').and.resolveTo();
+
+      const unregister = service.registerSendValidationFlushHandler(() => {
+        service.notifyCollectionEdited();
+      });
+
+      service.syncPendingInputsBeforeSendValidation();
+
+      expect(validateSpy).not.toHaveBeenCalled();
+      unregister();
+    });
+
+    it('validateToSend termina en una pasada aunque el flush llame notifyCollectionEdited', async () => {
+      service.collection = { coType: '0' } as any;
+
+      let validateCalls = 0;
+      const originalValidate = service.validateToSend.bind(service);
+      spyOn(service, 'validateToSend').and.callFake(async function (this: CollectionService) {
+        validateCalls++;
+        if (validateCalls > 5) {
+          fail('validateToSend entró en bucle');
+        }
+        return originalValidate.call(this);
+      });
+
+      spyOn(service, 'evaluateSendReadiness').and.resolveTo([]);
+
+      const unregister = service.registerSendValidationFlushHandler(() => {
+        service.notifyCollectionEdited();
+      });
+
+      await service.validateToSend();
+
+      expect(validateCalls).toBe(1);
+      unregister();
+    });
+  });
+
+  describe('COB-TOTAL-003 Monto Saldo restante con retenciones', () => {
+    it('full payment with retention shows 0 remaining (500 - 100 ret - 400 paid)', () => {
+      const detail = {
+        nuBalanceDoc: 500,
+        nuBalanceDocOriginal: 500,
+        nuAmountPaid: 400,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 100,
+        nuAmountRetention2: 0,
+        inPaymentPartial: false,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(0);
+    });
+
+    it('partial payment without deductions keeps gross minus paid (COB-TOTAL-002)', () => {
+      const detail = {
+        nuBalanceDoc: 157.75,
+        nuBalanceDocOriginal: 157.75,
+        nuAmountPaid: 57,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(100.75);
+    });
+
+    it('COB-TOTAL-004: partial + legacy retention uses gross minus paid (not net)', () => {
+      const detail = {
+        nuBalanceDoc: 500,
+        nuBalanceDocOriginal: 500,
+        nuAmountPaid: 200,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 100,
+        nuAmountRetention2: 0,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(300);
+    });
+
+    it('COB-TOTAL-004: partial 154.03 + ret 15+35 on 254.03 shows 100', () => {
+      const detail = {
+        nuBalanceDoc: 254.03,
+        nuBalanceDocOriginal: 254.03,
+        nuAmountPaid: 154.03,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 15,
+        nuAmountRetention2: 35,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBeCloseTo(100, 2);
+    });
+
+    it('COB-TOTAL-004: partial + dynamic retentions ignores them for remaining', () => {
+      service.dynamicRetentions = true;
+      const detail = {
+        nuBalanceDoc: 254.03,
+        nuBalanceDocOriginal: 254.03,
+        nuAmountPaid: 154.03,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        collectionDetailRetentions: [
+          { idCollectRetention: 1, nuAmountRetention: 15 },
+          { idCollectRetention: 2, nuAmountRetention: 35 },
+        ],
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBeCloseTo(100, 2);
     });
   });
 
@@ -2837,6 +3513,256 @@ describe('CollectionService', () => {
       service.markCollectionDirty();
       expect(service.sendBlockedByFields).toBeFalse();
       expect(service.disableSendButton).toBeFalse();
+    });
+  });
+
+  describe('COB-SEND-UX-003 Enviar refresh and doc prerequisite by coType', () => {
+    function assignInMemoryDocument(coType: string): void {
+      service.collection = {
+        coType,
+        stDelivery: 0,
+        stCollection: 0,
+        isSave: 0,
+        collectionDetails: [{
+          coDocument: 'FAC-TOTAL-1',
+          idDocument: 0,
+        } as CollectionDetail],
+        collectionPayments: [],
+      } as any;
+      service.documentSales = [];
+    }
+
+    function assignCompleteRetentionDetail(): CollectionDetail {
+      return {
+        coDocument: 'FAC-R1',
+        nuAmountRetention: 10,
+        nuAmountRetention2: 0,
+        nuVoucherRetention: '1234567890',
+        daVoucher: '2026-08-01',
+        collectionDetailRetentions: [{
+          idCollectRetention: 1,
+          nuAmountRetention: 10,
+          nuVoucherRetention: '1234567890',
+          daVoucherRetention: '2026-08-01',
+        }],
+      } as CollectionDetail;
+    }
+
+    beforeEach(() => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.sendBlockedByFields = false;
+      service.disableSendButton = true;
+    });
+
+    it('COB-SEND-UX-003a: coType 0 accepts collectionDetails without documentSales selection', () => {
+      assignInMemoryDocument('0');
+      expect(service.hasAssignedDocumentForSendUx()).toBeTrue();
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeTrue();
+      service.collection.collectionPayments = [{
+        coPaymentMethod: 'ef',
+        coType: 'ef',
+        nuAmountPartial: 10,
+      } as any];
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeFalse();
+    });
+
+    it('COB-SEND-UX-003a: coType 3 and 4 same in-memory doc rule', () => {
+      for (const coType of ['3', '4']) {
+        assignInMemoryDocument(coType);
+        expect(service.hasAssignedDocumentForSendUx()).toBeTrue();
+      }
+    });
+
+    it('COB-SEND-UX-003b: coType 1 requires payment only', () => {
+      service.hideDocuments = true;
+      service.collection = {
+        coType: '1',
+        collectionDetails: [],
+        collectionPayments: [],
+      } as any;
+      expect(service.hasSendPrerequisites()).toBeFalse();
+      service.collection.collectionPayments = [{
+        coPaymentMethod: 'ef',
+        coType: 'ef',
+        nuAmountPartial: 5,
+      } as any];
+      expect(service.hasSendPrerequisites()).toBeTrue();
+    });
+
+    it('COB-SEND-UX-003: refreshSendUxAfterEdit clears sendBlocked and enables when prerequisites met', () => {
+      service.hidePayments = true;
+      assignInMemoryDocument('2');
+      service.sendBlockedByFields = true;
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeTrue();
+
+      service.refreshSendUxAfterEdit();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.disableSendButton).toBeFalse();
+    });
+
+    it('COB-RET-SEND-002: coType 2 two complete details enable Enviar', () => {
+      service.hidePayments = true;
+      service.dynamicRetentions = true;
+      service.collectRetentions = [{
+        idCollectRetention: 1,
+        requireInput: true,
+        nuVoucherLength: 10,
+      } as any];
+      service.collection = {
+        coType: '2',
+        collectionDetails: [
+          assignCompleteRetentionDetail(),
+          { ...assignCompleteRetentionDetail(), coDocument: 'FAC-R2' },
+        ],
+      } as any;
+      service.sendBlockedByFields = false;
+      service.updateSendButtonAvailability();
+      expect(service.hasSendPrerequisites()).toBeTrue();
+      expect(service.disableSendButton).toBeFalse();
+    });
+
+    it('COB-RET-SEND-004: coType 2 second detail via Total (collectionDetails only)', () => {
+      service.hidePayments = true;
+      service.collection = {
+        coType: '2',
+        stDelivery: 0,
+        stCollection: 0,
+        isSave: 0,
+        collectionDetails: [
+          assignCompleteRetentionDetail(),
+          { ...assignCompleteRetentionDetail(), coDocument: 'FAC-MANUAL-2' },
+        ],
+      } as any;
+      service.documentSales = [];
+      expect(service.hasAssignedDocumentForSendUx()).toBeTrue();
+      expect(service.hasSendPrerequisites()).toBeTrue();
+    });
+  });
+
+  describe('COB-SESSION-001 Nuevo Cobro idéntico desde 0 tras enviar', () => {
+    interface NewSessionSnapshot {
+      sendBlockedByFields: boolean;
+      sendValidationAttempted: boolean;
+      lastValidToSend: boolean;
+      lastSendIssues: unknown[];
+      retentionSendFocusDocIndex: number | null;
+      collectionPersistedBaseline: boolean;
+      collectionDirtySincePersist: boolean;
+      cobro25: boolean;
+      hidePayments: boolean;
+      hideDocuments: boolean;
+      isAnticipo: boolean;
+      isRetention: boolean;
+      newCollect: boolean;
+      initCollect: boolean;
+      disableSendButton: boolean;
+      tabSelected: string;
+      documentSalesLength: number;
+    }
+
+    function captureNewSessionSnapshot(): NewSessionSnapshot {
+      return {
+        sendBlockedByFields: service.sendBlockedByFields,
+        sendValidationAttempted: service.sendValidationAttempted,
+        lastValidToSend: service.lastValidToSend,
+        lastSendIssues: [...service.lastSendIssues],
+        retentionSendFocusDocIndex: service.retentionSendFocusDocIndex,
+        collectionPersistedBaseline: service.collectionPersistedBaseline,
+        collectionDirtySincePersist: service.collectionDirtySincePersist,
+        cobro25: service.cobro25,
+        hidePayments: service.hidePayments,
+        hideDocuments: service.hideDocuments,
+        isAnticipo: service.isAnticipo,
+        isRetention: service.isRetention,
+        newCollect: service.newCollect,
+        initCollect: service.initCollect,
+        disableSendButton: service.disableSendButton,
+        tabSelected: service.tabSelected,
+        documentSalesLength: service.documentSales.length,
+      };
+    }
+
+    function simulatePostSendDirtyState(): void {
+      service.applyPersistSucceededBaseline();
+      service.sendBlockedByFields = true;
+      service.lastValidToSend = false;
+      service.lastSendIssues = [{ message: 'Error', tab: 'pagos' } as any];
+      service.retentionSendFocusDocIndex = 2;
+      service.cobro25 = true;
+      service.hidePayments = true;
+      service.isRetention = true;
+      service.collection = {
+        coType: '2',
+        collectionDetails: [{ coDocument: 'FAC-OLD' }],
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 100 }],
+      } as any;
+      service.documentSales = [{ coDocument: 'FAC-OLD', isSelected: true } as any];
+    }
+
+    it('COB-SESSION-001a: beginNewCollectionSession(0) matches fresh baseline', () => {
+      service.beginNewCollectionSession(0);
+      const baseline = captureNewSessionSnapshot();
+
+      expect(baseline.sendBlockedByFields).toBeFalse();
+      expect(baseline.disableSendButton).toBeTrue();
+      expect(baseline.newCollect).toBeTrue();
+      expect(baseline.initCollect).toBeTrue();
+      expect(baseline.hidePayments).toBeFalse();
+      expect(baseline.cobro25).toBeFalse();
+      expect(baseline.documentSalesLength).toBe(0);
+    });
+
+    it('COB-SESSION-001b: post-send dirty state resets to same baseline on new cobro', () => {
+      service.beginNewCollectionSession(0);
+      const baseline = captureNewSessionSnapshot();
+
+      simulatePostSendDirtyState();
+      service.beginNewCollectionSession(0);
+      const afterReset = captureNewSessionSnapshot();
+
+      expect(afterReset).toEqual(baseline);
+    });
+
+    it('COB-SESSION-001c: retention then IGTF restores hidePayments', () => {
+      simulatePostSendDirtyState();
+      service.beginNewCollectionSession(3);
+
+      expect(service.hidePayments).toBeFalse();
+      expect(service.hideDocuments).toBeFalse();
+      expect(service.isRetention).toBeFalse();
+      expect(service.coTypeModule).toBe('3');
+    });
+
+    it('COB-SESSION-001d: cobro25 then normal clears cobro25 flag', () => {
+      service.beginNewCollectionSession(4);
+      expect(service.cobro25).toBeTrue();
+
+      simulatePostSendDirtyState();
+      service.beginNewCollectionSession(0);
+      expect(service.cobro25).toBeFalse();
+    });
+
+    it('COB-SESSION-001e: resetCollectionSessionState clears send issues without new session', () => {
+      simulatePostSendDirtyState();
+      service.resetCollectionSessionState();
+
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.lastSendIssues).toEqual([]);
+      expect(service.collectionPersistedBaseline).toBeFalse();
+      expect(service.documentSales.length).toBe(0);
+    });
+  });
+
+  describe('COB-TAB-GENERAL-001 General tab remount', () => {
+    it('beginNewCollectionSession sets initCollect for first mount only', () => {
+      service.initCollect = false;
+      service.beginNewCollectionSession(0);
+      expect(service.initCollect).toBeTrue();
+      expect(service.newCollect).toBeTrue();
     });
   });
 

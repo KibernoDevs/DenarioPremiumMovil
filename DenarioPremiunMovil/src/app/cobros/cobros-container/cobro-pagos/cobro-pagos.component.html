@@ -83,7 +83,7 @@
               <ion-item>
                 <ion-input label="{{this.collectService.collectionTags.get('COB_LABEL_NRO_RECIBO')}}:"
                   label-placement="floating" fill="outline" color="primary" [(ngModel)]="efectivo.nuRecibo"
-                  value="{{efectivo.nuRecibo}}" (ionBlur)="setNroTransanccion(efectivo.nuRecibo,ef,'ef')"
+                  value="{{efectivo.nuRecibo}}" (ionInput)="onPaymentDocInput($event, ef, 'ef')" (ionBlur)="setNroTransanccion(efectivo.nuRecibo,ef,'ef')"
                   [maxlength]="paymentDocMaxLength"
                   class="customInput">
                 </ion-input>
@@ -176,11 +176,15 @@
                   inputmode="numeric" pattern="[0-9]*" [maxlength]="pagoMovilTelefonoMaxLength"
                   [minlength]="pagoMovilTelefonoMaxLength" [(ngModel)]="pagoMovil.numeroTelefono"
                   (ionInput)="onPagoMovilTelefonoInput(pm, $any($event.target).value)"
-                  (ionBlur)="onPagoMovilTelefonoInput(pm, pagoMovil.numeroTelefono)" class="customInput">
+                  (ionBlur)="onPagoMovilTelefonoInput(pm, pagoMovil.numeroTelefono)" class="customInput"
+                  [ngClass]="{'inp-write': shouldShowPaymentFieldError('pm', pm, 'numeroTelefono')}">
                 </ion-input>
               </ion-item>
               <app-text-comment-counter [value]="pagoMovil.numeroTelefono" [minLength]="pagoMovilTelefonoMaxLength"
                 [maxLength]="pagoMovilTelefonoMaxLength"></app-text-comment-counter>
+              @if (shouldShowPaymentFieldError('pm', pm, 'numeroTelefono')) {
+              <ion-label color="danger" class="campoObligatorio">{{ getRequiredFieldLabel() }}</ion-label>
+              }
             </ion-col>
 
 
@@ -343,7 +347,7 @@
               <ion-item disabled="{{cheque.disabled}}">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
                   [(ngModel)]="cheque.nuevaCuenta" label-placement="floating" fill="outline"
-                  (ionBlur)="setNuevaCuenta(cheque.nuevaCuenta,ch,'ch')" value="{{cheque.nuevaCuenta}}" color="primary"
+                  (ionInput)="onNuevaCuentaInput($event, ch, 'ch')" (ionBlur)="setNuevaCuenta(cheque.nuevaCuenta,ch,'ch')" value="{{cheque.nuevaCuenta}}" color="primary"
                   [maxlength]="paymentDocMaxLength"
                   class="customInput"></ion-input>
               </ion-item>
@@ -411,7 +415,7 @@
               <ion-item disabled="{{cheque.disabled}}">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_CHEQUE')}}"
                   label-placement="floating" fill="outline" color="primary" [(ngModel)]="cheque.numeroCheque"
-                  value="{{cheque.numeroCheque}}" (ionBlur)="setNroTransanccion(cheque.numeroCheque,ch,'ch')"
+                  value="{{cheque.numeroCheque}}" (ionInput)="onPaymentDocInput($event, ch, 'ch')" (ionBlur)="setNroTransanccion(cheque.numeroCheque,ch,'ch')"
                   [maxlength]="nuevaCuentaMaxLength"
                   class="customInput" [ngClass]="{'inp-write': shouldShowPaymentFieldError('ch', ch, 'numeroCheque')}"></ion-input>
               </ion-item>
@@ -478,7 +482,7 @@
               <ion-item disabled="{{deposito.disabled}}">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_DEPOSITO')}}"
                   label-placement="floating" fill="outline" color="primary" [(ngModel)]="deposito.numeroDeposito"
-                  value="{{deposito.numeroDeposito}}" (ionBlur)="setNroTransanccion(deposito.numeroDeposito,de,'de')"
+                  value="{{deposito.numeroDeposito}}" (ionInput)="onPaymentDocInput($event, de, 'de')" (ionBlur)="setNroTransanccion(deposito.numeroDeposito,de,'de')"
                   [maxlength]="paymentDocMaxLength"
                   class="customInput" [ngClass]="{'inp-write': shouldShowPaymentFieldError('de', de, 'numeroDeposito')}"></ion-input>
               </ion-item>
@@ -577,7 +581,7 @@
               <ion-item disabled="{{transferencia.disabled}}">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
                   [(ngModel)]="transferencia.nuevaCuenta" label-placement="floating" fill="outline"
-                  (ionBlur)="setNuevaCuenta(transferencia.nuevaCuenta,tr,'tr')" value="{{transferencia.nuevaCuenta}}"
+                  (ionInput)="onNuevaCuentaInput($event, tr, 'tr')" (ionBlur)="setNuevaCuenta(transferencia.nuevaCuenta,tr,'tr')" value="{{transferencia.nuevaCuenta}}"
                   color="primary" class="customInput" [maxlength]="paymentDocMaxLength"
                   [ngClass]="{'inp-write': shouldShowPaymentFieldError('tr', tr, 'nuevaCuenta')}"></ion-input>
               </ion-item>
@@ -607,7 +611,7 @@
                 <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_REFERENCIA')}}"
                   label-placement="floating" fill="outline" color="primary"
                   [(ngModel)]="transferencia.numeroTransferencia" value="{{transferencia.numeroTransferencia}}"
-                  (ionBlur)="setNroTransanccion(transferencia.numeroTransferencia,tr,'tr')" class="customInput"
+                  (ionInput)="onPaymentDocInput($event, tr, 'tr')" (ionBlur)="setNroTransanccion(transferencia.numeroTransferencia,tr,'tr')" class="customInput"
                   [maxlength]="nuevaCuentaMaxLength"
                   [ngClass]="{'inp-write': shouldShowPaymentFieldError('tr', tr, 'numeroTransferencia')}"></ion-input>
               </ion-item>
@@ -705,7 +709,7 @@
               <ion-item>
                 <ion-input label="{{this.collectService.collectionTags.get('COB_OTROS_ESPECIFIQUE')}}:"
                   label-placement="floating" fill="outline" color="primary" [(ngModel)]="otros.nombre"
-                  value="{{otros.nombre}}" (ionBlur)="setNroTransanccion(otros.nombre,ot,'ot')"
+                  value="{{otros.nombre}}" (ionInput)="onPaymentDocInput($event, ot, 'ot')" (ionBlur)="setNroTransanccion(otros.nombre,ot,'ot')"
                   [maxlength]="paymentDocMaxLength"
                   [ngClass]="{'inp-write': shouldShowPaymentFieldError('ot', ot, 'nombre')}" class="customInput"></ion-input>
               </ion-item>

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ModalController } from '@ionic/angular';
 
 import { ReturnLogicService } from './return-logic.service';
 import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
@@ -27,6 +28,7 @@ describe('ReturnLogicService', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: ModalController, useValue: { create: () => Promise.resolve({ present: () => Promise.resolve() }) } },
         {
           provide: SynchronizationDBService,
           useValue: { getDatabase: () => mockDb },
@@ -217,6 +219,21 @@ describe('ReturnLogicService', () => {
       expect(service.hasReturnFieldErrors()).toBeTrue();
       expect(service.getReturnValidationMessage()).toContain('Complete productos');
       expect(service.resolveSendValidationFocusTab()).toBe('productos');
+    });
+
+    it('SEND-TAB-001: devolución completa resolve es null y request no emite', () => {
+      service.generalTabValidForSave = true;
+      service.newReturn.idClient = 10;
+      service.validateReturn = false;
+      service.requeridedNroFactura = false;
+      service.userMustActivateGPS = false;
+      service.productList = [{ quProduct: 1, coDocument: 'F001' } as ReturnDetail];
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
     });
 
     it('devolución por enviar queda read-only', () => {

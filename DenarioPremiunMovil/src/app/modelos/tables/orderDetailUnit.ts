@@ -14,6 +14,8 @@ export class OrderDetailUnit {
             obj['quSuggested'],
             obj['coPriceList'],
             obj['idPriceList'],
+            obj['nuBase'] ?? 0,
+            obj['nuBaseConversion'] ?? 0,
             obj['nuBaseTotal'],
             obj['nuBaseTotalConversion'],
             obj['quBonified'] ?? 0,
@@ -34,6 +36,8 @@ export class OrderDetailUnit {
         public quSuggested: number,
         public coPriceList: string,
         public idPriceList: number,
+        public nuBase: number,
+        public nuBaseConversion: number,
         public nuBaseTotal: number,
         public nuBaseTotalConversion: number,
         /** REQ-01 */

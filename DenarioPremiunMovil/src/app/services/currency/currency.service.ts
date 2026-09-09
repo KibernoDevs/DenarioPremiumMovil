@@ -96,15 +96,45 @@ export class CurrencyService {
   public isHardCurrency(coCurrency: string): boolean {
     return this.multimoneda && coCurrency === this.hardCurrency.coCurrency;
   }
+
+  /** Normaliza co_module para lookup case-insensitive (ped / PED). */
+  private normalizeModuleCode(coModule: string | null | undefined): string {
+    return String(coModule ?? '').trim().toLowerCase();
+  }
+
+  /**
+   * Flags de currency_modules: null → true (default histórico);
+   * acepta boolean, 0/1 y strings 'true'/'false'.
+   */
+  parseCurrencyModuleFlag(value: unknown, defaultWhenNull = true): boolean {
+    if (value === null || value === undefined || value === '') {
+      return defaultWhenNull;
+    }
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'number') {
+      return value !== 0;
+    }
+    const normalized = String(value).trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+    return defaultWhenNull;
+  }
+
   getCurrencyModule(coModule: string): CurrencyModules {
     //Obtiene la configuración de moneda para un modulo segun su coModule
-    var cm = this.currencyModulesMap.get(coModule);
+    const key = this.normalizeModuleCode(coModule);
+    const cm = this.currencyModulesMap.get(key);
     if (cm) {
       return cm;
-    } else {
-      console.warn("[CurrencyService] No se encontró el módulo de moneda: " + coModule);
-      return new CurrencyModules(0, 0, true, true, true); // Valor por defecto
     }
+    console.warn("[CurrencyService] No se encontró el módulo de moneda: " + coModule);
+    return new CurrencyModules(0, 0, true, true, true); // Valor por defecto
   }
 
   toOppositeCurrency(coCurrency: string, amount: number) {
@@ -406,11 +436,14 @@ export class CurrencyService {
         let cm: CurrencyModules = {
           idCurrencyModules: item.id_currency_module,
           idModule: item.id_module,
-          localCurrencyDefault: item.local_currency_default === null ? true : item.local_currency_default.toLowerCase() === 'true',
-          showConversion: item.show_conversion === null ? true : item.show_conversion.toLowerCase() === 'true',
-          currencySelector: item.currency_selector === null ? true : item.currency_selector.toLowerCase() === 'true',
+          localCurrencyDefault: this.parseCurrencyModuleFlag(item.local_currency_default),
+          showConversion: this.parseCurrencyModuleFlag(item.show_conversion),
+          currencySelector: this.parseCurrencyModuleFlag(item.currency_selector),
         };
-        map.set(item.co_module, cm);
+        const key = this.normalizeModuleCode(item.co_module);
+        if (key) {
+          map.set(key, cm);
+        }
       }
       return map;
     });

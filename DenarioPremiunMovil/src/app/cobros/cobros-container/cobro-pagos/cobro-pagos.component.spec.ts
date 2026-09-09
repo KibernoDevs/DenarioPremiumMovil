@@ -34,6 +34,7 @@ describe('CobroPagosComponent', () => {
       markCollectionDirty: jasmine.createSpy('markCollectionDirty'),
       updateSendButtonAvailability: jasmine.createSpy('updateSendButtonAvailability'),
       refreshSendBlockedState: jasmine.createSpy('refreshSendBlockedState'),
+      refreshSendUxAfterEdit: jasmine.createSpy('refreshSendUxAfterEdit'),
       sendValidationAttempted: false,
       isAddPaymentMethodDisabled: jasmine.createSpy('isAddPaymentMethodDisabled').and.returnValue(false),
       blockSaveAndSendForInvalidPayments: jasmine.createSpy('blockSaveAndSendForInvalidPayments'),
@@ -140,9 +141,9 @@ describe('CobroPagosComponent', () => {
     expect(component.validatePayment).toHaveBeenCalledWith('ef', 0);
   });
 
-  it('validatePaymentMethodsForSend refreshes send blocked state', () => {
+  it('validatePaymentMethodsForSend refreshes send UX after field change', () => {
     component.validatePaymentMethodsForSend();
-    expect(collectionServiceMock.refreshSendBlockedState).toHaveBeenCalled();
+    expect(collectionServiceMock.refreshSendUxAfterEdit).toHaveBeenCalled();
   });
 
   it('shouldShowPaymentFieldError is true only after send attempt with field errors', () => {

@@ -73,10 +73,9 @@ export class DepositoGeneralComponent implements OnInit {
     this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", this.depositService.hideDeposit, COLOR_LILA);
     this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, 'depositos');
 
-    if (this.depositService.deposit.stDeposit == 1) {
+    if (this.depositService.isDepositReadOnlyForEdit()) {
       this.depositService.disabledEnterprise = true;
       this.depositService.disabledCurrency = true;
-
     } else {
       this.geoServ.getCurrentPosition().then(coords => {
         if (this.depositService.userMustActivateGPS) {

@@ -68,10 +68,11 @@
           label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
           label-placement="floating" fill="outline" min="1" step="0.01" [value]="rateSelected"
           [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur($event)"
-          id="manualRateInput" color="primary" required inputmode="decimal"></ion-input>
-        @if (manualRateError && shouldShowManualRateSendError()) {
+          id="manualRateInput" color="primary" required inputmode="decimal"
+          [ngClass]="{'inp-write': shouldShowManualRateSendError()}"></ion-input>
+        @if (shouldShowManualRateSendError()) {
         <ion-label color="danger" class="campoObligatorio">
-          {{ manualRateError }}
+          {{ manualRateError || 'Ingrese un valor numérico mayor o igual a 1' }}
         </ion-label>
         }
       </ion-col>
@@ -137,7 +138,7 @@
         <ion-input label="{{this.collectService.collectionTags.get('COB_RAZON_CAMBIO_TASA')}}:"
           label-placement="floating" fill="outline" value="" id="currency" color="primary"
           [(ngModel)]="this.collectService.collection.txConversion" (ionChange)="onChangeTxConversion($event)"
-          required="true" [ngClass]="{'inp-write': shouldShowTxConversionError()}"></ion-input>
+          [required]="changeRate" [ngClass]="{'inp-write': shouldShowTxConversionError()}"></ion-input>
         @if (shouldShowTxConversionError()) {
         <ion-label color="danger" class="campoObligatorio">
           {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
@@ -162,7 +163,6 @@
           maxlength="80" value="" id="currency" color="primary" (ionChange)="setResponsible()"
           [readonly]="this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6"
           [ngClass]="{
-            'inp-write': shouldShowRequiredCommentError(),
             'no-validate': isSentDelivery
           }"></ion-input>
       </ion-col>

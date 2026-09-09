@@ -116,7 +116,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 19;
+  private CURRENT_DB_VERSION: number = 23;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
 
@@ -785,13 +785,15 @@ export class SynchronizationDBService {
   insertIncidenceMotiveBatch(arr: IncidenceMotive[]) {
     var statements = [];
     let insertStatement = 'INSERT OR REPLACE INTO incidence_motives(' +
-      'id_motive,id_type,na_motive' +
+      'id_motive,id_type,na_motive,active,required_comment' +
       ') ' +
-      'VALUES(?,?,?)'
+      'VALUES(?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      statements.push([insertStatement, [obj.idMotive, obj.idType, obj.naMotive]]);
+      const activeVal = (obj.active === false || obj.active === 0 || (obj as any).active === '0') ? 0 : 1;
+      const reqCommentVal = (obj.requiredComment === true || obj.requiredComment === 1 || (obj as any).requiredComment === '1') ? 1 : 0;
+      statements.push([insertStatement, [obj.idMotive, obj.idType, obj.naMotive, activeVal, reqCommentVal]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -804,13 +806,14 @@ export class SynchronizationDBService {
   insertIncidenceTypeBatch(arr: IncidenceType[]) {
     var statements = [];
     let insertStatement = 'INSERT OR REPLACE INTO incidence_types(' +
-      'id_type, na_type, required_event, required_signature' +
+      'id_type, na_type, required_event, required_signature, active' +
       ') ' +
-      'VALUES(?,?,?,?)'
+      'VALUES(?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      statements.push([insertStatement, [obj.idType, obj.naType, obj.requiredEvent, obj.requiredSignature]]);
+      const activeVal = (obj.active === false || obj.active === 0 || (obj as any).active === '0') ? 0 : 1;
+      statements.push([insertStatement, [obj.idType, obj.naType, obj.requiredEvent, obj.requiredSignature, activeVal]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1683,6 +1686,7 @@ export class SynchronizationDBService {
   insertTransactionStatusesBatch(arr: TransactionStatuses[]) {
     var statements = [];
     this.collectionService.listTransactionStatusCollections = [] as TransactionStatuses[]; // LIMPIO LA LISTA ANTES DE CARGAR NUEVOS DATOS
+    this.depositService.listTransactionStatusDeposits = [] as TransactionStatuses[];
     let insertStatement = "INSERT OR REPLACE INTO transaction_statuses(" +
       "id_transaction_status, da_transaction_statuses,id_transaction_type," +
       "co_transaction_type,co_transaction,id_transaction," +
@@ -1699,6 +1703,10 @@ export class SynchronizationDBService {
         //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
         this.collectionService.listTransactionStatusCollections.push(arr[i]);
       }
+      if (arr[i].idTransactionType === 6) {
+        // Depósitos: al rechazar, liberar cobros del detalle (paralelo a documentos en cobros)
+        this.depositService.listTransactionStatusDeposits.push(arr[i]);
+      }
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1707,10 +1715,28 @@ export class SynchronizationDBService {
         if (res)
           this.collectionService.checkHistoricCollects(this.database).then(() => {
             console.log("checkHistoricCollects process finished");
-            this.collectionService.unlockDocumentSales(this.database);
+            this.collectionService.unlockDocumentSales(this.database).then((docs) => {
+              const refusedCollections = (this.collectionService.collectionRefused ?? [])
+                .map((ts) => String(
+                  (ts as any)?.coTransaction
+                  ?? (ts as any)?.co_transaction
+                  ?? (ts as any)?.coCollection
+                  ?? (ts as any)?.co_collection
+                  ?? '',
+                ).trim())
+                .filter((c) => c.length > 0);
+              void this.depositService.releaseCollectsFromRefusedCollections(
+                this.database,
+                refusedCollections,
+              );
+              return docs;
+            });
             this.collectionService.lockDocumentSales(this.database);
           });
       })
+      void this.depositService.checkHistoricDeposits(this.database).then(() => {
+        return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+      });
       return res;
     }).catch(e => {
       console.log(e);
@@ -1794,7 +1820,10 @@ export class SynchronizationDBService {
 
   insertDepositBatch(arr: Deposit[]) {
     return this.depositService.mergeSyncedDepositsWithLocal(this.database, arr).then((merged) => {
-      return this.depositService.saveDepositBatch(this.database, merged);
+      return this.depositService.saveDepositBatch(this.database, merged).then((result) => {
+        // Reaplica rechazo tras sync de deposits (la tabla llega después de transaction_statuses).
+        return this.depositService.releaseCollectsFromRefusedDeposits(this.database).then(() => result);
+      });
     });
   }
 

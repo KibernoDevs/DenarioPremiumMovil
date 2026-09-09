@@ -179,6 +179,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.subscriberShow = this.collectService.showButtons.subscribe((data: Boolean) => {
       this.collectService.showHeaderButtons = data;
       if (data && !this.collectService.isCollectionReadOnlyForEdit()) {
+        this.resetSendValidationAlerts();
         this.collectService.resetSendValidationUx();
       }
     });
@@ -189,6 +190,7 @@ export class CobrosHeaderComponent implements OnInit {
 
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
       this.collectService.notifyCollectionEdited();
+      this.cdr.detectChanges();
     });
     this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
       this.collectService.updateSaveButtonAvailability();
@@ -344,15 +346,19 @@ export class CobrosHeaderComponent implements OnInit {
     }
   }
 
+  private resetSendValidationAlerts(): void {
+    this.alertMessageOpenValidation = false;
+    this.validationFailureMessage = '';
+    this.alertMessageOpenSend = false;
+  }
+
   private async finishAfterSendNavigation(): Promise<void> {
+    this.resetSendValidationAlerts();
+    this.collectService.resetCollectionSessionState();
     this.collectService.initCollect = true;
-    this.collectService.disableSavedButton = true;
-    this.collectService.disableSendButton = true;
     this.collectService.showHeaderButtons = false;
     this.collectService.cobroComponent = false;
     this.collectService.cobrosComponent = true;
-    this.collectService.collectValid = false;
-    this.collectService.collectionIsSave = false;
     await this.messageService.hideLoading();
   }
 
@@ -423,19 +429,40 @@ export class CobrosHeaderComponent implements OnInit {
       return;
     }
 
-    // Enviar: validaciones ya corridas en sendCollect via collectCollectionSendIssues.
-    // Safety mínimo por si el estado cambió entre confirmar y persistir.
-    if (sendOrSave && this.collectService.hasSendFieldErrors()) {
+    if (sendOrSave) {
+      void this.persistSendAfterRevalidation();
+      return;
+    }
+
+    this.persistSaveOnly();
+  }
+
+  /**
+   * Enviar: revalida el colector completo antes de persistir (COB-SEND-ATTACH-001).
+   * Evita que confirmación abierta o prepaid dejen pasar adjuntos/campos/tolerancia.
+   */
+  private async persistSendAfterRevalidation(): Promise<void> {
+    this.collectService.sendValidationAttempted = true;
+    const blocking = await this.collectService.evaluateSendReadiness();
+    if (blocking.length > 0 || !this.collectService.canProceedSendAfterValidation()) {
       this.collectService.sendBlockedByFields = true;
       this.collectService.updateSendButtonAvailability();
-      this.notifySendValidationFailure();
+      const issue = blocking[0] ?? this.collectService.lastSendIssues[0];
+      if (this.collectService.collection.coType === '2') {
+        this.collectService.retentionSendFocusDocIndex =
+          this.collectService.findFirstIncompleteRetentionDocumentIndex();
+      }
+      this.showSendValidationAlert(
+        issue?.message ?? this.collectService.getCollectionSendValidationMessage(),
+      );
+      this.collectService.requestSendValidationTabFocus(issue?.tab);
       return;
     }
 
     this.collectService.collectionIsSave = true;
 
-    // Cobro normal Enviar: online=loading+AutoSend; offline=aviso cola (sin “será enviado” online).
-    if (sendOrSave && this.collectService.collection.coType === '0') {
+    // Cobro normal Enviar: online=loading+AutoSend; offline=aviso cola.
+    if (this.collectService.collection.coType === '0') {
       this.collectService.collection.stDelivery = 2;
       this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
       void this.sendNormalCollectionWithOptionalPrepaid().catch(err => {
@@ -452,87 +479,90 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.syncAnticipoTotalsBeforePersist();
       }
 
-      if (sendOrSave) {
-        this.collectService.collection.stDelivery = 2;
-        this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
+      this.collectService.collection.stDelivery = 2;
+      this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
 
-        // Otros tipos (anticipo manual / retención / IGTF): flujo previo
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(response => {
-          this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros").then(() => {
-            console.log(response);
-            this.collectService.applyPersistSucceededBaseline();
-            this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-            this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
-              if (shouldCreatePrepaid) {
-                this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
-                  console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
-                  this.collectService.createAutomatedPrepaid = false;
-                  this.collectService.anticipoAutomatico = [];
-                });
-              }
-
-              this.finishAfterSendNavigation();
-            });
-          })
-        })
-      } else {
-        //salvo
-        this.collectService.collection.stDelivery = 3;
-        this.collectService.collection.stCollection = 3;
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
-          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
+      this.collectService.saveCollection(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection,
+        true,
+      ).then(response => {
+        this.adjuntoService.savePhotos(
+          this.synchronizationServices.getDatabase(),
+          this.collectService.collection.coCollection,
+          'cobros',
+        ).then(() => {
           console.log(response);
           this.collectService.applyPersistSucceededBaseline();
-          this.saveSendNewCollection(false, this.collectService.collection.coCollection);
-          switch (this.collectService.collection.coType) {
-            case "0": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-              break;
+          this.saveSendNewCollection(true, this.collectService.collection.coCollection);
+          this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
+            if (shouldCreatePrepaid) {
+              this.collectService.createAnticipoCollection(
+                this.synchronizationServices.getDatabase(),
+                this.collectService.collection,
+              ).then(resp => {
+                console.log(resp, ' SE CREO ANTICIPO AUTOMATICO');
+                this.collectService.createAutomatedPrepaid = false;
+                this.collectService.anticipoAutomatico = [];
+              });
             }
 
-            case "1": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
-              break;
-            }
-
-            case "2": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
-              break;
-            }
-
-            case "3": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_IGTF_MSG')!;
-              break;
-            }
-            default: {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-            }
-          }
-          this.alertMessageOpen = true;
-          this.messageService.hideLoading();
-        })
-      }
+            this.finishAfterSendNavigation();
+          });
+        });
+      });
     });
-
   }
 
-  private notifyRetentionSendValidationFailure(): void {
-    const focusIndex = this.collectService.findFirstIncompleteRetentionDocumentIndex();
-    if (focusIndex >= 0) {
-      this.collectService.retentionSendFocusDocIndex = focusIndex;
-    }
-    this.showSendValidationAlert(this.collectService.getRetentionSendValidationMessage());
-    this.collectService.requestSendValidationTabFocus('documentos');
-  }
+  private persistSaveOnly(): void {
+    this.collectService.collectionIsSave = true;
 
-  /** Modal + salto a pestaña ante cualquier fallo de Enviar (COB-SEND-UX-001). */
-  private notifySendValidationFailure(): void {
-    if (this.collectService.collection.coType === '2') {
-      this.notifyRetentionSendValidationFailure();
-      return;
-    }
-    this.showSendValidationAlert(this.collectService.getCollectionSendValidationMessage());
-    this.collectService.requestSendValidationTabFocus();
+    this.messageService.showLoading().then(async () => {
+      if (this.collectService.collection.coType === '1') {
+        await this.collectService.calcularMontos('', 0);
+        this.collectService.syncAnticipoTotalsBeforePersist();
+      }
+
+      this.collectService.collection.stDelivery = 3;
+      this.collectService.collection.stCollection = 3;
+      this.collectService.saveCollection(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection,
+        false,
+      ).then(async response => {
+        await this.adjuntoService.savePhotos(
+          this.synchronizationServices.getDatabase(),
+          this.collectService.collection.coCollection,
+          'cobros',
+        );
+        console.log(response);
+        this.collectService.applyPersistSucceededBaseline();
+        this.saveSendNewCollection(false, this.collectService.collection.coCollection);
+        switch (this.collectService.collection.coType) {
+          case '0': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+            break;
+          }
+          case '1': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
+            break;
+          }
+          case '2': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
+            break;
+          }
+          case '3': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_IGTF_MSG')!;
+            break;
+          }
+          default: {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+          }
+        }
+        this.alertMessageOpen = true;
+        this.messageService.hideLoading();
+      });
+    });
   }
 
   /**
@@ -555,7 +585,8 @@ export class CobrosHeaderComponent implements OnInit {
     this.collectService.sendValidationAttempted = true;
 
     void this.collectService.validateToSend().then(() => {
-      if (!this.collectService.lastValidToSend) {
+      // COB-SEND-ATTACH-001: no confiar solo en lastValidToSend (prepaid podía forzarlo).
+      if (!this.collectService.canProceedSendAfterValidation()) {
         this.collectService.sendBlockedByFields = true;
         this.collectService.updateSendButtonAvailability();
         const issue = this.collectService.lastSendIssues[0];
@@ -574,22 +605,19 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.updateSendButtonAvailability();
 
       switch (this.collectService.collection.coType) {
-        case "0": {
+        case '0': {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
           break;
         }
-
-        case "1": {
+        case '1': {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_ANTICIPO_MSG')!;
           break;
         }
-
-        case "2": {
+        case '2': {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_RETENTION_MSG')!;
           break;
         }
-
-        case "3": {
+        case '3': {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_IGTF_MSG')!;
           break;
         }

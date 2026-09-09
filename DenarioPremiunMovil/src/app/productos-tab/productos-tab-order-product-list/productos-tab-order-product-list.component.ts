@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonAccordionGroup, IonInput } from '@ionic/angular';
 import { Subject, Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
@@ -14,7 +14,10 @@ import { ImageServicesService } from 'src/app/services/imageServices/image-servi
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
+import { register } from 'swiper/element/bundle';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+
+register();
 
 @Component({
   selector: 'productos-tab-order-product-list',
@@ -46,6 +49,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   @ViewChildren('quAmountInput') quAmountInputs!: QueryList<IonInput>;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
+  @ViewChild('zoomSwiper') zoomSwiper?: ElementRef<HTMLElement & { swiper?: { slideTo: (i: number, speed?: number) => void } }>;
   page = 0;
   scrollDisable = false;
   productList: ProductUtil[] = [];
@@ -74,6 +78,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   detailModal = false;
   discountModal = false;
+  imageZoomOpen = false;
+  productImages: string[] = [];
+  /** Índice del carrusel al abrir el zoom (foto visible/pulsada). */
+  imageZoomStartIndex = 0;
   productoModal!: OrderUtil;
   noProductsAlertShown = false;
 
@@ -319,6 +327,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   loadProductToModal(prod: OrderUtil) {
     this.productoModal = prod;
+    void this.loadProductImages();
     this.showDetailModal(true);
   }
 
@@ -327,9 +336,58 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.detailModal = show;
 
     if (!show) {
+      this.closeImageZoom();
+      this.productImages = [];
       //al ocultar el modal agregamos el producto al carrito
       this.orderServ.alCarrito(this.productoModal);
     }
+  }
+
+  openImageZoom(index = 0, event?: Event): void {
+    event?.stopPropagation();
+    const max = Math.max(this.getZoomImages().length - 1, 0);
+    this.imageZoomStartIndex = Math.min(Math.max(0, Number(index) || 0), max);
+    this.imageZoomOpen = true;
+  }
+
+  closeImageZoom(): void {
+    this.imageZoomOpen = false;
+  }
+
+  /** Tras abrir el modal, fuerza el slide del zoom a la foto pulsada. */
+  onZoomModalPresented(): void {
+    const apply = () => {
+      const swiper = this.zoomSwiper?.nativeElement?.swiper;
+      swiper?.slideTo(this.imageZoomStartIndex, 0);
+    };
+    apply();
+    setTimeout(apply, 50);
+  }
+
+  getZoomImages(): string[] {
+    if (this.productImages.length > 0) {
+      return this.productImages;
+    }
+    const fallback = this.productoModal?.coProduct
+      ? this.imageServices.getImgForProduct(this.productoModal.coProduct)
+      : '../../../assets/images/nodisponible.png';
+    return [fallback || '../../../assets/images/nodisponible.png'];
+  }
+
+  private async loadProductImages(): Promise<void> {
+    const productId = this.productoModal?.coProduct;
+    if (!productId || !this.orderServ.showProductImages) {
+      this.productImages = [];
+      return;
+    }
+
+    try {
+      this.productImages = await this.imageServices.getImagesForProduct(productId);
+    } catch (err) {
+      console.warn('[Pedidos] failed loading product images for', productId, err);
+      this.productImages = [];
+    }
+    this.cd.markForCheck();
   }
 
   // orderServ.getTag(tagName: string){

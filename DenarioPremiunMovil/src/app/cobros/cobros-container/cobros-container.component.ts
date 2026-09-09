@@ -1,6 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Collection } from 'src/app/modelos/tables/collection';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
@@ -103,104 +102,17 @@ export class CobrosContainerComponent implements OnInit {
   }
 
   goToNuevoCobro(type: number) {
-    //es numero "type" es el coType del objeto collection
-    //lo deberia pasar al componente
     this.messageService.showLoading().then(() => {
-
-      this.collectService.isOpenCollect = false;
-      this.collectService.isAnticipo = false;
-      this.collectService.isRetention = false;
-      this.collectService.collection = {} as Collection;
-      this.collectService.resetCollectionExitBaseline();
-      this.collectService.resetSendValidationUx();
+      this.collectService.beginNewCollectionSession(type);
 
       if (this.collectService.userMustActivateGPS) {
         this.collectService.collection.coordenada = this.coordenada;
       }
 
-      switch (type) {
-        case 0: {
-          console.log("NUEVO COBRO");
-          this.collectService.newCollect = true;
-          this.collectService.isOpenCollect = false;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!;
-          this.collectService.coTypeModule = "0";
-          //this.collectService.userCanSelectIGTF = true;
-          this.collectService.showHeaderButtonsFunction(true)
-          this.collectService.cobrosComponent = false;
-          this.collectService.isAnticipo = false;
-          this.collectService.hideDocuments = false;
-          this.collectService.hidePayments = false;
-          this.collectService.cobroComponent = true;
-
-          break
-        }
-        case 1: {
-          console.log("ANTICIPO")
-          this.collectService.isOpenCollect = false;
-          this.collectService.newCollect = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_ANTICIPO')!;
-          this.collectService.coTypeModule = "1";
-          this.collectService.showHeaderButtonsFunction(true)
-          this.collectService.cobrosComponent = false;
-          this.collectService.cobroComponent = true;
-          this.collectService.isAnticipo = true;
-          this.collectService.hideDocuments = true;
-          this.collectService.hidePayments = false;
-          this.collectService.disabledSelectCollectMethodDisabled = false;
-          break
-        }
-        case 2: {
-          console.log("RETENCION");
-          this.collectService.isOpenCollect = false;
-          this.collectService.newCollect = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_RETENTION')!;
-          this.collectService.coTypeModule = "2";
-          this.collectService.showHeaderButtonsFunction(true)
-          this.collectService.cobrosComponent = false;
-          this.collectService.cobroComponent = true;
-          this.collectService.isRetention = true;
-          this.collectService.isAnticipo = false;
-          this.collectService.hideDocuments = false;
-          this.collectService.hidePayments = true;
-          break
-        }
-        case 3: {
-          console.log("IGTF")
-          this.collectService.isOpenCollect = false;
-          this.collectService.newCollect = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_IGTF')!;;
-          this.collectService.coTypeModule = "3";
-          //this.collectService.userCanSelectIGTF = false;
-          //es igual que cobros, solo debo mostrar documentos tipo IGTF!!
-          //enviar por input el tipo?? IGTF o COBRO???
-          this.collectService.showHeaderButtonsFunction(true)
-          this.collectService.cobrosComponent = false;
-          this.collectService.cobroComponent = true;
-
-          break
-        }
-        case 4: {
-          console.log("COBRO25")
-          this.collectService.isOpenCollect = false;
-          this.collectService.newCollect = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_MODULE_COBRO25')!;;
-          this.collectService.coTypeModule = "4";
-          this.collectService.showHeaderButtonsFunction(true)
-          this.collectService.cobrosComponent = false;
-          this.collectService.cobroComponent = true;
-          this.collectService.cobro25 = true;
-
-          break
-        }
-      }
-      if (type == 0) {
-        console.log(type);
-
-      }
-
-
-    })
+      this.collectService.showHeaderButtonsFunction(true);
+      this.collectService.cobrosComponent = false;
+      this.collectService.cobroComponent = true;
+    });
   }
 
   buscarCobro() {

@@ -339,8 +339,8 @@ export class InventariosLogicService {
       ?? 'Debe seleccionar al menos un producto para el inventario.';
   }
 
-  /** Pestaña del primer error bloqueante (misma prioridad que getStockValidationMessage). */
-  public resolveSendValidationFocusTab(): 'default' | 'inventario' | 'actividades' | 'adjuntos' {
+  /** Pestaña del primer error bloqueante. Null = sin error (SEND-TAB-001). */
+  public resolveSendValidationFocusTab(): 'default' | 'inventario' | 'actividades' | 'adjuntos' | null {
     if (!this.generalTabValidForSave || !this.selectedClient) {
       return 'default';
     }
@@ -353,14 +353,18 @@ export class InventariosLogicService {
     if (this.hasMissingGpsCoordinate()) {
       return 'default';
     }
-    return this.hideTab ? 'inventario' : 'actividades';
+    return null;
   }
 
   /** Emite la pestaña a enfocar tras un fallo de Enviar/Guardar. */
   public requestSendValidationTabFocus(
-    tab?: 'default' | 'inventario' | 'actividades' | 'adjuntos',
+    tab?: 'default' | 'inventario' | 'actividades' | 'adjuntos' | null,
   ): void {
-    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+    const focus = tab === undefined ? this.resolveSendValidationFocusTab() : tab;
+    if (focus == null) {
+      return;
+    }
+    this.focusSendValidationTab.next(focus);
   }
 
   /** @deprecated Usar notifyStockEdited / updateSaveButtonAvailability / updateSendButtonAvailability */
