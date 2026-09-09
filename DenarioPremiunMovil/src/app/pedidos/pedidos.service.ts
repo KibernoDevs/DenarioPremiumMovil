@@ -243,6 +243,8 @@ export class PedidosService {
   public stock0!: boolean;
   public enterpriseEnabled!: boolean;
   public userCanChangeWarehouse!: boolean;
+  /** global_configuration.clave = userCanChangeUnits; ausente/vacío → true */
+  public userCanChangeUnits = true;
   public showProductImages!: boolean;
   public userCanChangePaymentConditions!: boolean;
   public paymentCurrencyEnabled!: boolean;
@@ -754,6 +756,11 @@ export class PedidosService {
     return tag;
   }
 
+  /** Selector de unidad OFF si unitByPriceList o userCanChangeUnits=false. */
+  get disableUnitSelector(): boolean {
+    return this.unitByPriceList || !this.userCanChangeUnits;
+  }
+
   getConfig() {
     //boolean
     this.productMinMul = this.config.get("productMinMul").toLowerCase() === 'true';
@@ -796,6 +803,10 @@ export class PedidosService {
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
+    {
+      const rawUnits = String(this.config.get('userCanChangeUnits') ?? '').trim();
+      this.userCanChangeUnits = rawUnits === '' ? true : rawUnits.toLowerCase() === 'true';
+    }
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
