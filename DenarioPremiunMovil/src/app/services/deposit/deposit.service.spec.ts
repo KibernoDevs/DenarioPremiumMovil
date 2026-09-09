@@ -206,6 +206,16 @@ describe('DepositService', () => {
       const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SAVED, null);
       expect(label).toBe('Guardado');
     });
+
+    it('getStatusOrderName no deja en blanco con st_deposit=0 si hay historial Recaudado', () => {
+      const label = service.getStatusOrderName(0, 0, { na_status: 'Recaudado' });
+      expect(label).toBe('Recaudado');
+    });
+
+    it('getStatusOrderName no deja en blanco con st_deposit=0 y st_delivery enviado', () => {
+      const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SENT, '');
+      expect(label).toBe('Enviado');
+    });
   });
 
   describe('Liberación de cobros en depósito rechazado', () => {
