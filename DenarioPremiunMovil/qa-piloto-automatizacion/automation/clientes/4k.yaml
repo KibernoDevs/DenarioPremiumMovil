@@ -92,29 +92,43 @@ vgs:
   userCanCollectIva: false
 
   # Tolerancias y anticipo  ── los números que hay que probar ──
-  # ✅ RELEÍDAS DEL DISPOSITIVO el 07/09. Los tres primeros valores estaban MAL
-  #    (venían de los dumps: 9 / 15 / 10). Manda el equipo.
+  # ✅ RELEÍDAS DEL DISPOSITIVO el 10/09, al cierre de `fixes_cobros_20260910`.
+  #    Manda el equipo (`node automation/playwright/leer-vg-dispositivo.js cobros`).
   tolerancia0: true                   # permite enviar cobros que no cierran en 0
   TipoTolerancia: 0                   # 0 = Importe · 1 = Porcentaje
-  RangoToleranciaPositiva: 10         # USD  (el dump decía 9)
-  RangoToleranciaNegativa: 10         # USD  (el dump decía 15)
+  RangoToleranciaPositiva: 49.99      # USD  ⚠ NO es 10: el 10/09 el equipo devolvió 49.99
+  RangoToleranciaNegativa: 10         # USD
   MonedaTolerancia: "USD"
   cobroPrepago: true                  # submódulo «Anticipo» disponible en el menú
   automatedPrepaid: true              # anticipo automático por excedente
-  prepaidRangeAmount: 50              # excedente mínimo del anticipo (el dump decía 10)
+  prepaidRangeAmount: 50              # excedente mínimo del anticipo
   prepaidRangeCurrency: "USD"
   prepaidCurrency: "USD"
   prepaidPaymentMethod: "pa"
-  # 🔑 EL UMBRAL DEL ANTICIPO ES LA SUMA, NO prepaidRangeAmount SOLO:
-  #       getAutomatedPrepaidActivationThreshold() = positiveCeiling + prepaidMin
-  #                                                = 10 + 50 = 60 USD
-  #    ⇒ el anticipo se valida DESPUÉS de la tolerancia (confirmado con desarrollo).
-  #    NO hay banda muerta entre tolerancia y anticipo — la versión anterior de
-  #    este comentario la describía por leer prepaidRangeAmount como si fuera el
-  #    umbral absoluto. Los tres tramos reales:
-  #        ≤ 10          → dentro de tolerancia, Enviar directo
-  #        10,01 … 59,99 → excede tolerancia y no alcanza el anticipo ⇒ BLOQUEA
-  #        ≥ 60          → genera ANTICIPO AUTOMÁTICO
+  # 🔴 CORREGIDO 10/09 CON MEDICIÓN EN EL EQUIPO — la versión anterior de este
+  #    comentario decía «el umbral es la suma (tolerancia + prepaidRangeAmount)».
+  #    NO es así en la build instalada (6.6.21.3):
+  #        getAutomatedPrepaidActivationThreshold() = prepaidRangeAmount  ⇒ 50 USD
+  #    y la función que sumaría el techo de tolerancia
+  #    (`getPositiveToleranceCeilingInCollectionCurrency`) NO EXISTE en el bundle.
+  #    Los tres tramos REALES con 49,99 / 50 (medidos, no deducidos):
+  #        ≤ 49,99  → dentro de tolerancia, Enviar directo  (borde INCLUSIVO)
+  #        —        → NO hay ningún importe que bloquee por exceso: la banda es
+  #                   el intervalo abierto (49,99 ; 50,00), de ancho CERO
+  #        ≥ 50,00  → genera ANTICIPO AUTOMÁTICO
+  #        ≤ −10,00 dentro de tolerancia · −10,01 BLOQUEA
+  #    ⚠ La banda que bloquea vale `prepaidRangeAmount − RangoToleranciaPositiva`.
+  #      Si alguien baja RangoToleranciaPositiva a 10, se ABRE una banda de 39,99
+  #      (10,01 … 49,99) en la que el cobro no se puede enviar.
+  #    ⚠ Y si prepaidRangeAmount queda POR DEBAJO de la tolerancia, el anticipo se
+  #      come la tolerancia: toda diferencia ≥ prepaidRangeAmount genera anticipo
+  #      aunque esté dentro de tolerancia (comprobado con 1 / 10,50 → anticipo de 1 USD).
+  #    Detalle: automation/reports/4k/fixes_cobros_20260910/01-tolerancia-y-anticipo.md
+  # 🔑 `prepaidRangeAmount` NO admite decimales ni 0 en la web: el spinner de esa fila
+  #    es ENTERO (precision 0, step 1, min 1) y rechaza «0,01» y «0» EN SILENCIO,
+  #    dejando 1. Las dos tolerancias sí admiten decimales (precision 2, step 0,01, min 0).
+  # 🔴 Una VG cambiada en la web NO llega al equipo con «Sincronizar» del HOME:
+  #    solo baja con un LOGIN nuevo (~80 s). Releer siempre del equipo antes de medir.
 
   # Descuento de cobro
   userCanSelectCollectDiscount: true  # ⇒ botón «Asignar descuento» en el DETALLE del documento
@@ -210,10 +224,18 @@ modules:
     #    2) que tenga documentos LIBRES — los comprometidos por cobros que sigan
     #       «Por aprobar» no se listan en el Tab Documentos (bloqueo anti-doble-cobro)
     #    Indicados por QA el 07/09 y verificados en BD.
-    cliente_test: "C.0060"            # MOTOR S DIESEL · 5 docs, los 5 LIBRES
+    cliente_test: "C.0029"            # INVERSIONES SUPER RAPIDO · queda FAC 00016794 (533,00 USD)
     clientes_con_documentos:
-      - "C.0060"                      # 5 docs libres · US$ 3.566,80
-      - "C.0029"                      # 4 docs libres · INVERSIONES SUPER RAPIDO
+      - "C.0029"                      # 1 doc USD libre al 10/09 (00016794 · 533,00 USD)
+      - "C.0010"                      # 11 docs USD · US$ 2.512 — relevo principal
+      - "C.0538"                      # 9 docs USD · US$ 4.754, saldos chicos (8 a 72 USD):
+                                      #   útil para bordes pequeños de tolerancia
+    # 🔴 C.0060 QUEDÓ AGOTADO el 10/09: su último documento USD libre (00022034) se
+    #    fue en el cobro 2629. Vuelve a servir cuando esos cobros se aprueben/rechacen.
+    # ⚠ Un cobro ENVIADO deja su factura «Por aprobar» y ésta DESAPARECE del Tab
+    #   Documentos. La BD local NO lo refleja (`document_sales.co_collection` sigue
+    #   en NULL) ⇒ el único inventario fiable de documentos libres es el propio
+    #   Tab Documentos, no la consulta a la base.
     # ⚠ C.0010 EURO REPUESTOS quedó AGOTADO el 07/09: sus 11 documentos están
     #   comprometidos en los cobros 2609-2621. Sirve otra vez cuando esos cobros
     #   se aprueben o rechacen en la web.
