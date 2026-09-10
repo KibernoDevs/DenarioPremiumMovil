@@ -49,6 +49,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Enviar: General OK habilita; tras fallo apaga y al editar reactiva; productos → GPS al click; adjuntos no obligatorios (`signatureStock` solo UI) — `INV-SEND-001`.
 - Comentario Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
 - Tras `{} as ClientStocks` (cambio de cliente): reponer `daysUntilNext`/`daysSinceLast` (default 1); Pedido Sugerido no usa `undefined` — `INV-DAYS-001`.
+- Pedido Sugerido (despacho/devolución): solo docs enviados (`id_return` / `id_client_stock <> 0`); no Guardado — `INV-SUG-001`.
 
 ## Depósitos
 

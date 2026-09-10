@@ -489,4 +489,34 @@ describe('InventariosLogicService', () => {
       expect(service.productsSuggested).toEqual([]);
     });
   });
+
+  describe('INV-SUG-001 Pedido Sugerido solo documentos enviados', () => {
+    const emptySqlResult = { rows: { length: 0, item: () => null } };
+
+    it('getPreviousClientStock filtra id_client_stock <> 0', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo(emptySqlResult),
+      } as any;
+
+      await service.getPreviousClientStock(dbMock, 10, 20, 'CS-999');
+
+      const sql = String(dbMock.executeSql.calls.mostRecent().args[0]);
+      expect(sql).toContain('id_client_stock <> 0');
+      expect(dbMock.executeSql).toHaveBeenCalledWith(
+        jasmine.stringMatching(/id_client_stock <> 0/),
+        [10, 20, 'CS-999']
+      );
+    });
+
+    it('getReturnsByDistribution filtra id_return <> 0', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo(emptySqlResult),
+      } as any;
+
+      await service.getReturnsByDistribution(dbMock, [1], ['U'], 5, 10, '2026-09-01T00:00:00');
+
+      const sql = String(dbMock.executeSql.calls.mostRecent().args[0]);
+      expect(sql).toContain('id_return <> 0');
+    });
+  });
 });

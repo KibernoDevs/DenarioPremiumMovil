@@ -248,6 +248,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-SUG-001] Pedido Sugerido usaba documentos Guardados (`id = 0`)
+
+- **Síntoma:** El Pedido Sugerido (despacho + devolución) restaba devoluciones Guardadas y podía tomar un inventario previo Guardado; totales de venta/sugerido no coincidían con documentos enviados.
+- **Causa:** `getReturnsByDistribution` y `getPreviousClientStock` no filtraban por id de servidor. Guardar/Por Enviar persiste `id_return` / `id_client_stock = 0` hasta ACK de AutoSend.
+- **Fix:** SQL exige `id_return <> 0` e `id_client_stock <> 0` (enviado = id distinto de 0, no `st_delivery`). Facturas, `straight_swap` y `client_avg_products` son sync, sin borrador local.
+- **Evitar:** No incluir documentos locales (`id = 0`) en cálculos de Pedido Sugerido. No sustituir el filtro de id por `st_delivery` (Por Enviar sigue con id 0).
+- **Tests:** `inventarios-logic.service.spec.ts` describe `INV-SUG-001`.
+- **Archivos:** `inventarios-logic.service.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-DAYS-001] Pedido Sugerido NaN tras cambio de cliente
 
 - **Síntoma:** Tras cambiar de cliente en Inventarios, General muestra “Días para siguiente Inventario” = 1. Al inventariar productos y pulsar Pedido Sugerido el cálculo da NaN. Al volver a General el campo queda vacío.

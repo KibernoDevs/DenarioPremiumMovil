@@ -2167,7 +2167,7 @@ export class InventariosLogicService {
 
   getPreviousClientStock(dbServ: SQLiteObject, idClient: number, idAddressClient: number, coClientStock: string) {
     let selectStatement = 
-      "SELECT * FROM client_stocks WHERE id_client = ? AND id_address_client = ? AND co_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
+      "SELECT * FROM client_stocks WHERE id_client = ? AND id_address_client = ? AND co_client_stock < ? AND id_client_stock <> 0 ORDER BY da_client_stock DESC LIMIT 1";
 
     return dbServ.executeSql(selectStatement, [idClient, idAddressClient, coClientStock]).then(result => {
       if(result.rows.length > 0){
@@ -2563,7 +2563,7 @@ let select = "select *  from return_details rd where co_return in "+
 "(SELECT r.co_return from returns r where r.id_type in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
-  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return >= '"+dateLastInventory.substring(0, 10)+"') "+
+  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.id_return <> 0 and r.da_return >= '"+dateLastInventory.substring(0, 10)+"') "+
 "and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN ('"+coUnits.join("','")+"')";
 
   return dbServ.executeSql(select, []).then(data => {
