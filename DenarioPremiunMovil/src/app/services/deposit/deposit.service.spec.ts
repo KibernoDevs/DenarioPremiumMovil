@@ -175,13 +175,13 @@ describe('DepositService', () => {
       expect(sendEnabled).toBeFalse();
     });
 
-    it('depósito rechazado o integrado queda read-only por stDeposit', () => {
+    it('stDeposit de aprobación no fuerza read-only; solo stDelivery como Cobros', () => {
       service.deposit.stDelivery = DEPOSITO_STATUS_SAVED;
       service.deposit.stDeposit = 2;
-      expect(service.isDepositReadOnlyForEdit()).toBeTrue();
+      expect(service.isDepositReadOnlyForEdit()).toBeFalse();
 
       service.deposit.stDeposit = 6;
-      expect(service.isDepositReadOnlyForEdit()).toBeTrue();
+      expect(service.isDepositReadOnlyForEdit()).toBeFalse();
     });
   });
 
@@ -207,9 +207,9 @@ describe('DepositService', () => {
       expect(label).toBe('Guardado');
     });
 
-    it('getStatusOrderName no deja en blanco con st_deposit=0 si hay historial Recaudado', () => {
+    it('getStatusOrderName con st_deposit=0 deriva de st_delivery como Cobros', () => {
       const label = service.getStatusOrderName(0, 0, { na_status: 'Recaudado' });
-      expect(label).toBe('Recaudado');
+      expect(label).toBe('');
     });
 
     it('getStatusOrderName no deja en blanco con st_deposit=0 y st_delivery enviado', () => {
@@ -315,6 +315,33 @@ describe('DepositService', () => {
       );
       expect(deleteCollects.length).toBe(1);
       expect(deleteCollects[0][1]).toEqual(['DEP-CLR-1']);
+    });
+
+    it('checkHistoricDeposits clasifica status_action 1 y 3 como enviados', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve({
+          rows: {
+            length: 1,
+            item: () => ({ id_status: 21, status_action: 3 }),
+          },
+        })),
+      } as unknown as SQLiteObject;
+
+      service.listTransactionStatusDeposits = [{
+        idTransactionStatus: 2,
+        daTransactionStatuses: '2026-03-01 11:00:00',
+        idTransactionType: 6,
+        coTransactionType: 'dep',
+        coTransaction: 'DEP-OK-1',
+        idTransaction: 78,
+        idStatus: 21,
+        coStatus: 'INT',
+        txComment: '',
+      } as any];
+
+      await service.checkHistoricDeposits(dbMock);
+      expect(service.depositSended.length).toBe(1);
+      expect(service.depositRefused.length).toBe(0);
     });
 
     it('checkHistoricDeposits marca depósitos con status_action=2 como rechazados', async () => {

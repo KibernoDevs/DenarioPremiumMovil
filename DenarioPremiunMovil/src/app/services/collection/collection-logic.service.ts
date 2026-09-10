@@ -2672,18 +2672,21 @@ export class CollectionService {
     }
 
     this.checkTiposPago();
+    const isRemnantOrCreditPrepaid = this.hasConfirmedDiscountRemnantPrepaid()
+      || this.creditBalancePrepaidAmount > 0;
     if (this.createAutomatedPrepaid) {
-      if (this.hasConfirmedDiscountRemnantPrepaid() || this.creditBalancePrepaidAmount > 0) {
+      if (isRemnantOrCreditPrepaid) {
         this.ensureAutomatedPrepaidPaymentTemplate();
-      }
-      this.setAutomatedPrepaid(type, index);
-      if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
-        this.resetAutomatedPrepaid();
+      } else {
+        this.setAutomatedPrepaid(type, index);
+        if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
+          this.resetAutomatedPrepaid();
+        }
       }
     } else {
       this.anticipoAutomatico = [];
-      this.syncAddPaymentMethodDisabledState();
     }
+    this.syncAddPaymentMethodDisabledState();
     this.markCollectionDirty();
     if (!skipValidateToSend) {
       this.validateToSend();
@@ -2751,17 +2754,30 @@ export class CollectionService {
     return this.coTypeModule === '0' || this.coTypeModule === '3';
   }
 
+  /** COB-DISC-004 / COB-NCR-PREPAID-001: descuento/NCR cubren el cobro sin efectivo requerido. */
+  private isZeroCashCoverageScenario(): boolean {
+    return this.coTypeModule === '0'
+      && !this.isRetentionCollection()
+      && this.isFullyCoveredCollection
+      && this.efectivoRequerido === 0;
+  }
+
+  /** Expuesto para UI Pagos: Otros monto 0 permitido solo en cobro cubierto. */
+  public allowsZeroCashOtrosPayment(): boolean {
+    return this.isZeroCashCoverageScenario();
+  }
+
   syncAddPaymentMethodDisabledState(): void {
     if (!this.isAddPaymentMethodDifferenceGuardEnabled()) {
       return;
     }
 
-    if (this.createAutomatedPrepaid) {
+    if (this.isZeroCashCoverageScenario()) {
+      this.disabledSelectCollectMethodDisabled = false;
       return;
     }
 
-    if (this.isFullyCoveredCollection && this.efectivoRequerido === 0) {
-      this.disabledSelectCollectMethodDisabled = false;
+    if (this.createAutomatedPrepaid) {
       return;
     }
 
@@ -4281,6 +4297,19 @@ export class CollectionService {
   }
 
   /**
+   * Limpia flags de cobro cubierto / remanente de descuento que no deben arrastrarse entre cobros (COB-SESSION-002).
+   */
+  public resetCobroPaymentCoverageSessionState(): void {
+    this.discountRemnantPrepaidByDocument.clear();
+    this.discountRemnantPrepaidAmount = 0;
+    this.isFullyCoveredCollection = false;
+    this.efectivoRequerido = 0;
+    this.creditBalancePrepaidAmount = 0;
+    this.createAutomatedPrepaid = false;
+    this.anticipoAutomatico = [];
+  }
+
+  /**
    * Limpia todo el estado de sesión del singleton entre cobros (COB-SESSION-001).
    * Usar al terminar Enviar o como base de beginNewCollectionSession.
    */
@@ -4291,7 +4320,7 @@ export class CollectionService {
     this.lastSendIssues = [];
     this.retentionSendFocusDocIndex = null;
     this.sendCollection = false;
-    this.createAutomatedPrepaid = false;
+    this.resetCobroPaymentCoverageSessionState();
     this.messageSended = false;
 
     this.generalTabValidForSave = false;
@@ -4721,7 +4750,7 @@ export class CollectionService {
     this.igtfList = [] as IgtfList[];
     this.igtfSelected = {} as IgtfList;
     this.alertMessageOpen = false;
-    this.createAutomatedPrepaid = false;
+    this.resetCobroPaymentCoverageSessionState();
     this.resetPartialPaymentSessionState();
 
 

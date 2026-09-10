@@ -1734,8 +1734,12 @@ export class SynchronizationDBService {
             this.collectionService.lockDocumentSales(this.database);
           });
       })
-      void this.depositService.checkHistoricDeposits(this.database).then(() => {
-        return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+      this.depositService.checkRequireApproval(this.database).then((res) => {
+        if (res) {
+          void this.depositService.checkHistoricDeposits(this.database).then(() => {
+            return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+          });
+        }
       });
       return res;
     }).catch(e => {

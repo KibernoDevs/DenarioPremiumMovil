@@ -320,6 +320,58 @@ describe('CollectionService', () => {
       expect(service.collection.nuDifference).toBe(0);
     });
 
+    it('COB-DISC-004d: remanente en mapa antes de calculatePayment habilita agregar método', async () => {
+      const svc = service as any;
+      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      spyOn(svc.currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+      spyOn(service, 'cleanFormattedNumber').and.callFake((value: string | number) => Number(value) || 0);
+      spyOn(svc, 'shouldApplyIgtfToCollection').and.returnValue(false);
+      spyOn(svc, 'shouldCalculateEmbeddedIgtf').and.returnValue(false);
+      spyOn(svc, 'isRetentionCollection').and.returnValue(false);
+      spyOn(service, 'validateToSend').and.resolveTo();
+      spyOn(svc, 'syncCollectionDetailsIgtfAmounts').and.stub();
+      spyOn(svc, 'syncCollectionIgtfFields').and.stub();
+      spyOn(svc, 'applyCollectionIgtfAmountFields').and.stub();
+      spyOn(svc, 'markCollectionDirty').and.stub();
+
+      service.coTypeModule = '0';
+      service.isOpen = false;
+      service.isChangePaymentPartialPersistence = false;
+      service.isRateChangeInProgress = false;
+      service.montoTotalPagado = 0;
+      service.documentSales = [] as DocumentSale[];
+      service.documentSalesBackup = [] as DocumentSale[];
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        stDelivery: service.COLLECT_STATUS_NEW,
+        stCollection: service.COLLECT_STATUS_NEW,
+        collectionDetails: [
+          makeDetail({
+            idDocument: 10,
+            coDocument: 'FAC-100',
+            nuBalanceDoc: 100,
+            nuBalanceDocOriginal: 100,
+            nuAmountCollectDiscount: 150,
+            nuAmountPaid: 0,
+            nuAmountPaidConversion: 0,
+          }),
+        ],
+        collectionPayments: [],
+        nuAmountIgtf: 0,
+      } as any;
+      service.automatedPrepaid = true;
+      service.setDiscountRemnantPrepaidForDocument('FAC-100', 50);
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.isFullyCoveredCollection).toBeTrue();
+      expect(service.efectivoRequerido).toBe(0);
+      service.createAutomatedPrepaid = true;
+      service.syncAddPaymentMethodDisabledState();
+      expect(service.isAddPaymentMethodDisabled()).toBeFalse();
+    });
+
     it('COB-NCR-PREPAID-001: NCR excede FACT → monto facturas, anticipo 500, efectivo 0', async () => {
       setupEditableCollection([
         makeDetail({
@@ -2152,6 +2204,8 @@ describe('CollectionService', () => {
     it('P1: syncAddPaymentMethodDisabledState blocks add when difference >= 0', () => {
       service.coTypeModule = '0';
       service.createAutomatedPrepaid = false;
+      service.isFullyCoveredCollection = false;
+      service.efectivoRequerido = 100;
       service.disabledSelectCollectMethodDisabled = false;
       (service as any).currencyService = {
         formatNumber: (n: number) => String(n ?? 0),
@@ -2169,6 +2223,47 @@ describe('CollectionService', () => {
       service.collection.nuDifference = -15;
       service.syncAddPaymentMethodDisabledState();
       expect(service.isAddPaymentMethodDisabled()).toBeFalse();
+    });
+
+    it('COB-DISC-004c: botón agregar ON aunque createAutomatedPrepaid=true en cobro cubierto', () => {
+      service.coTypeModule = '0';
+      service.createAutomatedPrepaid = true;
+      service.isFullyCoveredCollection = true;
+      service.efectivoRequerido = 0;
+      service.disabledSelectCollectMethodDisabled = true;
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+      };
+      service.collection = {
+        coType: '0',
+        collectionDetails: [{ idDocument: 1 }],
+        nuDifference: 0,
+      } as any;
+
+      service.syncAddPaymentMethodDisabledState();
+
+      expect(service.isAddPaymentMethodDisabled()).toBeFalse();
+    });
+
+    it('regresión: createAutomatedPrepaid por exceso no habilita add-method', () => {
+      service.coTypeModule = '0';
+      service.createAutomatedPrepaid = true;
+      service.isFullyCoveredCollection = false;
+      service.efectivoRequerido = 50;
+      service.disabledSelectCollectMethodDisabled = true;
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      service.collection = {
+        coType: '0',
+        collectionDetails: [{ idDocument: 1 }],
+        nuDifference: 10,
+      } as any;
+
+      service.syncAddPaymentMethodDisabledState();
+
+      expect(service.isAddPaymentMethodDisabled()).toBeTrue();
     });
 
     it('P1: hasValidDocumentSalesForSend requires selected ready document', () => {
@@ -3928,6 +4023,53 @@ describe('CollectionService', () => {
       expect(service.lastSendIssues).toEqual([]);
       expect(service.collectionPersistedBaseline).toBeFalse();
       expect(service.documentSales.length).toBe(0);
+    });
+  });
+
+  describe('COB-SESSION-002 reset cobro cubierto entre sesiones', () => {
+    it('resetCobroPaymentCoverageSessionState limpia remanente y flags de cobertura', () => {
+      service.discountRemnantPrepaidByDocument.set('FAC-OLD', 50);
+      service.discountRemnantPrepaidAmount = 50;
+      service.isFullyCoveredCollection = true;
+      service.efectivoRequerido = 0;
+      service.creditBalancePrepaidAmount = 50;
+      service.createAutomatedPrepaid = true;
+      service.anticipoAutomatico = [{ type: 'ot', posCollectionPayment: 0 }];
+
+      service.resetCobroPaymentCoverageSessionState();
+
+      expect(service.discountRemnantPrepaidByDocument.size).toBe(0);
+      expect(service.discountRemnantPrepaidAmount).toBe(0);
+      expect(service.isFullyCoveredCollection).toBeFalse();
+      expect(service.efectivoRequerido).toBe(0);
+      expect(service.creditBalancePrepaidAmount).toBe(0);
+      expect(service.createAutomatedPrepaid).toBeFalse();
+      expect(service.anticipoAutomatico).toEqual([]);
+    });
+
+    it('COB-SESSION-002: beginNewCollectionSession no arrastra remanente de cobro anterior', () => {
+      service.discountRemnantPrepaidByDocument.set('FAC-OLD', 50);
+      service.discountRemnantPrepaidAmount = 50;
+      service.createAutomatedPrepaid = true;
+      service.isFullyCoveredCollection = true;
+
+      service.beginNewCollectionSession(0);
+
+      expect(service.discountRemnantPrepaidByDocument.size).toBe(0);
+      expect(service.hasConfirmedDiscountRemnantPrepaid()).toBeFalse();
+      expect(service.createAutomatedPrepaid).toBeFalse();
+      expect(service.isFullyCoveredCollection).toBeFalse();
+    });
+
+    it('COB-SESSION-002b: initCollection limpia remanente stale', () => {
+      service.discountRemnantPrepaidByDocument.set('FAC-OLD', 80);
+      service.discountRemnantPrepaidAmount = 80;
+      service.coTypeModule = '0';
+
+      service.initCollection({} as any);
+
+      expect(service.discountRemnantPrepaidByDocument.size).toBe(0);
+      expect(service.hasConfirmedDiscountRemnantPrepaid()).toBeFalse();
     });
   });
 
