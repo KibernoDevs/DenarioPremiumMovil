@@ -624,7 +624,7 @@
                                 <ion-badge color="primary">{{order}}</ion-badge>
                                 }
                                 <ion-checkbox [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
-                                  (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
+                                  (ionChange)="toggleTempSelection(d.idCollectDiscount, $event)"></ion-checkbox>
                               </div>
                             </ion-item>
 

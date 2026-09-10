@@ -107,6 +107,20 @@ ion-fab-button {
   --background:#430197;
 }
 
+ion-fab.app-draggable-fab {
+  touch-action: none;
+}
+
+ion-fab.app-draggable-fab-positioned {
+  position: fixed !important;
+  margin: 0;
+}
+
+ion-fab.app-draggable-fab-dragging {
+  transition: none;
+  z-index: 10000;
+}
+
 
 
 .segment-button-checked.md::part(native) {

@@ -27,6 +27,7 @@ import { AddresClient } from 'src/app/modelos/tables/addresClient';
 import { IonModal, ModalController } from '@ionic/angular';
 import { ClienteComponent } from 'src/app/clientes/client-container/client-detail/client-detail.component';
 import { filterClientsBySelectionMode } from 'src/app/utils/client-suspension.policy';
+import { isPromoterHideFinanceActive } from 'src/app/guards/promoter-hide-finance.guard';
 
 
 @Injectable({
@@ -105,8 +106,16 @@ export class ClientLogicService {
   public showConversion: boolean = true;
   public multiCurrency: boolean = false;
 
+  /** Promotor + promoterHideFinance: ocultar saldos/docs en UI; Vendedor sin cambios. */
+  get isFinanceHiddenForUser(): boolean {
+    return isPromoterHideFinanceActive(this.globalConfig);
+  }
+
   /** Muestra saldo convertido solo con multimoneda, config activa y tasa válida. */
   canShowConversion(): boolean {
+    if (this.isFinanceHiddenForUser) {
+      return false;
+    }
     return this.showConversion
       && this.multiCurrency
       && this.currencyService.hasValidExchangeRate();

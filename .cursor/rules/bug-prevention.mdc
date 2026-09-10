@@ -34,6 +34,9 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Enviar con campos incompletos: siempre modal + salto a pestaña del error (no silencio en cobro/anticipo) — `COB-SEND-UX-001`.
 - Enviar: colector `collectCollectionSendIssues` evalúa TODAS las reglas aplicables (campos, tolerancia, refs, adjuntos); modal = primer issue, UI pinta todos — `COB-SEND-ALL-001`.
 - Monto a pagar (`nuAmountPaid`) y montos de pago en SQLite: validar en `hasSendFieldErrors` aunque la UI de Pagos aún no esté hidratada — `COB-SEND-UX-001`.
+- Enviar con FACT + NCR: `hasIncompleteDocumentAmountToPay` acepta `nuAmountPaid` negativo en notas de crédito/saldo negativo (no solo `> 0`) — `COB-SEND-AMT-001`.
+- Descuento > saldo: remanente/anticipo solo con `automatedPrepaid`; `montoTotalPagar` = deuda FACT, `efectivoRequerido` = 0, Otros monto 0 + diff code — `COB-DISC-004`.
+- NCR > FACT (neto < 0): anticipo `creditBalancePrepaidAmount`; neto ≥ 0 sin cambio (800) — `COB-NCR-PREPAID-001` / `COB-DOC-NEG-001`.
 - `enableDifferenceCodes`: selector de código en Otros obligatorio al Enviar (rojo + mensaje) — `COB-DIFF-001`.
 - Pago Móvil: teléfono (prefijo + 7 dígitos) obligatorio en Enviar como el resto de campos PM — `COB-PM-PHONE-001`.
 - `createAutomatedPrepaid`: no forzar Enviar ON si hay errores de campos; solo omite bloqueo por exceso/tolerancia positiva — `COB-SEND-ALL-001`.
@@ -67,6 +70,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Guardar/Enviar: Guardar solo General al pulsar; Enviar actividades/GPS/firma transportista al click — `VIS-SAVE-001` / `VIS-SEND-001`.
 - Guardar tras persistir: OFF hasta `markVisitDirty` / edición de usuario — `VIS-SAVE-002`.
 - Enviar: General OK habilita; tras fallo apaga y al editar reactiva; alerta local + salto a pestaña; `signatureVisit` solo UI — `VIS-SEND-001`.
+- Reabrir SAVED: sembrar cliente/sucursal antes de General; Enviar ON / Guardar OFF; `daReal` no implica read-only — `VIS-REOPEN-001`.
 - Comentario de actividad: máx. 120 (`incidences.tx_description`); motivo reagendo máx. 200; no depender de editar tras Enviar (`TO_SEND` es readonly) — `VIS-COMMENT-001`.
 
 ## Clientes potenciales

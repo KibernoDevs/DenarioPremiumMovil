@@ -21,6 +21,7 @@ describe('ClienteComponent (client-detail)', () => {
       esTransportista: false,
       multiCurrency: true,
       fromSelector: false,
+      clientTags: new Map<string, string>(),
       localCurrency: { coCurrency: 'BS' },
       hardCurrency: { coCurrency: 'USD' },
       datos: {
@@ -181,6 +182,30 @@ describe('ClienteComponent (client-detail)', () => {
     expect((component as any).sanitizeDescription('null')).toBe('');
     expect((component as any).sanitizeDescription('<b>Importante</b><br>Linea 2'))
       .toBe('<b>Importante</b><br>Linea 2');
+  });
+
+  it('openDescriptionModal carga título y HTML de la descripción pedida', () => {
+    component.client = {
+      ...component.client,
+      txDescription1: '<p>Uno</p>',
+      txDescription2: '<p>Dos</p>',
+    } as any;
+    clientLogicMock.clientTags = new Map([
+      ['CLI_DETAIL_DESCRIPTION_1', 'Descripción 1'],
+      ['CLI_DETAIL_DESCRIPTION_2', 'Descripción 2'],
+    ]);
+
+    component.openDescriptionModal(1);
+    expect(component.descriptionModalOpen).toBeTrue();
+    expect(component.descriptionModalTitle).toBe('Descripción 1');
+    expect(component.descriptionModalHtml).toBe('<p>Uno</p>');
+
+    component.openDescriptionModal(2);
+    expect(component.descriptionModalTitle).toBe('Descripción 2');
+    expect(component.descriptionModalHtml).toBe('<p>Dos</p>');
+
+    component.closeDescriptionModal();
+    expect(component.descriptionModalOpen).toBeFalse();
   });
 
   it('DM-CLT-014: openDoc navega a pantalla de documento', () => {

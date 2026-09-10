@@ -296,6 +296,90 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(800);
     });
 
+    it('COB-DISC-004: descuento > saldo muestra deuda FACT y efectivoRequerido 0', async () => {
+      setupEditableCollection([
+        makeDetail({
+          idDocument: 10,
+          coDocument: 'FAC-100',
+          nuBalanceDoc: 100,
+          nuBalanceDocOriginal: 100,
+          nuAmountCollectDiscount: 150,
+          nuAmountPaid: 100,
+          nuAmountPaidConversion: 100,
+        }),
+      ]);
+      service.automatedPrepaid = true;
+      service.discountRemnantPrepaidByDocument.set('FAC-100', 50);
+      service.discountRemnantPrepaidAmount = 50;
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(100);
+      expect(service.efectivoRequerido).toBe(0);
+      expect(service.isFullyCoveredCollection).toBeTrue();
+      expect(service.collection.nuDifference).toBe(0);
+    });
+
+    it('COB-NCR-PREPAID-001: NCR excede FACT → monto facturas, anticipo 500, efectivo 0', async () => {
+      setupEditableCollection([
+        makeDetail({
+          idDocument: 10,
+          coDocument: 'FAC-10',
+          coTypeDoc: 'FACT',
+          nuBalanceDoc: 1000,
+          nuBalanceDocOriginal: 1000,
+          nuAmountPaid: 1000,
+          nuAmountPaidConversion: 1000,
+        }),
+        makeDetail({
+          idDocument: 20,
+          coDocument: 'NCR-20',
+          coTypeDoc: 'NCR',
+          nuBalanceDoc: -1500,
+          nuBalanceDocOriginal: -1500,
+          nuAmountPaid: -1500,
+          nuAmountPaidConversion: -1500,
+        }),
+      ]);
+      service.automatedPrepaid = true;
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(1000);
+      expect(service.creditBalancePrepaidAmount).toBe(500);
+      expect(service.efectivoRequerido).toBe(0);
+      expect(service.isFullyCoveredCollection).toBeTrue();
+    });
+
+    it('COB-NCR-PREPAID-002: regresión COB-DOC-NEG-001 neto positivo sin gross override', async () => {
+      setupEditableCollection([
+        makeDetail({
+          idDocument: 10,
+          coDocument: 'FAC-10',
+          nuBalanceDoc: 1000,
+          nuBalanceDocOriginal: 1000,
+          nuAmountPaid: 1000,
+          nuAmountPaidConversion: 1000,
+        }),
+        makeDetail({
+          idDocument: 20,
+          coDocument: 'NCR-20',
+          coTypeDoc: 'NCR',
+          nuBalanceDoc: -200,
+          nuBalanceDocOriginal: -200,
+          nuAmountPaid: -200,
+          nuAmountPaidConversion: -200,
+        }),
+      ]);
+      service.automatedPrepaid = true;
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(800);
+      expect(service.creditBalancePrepaidAmount).toBe(0);
+      expect(service.isFullyCoveredCollection).toBeFalse();
+    });
+
     it('COB-DOCS-001: partials from all details even if documentSales has only current page', async () => {
       setupEditableCollection([
         makeDetail({
@@ -671,6 +755,7 @@ describe('CollectionService', () => {
       service.collection = { coCurrency: 'USD' } as any;
       service.MonedaTolerancia = 'USD';
       service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
       service.RangoToleranciaPositiva = 10;
       service.RangoToleranciaNegativa = 100000;
       service.alwaysPartialPayment = false;
@@ -719,7 +804,7 @@ describe('CollectionService', () => {
 
     it('DM-COB-012: overpayment within positive absolute tolerance enables send', () => {
       const spy = setupToleranceBase();
-      // amount = 5 < RangoToleranciaPositiva(10) → Enviar ON
+      // amount = 5 <= RangoToleranciaPositiva(10) → Enviar ON
       service.montoTotalPagado = 105;
 
       service.checkTolerancia();
@@ -727,10 +812,20 @@ describe('CollectionService', () => {
       expect(spy).toHaveBeenCalledWith(true);
     });
 
-    it('DM-COB-012: overpayment at or beyond positive absolute tolerance disables send', () => {
+    it('DM-COB-012: overpayment at positive absolute tolerance ceiling enables send', () => {
       const spy = setupToleranceBase();
-      // amount = 10 is NOT < 10 → Enviar OFF (comparación estricta)
+      // amount = 10 <= 10 → Enviar ON (comparador inclusivo, COB-TOL-DEC-002)
       service.montoTotalPagado = 110;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('DM-COB-012: overpayment beyond positive absolute tolerance disables send', () => {
+      const spy = setupToleranceBase();
+      service.montoTotalPagado = 110.01;
+      service.parteDecimal = 2;
 
       service.checkTolerancia();
 
@@ -753,6 +848,7 @@ describe('CollectionService', () => {
       service.collection = { coCurrency: 'USD' } as any;
       service.MonedaTolerancia = 'USD';
       service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
       service.RangoToleranciaPositiva = 0.5;
       service.RangoToleranciaNegativa = 0.5;
       service.alwaysPartialPayment = false;
@@ -768,7 +864,12 @@ describe('CollectionService', () => {
       spy.calls.reset();
       service.montoTotalPagado = 100.5;
       service.checkTolerancia();
-      // amount = 0.5 is NOT < 0.5 → OFF
+      // amount = 0.5 <= 0.5 → ON (inclusivo)
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 100.51;
+      service.checkTolerancia();
       expect(spy).toHaveBeenCalledWith(false);
 
       spy.calls.reset();
@@ -811,6 +912,53 @@ describe('CollectionService', () => {
       expect(service.prepaidRangeAmount).toBe(0.5);
       expect(service.RangoToleranciaPositiva).toBe(1.25);
       expect(service.RangoToleranciaNegativa).toBe(0.75);
+    });
+  });
+
+  describe('COB-TOL-DEC-002 redondeo e inclusividad en tolerancia absoluta', () => {
+    function setupQaToleranceCase(): jasmine.Spy {
+      service.collection = { coCurrency: 'USD' } as any;
+      service.MonedaTolerancia = 'USD';
+      service.TipoTolerancia = 0;
+      service.parteDecimal = 2;
+      service.RangoToleranciaPositiva = 49.99;
+      service.RangoToleranciaNegativa = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.montoTotalPagar = 672;
+      return spyOn(service, 'onCollectionValidToSend');
+    }
+
+    it('acepta diferencia exactamente en el tope 49.99 (caso QA 721.99 - 672)', () => {
+      const spy = setupQaToleranceCase();
+      service.montoTotalPagado = 721.99;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+      expect((service as any).getRoundedPaymentDelta()).toBe(49.99);
+    });
+
+    it('redondea delta flotante 49.99000000000001 antes de comparar', () => {
+      const spy = setupQaToleranceCase();
+      // Fuerza valores que en IEEE-754 producen residuo > 49.99 sin redondeo
+      service.montoTotalPagar = 672;
+      service.montoTotalPagado = 672 + 49.99000000000001;
+
+      service.checkTolerancia();
+
+      expect((service as any).getRoundedPaymentDelta()).toBe(49.99);
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('rechaza exceso por encima del tope tras redondeo', () => {
+      const spy = setupQaToleranceCase();
+      service.montoTotalPagado = 722;
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(false);
     });
   });
 
@@ -1675,7 +1823,7 @@ describe('CollectionService', () => {
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeFalse();
     });
 
-    describe('COB-PREPAID-001 / COB-PREPAID-004 automated prepaid vs tolerancia', () => {
+    describe('COB-PREPAID-001 / COB-PREPAID-005 automated prepaid vs tolerancia', () => {
       function setupUsdPrepaidScenario(excess: number, opts?: {
         prepaidRangeAmount?: number;
         rangoPositiva?: number;
@@ -1686,6 +1834,7 @@ describe('CollectionService', () => {
         service.existPartialPayment = false;
         service.prepaidRangeAmount = opts?.prepaidRangeAmount ?? 1;
         service.prepaidRangeCurrency = 'USD';
+        service.parteDecimal = 2;
         service.tolerancia0 = opts?.tolerancia0 ?? true;
         service.TipoTolerancia = 0;
         service.RangoToleranciaPositiva = opts?.rangoPositiva ?? 100000;
@@ -1701,27 +1850,29 @@ describe('CollectionService', () => {
         spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
       }
 
-      it('USD: exceso 1.54 con rango+ tolerancia alto NO crea anticipo (umbral = tol+ + prepaid)', () => {
+      it('USD: exceso 1.54 con prepaidRangeAmount=1 crea anticipo (umbral = solo prepaid)', () => {
         setupUsdPrepaidScenario(1.54);
 
         const prepaidExcess = (service as any).getPrepaidExcessAmount();
         expect(prepaidExcess).toBeCloseTo(1.54, 2);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
-        expect(service.createAutomatedPrepaid).toBeFalse();
+        expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-PREPAID-004: tol+ 10 + prepaid 5 → exceso 14 no crea; 15 sí', () => {
-        setupUsdPrepaidScenario(14, { prepaidRangeAmount: 5, rangoPositiva: 10 });
+      it('COB-PREPAID-005: umbral = prepaidRangeAmount; exceso bajo mínimo no crea', () => {
+        setupUsdPrepaidScenario(14, { prepaidRangeAmount: 50, rangoPositiva: 10 });
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
 
-        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(15);
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(50);
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-PREPAID-004: tolerancia0 false → umbral = solo prepaidRangeAmount', () => {
+      it('COB-PREPAID-005: tolerancia0 false → umbral sigue siendo solo prepaidRangeAmount', () => {
         setupUsdPrepaidScenario(1, {
           prepaidRangeAmount: 1,
           rangoPositiva: 100000,
@@ -1732,8 +1883,8 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('umbral exacto: exceso = tol+ + prepaidRangeAmount crea anticipo', () => {
-        setupUsdPrepaidScenario(11, { prepaidRangeAmount: 1, rangoPositiva: 10 });
+      it('umbral exacto: exceso = prepaidRangeAmount crea anticipo', () => {
+        setupUsdPrepaidScenario(50, { prepaidRangeAmount: 50, rangoPositiva: 10 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
@@ -1746,20 +1897,45 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeFalse();
       });
 
-      it('COB-TOL-DEC-001: prepaidRangeAmount 0.5 + tol+ 0 → exceso 0.5 crea anticipo', () => {
+      it('COB-TOL-DEC-001: prepaidRangeAmount 0.5 → exceso 0.5 crea anticipo', () => {
         setupUsdPrepaidScenario(0.5, { prepaidRangeAmount: 0.5, rangoPositiva: 0 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-TOL-DEC-001: tol+ 0.5 + prepaid 0.5 → umbral 1; exceso 0.9 no crea', () => {
-        setupUsdPrepaidScenario(0.9, { prepaidRangeAmount: 0.5, rangoPositiva: 0.5 });
+      it('COB-TOL-DEC-001: prepaid 0.5; exceso 0.4 no crea; 0.5 sí (tol+ no suma al umbral)', () => {
+        setupUsdPrepaidScenario(0.4, { prepaidRangeAmount: 0.5, rangoPositiva: 0.5 });
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(0.5);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
 
-        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(1);
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(0.5);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-PREPAID-005: tol+ 49.99 + prepaid 50; exceso 50 crea anticipo (caso QA)', () => {
+        service.parteDecimal = 2;
+        setupUsdPrepaidScenario(50, { prepaidRangeAmount: 50, rangoPositiva: 49.99 });
+
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-TOL-DEC-002: prepaid 0.01 redondeado; exceso 0.01 crea; 0.009 no', () => {
+        service.parteDecimal = 2;
+        setupUsdPrepaidScenario(0.009, { prepaidRangeAmount: 0.01, rangoPositiva: 49.99 });
+
+        expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(0.01);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(0.01);
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
@@ -1798,10 +1974,10 @@ describe('CollectionService', () => {
         expect(amounts.nuAmount).toBe(60);
       });
 
-      it('COB-DISC-003: shouldCreateAutomatedPrepaidOnSend true solo con remanente confirmado', () => {
+      it('COB-DISC-003: shouldCreateAutomatedPrepaidOnSend true solo con remanente confirmado y automatedPrepaid ON', () => {
         service.coTypeModule = '0';
         service.existPartialPayment = false;
-        service.automatedPrepaid = false;
+        service.automatedPrepaid = true;
         service.createAutomatedPrepaid = false;
         service.discountRemnantPrepaidAmount = 50;
         service.anticipoAutomatico = [];
@@ -1811,6 +1987,16 @@ describe('CollectionService', () => {
 
         expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
         expect(service.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      });
+
+      it('COB-DISC-004b: shouldCreateAutomatedPrepaidOnSend false con remanente si automatedPrepaid OFF', () => {
+        service.coTypeModule = '0';
+        service.existPartialPayment = false;
+        service.automatedPrepaid = false;
+        service.discountRemnantPrepaidAmount = 50;
+        service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: -1, synthetic: true }];
+
+        expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeFalse();
       });
 
       it('COB-DISC-003: convertCollectionAmountToPrepaidCurrency respeta prepaidCurrency', () => {
@@ -2529,6 +2715,57 @@ describe('CollectionService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('documentos');
     });
 
+    it('COB-SEND-AMT-001: FACT + NCR con montos negativos no bloquea Enviar por monto documento', () => {
+      service.collection = {
+        coType: '0',
+        collectionDetails: [
+          {
+            coDocument: 'FACT38565',
+            coTypeDoc: 'FACT',
+            nuAmountPaid: 120690.52,
+            nuBalanceDoc: 123466.27,
+            inPaymentPartial: true,
+          },
+          {
+            coDocument: 'NCR20000427',
+            coTypeDoc: 'NCR',
+            nuAmountPaid: -15000,
+            nuBalanceDoc: -15000,
+          },
+          {
+            coDocument: 'FACT39581',
+            coTypeDoc: 'FACT',
+            nuAmountPaid: 25000,
+            nuBalanceDoc: 25000,
+          },
+          {
+            coDocument: 'NCR20000428',
+            coTypeDoc: 'NCR',
+            nuAmountPaid: -12775.75,
+            nuBalanceDocOriginal: -12775.75,
+          },
+        ],
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 54000 }],
+      } as any;
+      service.hideDocuments = false;
+      service.hidePayments = false;
+
+      expect(service.hasIncompleteDocumentAmountToPay()).toBeFalse();
+    });
+
+    it('COB-SEND-AMT-001: NCR con nuAmountPaid 0 sigue bloqueando Enviar', () => {
+      service.collection = {
+        coType: '0',
+        collectionDetails: [
+          { coDocument: 'FAC-1', nuAmountPaid: 100, nuBalanceDoc: 100 },
+          { coDocument: 'NCR-1', coTypeDoc: 'NCR', nuAmountPaid: 0, nuBalanceDoc: -100 },
+        ],
+      } as any;
+      service.hideDocuments = false;
+
+      expect(service.hasIncompleteDocumentAmountToPay()).toBeTrue();
+    });
+
     it('hasIncompletePersistedPaymentMethods: transferencia sin cuenta receptor', () => {
       service.collection = {
         coType: '0',
@@ -2572,6 +2809,35 @@ describe('CollectionService', () => {
       service.requestSendValidationTabFocus();
 
       expect(focused).toBe('pagos');
+    });
+
+    it('COB-DISC-004: Otros monto 0 válido cuando cobro cubierto y efectivoRequerido es 0', () => {
+      service.isFullyCoveredCollection = true;
+      service.efectivoRequerido = 0;
+      service.enableDifferenceCodes = true;
+      service.coTypeModule = '0';
+      service.collection = {
+        coType: '0',
+        collectionPayments: [{
+          coPaymentMethod: 'ot',
+          coType: 'ot',
+          nuAmountPartial: 0,
+          idDifferenceCode: 1,
+          coDifferenceCode: 'CD01',
+          nuPaymentDoc: 'REF',
+        }],
+      } as any;
+      service.pagoOtros = [{
+        monto: 0,
+        nombre: 'Cubierto',
+        differenceCode: { idDifferenceCode: 1, coDifferenceCode: 'CD01' },
+      } as any];
+      service.tipoPagoOtros = true;
+
+      expect(service.hasIncompletePersistedPaymentAmounts()).toBeFalse();
+      expect(service.hasIncompletePaymentMethods()).toBeFalse();
+      service.syncAddPaymentMethodDisabledState();
+      expect(service.isAddPaymentMethodDisabled()).toBeFalse();
     });
   });
 
