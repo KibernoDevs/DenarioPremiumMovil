@@ -3313,13 +3313,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (confirmed) {
       this.pendingDiscountClampToBalance = false;
+      const remnantAmount = this.pendingDiscountRemnantInCollection;
+      this.collectService.setDiscountRemnantPrepaidForDocument(coDocument, remnantAmount);
       await this.applyCollectDiscounts({ clampToBalance: false });
-      this.collectService.setDiscountRemnantPrepaidForDocument(
-        coDocument,
-        this.pendingDiscountRemnantInCollection,
-      );
       this.collectService.createAutomatedPrepaid = true;
       this.collectService.ensureAutomatedPrepaidPaymentTemplate();
+      this.collectService.syncAddPaymentMethodDisabledState();
       this.pendingDiscountRemnantInCollection = 0;
       this.assignDiscountsOpen = false;
     } else {
