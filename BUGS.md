@@ -190,6 +190,39 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-SEND-AMT-001] Enviar bloqueado con FACT + NCR aunque totales cuadren
+
+- **Síntoma:** Cobro con facturas y notas de crédito; Monto pagado = Monto a pagar; al Enviar modal *“Indique el monto a pagar en Documentos antes de enviar.”*
+- **Causa:** `hasIncompleteDocumentAmountToPay` exigía `nuAmountPaid > 0` en todos los `collectionDetails`. Las NCR tienen `nuAmountPaid` negativo (saldo a favor); `calculatePayment` sí los suma (`COB-DOC-NEG-001`) pero la validación de Enviar los trataba como incompletos.
+- **Fix:** `isDocumentAmountToPayComplete`: FACT exige monto > 0; NCR/saldo negativo exige monto < 0; 0/NaN sigue bloqueando.
+- **Evitar:** No reutilizar `isPositivePaymentAmount` para montos de documento cuando el cobro mezcla saldos negativos.
+- **Archivos:** `collection-logic.service.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-DISC-004] Descuento > saldo: monto factura, efectivo 0, Otros y anticipo
+
+- **Síntoma:** Con descuento que supera el saldo y `automatedPrepaid=true`, `montoTotalPagar` quedaba en 0; no se podía agregar Otros; Enviar fallaba con pagado=0 aunque el remanente debía ser anticipo.
+- **Causa:** `Math.max(0, net)` en neto del documento; `syncAddPaymentMethodDisabledState` y validaciones de pago exigían monto > 0; diferencia/tolerancia comparaban contra bruto de factura en lugar de `efectivoRequerido`.
+- **Fix:** `resolveFullyCoveredCollectionTotals` separa `montoTotalPagar` (deuda FACT) de `efectivoRequerido` (=0); remanente solo con `automatedPrepaid` ON; Otros monto 0 + código de diferencia permitido en escenario cubierto.
+- **Evitar:** No cambiar acumulación normal cuando neto aritmético ≥ 0. No crear remanente si `automatedPrepaid=false` (clamp al saldo).
+- **Archivos:** `collection-logic.service.ts`, `cobro-documents.component.ts`, specs, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-NCR-PREPAID-001] NCR excede FACT: anticipo automático y cierre con Otros
+
+- **Síntoma:** FACT 1000 + NCR 1500: se esperaba monto a pagar 1000, diferencia 0, anticipo 500 y poder registrar Otros; antes neto −500 bloqueaba el flujo.
+- **Causa:** Suma aritmética negativa no activaba anticipo por crédito ni display de deuda de facturas; `getPrepaidExcessAmount` no aplicaba a saldo a favor sin pago en exceso.
+- **Fix:** Si neto < 0 y `automatedPrepaid`, `montoTotalPagar` = suma de deudas positivas, `creditBalancePrepaidAmount` = |neto|, `efectivoRequerido` = 0; mismo cierre Otros que COB-DISC-004. Neto ≥ 0 sin cambio (`COB-DOC-NEG-001`).
+- **Evitar:** No alterar FACT+NCR cuando neto ≥ 0 (ej. 1000−200=800).
+- **Archivos:** `collection-logic.service.ts`, specs, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DIFF-001] Código de diferencia obligatorio en Otros (`enableDifferenceCodes`)
 
 - **Síntoma:** Con `enableDifferenceCodes=true` el selector de código en método Otros no se exigía al Enviar (o se bloqueaba Enviar sin mensaje/UI en rojo).
