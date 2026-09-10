@@ -47,6 +47,7 @@ describe('CobrosDocumentComponent', () => {
         .and.callFake((n: number) => n),
       buildDiscountRemnantPrepaidMessage: jasmine.createSpy('buildDiscountRemnantPrepaidMessage')
         .and.callFake((n: number) => `¿anticipo ${n}?`),
+      automatedPrepaid: true,
       ensureAutomatedPrepaidPaymentTemplate: jasmine.createSpy('ensureAutomatedPrepaidPaymentTemplate'),
       collection: {
         collectionDetails: [],
@@ -423,11 +424,21 @@ describe('CobrosDocumentComponent', () => {
     });
 
     it('accept con remanente abre confirmación y no aplica aún', async () => {
+      collectServiceMock.automatedPrepaid = true;
       await component.acceptCollectDiscounts();
 
       expect(component.alertDiscountRemnantOpen).toBeTrue();
       expect(collectServiceMock.buildDiscountRemnantPrepaidMessage).toHaveBeenCalledWith(50);
       expect(component.applyCollectDiscounts).not.toHaveBeenCalled();
+    });
+
+    it('COB-DISC-004b: remanente con automatedPrepaid OFF aplica clamp sin modal', async () => {
+      collectServiceMock.automatedPrepaid = false;
+      await component.acceptCollectDiscounts();
+
+      expect(component.alertDiscountRemnantOpen).toBeFalse();
+      expect(collectServiceMock.clearDiscountRemnantPrepaidForDocument).toHaveBeenCalledWith('FAC-1');
+      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: true });
     });
 
     it('confirm Sí aplica full y registra remanente', async () => {

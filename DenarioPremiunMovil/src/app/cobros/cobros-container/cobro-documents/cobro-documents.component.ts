@@ -4269,6 +4269,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const coDocument = String(this.collectService.documentSaleOpen?.coDocument ?? '').trim();
 
     if (remnant > 0) {
+      if (!this.collectService.automatedPrepaid) {
+        this.collectService.clearDiscountRemnantPrepaidForDocument(coDocument);
+        await this.applyCollectDiscounts({ clampToBalance: true });
+        this.assignDiscountsOpen = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
       this.pendingDiscountRemnantInCollection = remnant;
       const remnantPrepaid = this.collectService.convertCollectionAmountToPrepaidCurrency(remnant);
       this.collectService.mensaje = this.collectService.buildDiscountRemnantPrepaidMessage(remnantPrepaid);
