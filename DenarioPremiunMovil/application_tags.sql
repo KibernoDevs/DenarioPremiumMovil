@@ -919,7 +919,12 @@ INSERT INTO public.application_tags(
 	('DEP_DEV_STATUS', 'DEP', 'DEPOSITOS', 'ENG', 'Status'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ESP', 'Fecha'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return'),
-	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado');
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado'),
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ENG','Saved'),
+	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ESP', 'Por Enviar'),
+	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ENG', 'To Send'),
+	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ESP', 'Enviado'),
+	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ENG', 'Sent');
 
 
 --	MENSAJES

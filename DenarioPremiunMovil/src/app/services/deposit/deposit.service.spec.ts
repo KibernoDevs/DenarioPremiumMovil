@@ -216,6 +216,52 @@ describe('DepositService', () => {
       const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SENT, '');
       expect(label).toBe('Enviado');
     });
+
+    it('getStatus usa fallback Enviado si falta tag DEP_DEV_SENDED en SQLite', () => {
+      service.depositTags.clear();
+      expect(service.getStatus(DEPOSITO_STATUS_SENT, '')).toBe('Enviado');
+      expect(service.getStatusOrderName(1, DEPOSITO_STATUS_SENT, '')).toBe('Enviado');
+    });
+
+    it('getStatusOrderName con pipeline local muestra Por Enviar aunque haya na_status', () => {
+      const label = service.getStatusOrderName(
+        DEPOSITO_STATUS_TO_SEND,
+        DEPOSITO_STATUS_TO_SEND,
+        'Rechazado',
+      );
+      expect(label).toBe('Por Enviar');
+    });
+
+    it('applySentStatusToInMemoryLists actualiza lista tras POST exitoso', () => {
+      service.listDeposits = [{
+        coDeposit: 'DEP-1',
+        idDeposit: 0,
+        stDeposit: DEPOSITO_STATUS_TO_SEND,
+        stDelivery: DEPOSITO_STATUS_TO_SEND,
+      } as any];
+      service.itemListaDepositos = [{
+        coDeposit: 'DEP-1',
+        idDeposit: 0,
+        stDeposit: DEPOSITO_STATUS_TO_SEND,
+        stDelivery: DEPOSITO_STATUS_TO_SEND,
+        naStatus: '',
+        daDeposit: '',
+        nuAmountDoc: '0',
+        coCurrency: '$',
+        coBank: 'B001',
+      }];
+
+      service.applySentStatusToInMemoryLists('DEP-1', 88);
+
+      expect(service.listDeposits[0].stDeposit).toBe(DEPOSITO_STATUS_SENT);
+      expect(service.listDeposits[0].stDelivery).toBe(DEPOSITO_STATUS_SENT);
+      expect(service.listDeposits[0].idDeposit).toBe(88);
+      expect(service.getStatusOrderName(
+        service.itemListaDepositos[0].stDeposit,
+        service.itemListaDepositos[0].stDelivery,
+        service.itemListaDepositos[0].naStatus,
+      )).toBe('Enviado');
+    });
   });
 
   describe('Liberación de cobros en depósito rechazado', () => {
