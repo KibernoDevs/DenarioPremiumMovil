@@ -49,6 +49,7 @@ describe('CobrosDocumentComponent', () => {
         .and.callFake((n: number) => `¿anticipo ${n}?`),
       automatedPrepaid: true,
       ensureAutomatedPrepaidPaymentTemplate: jasmine.createSpy('ensureAutomatedPrepaidPaymentTemplate'),
+      syncAddPaymentMethodDisabledState: jasmine.createSpy('syncAddPaymentMethodDisabledState'),
       collection: {
         collectionDetails: [],
       },
@@ -443,12 +444,25 @@ describe('CobrosDocumentComponent', () => {
 
     it('confirm Sí aplica full y registra remanente', async () => {
       (component as any).pendingDiscountRemnantInCollection = 50;
+      const callOrder: string[] = [];
+      collectServiceMock.setDiscountRemnantPrepaidForDocument.and.callFake(() => {
+        callOrder.push('setRemnant');
+      });
+      (component.applyCollectDiscounts as jasmine.Spy).and.callFake(async () => {
+        callOrder.push('apply');
+      });
+      collectServiceMock.syncAddPaymentMethodDisabledState.and.callFake(() => {
+        callOrder.push('sync');
+      });
+
       await component.setResultDiscountRemnant({ detail: { role: 'confirm' } });
 
-      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: false });
+      expect(callOrder).toEqual(['setRemnant', 'apply', 'sync']);
       expect(collectServiceMock.setDiscountRemnantPrepaidForDocument)
         .toHaveBeenCalledWith('FAC-1', 50);
+      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: false });
       expect(collectServiceMock.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      expect(collectServiceMock.syncAddPaymentMethodDisabledState).toHaveBeenCalled();
       expect(component.assignDiscountsOpen).toBeFalse();
     });
 
