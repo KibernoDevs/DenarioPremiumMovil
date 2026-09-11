@@ -27,6 +27,7 @@ import { AddresClient } from 'src/app/modelos/tables/addresClient';
 import { IonModal, ModalController } from '@ionic/angular';
 import { ClienteComponent } from 'src/app/clientes/client-container/client-detail/client-detail.component';
 import { filterClientsBySelectionMode } from 'src/app/utils/client-suspension.policy';
+import { isPromoterHideFinanceActive } from 'src/app/guards/promoter-hide-finance.guard';
 
 
 @Injectable({
@@ -105,8 +106,16 @@ export class ClientLogicService {
   public showConversion: boolean = true;
   public multiCurrency: boolean = false;
 
+  /** Promotor + promoterHideFinance: ocultar saldos/docs en UI; Vendedor sin cambios. */
+  get isFinanceHiddenForUser(): boolean {
+    return isPromoterHideFinanceActive(this.globalConfig);
+  }
+
   /** Muestra saldo convertido solo con multimoneda, config activa y tasa válida. */
   canShowConversion(): boolean {
+    if (this.isFinanceHiddenForUser) {
+      return false;
+    }
     return this.showConversion
       && this.multiCurrency
       && this.currencyService.hasValidExchangeRate();
@@ -240,8 +249,11 @@ export class ClientLogicService {
   initService() {
     this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
     this.currencyModule = this.currencyService.getCurrencyModule("cli");
-    this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
-    this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+    // parseCurrencyModuleFlag: boolean/0/1/'true' desde SQLite post-sync (no solo toString === 'true')
+    this.localCurrencyDefault = this.currencyService.parseCurrencyModuleFlag(
+      this.currencyModule.localCurrencyDefault);
+    this.showConversion = this.currencyService.parseCurrencyModuleFlag(
+      this.currencyModule.showConversion);
     this.transportRole = this.globalConfig.get("transportRole").toString() === 'true' ? true : false;
     //Si el rol de transportista esta activo, debo validar si el usuario es transportista
     if (this.transportRole) {
@@ -255,24 +267,36 @@ export class ClientLogicService {
           } else {
             //puede ser undefined o similar
             this.esTransportista = false;
-            this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+            this.showConversion = this.currencyService.parseCurrencyModuleFlag(
+              this.currencyModule.showConversion);
           }
         } catch (e) {
           this.esTransportista = false;
-          this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+          this.showConversion = this.currencyService.parseCurrencyModuleFlag(
+            this.currencyModule.showConversion);
         }
       }
     } else {
       this.esTransportista = false;
-      this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+      this.showConversion = this.currencyService.parseCurrencyModuleFlag(
+        this.currencyModule.showConversion);
     }
   }
 
+  /**
+   * Recarga currency_modules desde SQLite y aplica flags del módulo CLI.
+   * Pedidos/Cobros ya hacen setup al abrir; Clientes reutiliza el mapa en memoria
+   * y tras sync quedaba con showConversion/localCurrencyDefault viejos.
+   */
+  async refreshCliCurrencyModule(): Promise<void> {
+    await this.currencyService.setup(this.dbServ.getDatabase());
+    this.initService();
+    this.localCurrency = this.currencyService.getLocalCurrency();
+    this.hardCurrency = this.currencyService.getHardCurrency();
+  }
+
   getCurrency() {
-    this.currencyService.setup(this.dbServ.getDatabase()).then(() => {
-      this.localCurrency = this.currencyService.getLocalCurrency();
-      this.hardCurrency = this.currencyService.getHardCurrency();
-    })
+    this.refreshCliCurrencyModule();
   }
 
   setNombreModulo(tagKey: string, fallback: string = 'Clientes') {

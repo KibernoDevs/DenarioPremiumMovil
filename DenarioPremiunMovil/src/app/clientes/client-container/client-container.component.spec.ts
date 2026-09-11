@@ -23,6 +23,7 @@ describe('ClienteContainerComponent', () => {
       getCurrency: jasmine.createSpy('getCurrency'),
       getEnterprise: jasmine.createSpy('getEnterprise'),
       initService: jasmine.createSpy('initService'),
+      refreshCliCurrencyModule: jasmine.createSpy('refreshCliCurrencyModule').and.resolveTo(undefined),
       getClients: jasmine.createSpy('getClients').and.resolveTo([]),
       getPotentialClient: jasmine.createSpy('getPotentialClient'),
       listaEmpresa: [{ idEnterprise: 1 }],

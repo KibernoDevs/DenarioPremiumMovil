@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { ProductDetail } from 'src/app/modelos/ProductDetail';
 import { List } from 'src/app/modelos/tables/list';
 import { PriceListService } from 'src/app/services/priceLists/price-list.service';
@@ -61,6 +61,10 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   basePriceLocal = 0;
   basePriceHard: number | null = null;
   imageZoomOpen = false;
+  /** Índice del carrusel al abrir el zoom (foto visible/pulsada). */
+  imageZoomStartIndex = 0;
+
+  @ViewChild('zoomSwiper') zoomSwiper?: ElementRef<HTMLElement & { swiper?: { slideTo: (i: number, speed?: number) => void } }>;
 
   public swiper!: Swiper;
 
@@ -184,12 +188,24 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     return rate != null && String(rate).trim().length > 0;
   }
 
-  openImageZoom(): void {
+  openImageZoom(index = 0): void {
+    const max = Math.max(this.getZoomImages().length - 1, 0);
+    this.imageZoomStartIndex = Math.min(Math.max(0, Number(index) || 0), max);
     this.imageZoomOpen = true;
   }
 
   closeImageZoom(): void {
     this.imageZoomOpen = false;
+  }
+
+  /** Tras abrir el modal, fuerza el slide del zoom a la foto pulsada. */
+  onZoomModalPresented(): void {
+    const apply = () => {
+      const swiper = this.zoomSwiper?.nativeElement?.swiper;
+      swiper?.slideTo(this.imageZoomStartIndex, 0);
+    };
+    apply();
+    setTimeout(apply, 50);
   }
 
   getZoomImages(): string[] {

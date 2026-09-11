@@ -85,10 +85,6 @@ import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
-import {
-  ClientStockSuggestedOrder,
-  ClientStockSuggestedOrderDetail,
-} from 'src/app/modelos/tables/client-stock-suggested-order';
 
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
@@ -120,7 +116,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 22;
+  private CURRENT_DB_VERSION: number = 23;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
 
@@ -203,9 +199,7 @@ export class SynchronizationDBService {
       { "id": 80, "nameTable": "codePhoneNumber" },
       { "id": 81, "nameTable": "unitPriceListTable" },
       { "id": 83, "nameTable": "collectRetention" },
-      { "id": 84, "nameTable": "productBonusFavTable" },
-      { "id": 85, "nameTable": "clientStockSuggestedOrders" },
-      { "id": 86, "nameTable": "clientStockSuggestedOrderDetails" }
+      { "id": 84, "nameTable": "productBonusFavTable" }
     ]
   }
 
@@ -1692,6 +1686,7 @@ export class SynchronizationDBService {
   insertTransactionStatusesBatch(arr: TransactionStatuses[]) {
     var statements = [];
     this.collectionService.listTransactionStatusCollections = [] as TransactionStatuses[]; // LIMPIO LA LISTA ANTES DE CARGAR NUEVOS DATOS
+    this.depositService.listTransactionStatusDeposits = [] as TransactionStatuses[];
     let insertStatement = "INSERT OR REPLACE INTO transaction_statuses(" +
       "id_transaction_status, da_transaction_statuses,id_transaction_type," +
       "co_transaction_type,co_transaction,id_transaction," +
@@ -1708,6 +1703,10 @@ export class SynchronizationDBService {
         //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
         this.collectionService.listTransactionStatusCollections.push(arr[i]);
       }
+      if (arr[i].idTransactionType === 6) {
+        // Depósitos: al rechazar, liberar cobros del detalle (paralelo a documentos en cobros)
+        this.depositService.listTransactionStatusDeposits.push(arr[i]);
+      }
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1716,10 +1715,32 @@ export class SynchronizationDBService {
         if (res)
           this.collectionService.checkHistoricCollects(this.database).then(() => {
             console.log("checkHistoricCollects process finished");
-            this.collectionService.unlockDocumentSales(this.database);
+            this.collectionService.unlockDocumentSales(this.database).then((docs) => {
+              const refusedCollections = (this.collectionService.collectionRefused ?? [])
+                .map((ts) => String(
+                  (ts as any)?.coTransaction
+                  ?? (ts as any)?.co_transaction
+                  ?? (ts as any)?.coCollection
+                  ?? (ts as any)?.co_collection
+                  ?? '',
+                ).trim())
+                .filter((c) => c.length > 0);
+              void this.depositService.releaseCollectsFromRefusedCollections(
+                this.database,
+                refusedCollections,
+              );
+              return docs;
+            });
             this.collectionService.lockDocumentSales(this.database);
           });
       })
+      this.depositService.checkRequireApproval(this.database).then((res) => {
+        if (res) {
+          void this.depositService.checkHistoricDeposits(this.database).then(() => {
+            return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+          });
+        }
+      });
       return res;
     }).catch(e => {
       console.log(e);
@@ -1803,7 +1824,10 @@ export class SynchronizationDBService {
 
   insertDepositBatch(arr: Deposit[]) {
     return this.depositService.mergeSyncedDepositsWithLocal(this.database, arr).then((merged) => {
-      return this.depositService.saveDepositBatch(this.database, merged);
+      return this.depositService.saveDepositBatch(this.database, merged).then((result) => {
+        // Reaplica rechazo tras sync de deposits (la tabla llega después de transaction_statuses).
+        return this.depositService.releaseCollectsFromRefusedDeposits(this.database).then(() => result);
+      });
     });
   }
 
@@ -2059,21 +2083,5 @@ export class SynchronizationDBService {
     }).catch(e => {
       console.log(e);
     })
-  }
-
-  insertClientStockSuggestedOrderBatch(arr: ClientStockSuggestedOrder[]) {
-    return this.clientStockService.mergeSyncedSuggestedOrdersWithLocal(this.database, arr);
-  }
-
-  insertClientStockSuggestedOrderDetailBatch(arr: ClientStockSuggestedOrderDetail[]) {
-    return this.clientStockService.mergeSyncedSuggestedOrderDetailsWithLocal(this.database, arr);
-  }
-
-  deleteSuggestedOrderRowsByCo(
-    dbServ: SQLiteObject,
-    coList: string[],
-    table: 'header' | 'detail',
-  ) {
-    return this.clientStockService.deleteSuggestedOrderRowsByCo(dbServ, coList, table);
   }
 }

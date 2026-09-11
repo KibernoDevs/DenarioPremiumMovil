@@ -55,6 +55,9 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   public availableCreditFuerte: number = 0;
   /** global_configuration.htmlClientDescription — independiente de infoVendedores. */
   public htmlClientDescription = false;
+  public descriptionModalOpen = false;
+  public descriptionModalTitle = '';
+  public descriptionModalHtml = '';
 
   subjectClientShareModalOpen: any;
   // selección múltiple de documentos
@@ -77,11 +80,11 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() showHeader: boolean = false;
 
   constructor() {
-    this.clientLogic.initService();
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     //console.log(this.clientDetail);
+    await this.clientLogic.refreshCliCurrencyModule();
     this.client = this.clientLogic.datos.client;
     this.clientLogic.checkUserStatus();
     this.htmlClientDescription = this.globalConfig.get('htmlClientDescription') === 'true';
@@ -173,6 +176,21 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     const s = String(value).trim();
     if (s === '' || s.toLowerCase() === 'null') return '';
     return s;
+  }
+
+  public openDescriptionModal(which: 1 | 2): void {
+    if (which === 2) {
+      this.descriptionModalTitle = this.clientLogic.clientTags.get('CLI_DETAIL_DESCRIPTION_2') || 'Descripción 2';
+      this.descriptionModalHtml = this.client?.txDescription2 || '';
+    } else {
+      this.descriptionModalTitle = this.clientLogic.clientTags.get('CLI_DETAIL_DESCRIPTION_1') || 'Descripción 1';
+      this.descriptionModalHtml = this.client?.txDescription1 || '';
+    }
+    this.descriptionModalOpen = true;
+  }
+
+  public closeDescriptionModal(): void {
+    this.descriptionModalOpen = false;
   }
 
   private initializeClientBalances(): void {
@@ -682,7 +700,7 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   showDocVentasTab() {
-    if (this.clientLogic.esTransportista) {
+    if (this.clientLogic.esTransportista || this.clientLogic.isFinanceHiddenForUser) {
       return false;
     }
     /*

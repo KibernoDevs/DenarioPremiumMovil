@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonAccordionGroup, IonInput } from '@ionic/angular';
 import { Subject, Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
@@ -49,6 +49,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   @ViewChildren('quAmountInput') quAmountInputs!: QueryList<IonInput>;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
+  @ViewChild('zoomSwiper') zoomSwiper?: ElementRef<HTMLElement & { swiper?: { slideTo: (i: number, speed?: number) => void } }>;
   page = 0;
   scrollDisable = false;
   productList: ProductUtil[] = [];
@@ -79,6 +80,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   discountModal = false;
   imageZoomOpen = false;
   productImages: string[] = [];
+  /** Índice del carrusel al abrir el zoom (foto visible/pulsada). */
+  imageZoomStartIndex = 0;
   productoModal!: OrderUtil;
   noProductsAlertShown = false;
 
@@ -340,13 +343,25 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     }
   }
 
-  openImageZoom(event?: Event): void {
+  openImageZoom(index = 0, event?: Event): void {
     event?.stopPropagation();
+    const max = Math.max(this.getZoomImages().length - 1, 0);
+    this.imageZoomStartIndex = Math.min(Math.max(0, Number(index) || 0), max);
     this.imageZoomOpen = true;
   }
 
   closeImageZoom(): void {
     this.imageZoomOpen = false;
+  }
+
+  /** Tras abrir el modal, fuerza el slide del zoom a la foto pulsada. */
+  onZoomModalPresented(): void {
+    const apply = () => {
+      const swiper = this.zoomSwiper?.nativeElement?.swiper;
+      swiper?.slideTo(this.imageZoomStartIndex, 0);
+    };
+    apply();
+    setTimeout(apply, 50);
   }
 
   getZoomImages(): string[] {

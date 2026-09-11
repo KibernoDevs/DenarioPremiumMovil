@@ -17,7 +17,7 @@ import { PaymentCondition } from 'src/app/modelos/tables/paymentCondition';
 import { ProductosTabComponent } from 'src/app/productos-tab/productos-tab.component';
 import { ProductService } from 'src/app/services/products/product.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
-import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { Subscription } from 'rxjs';
 import { Location } from '@angular/common'
 import { COLOR_VERDE, DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
@@ -88,6 +88,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
 
   public geoServ = inject(GeolocationService);
+  public clientLogic = inject(ClientLogicService);
 
   public changeDetector = inject(ChangeDetectorRef);
 
@@ -874,7 +875,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         const unitPriceList = this.orderServ.buildOrderDetailUnitPriceListFields(item, unit);
-        const unitBaseTotal = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
+        const unitBaseFields = this.orderServ.buildOrderDetailUnitBaseTotalFields(item, unit);
         const unitBonusAmt = this.orderServ.productBonification
           ? this.orderServ.getBonusPricingBreakdownForUnit(item, unit).descuentoBonif
           : 0;
@@ -891,8 +892,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           0,
           unitPriceList.coPriceList,
           unitPriceList.idPriceList,
-          unitBaseTotal.nuBaseTotal,
-          unitBaseTotal.nuBaseTotalConversion,
+          unitBaseFields.nuBase,
+          unitBaseFields.nuBaseConversion,
+          unitBaseFields.nuBaseTotal,
+          unitBaseFields.nuBaseTotalConversion,
           this.orderServ.productBonification ? (unit.quBonified ?? 0) : 0,
           unitBonusAmt,
         )
@@ -1575,7 +1578,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         return;
       }
 
-      if (!skipDebtValidation && !this.orderServ.openOrder
+      if (!skipDebtValidation && !this.clientLogic.isFinanceHiddenForUser && !this.orderServ.openOrder
         && Number((cliente.saldo1 ?? 0) + (cliente.saldo2 ?? 0)) > 0
         && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
         && this.orderServ.order?.stDelivery !== null
@@ -1720,7 +1723,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       */
 
       //saldos si es pedido guardado/enviado
-      if (this.orderServ.openOrder) {
+      if (this.orderServ.openOrder && !this.clientLogic.isFinanceHiddenForUser) {
         if (this.currencyServ.multimoneda) {
           let saldoCliente = 0, saldoOpuesto = 0;
           if (cliente.coCurrency == this.localCurrency.coCurrency) {

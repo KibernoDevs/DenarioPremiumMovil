@@ -413,8 +413,8 @@ export class PedidosDbService {
 
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
       "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested, co_price_list, id_price_list, " +
-      "nu_base_total, nu_base_total_conversion, qu_bonified, nu_amount_bonus ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_base, nu_base_conversion, nu_base_total, nu_base_total_conversion, qu_bonified, nu_amount_bonus ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let dcQuery = "INSERT OR REPLACE INTO order_detail_discount ( id_order_detail_discount, co_order_detail_discount, " +
       "co_order_detail, id_order_detail, id_discount, qu_discount, nu_price_final, co_enterprise, id_enterprise ) " +
@@ -460,7 +460,9 @@ export class PedidosDbService {
         //query de unidad
         queries.push([unitQuery, [unit.idOrderDetailUnit, unit.coOrderDetailUnit, unit.coOrderDetail, unit.coProductUnit,
         unit.idProductUnit, unit.quOrder, unit.coEnterprise, unit.idEnterprise, unit.coUnit, unit.quSuggested,
-        unit.coPriceList ?? null, unit.idPriceList ?? null, unit.nuBaseTotal ?? null, unit.nuBaseTotalConversion ?? null,
+        unit.coPriceList ?? null, unit.idPriceList ?? null,
+        unit.nuBase ?? null, unit.nuBaseConversion ?? null,
+        unit.nuBaseTotal ?? null, unit.nuBaseTotalConversion ?? null,
         unit.quBonified ?? 0, unit.nuAmountBonus ?? 0]]);
       }
 
@@ -529,8 +531,8 @@ export class PedidosDbService {
   saveOrderDetailUnitBatch(db: SQLiteObject, orderDetailUnits: OrderDetailUnit[]) {
     let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
       "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested, co_price_list, id_price_list, " +
-      "nu_base_total, nu_base_total_conversion, qu_bonified, nu_amount_bonus ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_base, nu_base_conversion, nu_base_total, nu_base_total_conversion, qu_bonified, nu_amount_bonus ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
     for (let o = 0; o < orderDetailUnits.length; o++) {
@@ -539,6 +541,7 @@ export class PedidosDbService {
       orderDetailUnit.coProductUnit, orderDetailUnit.idProductUnit, orderDetailUnit.quOrder, orderDetailUnit.coEnterprise,
       orderDetailUnit.idEnterprise, orderDetailUnit.coUnit, orderDetailUnit.quSuggested,
       orderDetailUnit.coPriceList ?? null, orderDetailUnit.idPriceList ?? null,
+      orderDetailUnit.nuBase ?? null, orderDetailUnit.nuBaseConversion ?? null,
       orderDetailUnit.nuBaseTotal ?? null, orderDetailUnit.nuBaseTotalConversion ?? null,
       orderDetailUnit.quBonified ?? 0, orderDetailUnit.nuAmountBonus ?? 0]]);
     }
@@ -1046,6 +1049,8 @@ export class PedidosDbService {
       quSuggested: unitDB.qu_suggested,
       coPriceList: unitDB.co_price_list,
       idPriceList: unitDB.id_price_list,
+      nuBase: unitDB.nu_base == null ? 0 : unitDB.nu_base,
+      nuBaseConversion: unitDB.nu_base_conversion == null ? 0 : unitDB.nu_base_conversion,
       nuBaseTotal: unitDB.nu_base_total == null ? 0 : unitDB.nu_base_total,
       nuBaseTotalConversion: unitDB.nu_base_total_conversion == null ? 0 : unitDB.nu_base_total_conversion,
       quBonified: unitDB.qu_bonified == null ? 0 : unitDB.qu_bonified,

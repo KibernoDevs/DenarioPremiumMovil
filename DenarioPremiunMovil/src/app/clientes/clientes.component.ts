@@ -1,8 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ClientLogicService } from '../services/clientes/client-logic.service';
 import { MessageService } from '../services/messageService/message.service';
-import { CurrencyService } from '../services/currency/currency.service';
-import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 
 
 @Component({
@@ -15,27 +13,19 @@ import { SynchronizationDBService } from '../services/synchronization/synchroniz
 export class ClientesComponent implements OnInit {
   public clientLogic = inject(ClientLogicService);
   private messageService = inject(MessageService);
-  public currencyService = inject(CurrencyService);
-  private db = inject(SynchronizationDBService);
 
   constructor() { }
 
   ngOnInit() {
     this.messageService.showLoading().then(() => {
-      this.currencyService.setup(this.db.getDatabase()).then(() => {
-        this.clientLogic.currencyModule = this.currencyService.getCurrencyModule("cli");
-        this.clientLogic.localCurrencyDefault = this.clientLogic.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
-        this.clientLogic.showConversion = this.clientLogic.currencyModule.showConversion.toString() === 'true' ? true : false;
-
+      // setup + initService (CLI) para no quedar con flags de currency_modules pre-sync
+      this.clientLogic.refreshCliCurrencyModule().then(() => {
         this.clientLogic.getTags().then(() => this.clientLogic.getTagsDenario()).then(resp => {
           if (resp) {
             this.messageService.hideLoading();
           }
-        })
+        });
       });
-
-
     });
-
   }
 }

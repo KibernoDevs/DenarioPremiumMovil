@@ -68,8 +68,8 @@
                               @if (plan.id) {
                                 <h3>{{this.tags.get('VND_TIPO_PLAN')}} {{ plan.naUnit }}</h3>
                                 <p>{{this.tags.get('VND_CUOTA_MES')}}: {{ plan.cuotaMes }} {{ plan.coUnit }} </p>
-                                <p>{{this.tags.get('VND_VENTA_PEDIDO')}}: {{ plan.ventaPedidoMes ?? plan.ventaRealMes }} {{ plan.coUnit }}</p>
-                                <p>{{this.tags.get('VND_VENTA_FACTURADA')}}: {{ plan.ventaFacturadaMes }} {{ plan.coUnit }}</p>
+                                <p>{{this.tags.get('VND_VENTA_PEDIDO') || 'Venta por Pedido'}}: {{ plan.ventaPedidoMes ?? plan.ventaRealMes }} {{ plan.coUnit }}</p>
+                                <p>{{this.tags.get('VND_VENTA_FACTURADA') || 'Venta Facturada'}}: {{ plan.ventaFacturadaMes ?? 0 }} {{ plan.coUnit }}</p>
                               }
                             }
 

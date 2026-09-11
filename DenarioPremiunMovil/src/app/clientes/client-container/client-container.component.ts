@@ -91,8 +91,8 @@ export class ClienteContainerComponent implements OnInit {
   }
 
   clientList() {
-    this.clientLogic.initService();
     this.messageService.showLoading().then(async () => {
+      await this.clientLogic.refreshCliCurrencyModule();
       this.clientLogic.clientListPage = 0;
       this.clientLogic.getClients(this.clientLogic.listaEmpresa[0].idEnterprise).then(async resp => {
         this.messageService.hideLoading();

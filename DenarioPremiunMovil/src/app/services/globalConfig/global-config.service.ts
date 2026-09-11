@@ -19,7 +19,7 @@ export class GlobalConfigService {
     }
     if (vars.length > 0) {
       for (let index = 0; index < vars.length; index++) {
-        this.variables.set(vars[index].clave, vars[index].valor);
+      this.variables.set(vars[index].clave, vars[index].valor == null ? '' : String(vars[index].valor));
       }
       //guardamos el map como un string en local storage
       localStorage.setItem('globalConfiguration', JSON.stringify([...this.variables]));

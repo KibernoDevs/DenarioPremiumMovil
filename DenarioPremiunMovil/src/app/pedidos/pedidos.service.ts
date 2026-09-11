@@ -243,6 +243,8 @@ export class PedidosService {
   public stock0!: boolean;
   public enterpriseEnabled!: boolean;
   public userCanChangeWarehouse!: boolean;
+  /** global_configuration.clave = userCanChangeUnits; ausente/vacío → true */
+  public userCanChangeUnits = true;
   public showProductImages!: boolean;
   public userCanChangePaymentConditions!: boolean;
   public paymentCurrencyEnabled!: boolean;
@@ -754,6 +756,11 @@ export class PedidosService {
     return tag;
   }
 
+  /** Selector de unidad OFF si unitByPriceList o userCanChangeUnits=false. */
+  get disableUnitSelector(): boolean {
+    return this.unitByPriceList || !this.userCanChangeUnits;
+  }
+
   getConfig() {
     //boolean
     this.productMinMul = this.config.get("productMinMul").toLowerCase() === 'true';
@@ -796,6 +803,10 @@ export class PedidosService {
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
+    {
+      const rawUnits = String(this.config.get('userCanChangeUnits') ?? '').trim();
+      this.userCanChangeUnits = rawUnits === '' ? true : rawUnits.toLowerCase() === 'true';
+    }
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -1886,6 +1897,13 @@ export class PedidosService {
   }
 
   /**
+   * Base por 1 unidad de empaque: quUnit × precio (sin × quAmount).
+   */
+  computeUnitBase(item: OrderUtil, unit: UnitInfo): number {
+    return (Number(unit.quUnit) || 0) * this.resolveUnitNuPriceForLineTotal(item, unit);
+  }
+
+  /**
    * Total base de una unidad con la misma fórmula de `productSummary`.
    */
   computeUnitBaseTotal(item: OrderUtil, unit: UnitInfo): number {
@@ -1894,7 +1912,7 @@ export class PedidosService {
     }
     // REQ-01: base = Compra (quAmount); bonificado no se resta
     const billableQty = Number(unit.quAmount) || 0;
-    return unit.quUnit * billableQty * this.resolveUnitNuPriceForLineTotal(item, unit);
+    return this.computeUnitBase(item, unit) * billableQty;
   }
 
   /**
@@ -2026,36 +2044,42 @@ export class PedidosService {
   }
 
   /**
-   * nuBaseTotal/nuBaseTotalConversion para order_detail_units.
-   * Usa computeUnitBaseTotal con la misma lógica de conversión que productSummary.
+   * nuBase/nuBaseConversion + nuBaseTotal/nuBaseTotalConversion para order_detail_units.
+   * Usa computeUnitBase / computeUnitBaseTotal con la misma lógica de conversión que productSummary.
    */
   buildOrderDetailUnitBaseTotalFields(
     item: OrderUtil,
     unit: UnitInfo,
     quAmountOverride?: number,
-  ): { nuBaseTotal: number; nuBaseTotalConversion: number } {
+  ): { nuBase: number; nuBaseConversion: number; nuBaseTotal: number; nuBaseTotalConversion: number } {
     const unitForCalc = quAmountOverride != null
       ? { ...unit, quAmount: quAmountOverride }
       : unit;
+    const nuBase = this.computeUnitBase(item, unitForCalc);
     const nuBaseTotal = this.computeUnitBaseTotal(item, unitForCalc);
-    let nuBaseTotalConversion = 0;
-    if (this.currencyService.multimoneda) {
-      if (this.pedidoModificable) {
-        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
-          nuBaseTotalConversion = this.currencyService.toLocalCurrency(nuBaseTotal);
-        } else {
-          nuBaseTotalConversion = this.currencyService.toHardCurrency(nuBaseTotal);
-        }
-      } else {
-        const nuValueLocal = this.order.nuValueLocal;
-        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
-          nuBaseTotalConversion = this.currencyService.toLocalCurrencyByNuValueLocal(nuBaseTotal, nuValueLocal);
-        } else {
-          nuBaseTotalConversion = this.currencyService.toHardCurrencyByNuValueLocal(nuBaseTotal, nuValueLocal);
-        }
-      }
+    return {
+      nuBase,
+      nuBaseConversion: this.convertOrderDetailUnitAmount(nuBase),
+      nuBaseTotal,
+      nuBaseTotalConversion: this.convertOrderDetailUnitAmount(nuBaseTotal),
+    };
+  }
+
+  private convertOrderDetailUnitAmount(amount: number): number {
+    if (!this.currencyService.multimoneda) {
+      return 0;
     }
-    return { nuBaseTotal, nuBaseTotalConversion };
+    if (this.pedidoModificable) {
+      if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+        return this.currencyService.toLocalCurrency(amount);
+      }
+      return this.currencyService.toHardCurrency(amount);
+    }
+    const nuValueLocal = this.order.nuValueLocal;
+    if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+      return this.currencyService.toLocalCurrencyByNuValueLocal(amount, nuValueLocal);
+    }
+    return this.currencyService.toHardCurrencyByNuValueLocal(amount, nuValueLocal);
   }
 
   /** Sincroniza coPriceList/idPriceList en unitList antes de totalizar o persistir. */

@@ -175,13 +175,13 @@ describe('DepositService', () => {
       expect(sendEnabled).toBeFalse();
     });
 
-    it('depósito rechazado o integrado queda read-only por stDeposit', () => {
+    it('stDeposit de aprobación no fuerza read-only; solo stDelivery como Cobros', () => {
       service.deposit.stDelivery = DEPOSITO_STATUS_SAVED;
       service.deposit.stDeposit = 2;
-      expect(service.isDepositReadOnlyForEdit()).toBeTrue();
+      expect(service.isDepositReadOnlyForEdit()).toBeFalse();
 
       service.deposit.stDeposit = 6;
-      expect(service.isDepositReadOnlyForEdit()).toBeTrue();
+      expect(service.isDepositReadOnlyForEdit()).toBeFalse();
     });
   });
 
@@ -205,6 +205,16 @@ describe('DepositService', () => {
     it('getStatusOrderName cae a stDelivery cuando no hay na_status util', () => {
       const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SAVED, null);
       expect(label).toBe('Guardado');
+    });
+
+    it('getStatusOrderName con st_deposit=0 deriva de st_delivery como Cobros', () => {
+      const label = service.getStatusOrderName(0, 0, { na_status: 'Recaudado' });
+      expect(label).toBe('');
+    });
+
+    it('getStatusOrderName no deja en blanco con st_deposit=0 y st_delivery enviado', () => {
+      const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SENT, '');
+      expect(label).toBe('Enviado');
     });
   });
 
@@ -305,6 +315,153 @@ describe('DepositService', () => {
       );
       expect(deleteCollects.length).toBe(1);
       expect(deleteCollects[0][1]).toEqual(['DEP-CLR-1']);
+    });
+
+    it('checkHistoricDeposits clasifica status_action 1 y 3 como enviados', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve({
+          rows: {
+            length: 1,
+            item: () => ({ id_status: 21, status_action: 3 }),
+          },
+        })),
+      } as unknown as SQLiteObject;
+
+      service.listTransactionStatusDeposits = [{
+        idTransactionStatus: 2,
+        daTransactionStatuses: '2026-03-01 11:00:00',
+        idTransactionType: 6,
+        coTransactionType: 'dep',
+        coTransaction: 'DEP-OK-1',
+        idTransaction: 78,
+        idStatus: 21,
+        coStatus: 'INT',
+        txComment: '',
+      } as any];
+
+      await service.checkHistoricDeposits(dbMock);
+      expect(service.depositSended.length).toBe(1);
+      expect(service.depositRefused.length).toBe(0);
+    });
+
+    it('checkHistoricDeposits marca depósitos con status_action=2 como rechazados', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve({
+          rows: {
+            length: 1,
+            item: () => ({ id_status: 20, status_action: 2 }),
+          },
+        })),
+      } as unknown as SQLiteObject;
+
+      service.listTransactionStatusDeposits = [{
+        idTransactionStatus: 1,
+        daTransactionStatuses: '2026-03-01 10:00:00',
+        idTransactionType: 6,
+        coTransactionType: 'dep',
+        coTransaction: 'DEP-R1',
+        idTransaction: 77,
+        idStatus: 20,
+        coStatus: 'REJ',
+        txComment: '',
+      } as any];
+
+      await service.checkHistoricDeposits(dbMock);
+      expect(service.depositRefused.length).toBe(1);
+      expect(service.depositRefused[0].coTransaction).toBe('DEP-R1');
+    });
+
+    it('releaseCollectsFromRefusedDeposits actualiza st_deposit y borra deposit_collects', async () => {
+      const executed: Array<[string, unknown[]]> = [];
+      const dbMock = {
+        sqlBatch: jasmine.createSpy('sqlBatch').and.callFake((queries: Array<[string, unknown[]]>) => {
+          executed.push(...queries);
+          return Promise.resolve(true);
+        }),
+      } as unknown as SQLiteObject;
+
+      service.depositRefused = [{
+        idTransactionStatus: 1,
+        daTransactionStatuses: '2026-03-01 10:00:00',
+        idTransactionType: 6,
+        coTransactionType: 'dep',
+        coTransaction: 'DEP-R1',
+        idTransaction: 77,
+        idStatus: 20,
+        coStatus: 'REJ',
+        txComment: '',
+      } as any];
+
+      await service.releaseCollectsFromRefusedDeposits(dbMock);
+
+      expect(executed.some(([sql, params]) =>
+        sql.includes('UPDATE deposits SET st_deposit')
+        && params.includes(DEPOSIT_APPROVAL_STATUS_REJECTED)
+        && params.includes(77),
+      )).toBeTrue();
+      expect(executed.some(([sql, params]) =>
+        sql.includes('DELETE FROM deposit_collects')
+        && (params.includes('DEP-R1') || params.includes(77)),
+      )).toBeTrue();
+    });
+
+    it('releaseCollectsFromRefusedCollections borra vínculos por co_collection', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve(true)),
+      } as unknown as SQLiteObject;
+
+      await service.releaseCollectsFromRefusedCollections(dbMock, ['COL-1', 'COL-1', '']);
+      expect(dbMock.executeSql).toHaveBeenCalledWith(
+        'DELETE FROM deposit_collects WHERE co_collection IN (?)',
+        ['COL-1'],
+      );
+    });
+
+    it('mergeSyncedDepositsWithLocal preserva st_deposit rechazado si sync no lo trae', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.callFake((sql: string) => {
+          if (sql.includes('FROM deposits')) {
+            return Promise.resolve({
+              rows: {
+                length: 1,
+                item: () => ({
+                  co_deposit: 'DEP-R1',
+                  da_deposit: '2026-01-01 00:00:00',
+                  st_deposit: DEPOSIT_APPROVAL_STATUS_REJECTED,
+                  st_delivery: DEPOSITO_STATUS_SENT,
+                  id_deposit: 77,
+                }),
+              },
+            });
+          }
+          return Promise.resolve({ rows: { length: 0, item: () => ({}) } });
+        }),
+      } as unknown as SQLiteObject;
+
+      const merged = await service.mergeSyncedDepositsWithLocal(dbMock, [{
+        idDeposit: 77,
+        coDeposit: 'DEP-R1',
+        daDeposit: '2026-01-01 00:00:00',
+        coBank: 'B001',
+        nuAccount: '123',
+        nuDocument: 'PLT',
+        daDocument: '2026-01-01',
+        nuAmountDoc: 100,
+        coCurrency: '$',
+        idEnterprise: 1,
+        coEnterprise: 'DIESE',
+        stDeposit: 1,
+        stDelivery: DEPOSITO_STATUS_SENT,
+        txComment: '',
+        nuAmountDocConversion: 0,
+        nuValueLocal: 1,
+        idCurrency: 1,
+        coordenada: '',
+        collectionIds: [],
+      } as any]);
+
+      expect(merged[0].stDeposit).toBe(DEPOSIT_APPROVAL_STATUS_REJECTED);
+      expect(merged[0].stDelivery).toBe(DEPOSITO_STATUS_SENT);
     });
   });
 

@@ -126,6 +126,7 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
         () => this.flushPendingPaymentInputsBeforeSend(),
       );
     }
+    this.collectService.syncAddPaymentMethodDisabledState();
   }
 
   ngOnDestroy(): void {
@@ -338,6 +339,9 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
   addTipoPago(type: string) {
     if (this.collectService.isAddPaymentMethodDisabled()) {
+      return;
+    }
+    if (this.shouldRestrictPaymentMethodsToOtros() && type !== 'ot') {
       return;
     }
 
@@ -1086,8 +1090,13 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       case "ot": {
-        if (this.collectService.pagoOtros[index].monto > 0 && this.collectService.pagoOtros[index].nombre != "")
+        const monto = Number(this.collectService.pagoOtros[index]?.monto ?? -1);
+        const montoOk = this.collectService.allowsZeroCashOtrosPayment()
+          ? monto >= 0
+          : monto > 0;
+        if (montoOk && this.collectService.pagoOtros[index].nombre != "") {
           this.validatePayment("ot", index);
+        }
 
         break;
       }
@@ -1528,11 +1537,29 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
     // Si se está abriendo el modal, limpiar selección
     if (value) {
       this.collectService.tiposPago.forEach(tp => tp.selected = false);
+      if (this.shouldRestrictPaymentMethodsToOtros()) {
+        const otros = this.collectService.tiposPago.find(tp => tp.type === 'ot');
+        if (otros) {
+          otros.selected = true;
+        }
+      }
     }
   }
 
   isAddPaymentMethodDisabled(): boolean {
     return this.collectService.isAddPaymentMethodDisabled();
+  }
+
+  shouldRestrictPaymentMethodsToOtros(): boolean {
+    return this.collectService.allowsZeroCashOtrosPayment()
+      && !this.collectService.hasAddedPaymentMethodForSendUx();
+  }
+
+  isPaymentTypeSelectable(tipoPago: { type?: string }): boolean {
+    if (!this.shouldRestrictPaymentMethodsToOtros()) {
+      return true;
+    }
+    return String(tipoPago?.type ?? '').trim().toLowerCase() === 'ot';
   }
 
   getSelectedTipoPago() {
@@ -1541,6 +1568,9 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSelectTipoPago(tipoSeleccionado: any, type: number) {
+    if (!this.isPaymentTypeSelectable(tipoSeleccionado)) {
+      return;
+    }
     // Solo uno puede estar seleccionado
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
     tipoSeleccionado.selected = true;

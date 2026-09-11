@@ -178,7 +178,7 @@
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" 
-                    [value]="product.idUnit" [disabled]= "orderServ.unitByPriceList"
+                    [value]="product.idUnit" [disabled]="orderServ.disableUnitSelector"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
                     (ionChange)="onSelectUnit($event, product)">
                     @for(unit of product.unitList; track unit.idUnit){
@@ -310,19 +310,25 @@
                 <ion-col class="" size="12" size-sm="12" size-xs="12">
                   @if(orderServ.showProductImages){
                   <div class="productDetailImage">
-                    <swiper-container [pagination]="true" navigation="false" class="mySwiper" [loop]="false"
-                      [rewind]="productImages.length > 1" [watchOverflow]="true">
+                    <swiper-container
+                      class="mySwiper"
+                      navigation="false"
+                      [loop]="false"
+                      [watchOverflow]="true"
+                      [rewind]="productImages.length > 1"
+                      [pagination]="productImages.length > 1"
+                      pagination-clickable="true">
                       @if(productImages.length > 0){
-                      @for(imgSrc of productImages; track imgSrc){
+                      @for(imgSrc of productImages; track imgSrc; let i = $index){
                       <swiper-slide class="swiperSlide">
-                        <img class="sizeImgProduct" [src]="imgSrc" (click)="openImageZoom($event)" />
+                        <img class="sizeImgProduct" [src]="imgSrc" (click)="openImageZoom(i, $event)" />
                       </swiper-slide>
                       }
                       } @else {
                       <swiper-slide class="swiperSlide">
                         <img class="sizeImgProduct"
                           [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'"
-                          (click)="openImageZoom($event)" />
+                          (click)="openImageZoom(0, $event)" />
                       </swiper-slide>
                       }
                     </swiper-container>
@@ -457,7 +463,7 @@
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
-                        [disabled]="orderServ.unitByPriceList"
+                        [disabled]="orderServ.disableUnitSelector"
                         (ionChange)="onSelectUnit($event, productoModal)">
                         <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{
                           unit.naUnit }}</ion-select-option>
@@ -535,7 +541,7 @@
   </ion-modal>
 
   <!-- modal zoom de imagen de producto (header verde = Pedidos; Productos usa fondoAmarillo) -->
-  <ion-modal [isOpen]="imageZoomOpen" (didDismiss)="closeImageZoom()"
+  <ion-modal [isOpen]="imageZoomOpen" (didPresent)="onZoomModalPresented()" (didDismiss)="closeImageZoom()"
     class="product-image-zoom-modal product-image-zoom-modal--pedidos">
     <ng-template>
       <ion-header>
@@ -557,9 +563,18 @@
         </ion-toolbar>
       </ion-header>
       <ion-content class="product-image-zoom-content">
-        <swiper-container [pagination]="getZoomImages().length > 1" navigation="false" zoom="true"
-          [loop]="false" [rewind]="getZoomImages().length > 1" [watchOverflow]="true"
-          class="product-image-zoom-swiper">
+        <swiper-container
+          #zoomSwiper
+          class="product-image-zoom-swiper"
+          navigation="false"
+          zoom="true"
+          [loop]="false"
+          [watchOverflow]="true"
+          [rewind]="getZoomImages().length > 1"
+          [pagination]="getZoomImages().length > 1"
+          pagination-clickable="true"
+          [attr.initial-slide]="imageZoomStartIndex"
+          [initialSlide]="imageZoomStartIndex">
           @for(imgSrc of getZoomImages(); track imgSrc){
           <swiper-slide>
             <div class="swiper-zoom-container">

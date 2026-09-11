@@ -150,11 +150,31 @@ describe('ProductDetailComponent', () => {
     expect(component.getDisplayPriceHard()).toBe(2.5);
   });
 
-  it('openImageZoom abre y cierra el modal de zoom', () => {
-    component.openImageZoom();
+  it('openImageZoom abre en el índice pulsado y cierra el modal', () => {
+    component.productImages = ['img://a.jpg', 'img://b.jpg', 'img://c.jpg'];
+    component.openImageZoom(2);
     expect(component.imageZoomOpen).toBeTrue();
+    expect(component.imageZoomStartIndex).toBe(2);
     component.closeImageZoom();
     expect(component.imageZoomOpen).toBeFalse();
+  });
+
+  it('openImageZoom acota el índice al rango de fotos', () => {
+    component.productImages = ['img://a.jpg', 'img://b.jpg'];
+    component.openImageZoom(99);
+    expect(component.imageZoomStartIndex).toBe(1);
+    component.openImageZoom(-3);
+    expect(component.imageZoomStartIndex).toBe(0);
+  });
+
+  it('onZoomModalPresented llama slideTo al índice guardado', () => {
+    const slideTo = jasmine.createSpy('slideTo');
+    component.imageZoomStartIndex = 1;
+    component.zoomSwiper = {
+      nativeElement: { swiper: { slideTo } },
+    } as any;
+    component.onZoomModalPresented();
+    expect(slideTo).toHaveBeenCalledWith(1, 0);
   });
 
   it('getZoomImages usa productImages o fallback', () => {

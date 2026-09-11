@@ -43,6 +43,7 @@
               {
               <ion-item>
                 <ion-checkbox slot="start" [checked]="tipoPago.selected"
+                  [disabled]="!isPaymentTypeSelectable(tipoPago)"
                   (ionChange)="onSelectTipoPago(tipoPago,type)"></ion-checkbox>
                 <ion-label class="titulosBold">{{tipoPago.name}}</ion-label>
               </ion-item>
