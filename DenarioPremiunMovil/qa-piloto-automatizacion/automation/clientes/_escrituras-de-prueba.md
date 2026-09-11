@@ -158,3 +158,107 @@ este cliente.
 
 ℹ️ También se **reinició la app y se volvió a loguear** (para bajar el tag `COB_MSG_AUTOMATED_PREPAID`
 corregido y para limpiar el estado pegado del punto 3). No es una escritura: no hay nada que deshacer.
+
+---
+
+🔴 **REQ rol PROMOTOR — IMPORTADORA 4K, 10/09 (corrida `req_rol_promotor_20260910`).**
+
+Pantalla tocada: **web CARIBE → Empresa → Variables Globales → Empresa** (`/pages/variablesConfiguracion`),
+fila `data-ri="77"`, control `formGlobal:tablaConf:77:j_idt128_input`.
+
+| Cuándo | Qué cambiamos | Para qué | Cómo se deshace |
+|---|---|---|---|
+| 10/09 ~17:55 | **`promoterHideFinance`: SI (`true`) → NO (`false`)** | medir el Bloque A (no-regresión con la variable APAGADA) y el Bloque E (que «Sincronizar» no la baja y el login nuevo sí) | volver a poner **SI** en la misma fila 77 de esa pantalla |
+
+⚠ **Estado en que se encontró: `true` (SI)**, puesta por `admin` el 07/09 (audit id 240).
+**Estado en que hay que dejarla al cerrar: se indica al final de esta entrada.**
+
+Auditoría: `SELECT id_audit,na_variable,old_value,new_value,da_update FROM global_configuration_audit WHERE na_variable='promoterHideFinance' ORDER BY id_audit DESC`.
+
+ℹ️ Registro creado en el equipo durante la corrida (no es config, no hay que deshacerlo):
+**pedido `id_order 2593`** (`co_order 1789076633777.0`), cliente C.0017, 40,50 USD, vendedor V.0017 — Enviado y en la nube.
+
+**Cierre de la entrada del REQ rol PROMOTOR (10/09).** Movimientos reales sobre la fila 77:
+
+| Hora (UTC) | Cambio | audit |
+|---|---|---|
+| 21:53:45 | `promoterHideFinance` **true -> false** | id 278 |
+| 22:01:19 | `promoterHideFinance` **false -> true** | id 279 |
+
+**ESTADO FINAL: `true` (SI) — igual que como se encontró.**
+
+Se dejó ENCENDIDA a propósito, no apagada: la puso `admin` el 07/09 (audit id 240) para este REQ, así
+que apagarla sería cambiarle la configuración al tenant, no restaurarla. Si QA quiere dejarla apagada:
+web CARIBE -> Empresa -> Variables Globales -> Empresa -> fila "¿Ocultar información financiera al rol
+Promotor?" -> NO -> **Guardar** (sin pulsar Guardar NO persiste: la etiqueta cambia y la BD no).
+Recordar que **no baja al equipo hasta el próximo login**, nunca con "Sincronizar".
+
+⚠ El equipo quedó con sesión de `V.0002zonacentral` y su propia BD local (la del promotor se borró al
+cambiar de usuario, con el aviso de la app). No hay nada que deshacer ahí.
+
+---
+
+## 4K · CARIBE · Cobros — pendientes de la siguiente vuelta (10/09, tarde)
+
+Corrida `automation/reports/4k/fixes_cobros_20260910/` · informe `04-cobros-pendientes.md`.
+
+### Escritura 1 — `prepaidRangeAmount` 50 → 1 (SE DEJA PUESTA A PROPÓSITO)
+
+| Dato | Valor |
+|---|---|
+| Ruta web | CARIBE → `/pages/variablesConfiguracion` → tipo **Cobros** → fila «Indique El monto mínimo excedido en el cobro para generar el abono automático» |
+| Estado en que se encontró | **50** (`da_update` 2026-09-10 18:42:18Z) |
+| Estado en que se deja | **1** (= 1,00) — `da_update` 2026-09-10 22:26:13Z |
+| Acuse de la web | growl «Operación Exitosa · Configuración guardada exitosamente» |
+| Verificación | `node automation/db/query.js 4k "SELECT clave,valor,da_update FROM global_configuration WHERE clave='prepaidRangeAmount'"` → `1` |
+
+🔴 **NO restaurar a 50 sin avisar.** Se deja en **1,00** junto con la tolerancia positiva en **49,99**
+porque ésa es la única combinación con la que el caso «anticipo automático que se come la tolerancia»
+**se reproduce a mano en dos minutos** (ver el punto 1 del informe 04). Es material de prueba para que
+la responsable QA lo vea con sus propios ojos.
+
+**Cómo deshacerlo** (cuando QA ya lo haya visto): misma ruta, teclear `50` en esa fila y pulsar
+**Guardar**. Sin pulsar Guardar no persiste. **No baja al equipo con «Sincronizar»: hace falta un
+login nuevo.**
+
+**`RangoToleranciaPositiva` (49,99) y `RangoToleranciaNegativa` (10) NO se tocaron** en esta vuelta
+— `da_update` sigue en 2026-09-10 18:36:56Z para ambas.
+
+ℹ️ De paso: abrir `/pages/variablesConfiguracion` y elegir el tipo «Cobros` **sin pulsar Guardar**
+**no** revirtió ningún valor esta vez (D-03 del informe 02 **no reprodujo**): los tres `da_update`
+quedaron intactos hasta que se pulsó Guardar de verdad.
+
+### Cierre de la entrada — estado en que queda 4K (10/09, ~23:15Z)
+
+**Verificado en los dos lados** (`global_configuration` de la nube y `localStorage` del equipo):
+
+| VG | Valor al cierre | ¿Se tocó hoy? |
+|---|---|---|
+| `prepaidRangeAmount` | **1** (= 1,00) | **SÍ** — era 50 · **se deja a propósito** |
+| `RangoToleranciaPositiva` | 49,99 | no |
+| `RangoToleranciaNegativa` | 10 | no |
+| `enableDifferenceCodes` | true | no |
+| `promoterHideFinance` | true | no — venía así de la corrida del rol Promotor |
+
+**Es la única escritura de configuración de esta vuelta.** Con 49,99 / 1,00 el caso del anticipo
+automático que se come la tolerancia **se reproduce a mano en dos minutos** (receta en el punto 1
+del informe `04-cobros-pendientes.md`).
+
+⚠ **Al reproducirlo a mano, ojo con la moneda:** el cobro nace en **Bs** y la tolerancia está en
+**USD**. Pagar «5,00 de más» en un cobro en Bs son **0,01 USD** y no dispara nada. Con la tasa de
+hoy (870,00) hay que pagar **≥ 870 Bs de más**; con **4.350,00 Bs de más** salen los 5,00 USD del
+ejemplo.
+
+ℹ️ **Registros creados en el equipo durante la corrida** (no son configuración, no hay que
+deshacerlos): cobros **2653** (C.0210), **2654**, **2655**, **2657** y el **anticipo automático
+2656** (5,00 USD), todos de C.0538 salvo el primero. Los 5 están enviados y en la nube.
+
+ℹ️ **Consumo de documentos:** **C.0210 quedó AGOTADO** (su último documento USD libre se fue en el
+cobro 2653). El relevo para cobros en 4K es **C.0538**, que al cierre conserva 3 documentos USD
+libres.
+
+⚠ **No se creó ningún descuento de cobro ni código de diferencia**: el punto 2 quedó *no
+comprobado* justamente por eso (hoy no hay ningún descuento con «requiere monto» en el catálogo —
+los dos que existían se borraron en la web el 07/09). Si QA quiere cerrarlo, hay que **crear uno**
+en Empresa → Configuración → Descuentos para Cobros y **sincronizar**; esa sí sería una escritura
+nueva que habría que anotar aquí.

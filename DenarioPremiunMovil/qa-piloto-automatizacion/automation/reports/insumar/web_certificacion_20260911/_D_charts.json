@@ -1,0 +1,86 @@
+{
+ "clientes": {
+  "widget_form_j_idt134": {
+   "labels": [],
+   "ds": [
+    {
+     "data": []
+    }
+   ]
+  },
+  "widget_form_j_idt138": {
+   "labels": [],
+   "ds": []
+  },
+  "widget_form_j_idt142": {
+   "labels": [],
+   "ds": [
+    {
+     "data": []
+    }
+   ]
+  },
+  "widget_form_j_idt146": {
+   "labels": [],
+   "ds": []
+  }
+ },
+ "productos": {
+  "widget_form_j_idt139": {
+   "labels": [],
+   "ds": [
+    {
+     "data": []
+    }
+   ]
+  },
+  "widget_form_j_idt143": {
+   "labels": [],
+   "ds": []
+  },
+  "widget_form_j_idt147": {
+   "labels": [],
+   "ds": [
+    {
+     "data": []
+    }
+   ]
+  },
+  "widget_form_j_idt151": {
+   "labels": [],
+   "ds": []
+  }
+ },
+ "vendedoresPedido": {
+  "widget_form_j_idt139": {
+   "labels": [
+    "Clientes Efectivos: 0",
+    "Clientes No Efectivos: 842"
+   ],
+   "ds": [
+    {
+     "data": [
+      0,
+      842
+     ]
+    }
+   ]
+  },
+  "widget_form_j_idt160": {
+   "labels": [],
+   "ds": [
+    {
+     "data": []
+    }
+   ]
+  },
+  "widget_form_j_idt164": {
+   "labels": [],
+   "ds": [
+    {
+     "data": []
+    }
+   ]
+  }
+ }
+}

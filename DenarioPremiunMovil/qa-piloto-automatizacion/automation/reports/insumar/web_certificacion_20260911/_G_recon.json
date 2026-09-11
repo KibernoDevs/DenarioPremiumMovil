@@ -1,0 +1,232 @@
+{
+ "act": {
+  "path": "/DenarioPremium/pages/reporteActivacionClientes",
+  "info": {
+   "labels": [
+    "Pedido",
+    "Clásico",
+    "Oscuro",
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "Visualización",
+    "Seleccione...",
+    "Pedido",
+    "Fecha Inicio",
+    "Fecha Final",
+    "Ordenar",
+    "Filas por página"
+   ],
+   "selects": [
+    "config-form:j_idt104",
+    "form:j_idt115:idEnterprise",
+    "form:j_idt115:clasificacion",
+    "form:j_idt115:checkboxValor",
+    "form:j_idt115:cumplimiento",
+    "form:tablaComparativoPlanCuota_reflowDD"
+   ],
+   "inputsHidden": [
+    "form:j_idt115_active"
+   ],
+   "dateInputs": [
+    "form:j_idt115:fechaDesde_input",
+    "form:j_idt115:fechaHasta_input"
+   ],
+   "buttons": [
+    {
+     "id": "j_idt50:confirm",
+     "t": "Ok"
+    },
+    {
+     "id": "j_idt50:timeoutLogout",
+     "t": "Cerrar Sesión"
+    },
+    {
+     "id": "j_idt65:j_idt78",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt79",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt80",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt96",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt97",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt98",
+     "t": "ui-button"
+    },
+    {
+     "id": "form:j_idt115:ajax",
+     "t": "Buscar"
+    },
+    {
+     "id": "form:j_idt115:botonLimpiar",
+     "t": "Limpiar"
+    },
+    {
+     "id": "form:tablaComparativoPlanCuota:verGrafico",
+     "t": "Ver Gráfico"
+    },
+    {
+     "id": "form:download",
+     "t": "Descargar Gráfico"
+    }
+   ],
+   "tables": [
+    "j_idt50:j_idt52",
+    "form:tablaComparativoPlanCuota",
+    "form:j_idt163"
+   ],
+   "checkmenus": [
+    "form:j_idt115:checkboxValor",
+    "form:j_idt115:checkboxValor_focus",
+    "form:j_idt115:checkboxValor_label",
+    "form:j_idt115:checkboxValor_panel"
+   ],
+   "bodytxt": "Reportes ActivacionClientes admin Empresa Estructura Comercial Datos Maestros Visitas Transacciones Reportes Indicadores Rain Clothing Chicago, USA Products 12K Orders 26K Sales $200K Manage Store Get Reports Check Sales Create Add View Activity Download Listings Request Payment View Case Log CLose Store Tamas Bunce Olivia Arribas The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... 3 mins ago Last year was the hottest on record for the Arctic, with the annual. 23 mins ago Minimum extent of sea ice in the region its second-lowest on record. 24 mins ago Right… Right my friend. This is better. Right? Right my friend… 🏄‍♂️ 25 mins ago ui-button ui-button ui-button Denario Premium Configuración Visualizar el Dashboard principal por Pedidos o Facturaciones. Denario ofrece 2 temas diferentes para la visualización de la app web. Cumplimiento Pedido Facturado Pedido Temas Clásico Oscuro Filtros INSUMAR DISTRIBUIDORA 715, C.A. INSUMAR DISTRIBUIDORA 715, C.A. Visualización Empresa Canales de distribución Vendedores Pais Estado Linea Proveedor Visualización Seleccione... Pedido Facturado Pedido Fecha Inicio Fecha Final Buscar Limpiar Total de Resultados: 0 Ver Gráfico Clientes Clientes Activados Clientes Inactivos % Activación Clientes Nuevos Clientes Nuevos Activados % Act Nuevos No se encontraron registros. 50 100 200 Powered"
+  },
+  "combos": {
+   "config-form:j_idt104": "CLICK-FAIL:page.click: Timeout 5000ms exceeded.\nCal",
+   "form:j_idt115:idEnterprise": "CLICK-FAIL:page.click: Timeout 5000ms exceeded.\nCal",
+   "form:j_idt115:clasificacion": [
+    "Visualización",
+    "Empresa",
+    "Canales de distribución",
+    "Vendedores",
+    "Pais",
+    "Estado",
+    "Linea",
+    "Proveedor"
+   ],
+   "form:j_idt115:checkboxValor": [],
+   "form:j_idt115:cumplimiento": [
+    "Pedido",
+    "Facturado"
+   ],
+   "form:tablaComparativoPlanCuota_reflowDD": "CLICK-FAIL:page.click: Timeout 5000ms exceeded.\nCal"
+  }
+ },
+ "rot": {
+  "path": "/DenarioPremium/pages/reporteRotacionInventario",
+  "info": {
+   "labels": [
+    "Pedido",
+    "Clásico",
+    "Oscuro",
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "Visualización",
+    "Seleccione...",
+    "Pedido",
+    "Unidad de Venta",
+    "Fecha Inicio",
+    "Fecha Final",
+    "Ordenar",
+    "Filas por página"
+   ],
+   "selects": [
+    "config-form:j_idt104",
+    "form:j_idt115:idEnterprise",
+    "form:j_idt115:clasificacion",
+    "form:j_idt115:checkboxValor",
+    "form:j_idt115:cumplimiento",
+    "form:j_idt115:unidad",
+    "form:TablaRotacion_reflowDD"
+   ],
+   "inputsHidden": [
+    "form:j_idt115_active"
+   ],
+   "dateInputs": [
+    "form:j_idt115:fechaDesde_input",
+    "form:j_idt115:fechaHasta_input"
+   ],
+   "buttons": [
+    {
+     "id": "j_idt50:confirm",
+     "t": "Ok"
+    },
+    {
+     "id": "j_idt50:timeoutLogout",
+     "t": "Cerrar Sesión"
+    },
+    {
+     "id": "j_idt65:j_idt78",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt79",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt80",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt96",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt97",
+     "t": "ui-button"
+    },
+    {
+     "id": "j_idt65:j_idt98",
+     "t": "ui-button"
+    },
+    {
+     "id": "form:j_idt115:ajax",
+     "t": "Buscar"
+    },
+    {
+     "id": "form:j_idt115:botonLimpiar",
+     "t": "Limpiar"
+    },
+    {
+     "id": "form:TablaRotacion:verGrafico",
+     "t": "Ver Gráfico"
+    }
+   ],
+   "tables": [
+    "j_idt50:j_idt52",
+    "form:TablaRotacion"
+   ],
+   "checkmenus": [
+    "form:j_idt115:checkboxValor",
+    "form:j_idt115:checkboxValor_focus",
+    "form:j_idt115:checkboxValor_label",
+    "form:j_idt115:checkboxValor_panel"
+   ],
+   "bodytxt": "Reportes RotaciónInventario admin Empresa Estructura Comercial Datos Maestros Visitas Transacciones Reportes Indicadores Rain Clothing Chicago, USA Products 12K Orders 26K Sales $200K Manage Store Get Reports Check Sales Create Add View Activity Download Listings Request Payment View Case Log CLose Store Tamas Bunce Olivia Arribas The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... 3 mins ago Last year was the hottest on record for the Arctic, with the annual. 23 mins ago Minimum extent of sea ice in the region its second-lowest on record. 24 mins ago Right… Right my friend. This is better. Right? Right my friend… 🏄‍♂️ 25 mins ago ui-button ui-button ui-button Denario Premium Configuración Visualizar el Dashboard principal por Pedidos o Facturaciones. Denario ofrece 2 temas diferentes para la visualización de la app web. Cumplimiento Pedido Facturado Pedido Temas Clásico Oscuro Filtros INSUMAR DISTRIBUIDORA 715, C.A. INSUMAR DISTRIBUIDORA 715, C.A. Visualización Productos Linea Proveedor Visualización Seleccione... Pedido Facturado Pedido Unidad de Venta BULTO DISPLAY KILOGRAMOS UNIDADES Unidad de Venta Fecha Inicio Fecha Final Buscar Limpiar Total de Resultados: 0 Ver Gráfico Nombre SELL IN SELL OUT Plan VS Cumplimiento Inventario Inicial Inventario Final Rotaciòn Inventario Rotación VS SELL OUT SELL POINTS No se e"
+  },
+  "combos": {
+   "config-form:j_idt104": "CLICK-FAIL:page.click: Timeout 5000ms exceeded.\nCal",
+   "form:j_idt115:idEnterprise": "CLICK-FAIL:page.click: Timeout 5000ms exceeded.\nCal",
+   "form:j_idt115:clasificacion": [
+    "Visualización",
+    "Productos",
+    "Linea",
+    "Proveedor"
+   ],
+   "form:j_idt115:checkboxValor": [],
+   "form:j_idt115:cumplimiento": [
+    "Pedido",
+    "Facturado"
+   ],
+   "form:j_idt115:unidad": [
+    "Unidad de Venta",
+    "BULTO",
+    "DISPLAY",
+    "KILOGRAMOS",
+    "UNIDADES"
+   ],
+   "form:TablaRotacion_reflowDD": "CLICK-FAIL:page.click: Timeout 5000ms exceeded.\nCal"
+  }
+ }
+}

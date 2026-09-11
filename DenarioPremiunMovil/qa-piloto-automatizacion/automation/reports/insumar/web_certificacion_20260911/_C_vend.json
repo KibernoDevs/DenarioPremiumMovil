@@ -1,0 +1,86 @@
+[
+ {
+  "tag": "C4-cumpl-T001",
+  "vend": "T001 JOSE MUÑOZ",
+  "pickOk": true,
+  "total": "1",
+  "err": null,
+  "rows": [
+   [
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "0",
+    "192.308,95",
+    "192.308,95",
+    "1.150",
+    "100%",
+    "1.745",
+    "47,74%",
+    "0%"
+   ]
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": "T001",
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  }
+ },
+ {
+  "tag": "C5-cumpl-R013",
+  "vend": "R013 VIVIANA ESCALANTE",
+  "pickOk": true,
+  "total": "1",
+  "err": null,
+  "rows": [
+   [
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "0",
+    "27.632,38",
+    "27.632,38",
+    "137",
+    "100%",
+    "172",
+    "56,4%",
+    "100%"
+   ]
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": "R013",
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  }
+ },
+ {
+  "tag": "C6-cumpl-C001",
+  "vend": "C001 CATALOGO  INSUMAR",
+  "pickOk": true,
+  "total": "1",
+  "err": null,
+  "rows": [
+   [
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "0",
+    "0",
+    "0",
+    "0",
+    "100%",
+    "0",
+    "0%",
+    "0%"
+   ]
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": "C001",
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  }
+ }
+]

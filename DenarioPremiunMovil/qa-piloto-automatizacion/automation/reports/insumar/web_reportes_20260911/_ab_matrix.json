@@ -1,0 +1,218 @@
+[
+ {
+  "clas": "Empresa",
+  "cump": "Pedido",
+  "unid": "US$",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Empresa",
+   "Plan (US$)",
+   "Pedido (US$)",
+   "Diferencia Plan Vs Pedido (US$)",
+   "Monto Pedido (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Empresa",
+  "cump": "Facturado",
+  "unid": "US$",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Monto Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Linea",
+  "cump": "Pedido",
+  "unid": "US$",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Linea",
+   "Plan (US$)",
+   "Pedido (US$)",
+   "Diferencia Plan Vs Pedido (US$)",
+   "Monto Pedido (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Linea",
+  "cump": "Facturado",
+  "unid": "US$",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Linea",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Monto Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Linea",
+  "cump": "Pedido",
+  "unid": "BULTO",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Linea",
+   "Plan (BULTO)",
+   "Pedido (BULTO)",
+   "Diferencia Plan Vs Pedido (BULTO)",
+   "Monto Pedido (BULTO)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Linea",
+  "cump": "Facturado",
+  "unid": "BULTO",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Linea",
+   "Plan (BULTO)",
+   "Facturado (BULTO)",
+   "Diferencia Plan Vs Facturado (BULTO)",
+   "Monto Facturado (BULTO)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Sub-Linea",
+  "cump": "Pedido",
+  "unid": "US$",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Sub",
+   "Plan (US$)",
+   "Pedido (US$)",
+   "Diferencia Plan Vs Pedido (US$)",
+   "Monto Pedido (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ },
+ {
+  "clas": "Sub-Linea",
+  "cump": "Facturado",
+  "unid": "US$",
+  "d1": "01/08/2026",
+  "d2": "31/08/2026",
+  "total": "0",
+  "nrows": 1,
+  "heads": [
+   "Sub",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Monto Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "err": "Error en busqueda de reporte.",
+  "errdet": "Intente nuevamente."
+ }
+]

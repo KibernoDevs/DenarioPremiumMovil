@@ -1,0 +1,66 @@
+[
+ {
+  "tag": "A10-pedido-1a",
+  "nota": "CONTROL Pedido: 1a busqueda en sesion viva (ya hubo Buscar antes en esta sesion)",
+  "total": "1",
+  "err": null,
+  "det": null,
+  "row0": [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "0",
+   "35.373,1",
+   "35.373,1",
+   "1.935",
+   "161",
+   "8,32 %",
+   "11,21 %"
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Pedido",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ },
+ {
+  "tag": "A12-pedido-tras-limpiar",
+  "nota": "Pedido tras Limpiar",
+  "total": "0",
+  "err": "Error en busqueda de reporte.",
+  "det": "Intente nuevamente.",
+  "row0": [
+   "No se encontraron registros."
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Pedido",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ },
+ {
+  "tag": "A14-limpiar-antes-de-buscar",
+  "nota": "Sesion nueva: Limpiar ANTES de la 1a busqueda, luego filtros y Buscar",
+  "total": "0",
+  "err": "Error en busqueda de reporte.",
+  "det": "Intente nuevamente.",
+  "row0": [
+   "No se encontraron registros."
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Pedido",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ }
+]

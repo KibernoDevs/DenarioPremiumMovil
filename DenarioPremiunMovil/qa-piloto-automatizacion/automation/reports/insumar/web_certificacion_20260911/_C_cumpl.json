@@ -1,0 +1,84 @@
+[
+ {
+  "tag": "C1-cumpl-todos",
+  "nota": "Cumplimiento de Cuota · Empresa/Facturado/US$ · Vendedor=Todos · 01-11/09",
+  "total": "1",
+  "nrows": 1,
+  "err": null,
+  "det": null,
+  "heads": [
+   "Descripción",
+   "Cuota (US$)",
+   "Monto Facturado (US$)",
+   "Brecha Cuota (US$)",
+   "Cantidad Facturado (US$)",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "0",
+    "1.234.013,93",
+    "1.234.013,93",
+    "7.368",
+    "100%",
+    "1.826",
+    "45,62%",
+    "100%"
+   ]
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": "Todos",
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "0/0"
+ },
+ {
+  "tag": "C3-cumpl-tras-limpiar",
+  "nota": "Cumplimiento de Cuota: MISMOS filtros tras pulsar Limpiar",
+  "total": "1",
+  "nrows": 1,
+  "err": null,
+  "det": null,
+  "heads": [
+   "Descripción",
+   "Cuota (US$)",
+   "Monto Facturado (US$)",
+   "Brecha Cuota (US$)",
+   "Cantidad Facturado (US$)",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "INSUMAR DISTRIBUIDORA 715, C.A.",
+    "0",
+    "1.234.013,93",
+    "1.234.013,93",
+    "7.368",
+    "100%",
+    "1.826",
+    "45,62%",
+    "100%"
+   ]
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": "Todos",
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "0/0"
+ }
+]

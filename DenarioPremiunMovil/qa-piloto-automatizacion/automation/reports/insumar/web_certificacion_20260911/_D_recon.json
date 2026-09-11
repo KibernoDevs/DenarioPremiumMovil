@@ -1,0 +1,199 @@
+{
+ "ind-Pedidos": {
+  "path": "/DenarioPremium/pages/indicadoresPedidos",
+  "combos": [
+   "form:j_idt115:idEnterprise",
+   "form:j_idt115:visualizacion",
+   "form:j_idt115:anio1",
+   "form:j_idt115:cumplimiento",
+   "form:j_idt115:idCurrency"
+  ],
+  "grids": [
+   "form:j_idt115",
+   "form:j_idt115_active",
+   "form:j_idt142",
+   "form:j_idt146",
+   "form:j_idt146_canvas",
+   "form:tablaPedidos",
+   "form:tablaPedidos_reflowDD_label",
+   "form:tablaPedidos_reflowDD",
+   "form:tablaPedidos_head",
+   "form:tablaPedidos_data",
+   "form:j_idt165",
+   "form:j_idt165_canvas",
+   "form:j_idt169",
+   "form:j_idt169_canvas"
+  ],
+  "vendCombo": null,
+  "vendOpts": null
+ },
+ "ind-Vendedores": {
+  "path": "/DenarioPremium/pages/pedidosVendedores",
+  "combos": [
+   "form:j_idt115:idEnterprise",
+   "form:j_idt115:vendedor",
+   "form:j_idt115:cumplimiento",
+   "form:j_idt115:idCurrency"
+  ],
+  "grids": [
+   "form:j_idt115",
+   "form:j_idt115_active",
+   "form:j_idt139",
+   "form:j_idt139_canvas",
+   "form:j_idt143",
+   "form:j_idt143_head",
+   "form:j_idt143_data",
+   "form:j_idt160",
+   "form:j_idt160_canvas",
+   "form:j_idt164",
+   "form:j_idt164_canvas"
+  ],
+  "vendCombo": "form:j_idt115:vendedor",
+  "vendOpts": [
+   "Todos",
+   "ALEJANDRA RODRIGUEZ",
+   "EVA MEDINA",
+   "LEANDRO REBOLLEDO",
+   "MARIA JOSE PEREZ",
+   "MIGUEL PARRA",
+   "VIVIANA ESCALANTE",
+   "YENNI ALVAREZ"
+  ]
+ },
+ "ind-Clientes": {
+  "path": "/DenarioPremium/pages/pedidosClientes",
+  "combos": [
+   "form:j_idt115:idEnterprise",
+   "form:j_idt115:cumplimiento",
+   "form:j_idt115:idCurrency"
+  ],
+  "grids": [
+   "form:j_idt115",
+   "form:j_idt115_active",
+   "form:j_idt134",
+   "form:j_idt134_canvas",
+   "form:j_idt138",
+   "form:j_idt138_canvas",
+   "form:j_idt142",
+   "form:j_idt142_canvas",
+   "form:j_idt146",
+   "form:j_idt146_canvas"
+  ],
+  "vendCombo": null,
+  "vendOpts": null
+ },
+ "ind-Productos": {
+  "path": "/DenarioPremium/pages/indicadoresProductos",
+  "combos": [
+   "form:j_idt115:idEnterprise",
+   "form:j_idt115:vendedor",
+   "form:j_idt115:clasificacion",
+   "form:j_idt115:cumplimiento",
+   "form:j_idt115:idCurrency"
+  ],
+  "grids": [
+   "form:j_idt115",
+   "form:j_idt115_active",
+   "form:j_idt139",
+   "form:j_idt139_canvas",
+   "form:j_idt143",
+   "form:j_idt143_canvas",
+   "form:j_idt147",
+   "form:j_idt147_canvas",
+   "form:j_idt151",
+   "form:j_idt151_canvas"
+  ],
+  "vendCombo": "form:j_idt115:vendedor",
+  "vendOpts": [
+   "Todos",
+   "ALEJANDRA RODRIGUEZ",
+   "EVA MEDINA",
+   "LEANDRO REBOLLEDO",
+   "MARIA JOSE PEREZ",
+   "MIGUEL PARRA",
+   "VIVIANA ESCALANTE",
+   "YENNI ALVAREZ"
+  ]
+ },
+ "ind-VentasDiarias": {
+  "path": "/DenarioPremium/pages/protected/indicadores/pedidosProductosVentas.xhtml",
+  "combos": [
+   "form:j_idt116:idEnterprise",
+   "form:j_idt116:idSalesmaView",
+   "form:j_idt116:tipoVista"
+  ],
+  "grids": [
+   "form:j_idt116",
+   "form:j_idt116_active",
+   "form:j_idt134"
+  ],
+  "vendCombo": "form:j_idt116:idSalesmaView",
+  "vendOpts": [
+   "Vendedor",
+   "R015 - ALEJANDRA RODRIGUEZ",
+   "R003 - EVA MEDINA",
+   "R016 - LEANDRO REBOLLEDO",
+   "P001 - MARIA JOSE PEREZ",
+   "R007 - MIGUEL PARRA",
+   "R013 - VIVIANA ESCALANTE",
+   "R009 - YENNI ALVAREZ"
+  ]
+ },
+ "ind-Cobranzas": {
+  "path": "/DenarioPremium/pages/protected/indicadores/indicadorCobros.xhtml",
+  "combos": [
+   "form:j_idt115:idEnterprise",
+   "form:j_idt115:idSalesmaView",
+   "form:j_idt115:clientSOM",
+   "form:j_idt115:idTipo",
+   "form:j_idt115:idCurrency",
+   "form:j_idt115:idDep",
+   "form:j_idt115:orderStatus"
+  ],
+  "grids": [
+   "form:j_idt115",
+   "form:j_idt115_active",
+   "form:j_idt149",
+   "form:j_idt151",
+   "form:j_idt156",
+   "form:j_idt158",
+   "form:j_idt163",
+   "form:j_idt165",
+   "form:j_idt170",
+   "form:j_idt172",
+   "form:j_idt181",
+   "form:j_idt181_canvas"
+  ],
+  "vendCombo": "form:j_idt115:idSalesmaView",
+  "vendOpts": [
+   "Vendedor",
+   "ALEJANDRA RODRIGUEZ",
+   "EVA MEDINA",
+   "LEANDRO REBOLLEDO",
+   "MARIA JOSE PEREZ",
+   "MIGUEL PARRA",
+   "VIVIANA ESCALANTE",
+   "YENNI ALVAREZ"
+  ]
+ },
+ "ind-Morosidad": {
+  "path": "/DenarioPremium/pages/protected/indicadores/indicadorMorosos.xhtml",
+  "combos": [
+   "form:j_idt115:idEnterprise",
+   "form:j_idt115:idCurrency",
+   "form:j_idt115:idTipoDocs"
+  ],
+  "grids": [
+   "form:j_idt115",
+   "form:j_idt115_active",
+   "form:j_idt135",
+   "form:j_idt135_canvas",
+   "form:j_idt139",
+   "form:j_idt139_canvas",
+   "form:j_idt143",
+   "form:j_idt143_canvas"
+  ],
+  "vendCombo": null,
+  "vendOpts": null
+ }
+}

@@ -1,0 +1,93 @@
+{
+ "ind-Vendedores": {
+  "heads": [],
+  "rows": [],
+  "frag": "Filtros | INSUMAR DISTRIBUIDORA 715, C.A. | INSUMAR DISTRIBUIDORA 715, C.A. | Todos | ALEJANDRA RODRIGUEZ | EVA MEDINA | LEANDRO REBOLLEDO | MARIA JOSE PEREZ | MIGUEL PARRA | VIVIANA ESCALANTE | YENNI ALVAREZ | Todos | Fecha Inicio | Fecha Final | Pedido | Facturado | Facturado | BS | US$ | BULTO | DISPLAY | KILOGRAMOS | UNIDADES | US$ | Buscar | Detalle de Transacciones | Cobertura vendedor: Todos | Total de Clientes: 842 | Cantidad y monto Facturado por vendedor | Vendedor\tPedidos\tMonto Total | No existe registro | % Participación Top 10 Cantidad Facturado | % Participación Top 10 Total Facturado US$ | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "has": {
+   "d": true,
+   "c": true,
+   "cur": true,
+   "ajax": true,
+   "ids": [
+    "form:j_idt115:dateF",
+    "form:j_idt115:dateF_input",
+    "form:j_idt115:dateB",
+    "form:j_idt115:dateB_input",
+    "form:j_idt115:dateF_panel",
+    "form:j_idt115:dateB_panel"
+   ]
+  }
+ },
+ "ind-Clientes": {
+  "heads": [],
+  "rows": [],
+  "frag": "Filtros | INSUMAR DISTRIBUIDORA 715, C.A. | INSUMAR DISTRIBUIDORA 715, C.A. | Fecha Inicio | Fecha Final | Pedido | Facturado | Facturado | BS | US$ | BULTO | DISPLAY | KILOGRAMOS | UNIDADES | US$ | Buscar | Detalle de Transacciones | % de participación del TOP 10 de clientes | Top 10 Total Facturado por cliente | % de participación del TOP 10 canales de distribución | Top 10 Total Facturado por canales de distribución | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "has": {
+   "d": true,
+   "c": true,
+   "cur": true,
+   "ajax": true,
+   "ids": [
+    "form:j_idt115:dateF",
+    "form:j_idt115:dateF_input",
+    "form:j_idt115:dateB",
+    "form:j_idt115:dateB_input",
+    "form:j_idt115:dateF_panel",
+    "form:j_idt115:dateB_panel"
+   ]
+  }
+ },
+ "ind-Productos": {
+  "heads": [],
+  "rows": [],
+  "frag": "Filtros | INSUMAR DISTRIBUIDORA 715, C.A. | INSUMAR DISTRIBUIDORA 715, C.A. | Todos | ALEJANDRA RODRIGUEZ | EVA MEDINA | LEANDRO REBOLLEDO | MARIA JOSE PEREZ | MIGUEL PARRA | VIVIANA ESCALANTE | YENNI ALVAREZ | Todos | Linea | Proveedor | Linea | Fecha Inicio | Fecha Final | Pedido | Facturado | Facturado | BS | US$ | BULTO | DISPLAY | KILOGRAMOS | UNIDADES | US$ | Buscar | Detalle de Transacciones | % de participación del TOP 10 de productos: Todos | Top 10 Total Facturado por producto | % de participación del TOP 10 de Linea: Todos | Top 10 Total Facturado por Linea | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "has": {
+   "d": true,
+   "c": true,
+   "cur": true,
+   "ajax": true,
+   "ids": [
+    "form:j_idt115:dateF",
+    "form:j_idt115:dateF_input",
+    "form:j_idt115:dateB",
+    "form:j_idt115:dateB_input",
+    "form:j_idt115:dateF_panel",
+    "form:j_idt115:dateB_panel"
+   ]
+  }
+ },
+ "ind-Pedidos": {
+  "heads": [],
+  "rows": [],
+  "frag": "Filtros | INSUMAR DISTRIBUIDORA 715, C.A. | INSUMAR DISTRIBUIDORA 715, C.A. | Un solo año | Comparativo | Un solo año | 2018 | 2019 | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 | 2027 | 2028 | 2029 | 2030 | 2026 | Pedido | Facturado | Facturado | BS | US$ | BULTO | DISPLAY | KILOGRAMOS | UNIDADES | US$ | Buscar | Detalle de Transacciones | Monto Total Facturado 2026: 1.733.804,89 US$ | Monto Facturado por mes | Cantidad y monto Facturado por vendedor | Vendedor\tCantidad facturados\tmonto total facturado | VIVIANA ESCALANTE\t2581\t620.124,82 US$ | LEANDRO REBOLLEDO\t2093\t306.845,1 US$ | MIGUEL PARRA\t1345\t294.045,08 US$ | ALEJANDRA RODRIGUEZ\t935\t290.655,32 US$ | YENNI ALVAREZ\t1307\t222.134,57 US$ | % Participación Top 10 Cantidad Facturado | % Participación Top 10 Total Facturado US$ | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "has": {
+   "d": false,
+   "c": true,
+   "cur": true,
+   "ajax": true,
+   "ids": [
+    "form:j_idt115:anio1",
+    "form:j_idt115:anio1_focus",
+    "form:j_idt115:anio1_input",
+    "form:j_idt115:anio1_label",
+    "form:j_idt115:anio1_panel"
+   ]
+  }
+ }
+}

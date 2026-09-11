@@ -1,0 +1,238 @@
+{
+ "Empresa": {
+  "checkOpts": {
+   "labels": [],
+   "n": 0,
+   "vals": []
+  },
+  "checked": 0,
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "grid": {
+   "total": "1",
+   "heads": [
+    "Empresa",
+    "Clientes",
+    "Clientes Activados",
+    "Clientes Inactivos",
+    "% Activación",
+    "Clientes Nuevos",
+    "Clientes Nuevos Activados",
+    "% Act Nuevos"
+   ],
+   "nrows": 1,
+   "rows": [
+    [
+     "INSUMAR DISTRIBUIDORA 715, C.A.",
+     "1935",
+     "833",
+     "1102",
+     "43,04 %",
+     "37",
+     "37",
+     "100 %"
+    ]
+   ]
+  }
+ },
+ "Vendedores": {
+  "checkOpts": {
+   "labels": [
+    "VIVIANA ESCALANTE",
+    "JOSE MUÑOZ",
+    "LEANDRO MUÑOZ",
+    "YONI MILANO",
+    "SAUL PENOTT",
+    "ARMANDO  ROSAS",
+    "ALEJANDRA RODRIGUEZ",
+    "MIGUEL PARRA",
+    "LEANDRO REBOLLEDO",
+    "YENNI ALVAREZ",
+    "VACANTE VACANTE",
+    "EVA MEDINA",
+    "CATALOGO  INSUMAR",
+    "MARIA JOSE PEREZ"
+   ],
+   "n": 14,
+   "vals": [
+    "R013",
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005",
+    "R015",
+    "R007",
+    "R016",
+    "R009",
+    "T006",
+    "R003",
+    "C001",
+    "P001"
+   ]
+  },
+  "checked": 14,
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "grid": {
+   "total": "14",
+   "heads": [
+    "Vendedor",
+    "Clientes",
+    "Clientes Activados",
+    "Clientes Inactivos",
+    "% Activación",
+    "Clientes Nuevos",
+    "Clientes Nuevos Activados",
+    "% Act Nuevos"
+   ],
+   "nrows": 14,
+   "rows": [
+    [
+     "VIVIANA ESCALANTE",
+     "172",
+     "94",
+     "78",
+     "54,65 %",
+     "3",
+     "3",
+     "100 %"
+    ],
+    [
+     "JOSE MUÑOZ",
+     "1745",
+     "796",
+     "949",
+     "45,61 %",
+     "0",
+     "37",
+     "0 %"
+    ],
+    [
+     "LEANDRO MUÑOZ",
+     "1826",
+     "796",
+     "1030",
+     "43,59 %",
+     "37",
+     "37",
+     "100 %"
+    ],
+    [
+     "YONI MILANO",
+     "1826",
+     "796",
+     "1030",
+     "43,59 %",
+     "37",
+     "37",
+     "100 %"
+    ],
+    [
+     "SAUL PENOTT",
+     "1826",
+     "796",
+     "1030",
+     "43,59 %",
+     "37",
+     "37",
+     "100 %"
+    ],
+    [
+     "ARMANDO ROSAS",
+     "1826",
+     "796",
+     "1030",
+     "43,59 %",
+     "37",
+     "37",
+     "100 %"
+    ],
+    [
+     "ALEJANDRA RODRIGUEZ",
+     "105",
+     "34",
+     "71",
+     "32,38 %",
+     "1",
+     "1",
+     "100 %"
+    ],
+    [
+     "MIGUEL PARRA",
+     "136",
+     "65",
+     "71",
+     "47,79 %",
+     "1",
+     "1",
+     "100 %"
+    ],
+    [
+     "LEANDRO REBOLLEDO",
+     "172",
+     "81",
+     "91",
+     "47,09 %",
+     "4",
+     "4",
+     "100 %"
+    ],
+    [
+     "YENNI ALVAREZ",
+     "104",
+     "55",
+     "49",
+     "52,88 %",
+     "1",
+     "1",
+     "100 %"
+    ],
+    [
+     "VACANTE VACANTE",
+     "1826",
+     "796",
+     "1030",
+     "43,59 %",
+     "37",
+     "37",
+     "100 %"
+    ],
+    [
+     "EVA MEDINA",
+     "150",
+     "0",
+     "150",
+     "0 %",
+     "1",
+     "0",
+     "0 %"
+    ],
+    [
+     "CATALOGO INSUMAR",
+     "0",
+     "0",
+     "0",
+     "0 %",
+     "0",
+     "0",
+     "0 %"
+    ],
+    [
+     "MARIA JOSE PEREZ",
+     "0",
+     "0",
+     "0",
+     "0 %",
+     "0",
+     "0",
+     "0 %"
+    ]
+   ]
+  }
+ }
+}

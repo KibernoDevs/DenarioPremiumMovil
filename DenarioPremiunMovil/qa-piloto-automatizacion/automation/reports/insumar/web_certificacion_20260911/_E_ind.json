@@ -1,0 +1,84 @@
+[
+ {
+  "name": "ind-Vendedores",
+  "cump": "Facturado",
+  "d1": "01/09/2026",
+  "d2": "11/09/2026",
+  "vend": "Todos",
+  "charts": {
+   "widget_form_j_idt139": {
+    "labels": [
+     "Clientes Efectivos: 0",
+     "Clientes No Efectivos: 842"
+    ],
+    "ds": [
+     {
+      "d": [
+       0,
+       842
+      ]
+     }
+    ]
+   }
+  },
+  "frag": "Buscar | Detalle de Transacciones | Cobertura vendedor: Todos | Total de Clientes: 842 | Cantidad y monto Facturado por vendedor | Vendedor\tPedidos\tMonto Total | No existe registro | % Participación Top 10 Cantidad Facturado | % Participación Top 10 Total Facturado US$ | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  }
+ },
+ {
+  "name": "ind-Vendedores",
+  "cump": "Pedido",
+  "d1": "01/09/2026",
+  "d2": "11/09/2026",
+  "vend": "Todos",
+  "charts": {
+   "widget_form_j_idt139": {
+    "labels": [
+     "Clientes Efectivos: 0",
+     "Clientes No Efectivos: 842"
+    ],
+    "ds": [
+     {
+      "d": [
+       0,
+       842
+      ]
+     }
+    ]
+   }
+  },
+  "frag": "Buscar | Detalle de Transacciones | Cobertura vendedor: Todos | Total de Clientes: 842 | Cantidad y monto Pedido por vendedor | Vendedor\tPedidos\tMonto Total | No existe registro | % Participación Top 10 Cantidad Pedido | % Participación Top 10 Total Pedido US$ | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  }
+ },
+ {
+  "name": "ind-Clientes",
+  "cump": "Facturado",
+  "d1": "01/09/2026",
+  "d2": "11/09/2026",
+  "vend": null,
+  "charts": {},
+  "frag": "Buscar | Detalle de Transacciones | % de participación del TOP 10 de clientes | Top 10 Total Facturado por cliente | % de participación del TOP 10 canales de distribución | Top 10 Total Facturado por canales de distribución | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  }
+ },
+ {
+  "name": "ind-Productos",
+  "cump": "Facturado",
+  "d1": "01/09/2026",
+  "d2": "11/09/2026",
+  "vend": "Todos",
+  "charts": {},
+  "frag": "Buscar | Detalle de Transacciones | % de participación del TOP 10 de productos: Todos | Top 10 Total Facturado por producto | % de participación del TOP 10 de Linea: Todos | Top 10 Total Facturado por Linea | Powered by kiberno ©2026 www.denario.net",
+  "err": {
+   "err": null,
+   "det": null
+  }
+ }
+]

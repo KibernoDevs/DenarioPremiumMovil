@@ -1,0 +1,26 @@
+const D = require('./_drv');
+const fs=require('fs'),path=require('path');
+const F='form:j_idt116';
+const a=Object.fromEntries(process.argv.slice(2).map(x=>x.replace(/^--/,'').split('=')));
+const TIPO=a.tipo||null, VEND=a.vend||null, D1=a.d1||'01/08/2026', D2=a.d2||'31/08/2026', TAG=a.tag||'C-X', REF=a.ref||null;
+(async()=>{
+ const {pg}=await D.attach();
+ await D.goto(pg,'/pages/facturaciones'); await pg.waitForTimeout(2000);
+ await pg.$eval(`[id="${F}:botonLimpiar"]`,e=>e.click()); await pg.waitForTimeout(3500);
+ if(TIPO) console.log('tipo='+await D.pick(pg,`${F}:tipoDocumento`,TIPO));
+ if(VEND) console.log('vend='+await D.pick(pg,`${F}:idSalesmaView`,VEND));
+ if(REF) await pg.evaluate(([f,v])=>{document.getElementById(f+':n_ref').value=v;},[F,REF]);
+ await pg.evaluate(([f,x,y])=>{document.getElementById(f+':dateB_input').value=x;document.getElementById(f+':dateF_input').value=y;},[F,D1,D2]);
+ const st=await pg.evaluate((f)=>({ent:document.getElementById(f+':idEnterprise_input')?.value,ref:document.getElementById(f+':n_ref')?.value,vend:document.getElementById(f+':idSalesmaView_input')?.value,cli:document.getElementById(f+':clientSOM_input')?.value,cur:document.getElementById(f+':idCurrency_input')?.value,tipo:document.getElementById(f+':tipoDocumento_input')?.value,d1:document.getElementById(f+':dateB_input')?.value,d2:document.getElementById(f+':dateF_input')?.value}),F);
+ console.log('ESTADO='+JSON.stringify(st));
+ await pg.$eval(`[id="${F}:ajax"]`,e=>e.click()); await pg.waitForTimeout(12000);
+ await D.shot(pg,TAG);
+ const r=await pg.evaluate(()=>{const t=document.getElementById('form:pedidosDT');
+  const heads=t?[...t.querySelectorAll('thead th')].map(th=>th.innerText.trim().replace(/\s+/g,' ')):[];
+  const rows=t?[...t.querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.innerText.trim().replace(/\s+/g,' '))):[];
+  const m=document.body.innerText.match(/Total de Resultados:\s*(\d+)/);return{total:m?m[1]:null,heads,rows};});
+ console.log('TOTAL='+r.total); console.log('HEADS='+JSON.stringify(r.heads)); console.log('NROWS='+r.rows.length);
+ r.rows.slice(0,25).forEach((x,i)=>console.log('R'+i+'='+JSON.stringify(x)));
+ fs.writeFileSync(path.join(__dirname,'_'+TAG+'.json'),JSON.stringify(r,null,1));
+ process.exit(0);
+})();

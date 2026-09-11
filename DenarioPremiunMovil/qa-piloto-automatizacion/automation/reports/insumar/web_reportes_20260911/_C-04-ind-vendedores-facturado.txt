@@ -1,0 +1,115 @@
+Indicadores
+Vendedores
+admin 
+Empresa
+Estructura Comercial
+Datos Maestros
+Visitas
+Transacciones
+Reportes
+Indicadores
+Rain Clothing
+ Chicago, USA
+Products
+12K
+Orders
+26K
+Sales
+$200K
+Manage Store
+Get Reports
+Check Sales
+Create Add
+View Activity
+Download Listings
+Request Payment
+View Case Log
+CLose Store
+Tamas Bunce
+Olivia Arribas
+
+The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...
+
+3 mins ago
+
+Last year was the hottest on record for the Arctic, with the annual.
+
+23 mins ago
+
+Minimum extent of sea ice in the region its second-lowest on record.
+
+24 mins ago
+
+Right… Right my friend. This is better. Right? Right my friend… 🏄‍♂️
+
+25 mins ago
+ui-button
+ui-button
+ui-button
+Denario Premium Configuración
+Visualizar el Dashboard principal por Pedidos o Facturaciones.
+Denario ofrece 2 temas diferentes para la visualización de la app web.
+Cumplimiento
+Pedido
+Facturado
+Pedido
+Temas
+Clásico
+Oscuro
+Filtros
+INSUMAR DISTRIBUIDORA 715, C.A.
+INSUMAR DISTRIBUIDORA 715, C.A.
+Todos
+ALEJANDRA RODRIGUEZ
+EVA MEDINA
+LEANDRO REBOLLEDO
+MIGUEL PARRA
+VIVIANA ESCALANTE
+YENNI ALVAREZ
+Todos
+Fecha Inicio
+Fecha Final
+Pedido
+Facturado
+Facturado
+BS
+US$
+BULTO
+DISPLAY
+KILOGRAMOS
+UNIDADES
+US$
+Buscar
+Detalle de Transacciones
+Cobertura vendedor: Todos
+Total de Clientes: 815
+Cantidad y monto Facturado por vendedor
+Vendedor	Pedidos	Monto Total
+No existe registro
+% Participación Top 10 Cantidad Facturado
+% Participación Top 10 Total Facturado US$
+Powered by kiberno ©2026 www.denario.net
+
+=== TABLAS ===
+La Sesión se cerrará por Inactividad en 00:20 segundos.
+Presionar 'Ok' para mantener la sesión abierta
+OkCerrar Sesión
+---
+Vendedor | Pedidos | Monto Total
+No existe registro
+---
+S | M | T | W | T | F | S
+26 | 27 | 28 | 29 | 30 | 31 | 1
+2 | 3 | 4 | 5 | 6 | 7 | 8
+9 | 10 | 11 | 12 | 13 | 14 | 15
+16 | 17 | 18 | 19 | 20 | 21 | 22
+23 | 24 | 25 | 26 | 27 | 28 | 29
+30 | 31 | 1 | 2 | 3 | 4 | 5
+---
+S | M | T | W | T | F | S
+26 | 27 | 28 | 29 | 30 | 31 | 1
+2 | 3 | 4 | 5 | 6 | 7 | 8
+9 | 10 | 11 | 12 | 13 | 14 | 15
+16 | 17 | 18 | 19 | 20 | 21 | 22
+23 | 24 | 25 | 26 | 27 | 28 | 29
+30 | 31 | 1 | 2 | 3 | 4 | 5

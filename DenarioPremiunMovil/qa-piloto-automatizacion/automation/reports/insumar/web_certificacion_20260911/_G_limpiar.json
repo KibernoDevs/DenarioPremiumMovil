@@ -1,0 +1,80 @@
+{
+ "Activacion": {
+  "antes": {
+   "e": {
+    "err": null,
+    "det": null
+   },
+   "g": {
+    "total": "14",
+    "nrows": 14,
+    "r0": [
+     "VIVIANA ESCALANTE",
+     "172",
+     "94",
+     "78",
+     "54,65 %",
+     "3",
+     "3",
+     "100 %"
+    ]
+   }
+  },
+  "limpiar": {
+   "err": null,
+   "det": null
+  },
+  "despues": {
+   "e": {
+    "err": null,
+    "det": null
+   },
+   "g": {
+    "total": "14",
+    "nrows": 14,
+    "r0": [
+     "VIVIANA ESCALANTE",
+     "172",
+     "94",
+     "78",
+     "54,65 %",
+     "3",
+     "3",
+     "100 %"
+    ]
+   }
+  }
+ },
+ "Rotacion": {
+  "antes": {
+   "e": {
+    "err": null,
+    "det": null
+   },
+   "g": {
+    "total": "0",
+    "nrows": 1,
+    "r0": [
+     "No se encontraron registros."
+    ]
+   }
+  },
+  "limpiar": {
+   "err": null,
+   "det": null
+  },
+  "despues": {
+   "e": {
+    "err": null,
+    "det": null
+   },
+   "g": {
+    "total": "0",
+    "nrows": 1,
+    "r0": [
+     "No se encontraron registros."
+    ]
+   }
+  }
+ }
+}

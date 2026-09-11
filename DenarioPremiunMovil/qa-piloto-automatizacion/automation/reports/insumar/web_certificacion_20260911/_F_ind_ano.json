@@ -1,0 +1,18 @@
+[
+ {
+  "name": "ind-Vendedores",
+  "cump": "Facturado",
+  "d1": "01/01/2026",
+  "d2": "11/09/2026",
+  "req": "javax.faces.partial.ajax=true&javax.faces.source=form%3Aj_idt115%3Aajax&javax.faces.partial.execute=%40all&javax.faces.partial.render=form&form%3Aj_idt115%3Aajax=form%3Aj_idt115%3Aajax&form=form&form%3Aj_idt115%3Avendedor_focus=&form%3Aj_idt115%3Avendedor_input=Todos&form%3Aj_idt115%3AdateF_input=11%2F09%2F2026&form%3Aj_idt115%3AdateB_input=01%2F01%2F2026&form%3Aj_idt115%3Acumplimiento_focus=&form%3Aj_idt115%3Acumplimiento_input=Facturado&form%3Aj_idt115%3AidCurrency_focus=&form%3Aj_idt115%3AidCurrency_input=Currency-US%24&form%3Aj_idt115_active=0&javax.faces.ViewState=-574595446046977849%3A341432840778447266",
+  "frag": "Buscar | Detalle de Transacciones | Cobertura vendedor: Todos | Total de Clientes: 656 | Cantidad y monto Facturado por vendedor | Vendedor\tPedidos\tMonto Total | No existe registro | % Participación Top 10 Cantidad Facturado | % Participación Top 10 Total Facturado US$ | Powered by kiberno ©2026 www.denario.net"
+ },
+ {
+  "name": "ind-Clientes",
+  "cump": "Facturado",
+  "d1": "01/01/2026",
+  "d2": "11/09/2026",
+  "req": "javax.faces.partial.ajax=true&javax.faces.source=form%3Aj_idt115%3Aajax&javax.faces.partial.execute=%40all&javax.faces.partial.render=form&form%3Aj_idt115%3Aajax=form%3Aj_idt115%3Aajax&form=form&form%3Aj_idt115%3AdateF_input=11%2F09%2F2026&form%3Aj_idt115%3AdateB_input=01%2F01%2F2026&form%3Aj_idt115%3Acumplimiento_focus=&form%3Aj_idt115%3Acumplimiento_input=Facturado&form%3Aj_idt115%3AidCurrency_focus=&form%3Aj_idt115%3AidCurrency_input=Currency-US%24&form%3Aj_idt115_active=0&javax.faces.ViewState=-8669144545324530701%3A5266809756052117319",
+  "frag": "Buscar | Detalle de Transacciones | % de participación del TOP 10 de clientes | Top 10 Total Facturado por cliente | % de participación del TOP 10 canales de distribución | Top 10 Total Facturado por canales de distribución | Powered by kiberno ©2026 www.denario.net"
+ }
+]

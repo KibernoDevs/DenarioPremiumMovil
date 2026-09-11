@@ -109,6 +109,19 @@ const REQUISITOS = {
       seAbre: 'activar automatedPrepaid en Variables Globales → Cobros',
     },
     {
+      id: 'COB-ANT-MONEDA',
+      caso: 'La moneda del anticipo automático y la de la tolerancia',
+      necesita: 'saber en qué moneda se evalúa cada umbral antes de construir el caso',
+      naSi: (c) => !activa(c.vgs.automatedPrepaid),
+      naMotivo: 'automatedPrepaid=false ⇒ no hay anticipo automático',
+      // 🔴 Esto NO es una condición que se cumpla o no: es un AVISO. Se declara
+      //    "no alcanzable" a propósito cuando las monedas difieren, para que el
+      //    aviso salga en el pre-vuelo y nadie construya el caso a ciegas.
+      evaluar: (c) => c.vgs.prepaidRangeCurrency === c.vgs.MonedaTolerancia,
+      hoy: (c) => `tolerancia en ${c.vgs.MonedaTolerancia} · umbral del anticipo en ${c.vgs.prepaidRangeCurrency} · el anticipo se genera en ${c.vgs.prepaidCurrency}`,
+      seAbre: '⚠ No hace falta "arreglarlo": hace falta TENERLO EN CUENTA. Si el cobro va en otra moneda, «pagar 5 de más» NO son 5 en la moneda del umbral. El 10/09 se midieron dos cobros en Bs creyendo que el excedente era 5,00 USD y en realidad era 0,01 — no disparaban nada y parecía que el caso no reproducía. Calcular el excedente EN LA MONEDA DEL UMBRAL antes de teclear',
+    },
+    {
       id: 'COB-ANT-DESC',
       caso: 'Descuento mayor que el saldo del documento ⇒ anticipo por el excedente',
       necesita: 'descuentos de cobro activos y anticipo disponible',

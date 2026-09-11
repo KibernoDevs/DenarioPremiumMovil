@@ -1,0 +1,129 @@
+[
+ {
+  "tag": "A1-fresh",
+  "nota": "1a busqueda tras entrada limpia",
+  "total": "1",
+  "nrows": 1,
+  "checked": "1/1",
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "err": null,
+  "det": null,
+  "row0": [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "0",
+   "1.234.013,93",
+   "1.234.013,93",
+   "1.935",
+   "833",
+   "43,05 %",
+   "65,68 %"
+  ],
+  "heads": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ]
+ },
+ {
+  "tag": "A3-tras-limpiar",
+  "nota": "2a busqueda: mismos filtros DESPUES de Limpiar",
+  "total": "0",
+  "nrows": 1,
+  "checked": "1/1",
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "err": "Error en busqueda de reporte.",
+  "det": "Intente nuevamente.",
+  "row0": [
+   "No se encontraron registros."
+  ],
+  "heads": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ]
+ },
+ {
+  "tag": "A4-repite",
+  "nota": "3a busqueda: Buscar de nuevo sin tocar filtros",
+  "total": "0",
+  "nrows": 1,
+  "checked": "1/1",
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "err": "Error en busqueda de reporte.",
+  "det": "Intente nuevamente.",
+  "row0": [
+   "No se encontraron registros."
+  ],
+  "heads": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ]
+ },
+ {
+  "tag": "A5-tras-reload",
+  "nota": "4a: tras recargar la pagina (F5), mismos filtros",
+  "total": "0",
+  "nrows": 1,
+  "checked": "1/1",
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "err": "Error en busqueda de reporte.",
+  "det": "Intente nuevamente.",
+  "row0": [
+   "No se encontraron registros."
+  ],
+  "heads": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ]
+ }
+]

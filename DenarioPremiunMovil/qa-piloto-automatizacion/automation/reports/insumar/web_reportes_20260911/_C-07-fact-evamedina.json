@@ -1,0 +1,22 @@
+{
+ "total": "0",
+ "heads": [
+  "Detalle",
+  "Tipo",
+  "Código facturación",
+  "Fecha facturación",
+  "Vendedor",
+  "Cliente",
+  "Monto facturado",
+  "Saldo pendiente",
+  "Vencimiento",
+  "Monto conv.",
+  "Tasa conv.",
+  "Adjuntos"
+ ],
+ "rows": [
+  [
+   "No se encontraron registros."
+  ]
+ ]
+}

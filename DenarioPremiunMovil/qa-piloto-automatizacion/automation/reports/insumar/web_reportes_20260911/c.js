@@ -1,0 +1,32 @@
+const D = require('./_drv');
+const fs=require('fs'),path=require('path');
+const F='form:j_idt115';
+const a=Object.fromEntries(process.argv.slice(2).map(x=>x.replace(/^--/,'').split('=')));
+const CLAS=a.clas||'Linea',CUMP=a.cump||'Pedido',UNID=a.unid||'US$',VEND=a.vend||'Todos';
+const D1=a.d1||'01/08/2026',D2=a.d2||'31/08/2026',TAG=a.tag||'C-X';
+(async()=>{
+  const {pg}=await D.attach();
+  await D.goto(pg,'/pages/reporteCumplimientoCuota'); await pg.waitForTimeout(1800);
+  console.log('vend='+await D.pick(pg,`${F}:codRdv`,VEND));
+  console.log('clas='+await D.pick(pg,`${F}:clasificacion`,CLAS));
+  console.log('cump='+await D.pick(pg,`${F}:cumplimiento`,CUMP));
+  console.log('unid='+await D.pick(pg,`${F}:unidad`,UNID));
+  const cb=await pg.evaluate(()=>{const w=PrimeFaces.widgets['widget_form_j_idt115_checkboxValor'];try{w.renderPanel()}catch(e){}try{w.checkAll()}catch(e){}
+    const x=[...document.querySelectorAll('input[name="form:j_idt115:checkboxValor"]')];
+    return {n:x.length,on:x.filter(i=>i.checked).length,labels:x.map(i=>((document.querySelector(`label[for="${CSS.escape(i.id)}"]`)||{}).textContent||'').trim())};});
+  console.log('VALORES='+cb.on+'/'+cb.n); console.log('COMBO_VALOR='+JSON.stringify(cb.labels));
+  await pg.evaluate(([f,x,y])=>{document.getElementById(f+':fechaDesde_input').value=x;document.getElementById(f+':fechaHasta_input').value=y;},[F,D1,D2]);
+  let resp=null; const h=async r=>{if(r.request().method()==='POST'&&r.url().includes('reporteCumplimientoCuota')){try{resp=await r.text()}catch(e){}}};
+  pg.on('response',h);
+  await pg.$eval(`[id="${F}:ajax"]`,e=>e.click()); await pg.waitForTimeout(9000); pg.off('response',h);
+  await D.shot(pg,TAG);
+  const err=resp?(resp.match(/summary:"([^"]*)"/)||[])[1]:null;
+  const res=await pg.evaluate(()=>{const t=document.getElementById('form:tablaCumplimientoCuota');
+    const heads=t?[...t.querySelectorAll('thead th')].map(th=>th.innerText.trim().replace(/\s+/g,' ')):[];
+    const rows=t?[...t.querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.innerText.trim().replace(/\s+/g,' '))):[];
+    const m=document.body.innerText.match(/Total de Resultados:\s*(\d+)/);return{total:m?m[1]:null,heads,rows};});
+  console.log('ERR='+err); console.log('TOTAL='+res.total); console.log('HEADS='+JSON.stringify(res.heads)); console.log('NROWS='+res.rows.length);
+  res.rows.forEach((r,i)=>console.log('R'+i+'='+JSON.stringify(r)));
+  fs.writeFileSync(path.join(__dirname,'_'+TAG+'.json'),JSON.stringify(res,null,1));
+  process.exit(0);
+})();

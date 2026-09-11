@@ -1,0 +1,70 @@
+{
+ "Facturado-BULTO-sep": {
+  "chk": 2065,
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "grid": {
+   "total": "0",
+   "nrows": 1,
+   "rows": [
+    [
+     "No se encontraron registros."
+    ]
+   ]
+  },
+  "req": "javax.faces.partial.ajax=true&javax.faces.source=form%3Aj_idt115%3Aajax&javax.faces.partial.execute=%40all&javax.faces.partial.render=form%3ATablaRotacion&form%3Aj_idt115%3Aajax=form%3Aj_idt115%3Aajax&form=form&form%3Aj_idt115%3Aclasificacion_focus=&form%3Aj_idt115%3Aclasificacion_input=Productos&form%3Aj_idt115%3AcheckboxValor_focus=&form%3Aj_idt115%3AcheckboxValor=010111&form%3Aj_idt115%3AcheckboxValor=01012&form%3Aj_idt115%3AcheckboxValor=01013&form%3Aj_idt115%3AcheckboxValor=01015&form%3Aj_idt115%3AcheckboxValor=01034&form%3Aj_idt115%3AcheckboxValor=010181&form%3Aj_idt115%3AcheckboxValor=0"
+ },
+ "Facturado-sinUnidad-anio": {
+  "chk": 2065,
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "grid": {
+   "total": "0",
+   "nrows": 1,
+   "rows": [
+    [
+     "No se encontraron registros."
+    ]
+   ]
+  },
+  "req": "javax.faces.partial.ajax=true&javax.faces.source=form%3Aj_idt115%3Aajax&javax.faces.partial.execute=%40all&javax.faces.partial.render=form%3ATablaRotacion&form%3Aj_idt115%3Aajax=form%3Aj_idt115%3Aajax&form=form&form%3Aj_idt115%3Aclasificacion_focus=&form%3Aj_idt115%3Aclasificacion_input=Productos&form%3Aj_idt115%3AcheckboxValor_focus=&form%3Aj_idt115%3AcheckboxValor=010111&form%3Aj_idt115%3AcheckboxValor=01012&form%3Aj_idt115%3AcheckboxValor=01013&form%3Aj_idt115%3AcheckboxValor=01015&form%3Aj_idt115%3AcheckboxValor=01034&form%3Aj_idt115%3AcheckboxValor=010181&form%3Aj_idt115%3AcheckboxValor=0"
+ },
+ "Pedido-UNIDADES-anio": {
+  "chk": 2065,
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "grid": {
+   "total": "0",
+   "nrows": 1,
+   "rows": [
+    [
+     "No se encontraron registros."
+    ]
+   ]
+  },
+  "req": "javax.faces.partial.ajax=true&javax.faces.source=form%3Aj_idt115%3Aajax&javax.faces.partial.execute=%40all&javax.faces.partial.render=form%3ATablaRotacion&form%3Aj_idt115%3Aajax=form%3Aj_idt115%3Aajax&form=form&form%3Aj_idt115%3Aclasificacion_focus=&form%3Aj_idt115%3Aclasificacion_input=Productos&form%3Aj_idt115%3AcheckboxValor_focus=&form%3Aj_idt115%3AcheckboxValor=010111&form%3Aj_idt115%3AcheckboxValor=01012&form%3Aj_idt115%3AcheckboxValor=01013&form%3Aj_idt115%3AcheckboxValor=01015&form%3Aj_idt115%3AcheckboxValor=01034&form%3Aj_idt115%3AcheckboxValor=010181&form%3Aj_idt115%3AcheckboxValor=0"
+ },
+ "Facturado-UNIDADES-2025a2026": {
+  "chk": 2065,
+  "err": {
+   "err": null,
+   "det": null
+  },
+  "grid": {
+   "total": "0",
+   "nrows": 1,
+   "rows": [
+    [
+     "No se encontraron registros."
+    ]
+   ]
+  },
+  "req": "javax.faces.partial.ajax=true&javax.faces.source=form%3Aj_idt115%3Aajax&javax.faces.partial.execute=%40all&javax.faces.partial.render=form%3ATablaRotacion&form%3Aj_idt115%3Aajax=form%3Aj_idt115%3Aajax&form=form&form%3Aj_idt115%3Aclasificacion_focus=&form%3Aj_idt115%3Aclasificacion_input=Productos&form%3Aj_idt115%3AcheckboxValor_focus=&form%3Aj_idt115%3AcheckboxValor=010111&form%3Aj_idt115%3AcheckboxValor=01012&form%3Aj_idt115%3AcheckboxValor=01013&form%3Aj_idt115%3AcheckboxValor=01015&form%3Aj_idt115%3AcheckboxValor=01034&form%3Aj_idt115%3AcheckboxValor=010181&form%3Aj_idt115%3AcheckboxValor=0"
+ }
+}

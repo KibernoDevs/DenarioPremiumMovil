@@ -1,0 +1,103 @@
+[
+ {
+  "tag": "A6-por-menu",
+  "nota": "tras salir a main y volver a entrar por el menu",
+  "total": "0",
+  "nrows": 1,
+  "err": "Error en busqueda de reporte.",
+  "det": "Intente nuevamente.",
+  "row0": [
+   "No se encontraron registros."
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ },
+ {
+  "tag": "A7-sesion-nueva",
+  "nota": "tras cerrar sesion (cookies borradas) y volver a entrar",
+  "total": "1",
+  "nrows": 1,
+  "err": null,
+  "det": null,
+  "row0": [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "0",
+   "1.234.013,93",
+   "1.234.013,93",
+   "1.935",
+   "833",
+   "43,05 %",
+   "65,68 %"
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ },
+ {
+  "tag": "A8-2a-sin-limpiar",
+  "nota": "CONTROL: 2a busqueda seguida, sin pulsar Limpiar",
+  "total": "1",
+  "nrows": 1,
+  "err": null,
+  "det": null,
+  "row0": [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "0",
+   "1.234.013,93",
+   "1.234.013,93",
+   "1.935",
+   "833",
+   "43,05 %",
+   "65,68 %"
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ },
+ {
+  "tag": "A9-3a-sin-limpiar",
+  "nota": "CONTROL: 3a busqueda seguida, sin pulsar Limpiar",
+  "total": "1",
+  "nrows": 1,
+  "err": null,
+  "det": null,
+  "row0": [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "0",
+   "1.234.013,93",
+   "1.234.013,93",
+   "1.935",
+   "833",
+   "43,05 %",
+   "65,68 %"
+  ],
+  "filtros": {
+   "clas": "Empresa",
+   "cump": "Facturado",
+   "unid": "US$ - US$ - CURRENCY",
+   "vend": null,
+   "d1": "01/09/2026",
+   "d2": "11/09/2026"
+  },
+  "checked": "1/1"
+ }
+]

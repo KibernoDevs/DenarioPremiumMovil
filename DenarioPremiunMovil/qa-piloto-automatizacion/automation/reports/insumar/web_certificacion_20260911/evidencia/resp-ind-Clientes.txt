@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<partial-response id="j_id1"><changes><update id="form"><![CDATA[
+<form id="form" name="form" method="post" action="/DenarioPremium/pages/pedidosClientes" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="form" value="form" />
+
+			<div class="grid table-demo">
+
+				<div class="col-12">
+					<div class="card"><div id="form:j_idt115" class="ui-accordion ui-widget ui-helper-reset ui-hidden-container" role="tablist" data-widget="widget_form_j_idt115"><div id="form:j_idt115:j_idt116_header" class="ui-accordion-header ui-helper-reset ui-state-default ui-state-active ui-corner-top" role="tab" aria-expanded="true" aria-selected="true" tabindex="0"><span class="ui-icon ui-icon-triangle-1-s"></span>Filtros</div><div id="form:j_idt115:j_idt116" class="ui-accordion-content ui-helper-reset ui-widget-content" role="tabpanel" aria-hidden="false">
+								<div class="grid formgrid">
+									<div class="col-12 mb-3 lg:col-3"><div id="form:j_idt115:idEnterprise" class="ui-selectonemenu ui-widget ui-state-default ui-corner-all ui-state-disabled " aria-owns="form:j_idt115:idEnterprise_panel" role="combobox" aria-haspopup="listbox" aria-expanded="false"><div class="ui-helper-hidden-accessible"><input id="form:j_idt115:idEnterprise_focus" name="form:j_idt115:idEnterprise_focus" type="text" autocomplete="off" disabled="disabled" aria-disabled="true" /></div><div class="ui-helper-hidden-accessible"><select id="form:j_idt115:idEnterprise_input" name="form:j_idt115:idEnterprise_input" tabindex="-1" autocomplete="off" aria-hidden="true" disabled="disabled" onchange="PrimeFaces.ab({s:&quot;form:j_idt115:idEnterprise&quot;,e:&quot;valueChange&quot;,f:&quot;form&quot;,p:&quot;form:j_idt115:idEnterprise&quot;,u:&quot;form&quot;});"><option value="1" selected="selected" data-escape="true">INSUMAR DISTRIBUIDORA 715, C.A.</option></select></div><label id="form:j_idt115:idEnterprise_label" class="ui-selectonemenu-label ui-inputfield ui-corner-all">&nbsp;</label><div class="ui-selectonemenu-trigger ui-state-default ui-corner-right"><span class="ui-icon ui-icon-triangle-1-s ui-c"></span></div><div id="form:j_idt115:idEnterprise_panel" class="ui-selectonemenu-panel ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow ui-input-overlay"><div class="ui-selectonemenu-items-wrapper" style="max-height:200px"></div></div></div><script id="form:j_idt115:idEnterprise_s" type="text/javascript">PrimeFaces.cw("SelectOneMenu","widget_form_j_idt115_idEnterprise",{id:"form:j_idt115:idEnterprise",appendTo:"@(body)",autoWidth:false,renderPanelContentOnClient:true,behaviors:{valueChange:function(ext,event) {PrimeFaces.ab({s:"form:j_idt115:idEnterprise",e:"valueChange",f:"form",p:"form:j_idt115:idEnterprise",u:"form"},ext);}}});</script>
+									</div>
+
+
+
+									<div class="col-12 mb-3 lg:col-3"></div>
+									<div class="col-12 mb-3 lg:col-3">
+										<span class="ui-float-label"><span id="form:j_idt115:dateF" class="p-datepicker ui-calendar"><input id="form:j_idt115:dateF_input" name="form:j_idt115:dateF_input" type="text" value="11/09/2026" class="ui-inputfield ui-widget ui-state-default ui-corner-all " aria-labelledby="form:j_idt115:j_idt120" /></span><script id="form:j_idt115:dateF_s" type="text/javascript">PrimeFaces.cw("DatePicker","widget_form_j_idt115_dateF",{id:"form:j_idt115:dateF",defaultDate:"11\/09\/2026",inline:false,userLocale:"es",dateFormat:"dd\/mm\/yy",selectionMode:"single",showOnFocus:true,appendTo:"@(body)",fractionSeparator:",",timeInput:false});</script><label id="form:j_idt115:j_idt120" class="ui-outputlabel ui-widget" for="form:j_idt115:dateF_input">Fecha Inicio</label>
+										</span>
+									</div>
+
+									<div class="col-12 mb-3 lg:col-3">
+										<span class="ui-float-label"><span id="form:j_idt115:dateB" class="p-datepicker ui-calendar"><input id="form:j_idt115:dateB_input" name="form:j_idt115:dateB_input" type="text" value="01/09/2026" class="ui-inputfield ui-widget ui-state-default ui-corner-all " aria-labelledby="form:j_idt115:j_idt122" /></span><script id="form:j_idt115:dateB_s" type="text/javascript">PrimeFaces.cw("DatePicker","widget_form_j_idt115_dateB",{id:"form:j_idt115:dateB",defaultDate:"01\/09\/2026",inline:false,userLocale:"es",dateFormat:"dd\/mm\/yy",selectionMode:"single",showOnFocus:true,appendTo:"@(body)",fractionSeparator:",",timeInput:false});</script><label id="form:j_idt115:j_idt122" class="ui-outputlabel ui-widget" for="form:j_idt115:dateB_input">Fecha Final</label>
+										</span>
+									</div>
+
+									<div class="col-12 mb-3 lg:col-3"><div id="form:j_idt115:cumplimiento" class="ui-selectonemenu ui-widget ui-state-default ui-corner-all " aria-owns="form:j_idt115:cumplimiento_panel" role="combobox" aria-haspopup="listbox" aria-expanded="false"><div class="ui-helper-hidden-accessible"><input id="form:j_idt115:cumplimiento_focus" name="form:j_idt115:cumplimiento_focus" type="text" autocomplete="off" /></div><div class="ui-helper-hidden-accessible"><select id="form:j_idt115:cumplimiento_input" name="form:j_idt115:cumplimiento_input" tabindex="-1" autocomplete="off" aria-hidden="true" onchange="PrimeFaces.ab({s:&quot;form:j_idt115:cumplimiento&quot;,e:&quot;valueChange&quot;,f:&quot;form&quot;,p:&quot;form:j_idt115:cumplimiento&quot;,u:&quot;form&quot;});"><option value="Pedido" data-escape="true">Pedido</option><option value="Facturado" selected="selected" data-escape="true">Facturado</option></select></div><label id="form:j_idt115:cumplimiento_label" class="ui-selectonemenu-label ui-inputfield ui-corner-all">&nbsp;</label><div class="ui-selectonemenu-trigger ui-state-default ui-corner-right"><span class="ui-icon ui-icon-triangle-1-s ui-c"></span></div><div id="form:j_idt115:cumplimiento_panel" class="ui-selectonemenu-panel ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow ui-input-overlay"><div class="ui-selectonemenu-items-wrapper" style="max-height:200px"></div></div></div><script id="form:j_idt115:cumplimiento_s" type="text/javascript">PrimeFaces.cw("SelectOneMenu","widget_form_j_idt115_cumplimiento",{id:"form:j_idt115:cumplimiento",appendTo:"@(body)",renderPanelContentOnClient:true,behaviors:{valueChange:function(ext,event) {PrimeFaces.ab({s:"form:j_idt115:cumplimiento",e:"valueChange",f:"form",p:"form:j_idt115:cumplimiento",u:"form"},ext);}}});</script>
+									</div>
+
+									<div class="col-12 mb-1 lg:col-3"><div id="form:j_idt115:idCurrency" class="ui-selectonemenu ui-widget ui-state-default ui-corner-all " aria-owns="form:j_idt115:idCurrency_panel" role="combobox" aria-haspopup="listbox" aria-expanded="false"><div class="ui-helper-hidden-accessible"><input id="form:j_idt115:idCurrency_focus" name="form:j_idt115:idCurrency_focus" type="text" autocomplete="off" /></div><div class="ui-helper-hidden-accessible"><select id="form:j_idt115:idCurrency_input" name="form:j_idt115:idCurrency_input" tabindex="-1" autocomplete="off" aria-hidden="true" onchange="PrimeFaces.ab({s:&quot;form:j_idt115:idCurrency&quot;,e:&quot;valueChange&quot;,f:&quot;form&quot;,p:&quot;form:j_idt115:idCurrency&quot;,u:&quot;form&quot;});"><optgroup label="Monedas" data-escape="true"><option value="Currency-BS" data-escape="true">BS</option><option value="Currency-US$" selected="selected" data-escape="true">US$</option></optgroup><optgroup label="Unidades" data-escape="true"><option value="Unit-BTO" data-escape="true">BULTO</option><option value="Unit-DISP" data-escape="true">DISPLAY</option><option value="Unit-KG" data-escape="true">KILOGRAMOS</option><option value="Unit-UND" data-escape="true">UNIDADES</option></optgroup></select></div><label id="form:j_idt115:idCurrency_label" class="ui-selectonemenu-label ui-inputfield ui-corner-all">&nbsp;</label><div class="ui-selectonemenu-trigger ui-state-default ui-corner-right"><span class="ui-icon ui-icon-triangle-1-s ui-c"></span></div><div id="form:j_idt115:idCurrency_panel" class="ui-selectonemenu-panel ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow ui-input-overlay"><div class="ui-selectonemenu-items-wrapper" style="max-height:200px"></div></div></div><script id="form:j_idt115:idCurrency_s" type="text/javascript">PrimeFaces.cw("SelectOneMenu","widget_form_j_idt115_idCurrency",{id:"form:j_idt115:idCurrency",appendTo:"@(body)",renderPanelContentOnClient:true,behaviors:{valueChange:function(ext,event) {PrimeFaces.ab({s:"form:j_idt115:idCurrency",e:"valueChange",f:"form",p:"form:j_idt115:idCurrency",u:"form"},ext);}}});</script>
+									</div>
+
+									<div class="col-12 mb-2 lg:col-3"><button id="form:j_idt115:ajax" name="form:j_idt115:ajax" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" onclick="PrimeFaces.ab({s:&quot;form:j_idt115:ajax&quot;,f:&quot;form&quot;,u:&quot;form&quot;});return false;" type="submit"><span class="ui-button-text ui-c">Buscar</span></button><script id="form:j_idt115:ajax_s" type="text/javascript">PrimeFaces.cw("CommandButton","widget_form_j_idt115_ajax",{id:"form:j_idt115:ajax"});</script>
+									</div>
+									<div class="col-12 mb-2 lg:col-3"><button id="form:j_idt115:detalleGraficas1" name="form:j_idt115:detalleGraficas1" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" onclick="PrimeFaces.ab({s:&quot;form:j_idt115:detalleGraficas1&quot;,f:&quot;form&quot;});return false;" type="submit"><span class="ui-button-text ui-c">Detalle de Transacciones</span></button><script id="form:j_idt115:detalleGraficas1_s" type="text/javascript">PrimeFaces.cw("CommandButton","widget_form_j_idt115_detalleGraficas1",{id:"form:j_idt115:detalleGraficas1"});</script>
+									</div>
+								</div></div><input id="form:j_idt115_active" name="form:j_idt115_active" type="hidden" autocomplete="off" aria-hidden="true" value="0" /></div><script id="form:j_idt115_s" type="text/javascript">PrimeFaces.cw("AccordionPanel","widget_form_j_idt115",{id:"form:j_idt115"});</script><div class="grid formgrid cardgraficos">
+							<div class="col-12 mb-3 lg:col-6">
+								<div class="card">
+									<h5>% de participación del TOP 10 de clientes
+									</h5><div id="form:j_idt134" class="ui-chart"><canvas id="form:j_idt134_canvas" style="width: 100%; height: 350px;"></canvas></div><script id="form:j_idt134_s" type="text/javascript">PrimeFaces.cw("PieChart","widget_form_j_idt134",{id:"form:j_idt134","config":{"type":"pie","data":{"datasets":[{"type":"pie","data":[],"hidden":false,"backgroundColor":["rgb(247, 194, 87)","rgb(194, 75, 75)","rgb(144, 111, 226)","rgb(80, 195, 204)","rgb(173, 204, 43)","rgb(244, 126, 47)","rgb(224, 76, 168)","rgb(98, 129, 160)","rgb(82, 204, 142)","rgb(204, 174, 46)"]}],"labels":[]}},"extender":chartExtender});</script>
+								</div>
+							</div>
+
+							<div class="col-12 mb-3 lg:col-6">
+								<div class="card">
+									<h5>Top 10 Total  Facturado por cliente
+									</h5><div id="form:j_idt138" class="ui-chart"><canvas id="form:j_idt138_canvas" style="width: 100%; height: 350px;"></canvas></div><script id="form:j_idt138_s" type="text/javascript">PrimeFaces.cw("BarChart","widget_form_j_idt138",{id:"form:j_idt138","config":{"type":"bar"}});</script>
+								</div>
+							</div>
+
+							<div class="col-12 mb-3 lg:col-6">
+								<div class="card">
+									<h5>% de participación del TOP 10 canales de distribución
+									</h5><div id="form:j_idt142" class="ui-chart"><canvas id="form:j_idt142_canvas" style="width: 100%; height: 350px;"></canvas></div><script id="form:j_idt142_s" type="text/javascript">PrimeFaces.cw("PieChart","widget_form_j_idt142",{id:"form:j_idt142","config":{"type":"pie","data":{"datasets":[{"type":"pie","data":[],"hidden":false,"backgroundColor":["rgb(247, 194, 87)","rgb(194, 75, 75)","rgb(144, 111, 226)","rgb(80, 195, 204)","rgb(173, 204, 43)","rgb(244, 126, 47)","rgb(224, 76, 168)","rgb(98, 129, 160)","rgb(82, 204, 142)","rgb(204, 174, 46)"]}],"labels":[]}},"extender":chartExtender});</script>
+								</div>
+							</div>
+
+							<div class="col-12 mb-3 lg:col-6">
+								<div class="card">
+									<h5>Top 10 Total  Facturado por canales de distribución
+									</h5><div id="form:j_idt146" class="ui-chart"><canvas id="form:j_idt146_canvas" style="width: 100%; height: 350px;"></canvas></div><script id="form:j_idt146_s" type="text/javascript">PrimeFaces.cw("BarChart","widget_form_j_idt146",{id:"form:j_idt146","config":{"type":"bar"}});</script>
+								</div>
+							</div></div>
+					</div>
+				</div>
+			</div>
+</form>]]></update><update id="j_id1:javax.faces.ViewState:0"><![CDATA[-6695463706173267024:-8232218300731581772]]></update></changes></partial-response>
