@@ -187,7 +187,7 @@ export class CobrosGeneralComponent implements OnInit {
     }
     this.collectService.restoreCollectionIgtfFields();
 
-    void this.loadPayments();
+    void this.ensureBankCatalogsAndLoadPayments();
 
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
@@ -491,106 +491,21 @@ export class CobrosGeneralComponent implements OnInit {
           break;
         }
         case 'pm': {
-          const fallbackType = this.collectService.typeDocumentList[0]?.coTypeDocument || 'V';
-          const fallbackPhoneCode = this.collectService.codePhoneNumberList[0]?.coCodePhoneNumber || '0414';
-          const rawLegacyDocument = (payment.coClientBankAccount || '').trim();
-          const legacyDocumentParts = rawLegacyDocument.split('-');
-          const rawPhone = (payment.nuPhoneNumber || '').replace(/\D/g, '');
-          const typeById = this.collectService.typeDocumentList.find(
-            typeDocument => typeDocument.idTypeDocument === payment.idTypeDocument
+          this.collectService.pagoMovil.push(
+            this.buildHydratedPagoMovilPayment(payment, i, bankAccounts)
           );
-          const phoneCodeById = this.collectService.codePhoneNumberList.find(
-            codePhoneNumber => codePhoneNumber.idCodePhoneNumber === payment.idCodePhoneNumber
-          );
-          const phoneCodeByPrefix = this.collectService.codePhoneNumberList.find(
-            codePhoneNumber => rawPhone.startsWith(codePhoneNumber.coCodePhoneNumber)
-          );
-          const selectedPhoneCode = phoneCodeById?.coCodePhoneNumber
-            || phoneCodeByPrefix?.coCodePhoneNumber
-            || fallbackPhoneCode;
-          const phoneNumber = payment.nuPhoneNumber
-            ? (phoneCodeByPrefix ? rawPhone.slice(phoneCodeByPrefix.coCodePhoneNumber.length) : rawPhone)
-            : '';
-          const newPagoMovil: PagoMovil = {
-            idBancoEmisor: 0,
-            nombreBancoEmisor: '',
-            idBancoDestino: payment.idBank,
-            nombreBancoDestino: payment.naBank,
-            numeroCuentaDestino: payment.nuBankAccount ?? '',
-            tipoDocumento: typeById?.coTypeDocument || legacyDocumentParts[0] || fallbackType,
-            numeroDocumento: (payment.nuDocument || legacyDocumentParts[1] || '').replace(/\D/g, ''),
-            codigoTelefono: selectedPhoneCode,
-            numeroTelefono: phoneNumber,
-            numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
-            monto: payment.nuAmountPartial,
-            montoConversion: payment.nuAmountPartialConversion,
-            fecha: payment.daValue!,
-            posCollectionPayment: i,
-            type: 'pm',
-            anticipoPrepaid: payment.isAnticipoPrepaid,
-            disabled: false,
-            showDateModal: false,
-          };
-
-          const bancoEmisor = this.collectService.listBanks?.find(
-            b => b.coBank === payment.coClientBankAccount || b.naBank === payment.coClientBankAccount
-          );
-          if (bancoEmisor) {
-            newPagoMovil.idBancoEmisor = bancoEmisor.idBank;
-            newPagoMovil.nombreBancoEmisor = bancoEmisor.naBank;
-          }
-
-          const bancoDestino = bankAccounts.find(b => b.idBank == newPagoMovil.idBancoDestino && b.nuAccount == newPagoMovil.numeroCuentaDestino);
-          if (bancoDestino) {
-            this.collectService.clientBankAccountSelected[newPagoMovil.posCollectionPayment] = bancoDestino as any;
-          }
-
-          this.collectService.pagoMovil.push(newPagoMovil);
           break;
         }
         case 'de': {
-          const newPagoDeposito: PagoDeposito = {
-            idBanco: payment.idBank,
-            nombreBanco: payment.naBank,
-            numeroCuenta: payment.nuClientBankAccount,
-            numeroDeposito: payment.nuPaymentDoc,
-            fecha: payment.daValue!,
-            monto: payment.nuAmountPartial,
-            montoConversion: payment.nuAmountPartialConversion,
-            posCollectionPayment: i,
-            type: "de",
-            anticipoPrepaid: payment.isAnticipoPrepaid,
-            disabled: false,
-            showDateModal: false,
-          };
-          const cuenta = bankAccounts.find(b => b.idBank == newPagoDeposito.idBanco);
-          if (cuenta) {
-            this.collectService.bankAccountSelected[newPagoDeposito.posCollectionPayment] = cuenta;
-            newPagoDeposito.disabled = false;
-          }
-          this.collectService.pagoDeposito.push(newPagoDeposito);
+          this.collectService.pagoDeposito.push(
+            this.buildHydratedDepositoPayment(payment, i, bankAccounts)
+          );
           break;
         }
         case 'ch': {
-          const newPagoCheque: PagoCheque = {
-            idBanco: payment.idBank,
-            nombreBanco: payment.naBank,
-            fecha: payment.daValue!,
-            monto: payment.nuAmountPartial,
-            montoConversion: payment.nuAmountPartialConversion,
-            fechaValor: payment.daCollectionPayment!,
-            numeroCheque: payment.nuPaymentDoc,
-            nuevaCuenta: payment.newNuClientBankAccount,
-            posCollectionPayment: i,
-            type: "ch",
-            anticipoPrepaid: payment.isAnticipoPrepaid,
-            disabled: false,
-            bancoReceptor: new BancoReceptor(),
-            showDateVenceModal: false,
-            showDateValorModal: false,
-            showNuevaCuenta: false,
-          };
-          this.collectService.pagoCheque.push(newPagoCheque);
+          this.collectService.pagoCheque.push(
+            this.buildHydratedChequePayment(payment, i)
+          );
           break;
         }
         case 'ot': {
@@ -847,11 +762,13 @@ export class CobrosGeneralComponent implements OnInit {
 
         //BUSCAMOS LOS CUENTAS BANCOS DE LA EMPRESA
         this.collectService.bankAccountSelected = [] as BankAccount[];
-        this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
+        this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(async result => {
           this.collectService.listBankAccounts = result;
-          void this.loadPayments();
-
-          this.collectService.getAllBanks(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
+          await this.collectService.getAllBanks(
+            this.synchronizationServices.getDatabase(),
+            this.collectService.collection.idEnterprise,
+          );
+          await this.loadPayments();
 
           this.collectService.unlockTabs().then((resp) => {
             this.collectService.onCollectionValid(resp);
@@ -907,7 +824,7 @@ export class CobrosGeneralComponent implements OnInit {
             }
           })
 
-          if (this.collectService.requiredComment) {
+          if (this.collectService.isCommentRequiredForSend()) {
             if (this.collectService.collection.txComment && this.collectService.collection.txComment.trim().length > 0) {
               this.collectService.validComment = true;
             } else {
@@ -1105,7 +1022,7 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.documentsSaleComponent = false;
 
             this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-            void this.loadPayments();
+            void this.ensureBankCatalogsAndLoadPayments();
           })
 
       })
@@ -1157,10 +1074,9 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.calculatePayment("", 0);
 
 
-    this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
+    this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(async result => {
       this.collectService.listBankAccounts = result;
-      void this.loadPayments();
-
+      await this.ensureBankCatalogsAndLoadPayments();
     })
   }
 
@@ -1221,7 +1137,8 @@ export class CobrosGeneralComponent implements OnInit {
   setComment() {
     if (this.collectService.changeClient)
       this.collectService.changeClient = false;
-    else if (this.collectService.requiredComment && this.collectService.collection.txComment.trim() == "") {
+    else if (this.collectService.isCommentRequiredForSend()
+      && this.collectService.collection.txComment.trim() == "") {
       this.collectService.validComment = false;
       this.mensaje = this.collectService.collectionTags.get('COB_EMPTY_TXCOMMENT')!,
         this.collectService.alertMessageOpen = true;
@@ -1251,7 +1168,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.input.value = clean;
       }
     }
-    if (this.collectService.requiredComment) {
+    if (this.collectService.isCommentRequiredForSend()) {
       this.collectService.syncCommentValidityFromCollection();
     }
     this.collectService.refreshSendUxAfterEdit();
@@ -1259,7 +1176,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   /** Volcar inputs de General pendientes de blur antes de Enviar. */
   private flushPendingGeneralInputsBeforeSend(): void {
-    if (this.collectService.requiredComment) {
+    if (this.collectService.isCommentRequiredForSend()) {
       const clean = applyTextCommentMaxLength(
         this.collectService.cleanString(this.collectService.collection.txComment),
         this.textCommentMaxLength,
@@ -1461,6 +1378,299 @@ export class CobrosGeneralComponent implements OnInit {
     const coClient = String(payment.coClientBankAccount ?? '').trim();
     const nuClient = String(payment.nuClientBankAccount ?? '').trim();
     return coClient === 'Nueva Cuenta' || nuClient === 'Nueva Cuenta';
+  }
+
+  /** Carga catálogos de bancos/cuentas y rehidrata pagos (evita carrera listBanks vs loadPayments). */
+  private async ensureBankCatalogsAndLoadPayments(): Promise<void> {
+    const db = this.synchronizationServices.getDatabase();
+    const idEnterprise = this.collectService.collection.idEnterprise;
+    if (!this.collectService.listBankAccounts?.length) {
+      this.collectService.listBankAccounts = await this.collectService.getAllBankAccountsByEnterprise(
+        db,
+        idEnterprise,
+        this.collectService.collection.coCurrency,
+      );
+    }
+    await this.collectService.getAllBanks(db, idEnterprise);
+    await this.loadPayments();
+  }
+
+  /**
+   * Rehidrata Pago Móvil desde SQLite. Emisor: listBanks → bankAccountSelected.
+   * Destino: listBankAccounts → clientBankAccountSelected (id_bank en SQLite es receptor).
+   */
+  private buildHydratedPagoMovilPayment(
+    payment: CollectionPayment,
+    paymentIndex: number,
+    bankAccounts: BankAccount[] | null | undefined,
+  ): PagoMovil {
+    const fallbackType = this.collectService.typeDocumentList[0]?.coTypeDocument || 'V';
+    const fallbackPhoneCode = this.collectService.codePhoneNumberList[0]?.coCodePhoneNumber || '0414';
+    const rawLegacyDocument = (payment.coClientBankAccount || '').trim();
+    const legacyDocumentParts = rawLegacyDocument.split('-');
+    const rawPhone = (payment.nuPhoneNumber || '').replace(/\D/g, '');
+    const typeById = this.collectService.typeDocumentList.find(
+      typeDocument => typeDocument.idTypeDocument === payment.idTypeDocument
+    );
+    const phoneCodeById = this.collectService.codePhoneNumberList.find(
+      codePhoneNumber => codePhoneNumber.idCodePhoneNumber === payment.idCodePhoneNumber
+    );
+    const phoneCodeByPrefix = this.collectService.codePhoneNumberList.find(
+      codePhoneNumber => rawPhone.startsWith(codePhoneNumber.coCodePhoneNumber)
+    );
+    const selectedPhoneCode = phoneCodeById?.coCodePhoneNumber
+      || phoneCodeByPrefix?.coCodePhoneNumber
+      || fallbackPhoneCode;
+    const phoneNumber = payment.nuPhoneNumber
+      ? (phoneCodeByPrefix ? rawPhone.slice(phoneCodeByPrefix.coCodePhoneNumber.length) : rawPhone)
+      : '';
+    const emisorLabel = String(payment.coClientBankAccount ?? payment.nuClientBankAccount ?? '').trim();
+
+    const newPagoMovil: PagoMovil = {
+      idBancoEmisor: 0,
+      nombreBancoEmisor: emisorLabel,
+      idBancoDestino: payment.idBank,
+      nombreBancoDestino: payment.naBank,
+      numeroCuentaDestino: payment.nuBankAccount ?? '',
+      tipoDocumento: typeById?.coTypeDocument || legacyDocumentParts[0] || fallbackType,
+      numeroDocumento: (payment.nuDocument || legacyDocumentParts[1] || '').replace(/\D/g, ''),
+      codigoTelefono: selectedPhoneCode,
+      numeroTelefono: phoneNumber,
+      numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
+      monto: payment.nuAmountPartial,
+      montoConversion: payment.nuAmountPartialConversion,
+      fecha: payment.daValue!,
+      posCollectionPayment: paymentIndex,
+      type: 'pm',
+      anticipoPrepaid: payment.isAnticipoPrepaid,
+      disabled: false,
+      showDateModal: false,
+    };
+
+    const emisorPicker = this.restoreEmisorBankPickerFromListBanks(
+      newPagoMovil.posCollectionPayment,
+      payment,
+      emisorLabel,
+      { trustPersistedIdBank: false },
+    );
+    if (emisorPicker) {
+      newPagoMovil.idBancoEmisor = emisorPicker.idBank ?? 0;
+      newPagoMovil.nombreBancoEmisor = emisorPicker.naBank ?? emisorLabel;
+    }
+
+    this.restoreReceptorBankPickerFromAccounts(
+      newPagoMovil.posCollectionPayment,
+      payment,
+      bankAccounts,
+      'clientBankAccountSelected',
+      {
+        idBank: newPagoMovil.idBancoDestino,
+        naBank: newPagoMovil.nombreBancoDestino,
+        nuAccount: newPagoMovil.numeroCuentaDestino,
+      },
+      (resolved) => {
+        newPagoMovil.idBancoDestino = resolved.idBank ?? newPagoMovil.idBancoDestino;
+        newPagoMovil.nombreBancoDestino = resolved.naBank ?? newPagoMovil.nombreBancoDestino;
+        newPagoMovil.numeroCuentaDestino = resolved.nuAccount ?? newPagoMovil.numeroCuentaDestino;
+      },
+    );
+
+    return newPagoMovil;
+  }
+
+  /** Rehidrata Depósito: cuenta receptor en listBankAccounts → bankAccountSelected. */
+  private buildHydratedDepositoPayment(
+    payment: CollectionPayment,
+    paymentIndex: number,
+    bankAccounts: BankAccount[] | null | undefined,
+  ): PagoDeposito {
+    const numeroCuenta = String(payment.nuClientBankAccount ?? '').trim();
+    const newPagoDeposito: PagoDeposito = {
+      idBanco: payment.idBank,
+      nombreBanco: payment.naBank,
+      numeroCuenta,
+      numeroDeposito: payment.nuPaymentDoc,
+      fecha: payment.daValue!,
+      monto: payment.nuAmountPartial,
+      montoConversion: payment.nuAmountPartialConversion,
+      posCollectionPayment: paymentIndex,
+      type: 'de',
+      anticipoPrepaid: payment.isAnticipoPrepaid,
+      disabled: false,
+      showDateModal: false,
+    };
+
+    this.restoreReceptorBankPickerFromAccounts(
+      newPagoDeposito.posCollectionPayment,
+      payment,
+      bankAccounts,
+      'bankAccountSelected',
+      {
+        idBank: newPagoDeposito.idBanco,
+        naBank: newPagoDeposito.nombreBanco,
+        nuAccount: newPagoDeposito.numeroCuenta,
+      },
+      (resolved) => {
+        newPagoDeposito.idBanco = resolved.idBank ?? newPagoDeposito.idBanco;
+        newPagoDeposito.nombreBanco = resolved.naBank ?? newPagoDeposito.nombreBanco;
+        newPagoDeposito.numeroCuenta = resolved.nuAccount ?? newPagoDeposito.numeroCuenta;
+        newPagoDeposito.disabled = false;
+      },
+    );
+
+    return newPagoDeposito;
+  }
+
+  /**
+   * Rehidrata Cheque desde SQLite con el mismo contrato que guarda selectBankAccount.
+   * Banco emisor: listBanks → bankAccountSelected + pagoCheque.nombreBanco.
+   */
+  private buildHydratedChequePayment(
+    payment: CollectionPayment,
+    paymentIndex: number,
+  ): PagoCheque {
+    const bankLabel = String(payment.naBank ?? payment.coClientBankAccount ?? '').trim();
+    const showNuevaCuenta = this.isPersistedChequeNuevaCuenta(payment);
+
+    const newPagoCheque: PagoCheque = {
+      idBanco: payment.idBank,
+      nombreBanco: bankLabel,
+      fecha: payment.daValue!,
+      monto: payment.nuAmountPartial,
+      montoConversion: payment.nuAmountPartialConversion,
+      fechaValor: payment.daCollectionPayment!,
+      numeroCheque: payment.nuPaymentDoc,
+      nuevaCuenta: showNuevaCuenta
+        ? String(payment.newNuClientBankAccount ?? '').trim()
+        : (payment.newNuClientBankAccount ?? ''),
+      posCollectionPayment: paymentIndex,
+      type: 'ch',
+      anticipoPrepaid: payment.isAnticipoPrepaid,
+      disabled: false,
+      bancoReceptor: new BancoReceptor(),
+      showDateVenceModal: false,
+      showDateValorModal: false,
+      showNuevaCuenta,
+    };
+
+    this.restoreChequeBankPicker(newPagoCheque, payment, bankLabel);
+    return newPagoCheque;
+  }
+
+  private isPersistedChequeNuevaCuenta(payment: CollectionPayment): boolean {
+    if (!this.collectService.clientBankAccount) {
+      return false;
+    }
+    const coClient = String(payment.coClientBankAccount ?? '').trim();
+    const naBank = String(payment.naBank ?? '').trim();
+    return coClient === 'Nueva Cuenta' || naBank === 'Nueva Cuenta';
+  }
+
+  private restoreChequeBankPicker(
+    pago: PagoCheque,
+    payment: CollectionPayment,
+    bankLabel: string,
+  ): void {
+    const emisorPicker = this.restoreEmisorBankPickerFromListBanks(
+      pago.posCollectionPayment,
+      payment,
+      bankLabel,
+      { trustPersistedIdBank: true },
+    );
+    if (!emisorPicker) {
+      return;
+    }
+    pago.idBanco = emisorPicker.idBank ?? pago.idBanco;
+    pago.nombreBanco = emisorPicker.naBank ?? bankLabel;
+  }
+
+  /** Emisor desde listBanks (Cheque/PM). PM: id_bank en SQLite es cuenta destino, no emisor. */
+  private restoreEmisorBankPickerFromListBanks(
+    pos: number,
+    payment: CollectionPayment,
+    bankLabel: string,
+    options: { trustPersistedIdBank: boolean },
+  ): BankAccount | null {
+    const label = bankLabel.trim();
+    const banks = this.collectService.listBanks ?? [];
+    const bancoEmisor = banks.find(b =>
+      (options.trustPersistedIdBank && payment.idBank && Number(b.idBank) === Number(payment.idBank))
+      || (label && (b.naBank === label || b.coBank === label))
+      || (payment.coClientBankAccount
+        && (b.coBank === payment.coClientBankAccount || b.naBank === payment.coClientBankAccount))
+    );
+
+    if (!bancoEmisor && !label) {
+      return null;
+    }
+
+    if (!Array.isArray(this.collectService.bankAccountSelected)) {
+      this.collectService.bankAccountSelected = [] as BankAccount[];
+    }
+
+    if (bancoEmisor) {
+      this.collectService.bankAccountSelected[pos] = bancoEmisor as unknown as BankAccount;
+      return bancoEmisor as unknown as BankAccount;
+    }
+
+    const fallback = {
+      idBank: options.trustPersistedIdBank ? (payment.idBank ?? 0) : 0,
+      naBank: label,
+      coBank: String(payment.coClientBankAccount ?? label),
+    } as BankAccount;
+    this.collectService.bankAccountSelected[pos] = fallback;
+    return fallback;
+  }
+
+  /** Receptor/destino desde listBankAccounts (Depósito, PM destino, TR receptor). */
+  private restoreReceptorBankPickerFromAccounts(
+    pos: number,
+    payment: CollectionPayment,
+    bankAccounts: BankAccount[] | null | undefined,
+    target: 'bankAccountSelected' | 'clientBankAccountSelected',
+    persisted: { idBank?: number | null; naBank?: string | null; nuAccount?: string | null },
+    applyResolved: (account: BankAccount) => void,
+  ): void {
+    const accounts = Array.isArray(bankAccounts) ? bankAccounts : [];
+    const numeroCuenta = String(persisted.nuAccount ?? payment.nuBankAccount ?? payment.nuClientBankAccount ?? '').trim();
+    const idBank = persisted.idBank ?? payment.idBank;
+    const cuenta = accounts.find(b =>
+      Number(b.idBank) === Number(idBank)
+      && (!numeroCuenta || b.nuAccount === numeroCuenta)
+    ) ?? accounts.find(b => Number(b.idBank) === Number(idBank));
+
+    const assignSelected = (account: BankAccount): void => {
+      if (target === 'clientBankAccountSelected') {
+        if (!Array.isArray(this.collectService.clientBankAccountSelected)) {
+          this.collectService.clientBankAccountSelected = [] as BankAccount[];
+        }
+        this.collectService.clientBankAccountSelected[pos] = account;
+      } else {
+        if (!Array.isArray(this.collectService.bankAccountSelected)) {
+          this.collectService.bankAccountSelected = [] as BankAccount[];
+        }
+        this.collectService.bankAccountSelected[pos] = account;
+      }
+    };
+
+    if (cuenta) {
+      assignSelected(cuenta);
+      applyResolved(cuenta);
+      return;
+    }
+
+    const naBank = String(persisted.naBank ?? payment.naBank ?? '').trim();
+    if (!naBank && !numeroCuenta) {
+      return;
+    }
+
+    const fallback = {
+      idBank: idBank ?? 0,
+      naBank,
+      nuAccount: numeroCuenta,
+    } as BankAccount;
+    assignSelected(fallback);
+    applyResolved(fallback);
   }
 
   private restoreTransferenciaBankPickers(
