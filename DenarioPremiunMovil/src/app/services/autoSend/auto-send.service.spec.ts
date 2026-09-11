@@ -18,6 +18,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import {
   COLLECT_STATUS_TO_SEND,
+  DEPOSITO_STATUS_TO_SEND,
   VISIT_STATUS_TO_SEND,
   VISIT_STATUS_VISITED,
   VISIT_STATUS_NOT_VISITED,
@@ -30,12 +31,14 @@ describe('AutoSendService', () => {
   let alertModalSpy: jasmine.Spy;
   let getVisitSpy: jasmine.Spy;
   let getNuAttachImagesSpy: jasmine.Spy;
+  let prepareDepositForSendSpy: jasmine.Spy;
 
   beforeEach(() => {
     executeSqlSpy = jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0, item: () => null } });
     alertModalSpy = jasmine.createSpy('alertModal');
     getVisitSpy = jasmine.createSpy('getVisit');
     getNuAttachImagesSpy = jasmine.createSpy('getNuAttachImages').and.resolveTo(0);
+    prepareDepositForSendSpy = jasmine.createSpy('prepareDepositForSend');
 
     TestBed.configureTestingModule({
       providers: [
@@ -63,7 +66,10 @@ describe('AutoSendService', () => {
         },
         { provide: ReturnDatabaseService, useValue: {} },
         { provide: CollectionService, useValue: {} },
-        { provide: DepositService, useValue: {} },
+        {
+          provide: DepositService,
+          useValue: { prepareDepositForSend: prepareDepositForSendSpy },
+        },
         { provide: VisitasService, useValue: { getVisit: getVisitSpy } },
         { provide: PedidosService, useValue: {} },
         { provide: ClientLocationService, useValue: {} },
@@ -440,6 +446,43 @@ describe('AutoSendService', () => {
       }),
       'visit',
       coVisit,
+    );
+  });
+
+  it('dispatchDepositTransaction no envía payload vacío si prepareDepositForSend falla', async () => {
+    prepareDepositForSendSpy.and.resolveTo(null);
+    const sendTransactionSpy = spyOn<any>(service, 'sendTransaction').and.resolveTo(true);
+
+    const result = await (service as any).dispatchDepositTransaction('DEP-EMPTY');
+
+    expect(result).toBeFalse();
+    expect(sendTransactionSpy).not.toHaveBeenCalled();
+  });
+
+  it('dispatchDepositTransaction envía depósito completo con collectionIds', async () => {
+    prepareDepositForSendSpy.and.resolveTo({
+      coDeposit: 'DEP-001',
+      coBank: 'B001',
+      coCurrency: '$',
+      stDeposit: DEPOSITO_STATUS_TO_SEND,
+      stDelivery: DEPOSITO_STATUS_TO_SEND,
+      collectionIds: [77],
+      depositCollect: [{ coCollection: 'COL-1', idCollection: 77 }],
+    });
+    const sendTransactionSpy = spyOn<any>(service, 'sendTransaction').and.resolveTo(true);
+
+    await (service as any).dispatchDepositTransaction('DEP-001');
+
+    expect(sendTransactionSpy).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        deposit: jasmine.objectContaining({
+          coDeposit: 'DEP-001',
+          stDeposit: DEPOSITO_STATUS_TO_SEND,
+        }),
+        collectionIds: [77],
+      }),
+      'deposit',
+      'DEP-001',
     );
   });
 
