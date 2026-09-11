@@ -85,6 +85,10 @@ import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
+import {
+  ClientStockSuggestedOrder,
+  ClientStockSuggestedOrderDetail,
+} from 'src/app/modelos/tables/client-stock-suggested-order';
 
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
@@ -199,7 +203,9 @@ export class SynchronizationDBService {
       { "id": 80, "nameTable": "codePhoneNumber" },
       { "id": 81, "nameTable": "unitPriceListTable" },
       { "id": 83, "nameTable": "collectRetention" },
-      { "id": 84, "nameTable": "productBonusFavTable" }
+      { "id": 84, "nameTable": "productBonusFavTable" },
+      { "id": 85, "nameTable": "clientStockSuggestedOrders" },
+      { "id": 86, "nameTable": "clientStockSuggestedOrderDetails" }
     ]
   }
 
@@ -2083,5 +2089,21 @@ export class SynchronizationDBService {
     }).catch(e => {
       console.log(e);
     })
+  }
+
+  insertClientStockSuggestedOrderBatch(arr: ClientStockSuggestedOrder[]) {
+    return this.clientStockService.mergeSyncedSuggestedOrdersWithLocal(this.database, arr);
+  }
+
+  insertClientStockSuggestedOrderDetailBatch(arr: ClientStockSuggestedOrderDetail[]) {
+    return this.clientStockService.mergeSyncedSuggestedOrderDetailsWithLocal(this.database, arr);
+  }
+
+  deleteSuggestedOrderRowsByCo(
+    dbServ: SQLiteObject,
+    coList: string[],
+    table: 'header' | 'detail',
+  ) {
+    return this.clientStockService.deleteSuggestedOrderRowsByCo(dbServ, coList, table);
   }
 }
