@@ -16,6 +16,7 @@ import { StraightSwap } from '../modelos/tables/straightSwap';
 import { PedidosService } from '../pedidos/pedidos.service';
 import { AutoSendService } from '../services/autoSend/auto-send.service';
 import { isPromoterHideFinanceActive } from '../guards/promoter-hide-finance.guard';
+import { LoginLogicService } from '../services/login/login-logic.service';
 
 const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81, 84];
 /** Omitidas por WS si promoterHideFinance: Bank, docs, invoices, cobros, depósitos. */
@@ -36,6 +37,7 @@ export class SynchronizationComponent implements OnInit {
   private message = inject(MessageService);
   private imageServices = inject(ImageServicesService);
   private autoSend = inject(AutoSendService);
+  private loginLogic = inject(LoginLogicService);
 
   public messageAlert!: MessageAlert;
   private sqlTableMap: Record<string, { table: string, id: string, idName: string }> = {};
@@ -402,6 +404,7 @@ export class SynchronizationComponent implements OnInit {
    */
   async sincronice(): Promise<void> {
     await this.autoSend.runPendingQueue();
+    await this.loginLogic.resetClientsSyncCursorAfterFinanceUnlock();
     this.getTablesVersion();
     this.initProgress(this.PROGRESS, this.BUFF);
     // Carga tags para la UI
