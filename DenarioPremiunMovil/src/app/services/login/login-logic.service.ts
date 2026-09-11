@@ -18,6 +18,15 @@ export class LoginLogicService {
 
   changeUser = new Subject<boolean>() //para mensajes que el boton no va atras
 
+  /** id_table=3 (clients). Solo cursor; sin DELETE. */
+  async resetClientsSyncCursorAfterFinanceUnlock(): Promise<void> {
+    if (localStorage.getItem('resyncClientsAfterFinanceUnlock') !== 'true') {
+      return;
+    }
+    localStorage.removeItem('resyncClientsAfterFinanceUnlock');
+    await this.databaseService.resetTableSyncCursor(3);
+  }
+
   constructor(
     private sqlite: SQLite,
 
