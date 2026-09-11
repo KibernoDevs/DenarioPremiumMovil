@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DepositService } from './deposit.service';
-import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 
 describe('DepositService', () => {
@@ -462,6 +462,94 @@ describe('DepositService', () => {
 
       expect(merged[0].stDeposit).toBe(DEPOSIT_APPROVAL_STATUS_REJECTED);
       expect(merged[0].stDelivery).toBe(DEPOSITO_STATUS_SENT);
+    });
+  });
+
+  describe('DEP-STATUS-001 inicialización y payload de envío', () => {
+    it('resetDeposit asigna stDeposit/stDelivery = DEPOSITO_STATUS_NEW', async () => {
+      service.enterpriseServ.empresas = [{ idEnterprise: 1, coEnterprise: 'DIESE' } as any];
+      await service.resetDeposit();
+      expect(service.deposit.stDeposit).toBe(DEPOSITO_STATUS_NEW);
+      expect(service.deposit.stDelivery).toBe(DEPOSITO_STATUS_NEW);
+    });
+
+    it('prepareDepositForSend arma depósito completo con estatus TO_SEND', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.callFake((sql: string) => {
+          if (sql.includes('FROM deposits WHERE co_deposit')) {
+            return Promise.resolve({
+              rows: {
+                length: 1,
+                item: () => ({
+                  co_deposit: 'DEP-001',
+                  da_deposit: '2026-01-01 00:00:00',
+                  co_bank: 'B001',
+                  nu_account: '123',
+                  nu_document: 'PLT',
+                  da_document: '2026-01-01',
+                  nu_amount_doc: 100,
+                  nu_amount_doc_conversion: 100,
+                  co_currency: '$',
+                  id_enterprise: 1,
+                  co_enterprise: 'DIESE',
+                  tx_comment: '',
+                  nu_value_local: 1,
+                  id_currency: 1,
+                  st_deposit: DEPOSITO_STATUS_NEW,
+                  st_delivery: DEPOSITO_STATUS_TO_SEND,
+                  coordenada: '0,0',
+                }),
+              },
+            });
+          }
+          if (sql.includes('FROM deposit_collects')) {
+            return Promise.resolve({
+              rows: {
+                length: 1,
+                item: () => ({
+                  id_deposit_collect: 1,
+                  co_deposit_collect: 'DC-1',
+                  co_deposit: 'DEP-001',
+                  co_collection: 'COL-1',
+                  id_collection: 55,
+                  co_document: 'DOC-1',
+                  nu_amount_total: 100,
+                  nu_total_deposit: 100,
+                }),
+              },
+            });
+          }
+          if (sql.includes('id_collection FROM deposit_collects')) {
+            return Promise.resolve({
+              rows: {
+                length: 1,
+                item: () => ({ id_collection: 55 }),
+              },
+            });
+          }
+          return Promise.resolve({ rows: { length: 0, item: () => ({}) } });
+        }),
+      } as unknown as SQLiteObject;
+
+      const prepared = await service.prepareDepositForSend(dbMock, 'DEP-001');
+      expect(prepared).not.toBeNull();
+      expect(prepared!.coDeposit).toBe('DEP-001');
+      expect(prepared!.stDeposit).toBe(DEPOSITO_STATUS_TO_SEND);
+      expect(prepared!.stDelivery).toBe(DEPOSITO_STATUS_TO_SEND);
+      expect(prepared!.collectionIds).toEqual([55]);
+      expect(prepared!.depositCollect.length).toBe(1);
+      expect(service.isDepositReadyForSend(prepared)).toBeTrue();
+    });
+
+    it('prepareDepositForSend retorna null si no hay fila en deposits', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: { length: 0, item: () => ({}) },
+        }),
+      } as unknown as SQLiteObject;
+
+      const prepared = await service.prepareDepositForSend(dbMock, 'DEP-MISSING');
+      expect(prepared).toBeNull();
     });
   });
 

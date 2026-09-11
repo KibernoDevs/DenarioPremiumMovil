@@ -628,8 +628,8 @@ export class DepositService {
       txComment: "",
       nuValueLocal: 0,
       idCurrency: 0,
-      stDeposit: 0,
-      stDelivery: 0,
+      stDeposit: DEPOSITO_STATUS_NEW,
+      stDelivery: DEPOSITO_STATUS_NEW,
       isEdit: true,
       isEditTotal: false,
       isSave: false,
@@ -1411,6 +1411,64 @@ export class DepositService {
     })
   }
 
+  /** Depósito persistido listo para POST (cabecera + cobros + estatus TO_SEND). */
+  isDepositReadyForSend(deposit: Deposit | null | undefined): boolean {
+    if (!deposit?.coDeposit?.trim()) {
+      return false;
+    }
+    if (!String(deposit.coBank ?? '').trim() || !String(deposit.coCurrency ?? '').trim()) {
+      return false;
+    }
+    const collectionIds = Array.isArray(deposit.collectionIds) ? deposit.collectionIds : [];
+    const collects = Array.isArray(deposit.depositCollect) ? deposit.depositCollect : [];
+    if (collectionIds.length === 0 && collects.length === 0) {
+      return false;
+    }
+    return Number(deposit.stDelivery ?? 0) === this.DEPOSITO_STATUS_TO_SEND;
+  }
+
+  normalizeDepositSendStatuses(deposit: Deposit): void {
+    const stDelivery = Number(deposit.stDelivery ?? 0);
+    const stDeposit = Number(deposit.stDeposit ?? 0);
+    if (stDelivery === this.DEPOSITO_STATUS_TO_SEND && stDeposit === this.DEPOSITO_STATUS_NEW) {
+      deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
+    }
+  }
+
+  async fetchDepositCollectRowsForSend(dbServ: SQLiteObject, coDeposit: string): Promise<DepositCollect[]> {
+    try {
+      const res = await dbServ.executeSql(
+        'SELECT * FROM deposit_collects WHERE co_deposit = ?',
+        [coDeposit],
+      );
+      const collects: DepositCollect[] = [];
+      for (let i = 0; i < res.rows.length; i++) {
+        collects.push(this.mapLocalDepositCollectRow(res.rows.item(i) as Record<string, unknown>));
+      }
+      return collects;
+    } catch (e) {
+      console.log('[fetchDepositCollectRowsForSend] error:', e);
+      return [];
+    }
+  }
+
+  async prepareDepositForSend(dbServ: SQLiteObject, coDeposit: string): Promise<Deposit | null> {
+    const deposit = await this.getDeposit(dbServ, coDeposit);
+    if (!deposit?.coDeposit?.trim()) {
+      return null;
+    }
+
+    deposit.depositCollect = await this.fetchDepositCollectRowsForSend(dbServ, coDeposit);
+    const rawIds = await this.getIdsDepositCollect(dbServ, coDeposit);
+    deposit.collectionIds = Array.isArray(rawIds)
+      ? rawIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
+      : [];
+
+    this.normalizeDepositSendStatuses(deposit);
+
+    return this.isDepositReadyForSend(deposit) ? deposit : null;
+  }
+
   getDepositCollect(dbServ: SQLiteObject, coDeposit: string) {
     /* Alias explícitos: SELECT * JOIN duplica nombres (co_collection, id_collection, ...) y SQLite/Cordova
        dejan un solo valor; además antes se reusaba una sola referencia DepositCollect en el bucle. */
@@ -1483,9 +1541,8 @@ export class DepositService {
 
 
     }).catch(e => {
-      let deposit = {} as Deposit;
       console.log(e);
-      return deposit;
+      return [] as number[];
     })
   }
 

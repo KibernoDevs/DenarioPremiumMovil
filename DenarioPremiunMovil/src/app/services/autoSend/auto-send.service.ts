@@ -522,23 +522,25 @@ export class AutoSendService implements OnInit {
   }
 
   private async dispatchDepositTransaction(coTransaction: string): Promise<boolean> {
-    const request: Request = {
-      deposit: {} as Deposit,
-      collectionIds: {},
-    };
-    const deposit = await this.depositService.getDeposit(this.dbService.getDatabase(), coTransaction);
-    request.deposit = deposit!;
-    request.deposit.idUser = Number(localStorage.getItem("idUser"));
-    request.deposit.coUser = localStorage.getItem("coUser")!;
-    request.deposit.idDeposit = null;
-
-    await this.depositService.getDepositCollect(this.dbService.getDatabase(), coTransaction);
-    const collectionIds = await this.depositService.getIdsDepositCollect(
+    const deposit = await this.depositService.prepareDepositForSend(
       this.dbService.getDatabase(),
       coTransaction,
     );
-    request.collectionIds = collectionIds;
-    return await this.sendTransaction(request, "deposit", coTransaction);
+    if (!deposit) {
+      console.warn('[AutoSendService] Sin datos de depósito listos para envío ' + coTransaction);
+      return false;
+    }
+
+    deposit.idUser = Number(localStorage.getItem('idUser'));
+    deposit.coUser = localStorage.getItem('coUser')!;
+    deposit.idDeposit = null;
+
+    const request: Request = {
+      deposit,
+      collectionIds: deposit.collectionIds ?? [],
+    };
+
+    return await this.sendTransaction(request, 'deposit', coTransaction);
   }
 
   private async dispatchUpdateAddressTransaction(coTransaction: string): Promise<boolean> {
