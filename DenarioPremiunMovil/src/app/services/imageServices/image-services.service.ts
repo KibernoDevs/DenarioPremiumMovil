@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { ServicesService } from '../services.service';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
@@ -22,8 +22,17 @@ export class ImageServicesService {
 
   private services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
-  private syncDb = inject(SynchronizationDBService);
+  private injector = inject(Injector);
   private globalConfig = inject(GlobalConfigService);
+  private _syncDb?: SynchronizationDBService;
+
+  /** Lazy: evita NG0200 (SyncDB → ReturnDB → ProductService → ImageServices → SyncDB). */
+  private get syncDb(): SynchronizationDBService {
+    if (!this._syncDb) {
+      this._syncDb = this.injector.get(SynchronizationDBService);
+    }
+    return this._syncDb;
+  }
   public downloadFileList: string[] = [];
   public removeFileList: string[] = [];
   public downloadFileListPdf: string[] = [];
