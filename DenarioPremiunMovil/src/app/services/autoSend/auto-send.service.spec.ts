@@ -16,7 +16,12 @@ import { InventariosLogicService } from '../inventarios/inventarios-logic.servic
 import { PotentialClientDatabaseServicesService } from '../clientes/potentialClient/potential-client-database-services.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, VISIT_STATUS_NOT_VISITED } from 'src/app/utils/appConstants';
+import {
+  COLLECT_STATUS_TO_SEND,
+  VISIT_STATUS_TO_SEND,
+  VISIT_STATUS_VISITED,
+  VISIT_STATUS_NOT_VISITED,
+} from 'src/app/utils/appConstants';
 
 describe('AutoSendService', () => {
   let service: AutoSendService;
@@ -231,6 +236,43 @@ describe('AutoSendService', () => {
 
     expect(callCount).toBe(1);
     expect(getVisitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('COB-PREPAID-006: sendCollectPendingNow delega en dispatchCollectTransaction', async () => {
+    const dispatchSpy = spyOn<any>(service, 'dispatchCollectTransaction').and.resolveTo(true);
+
+    const sent = await service.sendCollectPendingNow('ANT-001');
+
+    expect(sent).toBeTrue();
+    expect(dispatchSpy).toHaveBeenCalledWith('ANT-001');
+  });
+
+  it('COB-PREPAID-006: isCollectUnsent true tras 400 (fuera de pending, aún Por Enviar)', async () => {
+    const collectionService = TestBed.inject(CollectionService) as CollectionService;
+    collectionService.getCollection = jasmine.createSpy('getCollection').and.resolveTo({
+      coCollection: '1789140257081.0',
+      idCollection: 0,
+      stDelivery: COLLECT_STATUS_TO_SEND,
+      stCollection: COLLECT_STATUS_TO_SEND,
+    } as any);
+
+    const unsent = await service.isCollectUnsent('1789140257081.0');
+
+    expect(unsent).toBeTrue();
+  });
+
+  it('COB-PREPAID-006: isCollectUnsent false cuando ya tiene id_collection', async () => {
+    const collectionService = TestBed.inject(CollectionService) as CollectionService;
+    collectionService.getCollection = jasmine.createSpy('getCollection').and.resolveTo({
+      coCollection: 'ANT-OK',
+      idCollection: 99,
+      stDelivery: COLLECT_STATUS_TO_SEND,
+      stCollection: COLLECT_STATUS_TO_SEND,
+    } as any);
+
+    const unsent = await service.isCollectUnsent('ANT-OK');
+
+    expect(unsent).toBeFalse();
   });
 
   it('COB-PREPAID-002: runPendingQueue during processing marks dirty and sends newly queued item', async () => {

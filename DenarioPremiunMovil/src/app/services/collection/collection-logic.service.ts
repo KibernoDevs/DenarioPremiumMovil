@@ -1124,7 +1124,15 @@ export class CollectionService {
       this.syncAddPaymentMethodDisabledState();
       return Promise.resolve(this.createAutomatedPrepaid);
     } else {
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) {
+      // COB-PREPAID-006: con forceRecalc recalcular desde documentos aunque ya esté TO_SEND
+      // (Enviar marca stDelivery antes de refreshAutomatedPrepaidBeforeSend).
+      if (
+        !forceRecalc
+        && (
+          this.collection.stDelivery == this.COLLECT_STATUS_SENT
+          || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
+        )
+      ) {
         monto = Number(this.collection.nuAmountTotal ?? 0);
         montoConversion = Number(this.collection.nuAmountTotalConversion ?? 0);
       } else if (this.collection.collectionDetails.length > 0) {
@@ -1592,13 +1600,12 @@ export class CollectionService {
     }
 
     if (arithmeticNet < 0 && this.automatedPrepaid) {
-      const gross = this.accumulateGrossPositiveDebitsFromCollectionDetails();
       this.isFullyCoveredCollection = true;
       this.creditBalancePrepaidAmount = Math.abs(arithmeticNet);
       this.efectivoRequerido = 0;
       return {
-        displayMonto: gross.monto,
-        displayMontoConversion: gross.montoConversion,
+        displayMonto: 0,
+        displayMontoConversion: 0,
         efectivoRequerido: 0,
       };
     }
@@ -1610,8 +1617,31 @@ export class CollectionService {
         this.isFullyCoveredCollection = true;
         this.efectivoRequerido = 0;
         return {
-          displayMonto: gross.monto,
-          displayMontoConversion: gross.montoConversion,
+          displayMonto: 0,
+          displayMontoConversion: 0,
+          efectivoRequerido: 0,
+        };
+      }
+    }
+
+    if (this.automatedPrepaid && arithmeticNet === 0) {
+      const details = Array.isArray(this.collection?.collectionDetails)
+        ? this.collection.collectionDetails
+        : [];
+      const hasGrossDebit = details.some(detail => {
+        if (!detail) {
+          return false;
+        }
+        const docIndex = this.findDocumentSaleIndexForDetail(detail);
+        const backup = docIndex >= 0 ? this.documentSalesBackup[docIndex] : undefined;
+        return this.resolveDetailGrossBalanceForTotals(detail, backup) > 0;
+      });
+      if (hasGrossDebit) {
+        this.isFullyCoveredCollection = true;
+        this.efectivoRequerido = 0;
+        return {
+          displayMonto: 0,
+          displayMontoConversion: 0,
           efectivoRequerido: 0,
         };
       }
@@ -1971,6 +2001,10 @@ export class CollectionService {
       return false;
     }
 
+    if (this.isZeroCashCoverageScenario() && this.hasAssignedDocumentForSendUx()) {
+      return true;
+    }
+
     if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
       const readyFromUi = this.documentSales.some((doc, index) =>
         this.isDocumentSaleReadyForSend(doc, index, details)
@@ -2005,6 +2039,11 @@ export class CollectionService {
     const detail = details[pos];
     if (!detail?.coDocument && !detail?.idDocument) {
       return false;
+    }
+
+    const coDocument = String(detail.coDocument ?? doc.coDocument ?? '').trim();
+    if (coDocument && this.discountRemnantPrepaidByDocument.has(coDocument)) {
+      return true;
     }
 
     if (doc.isSave === true) {
@@ -2388,18 +2427,7 @@ export class CollectionService {
 
   /** Monto excedente expresado en la moneda del anticipo automático. */
   public getAutomatedPrepaidExcessAmount(): number {
-    const excess = this.syncPrepaidDifferenceAmounts();
-    const targetCurrency = this.resolveAutomatedPrepaidCurrency();
-    if (!targetCurrency || targetCurrency === this.collection.coCurrency) {
-      return excess;
-    }
-
-    const converted = this.convertirMonto(
-      excess,
-      this.getEffectiveExchangeRate(),
-      this.collection.coCurrency,
-    );
-    return converted > 0 ? converted : excess;
+    return this.getPrepaidExcessAmount();
   }
 
   public resolveAutomatedPrepaidDocumentAmounts(): {
@@ -2410,8 +2438,15 @@ export class CollectionService {
   } {
     const coCurrency = this.resolveAutomatedPrepaidCurrency();
     const idCurrency = this.resolveCurrencyIdByCoCurrency(coCurrency);
-    const excessInCollection = this.syncPrepaidDifferenceAmounts();
-    const excessConversionStored = Number(this.collection.nuDifferenceConversion ?? 0);
+    const rawExcessInCollection = this.syncPrepaidDifferenceAmounts();
+    const excessInCollection = this.resolvePrepaidEligibleExcessInCollectionCurrency(rawExcessInCollection);
+    const excessConversionStored = excessInCollection > 0
+      ? this.convertirMonto(
+        excessInCollection,
+        this.getEffectiveExchangeRate(),
+        this.collection.coCurrency,
+      )
+      : Number(this.collection.nuDifferenceConversion ?? 0);
     const remnantPrepaid = Math.max(0, Number(this.discountRemnantPrepaidAmount) || 0);
     const remnantInCollection = this.convertPrepaidAmountToCollectionCurrency(remnantPrepaid);
     const creditExcessInCollection = Math.max(0, Number(this.creditBalancePrepaidAmount) || 0);
@@ -2512,6 +2547,23 @@ export class CollectionService {
     return this.discountRemnantPrepaidAmount > 0;
   }
 
+  /** Evita repetir el modal de anticipo automático en Pagos (COB-DISC-004). */
+  private automatedPrepaidInformMessageShown = false;
+
+  public shouldShowAutomatedPrepaidInformMessage(): boolean {
+    if (this.recentOpenCollect || !this.createAutomatedPrepaid) {
+      return false;
+    }
+    if (this.hasConfirmedDiscountRemnantPrepaid() || this.creditBalancePrepaidAmount > 0) {
+      return false;
+    }
+    return !this.automatedPrepaidInformMessageShown;
+  }
+
+  public markAutomatedPrepaidInformMessageShown(): void {
+    this.automatedPrepaidInformMessageShown = true;
+  }
+
   public buildDiscountRemnantPrepaidMessage(remnantInPrepaidCurrency: number): string {
     const template = this.collectionTags.get('COB_MSG_DISCOUNT_REMNANT_PREPAID')
       ?? 'El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por {amount}?';
@@ -2530,55 +2582,127 @@ export class CollectionService {
   }
 
   /**
-   * Excedente para anticipo automático (misma moneda que prepaidRangeAmount).
-   * El umbral de activación es solo `prepaidRangeAmount`
-   * (`getAutomatedPrepaidActivationThreshold` / COB-PREPAID-005).
+   * Excedente elegible para anticipo tras absorber tolerancia positiva (COB-PREPAID-005).
+   * Con `tolerancia0` + tolerancia absoluta, solo cuenta lo que supera `RangoToleranciaPositiva`.
    */
-  private getPrepaidExcessAmount(): number {
-    const excess = this.syncPrepaidDifferenceAmounts();
-    if (excess <= 0) {
+  private resolvePrepaidEligibleExcessInCollectionCurrency(rawExcess: number): number {
+    const normalizedRaw = this.cleanFormattedNumber(this.currencyService.formatNumber(rawExcess));
+    if (normalizedRaw <= 0) {
       return 0;
     }
-    if (this.prepaidRangeCurrency === this.collection.coCurrency) {
-      return excess;
+    if (!this.tolerancia0 || this.TipoTolerancia != 0 || this.existPartialPayment) {
+      return normalizedRaw;
     }
-
-    // Convertir el exceso ahora con la tasa efectiva (no depender de conversion stale).
-    const conversionExcess = this.convertirMonto(
-      excess,
-      this.getEffectiveExchangeRate(),
-      this.collection.coCurrency,
-    );
-    return conversionExcess > 0 ? conversionExcess : excess;
+    const positiveLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
+    const beyondTolerance = normalizedRaw - positiveLimit;
+    const eligible = Math.max(0, beyondTolerance);
+    return this.cleanFormattedNumber(this.currencyService.formatNumber(eligible));
   }
 
   /**
-   * Umbral mínimo de exceso para activar anticipo automático = prepaidRangeAmount
-   * (monto mínimo excedido configurado; no se suma a tolerancia positiva).
-   * COB-PREPAID-001 / COB-PREPAID-005. Redondeo a decimales de moneda (COB-TOL-DEC-002).
+   * Excedente para anticipo automático (misma moneda que prepaidRangeAmount).
+   * Tras tolerancia positiva; umbral de activación = `prepaidRangeAmount` sobre ese remanente.
+   */
+  private getPrepaidExcessAmount(): number {
+    const rawExcess = this.syncPrepaidDifferenceAmounts();
+    const eligible = this.resolvePrepaidEligibleExcessInCollectionCurrency(rawExcess);
+    if (eligible <= 0) {
+      return 0;
+    }
+    if (this.prepaidRangeCurrency === this.collection.coCurrency) {
+      return eligible;
+    }
+
+    const conversionExcess = this.convertirMonto(
+      eligible,
+      this.getEffectiveExchangeRate(),
+      this.collection.coCurrency,
+    );
+    return conversionExcess > 0 ? conversionExcess : eligible;
+  }
+
+  /**
+   * Umbral mínimo de excese para activar anticipo = prepaidRangeAmount
+   * aplicado sobre el excedente posterior a tolerancia positiva (COB-PREPAID-005).
+   * Redondeo a decimales de moneda (COB-TOL-DEC-002).
    */
   private getAutomatedPrepaidActivationThreshold(): number {
     const prepaidMin = this.parseConfigDecimal(this.prepaidRangeAmount);
     return Number(prepaidMin.toFixed(this.getMoneyDecimalPlaces()));
   }
 
+  /** Monto del anticipo automático que se persistiría al Enviar (moneda prepaidCurrency). */
+  private getAutomatedPrepaidSendAmount(): number {
+    return Math.max(0, Number(this.resolveAutomatedPrepaidDocumentAmounts().nuAmount) || 0);
+  }
+
+  /** Remanente descuento + saldo acreedor NCR en moneda de anticipo (sin exceso de pagos). */
+  private getRemnantOrCreditAutomatedPrepaidAmount(): number {
+    const remnantPrepaid = Math.max(0, Number(this.discountRemnantPrepaidAmount) || 0);
+    const creditExcessInCollection = Math.max(0, Number(this.creditBalancePrepaidAmount) || 0);
+    const creditExcessPrepaid = this.convertCollectionAmountToPrepaidCurrency(creditExcessInCollection);
+    return remnantPrepaid + creditExcessPrepaid;
+  }
+
+  private hasRemnantOrCreditAutomatedPrepaid(): boolean {
+    return this.hasConfirmedDiscountRemnantPrepaid()
+      || this.discountRemnantPrepaidByDocument.size > 0
+      || this.creditBalancePrepaidAmount > 0;
+  }
+
+  /** Anticipo automático por remanente de descuento o NCR > FACT (UX + validación Enviar). */
+  public isRemnantOrCreditAutomatedPrepaidScenario(): boolean {
+    if (this.coTypeModule !== '0' || !this.automatedPrepaid) {
+      return false;
+    }
+    if (!this.hasRemnantOrCreditAutomatedPrepaid()) {
+      return false;
+    }
+    return this.createAutomatedPrepaid
+      || this.canSendRemnantOrCreditAutomatedPrepaid()
+      || this.getRemnantOrCreditAutomatedPrepaidAmount() > 0;
+  }
+
+  /** Comentario obligatorio al Enviar solo en anticipo automático remanente/NCR. */
+  public requiresRemnantOrCreditAutomatedPrepaidComment(): boolean {
+    return this.isRemnantOrCreditAutomatedPrepaidScenario();
+  }
+
+  public isCommentRequiredForSend(): boolean {
+    return this.requiredComment || this.requiresRemnantOrCreditAutomatedPrepaidComment();
+  }
+
+  /** Otros monto 0 bloqueado: cobro cubierto o anticipo remanente/NCR con fila Otros. */
+  public isRemnantOrCreditOtrosMontoLocked(): boolean {
+    return this.isRemnantOrCreditAutomatedPrepaidScenario()
+      && Array.isArray(this.pagoOtros)
+      && this.pagoOtros.length > 0;
+  }
+
+  private canSendRemnantOrCreditAutomatedPrepaid(): boolean {
+    if (!this.hasRemnantOrCreditAutomatedPrepaid()) {
+      return false;
+    }
+    if (this.getRemnantOrCreditAutomatedPrepaidAmount() <= 0) {
+      return false;
+    }
+    this.ensureAutomatedPrepaidPaymentTemplate();
+    return Array.isArray(this.anticipoAutomatico)
+      && this.anticipoAutomatico.length > 0;
+  }
+
   shouldCreateAutomatedPrepaidOnSend(): boolean {
-    if (this.coTypeModule !== '0' || this.existPartialPayment) {
+    if (this.coTypeModule !== '0' || !this.automatedPrepaid) {
       return false;
     }
 
-    if (!this.automatedPrepaid) {
+    // Remanente de descuento / NCR > FACT: no bloquear por existPartialPayment ni umbral de exceso.
+    if (this.canSendRemnantOrCreditAutomatedPrepaid()) {
+      return true;
+    }
+
+    if (this.existPartialPayment) {
       return false;
-    }
-
-    if (this.hasConfirmedDiscountRemnantPrepaid()) {
-      this.ensureAutomatedPrepaidPaymentTemplate();
-      return Array.isArray(this.anticipoAutomatico) && this.anticipoAutomatico.length > 0;
-    }
-
-    if (this.creditBalancePrepaidAmount > 0) {
-      this.ensureAutomatedPrepaidPaymentTemplate();
-      return Array.isArray(this.anticipoAutomatico) && this.anticipoAutomatico.length > 0;
     }
 
     const prepaidExcess = this.getPrepaidExcessAmount();
@@ -2591,23 +2715,70 @@ export class CollectionService {
       && this.anticipoAutomatico.length > 0;
   }
 
+  /** Snapshot de anticipo automático antes de persistir al Enviar (COB-PREPAID-006). */
+  captureAutomatedPrepaidSendSnapshot(): {
+    createAutomatedPrepaid: boolean;
+    discountRemnantPrepaidAmount: number;
+    creditBalancePrepaidAmount: number;
+    discountRemnantPrepaidByDocument: Map<string, number>;
+    anticipoAutomatico: Array<{ type: string; posCollectionPayment: number; synthetic?: boolean }>;
+  } {
+    return {
+      createAutomatedPrepaid: this.createAutomatedPrepaid,
+      discountRemnantPrepaidAmount: this.discountRemnantPrepaidAmount,
+      creditBalancePrepaidAmount: this.creditBalancePrepaidAmount,
+      discountRemnantPrepaidByDocument: new Map(this.discountRemnantPrepaidByDocument),
+      anticipoAutomatico: Array.isArray(this.anticipoAutomatico)
+        ? this.anticipoAutomatico.map(item => ({ ...item }))
+        : [],
+    };
+  }
+
+  applyAutomatedPrepaidSendSnapshot(snapshot: {
+    createAutomatedPrepaid?: boolean;
+    discountRemnantPrepaidAmount?: number;
+    creditBalancePrepaidAmount?: number;
+    discountRemnantPrepaidByDocument?: Map<string, number>;
+    anticipoAutomatico?: Array<{ type: string; posCollectionPayment: number; synthetic?: boolean }>;
+  } | null): void {
+    if (!snapshot) {
+      return;
+    }
+    if (snapshot.discountRemnantPrepaidByDocument && snapshot.discountRemnantPrepaidByDocument.size > 0) {
+      this.discountRemnantPrepaidByDocument = new Map(snapshot.discountRemnantPrepaidByDocument);
+      this.syncDiscountRemnantPrepaidTotal();
+    } else if ((snapshot.discountRemnantPrepaidAmount ?? 0) > 0) {
+      this.discountRemnantPrepaidAmount = snapshot.discountRemnantPrepaidAmount ?? 0;
+    }
+    if ((snapshot.creditBalancePrepaidAmount ?? 0) > 0) {
+      this.creditBalancePrepaidAmount = snapshot.creditBalancePrepaidAmount ?? 0;
+    }
+    if (snapshot.createAutomatedPrepaid) {
+      this.createAutomatedPrepaid = true;
+    }
+    if (Array.isArray(snapshot.anticipoAutomatico) && snapshot.anticipoAutomatico.length > 0) {
+      this.anticipoAutomatico = snapshot.anticipoAutomatico.map(item => ({ ...item }));
+    }
+  }
+
   refreshAutomatedPrepaidBeforeSend(): Promise<boolean> {
     this.syncExchangeRateToCollectionHeader();
-    return this.calcularMontos('', 0).then(() => {
-      this.resolveAutomatedPrepaid('', 0);
-      if (this.hasConfirmedDiscountRemnantPrepaid() || this.creditBalancePrepaidAmount > 0) {
+    // forceRecalc: stDelivery ya es TO_SEND al Enviar; evitar rama preserve/nuAmountTotal.
+    return this.calcularMontos('', 0, true).then(async () => {
+      this.syncDiscountRemnantPrepaidTotal();
+
+      if (this.hasRemnantOrCreditAutomatedPrepaid()) {
         this.createAutomatedPrepaid = true;
         this.ensureAutomatedPrepaidPaymentTemplate();
+        return this.shouldCreateAutomatedPrepaidOnSend();
       }
+
+      this.resolveAutomatedPrepaid('', 0, true);
       if (
         this.createAutomatedPrepaid
         && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)
       ) {
         this.resetAutomatedPrepaid();
-        if (this.hasConfirmedDiscountRemnantPrepaid() || this.creditBalancePrepaidAmount > 0) {
-          this.createAutomatedPrepaid = true;
-          this.ensureAutomatedPrepaidPaymentTemplate();
-        }
       }
       return this.shouldCreateAutomatedPrepaidOnSend();
     });
@@ -2618,32 +2789,24 @@ export class CollectionService {
    * COB-DISC-003: remanente de descuento puede no tener pagos en el cobro.
    */
   ensureAutomatedPrepaidPaymentTemplate(): void {
-    if (Array.isArray(this.anticipoAutomatico) && this.anticipoAutomatico.length > 0) {
+    const normalized = this.normalizeAutomatedPrepaidPaymentMeta();
+    if (normalized) {
+      this.anticipoAutomatico = [normalized];
       return;
     }
 
-    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
-    if (payments.length > 0) {
-      const last = payments[payments.length - 1];
-      const allPayments = Array.isArray(this.collection?.collectionPayments)
-        ? this.collection.collectionPayments
-        : [];
-      let pos = allPayments.indexOf(last);
-      if (pos < 0) {
-        pos = allPayments.findIndex(p => p === last);
-      }
-      if (pos < 0) {
-        pos = Math.max(0, allPayments.length - 1);
-      }
-      const payType = String(last.coType ?? last.coPaymentMethod ?? 'ef').toLowerCase();
+    const pos = this.resolveLastPersistedPaymentIndexForAutomatedPrepaid();
+    if (pos >= 0) {
+      const source = this.collection.collectionPayments?.[pos];
+      const payType = String(source?.coType ?? source?.coPaymentMethod ?? 'ef').toLowerCase() || 'ef';
       this.anticipoAutomatico = [{
-        type: payType || 'ef',
+        type: payType,
         posCollectionPayment: pos,
       }];
       return;
     }
 
-    // EF sintético: createAnticipoCollectionPayment no exige fila fuente.
+    // Sin filas de pago (remanente descuento puro): EF sintético.
     this.anticipoAutomatico = [{
       type: 'ef',
       posCollectionPayment: -1,
@@ -2651,8 +2814,112 @@ export class CollectionService {
     }];
   }
 
+  /** Índice del último pago persistido con método (aunque monto=0, ej. Otros cierre NCR). */
+  private resolveLastPersistedPaymentIndexForAutomatedPrepaid(): number {
+    const allPayments = Array.isArray(this.collection?.collectionPayments)
+      ? this.collection.collectionPayments
+      : [];
+    for (let i = allPayments.length - 1; i >= 0; i--) {
+      if (!this.isEmptyCollectionPayment(allPayments[i])) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Exceso de pago usa objetos UI (PagoEfectivo…) en anticipoAutomatico; remanente/NCR usa meta {type,pos}.
+   * Normaliza al formato que createAnticipoCollectionPayment entiende.
+   */
+  private normalizeAutomatedPrepaidPaymentMeta(): {
+    type: string;
+    posCollectionPayment: number;
+    synthetic?: boolean;
+  } | null {
+    if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
+      return null;
+    }
+
+    const meta = this.anticipoAutomatico[0] as {
+      type?: string;
+      posCollectionPayment?: number;
+      synthetic?: boolean;
+      coType?: string;
+      coPaymentMethod?: string;
+    };
+    if (meta?.synthetic === true || Number(meta?.posCollectionPayment) < 0) {
+      return {
+        type: String(meta.type ?? 'ef').toLowerCase() || 'ef',
+        posCollectionPayment: -1,
+        synthetic: true,
+      };
+    }
+
+    if (Number.isInteger(meta?.posCollectionPayment) && (meta.posCollectionPayment ?? -1) >= 0) {
+      return {
+        type: String(meta.type ?? meta.coType ?? meta.coPaymentMethod ?? 'ef').toLowerCase() || 'ef',
+        posCollectionPayment: meta.posCollectionPayment ?? 0,
+      };
+    }
+
+    const uiIndex = this.resolveUiPaymentIndexForAutomatedPrepaid(meta);
+    if (uiIndex.index >= 0) {
+      return {
+        type: uiIndex.type,
+        posCollectionPayment: uiIndex.index,
+      };
+    }
+
+    return null;
+  }
+
+  private resolveUiPaymentIndexForAutomatedPrepaid(paymentLike: unknown): { index: number; type: string } {
+    const candidates: Array<{ type: string; arr: unknown[] | undefined }> = [
+      { type: 'ef', arr: this.pagoEfectivo },
+      { type: 'ch', arr: this.pagoCheque },
+      { type: 'de', arr: this.pagoDeposito },
+      { type: 'tr', arr: this.pagoTransferencia },
+      { type: 'pm', arr: this.pagoMovil },
+      { type: 'ot', arr: this.pagoOtros },
+    ];
+    for (const { type, arr } of candidates) {
+      if (!Array.isArray(arr)) {
+        continue;
+      }
+      const index = arr.indexOf(paymentLike);
+      if (index >= 0) {
+        const persistedIndex = this.mapUiPaymentIndexToPersistedIndex(type, index);
+        return { index: persistedIndex, type };
+      }
+    }
+    return { index: -1, type: 'ef' };
+  }
+
+  /** Alinea índice UI (pagoEfectivo[i]) con collectionPayments[i] persistido. */
+  private mapUiPaymentIndexToPersistedIndex(payType: string, uiIndex: number): number {
+    const allPayments = Array.isArray(this.collection?.collectionPayments)
+      ? this.collection.collectionPayments
+      : [];
+    if (uiIndex >= 0 && uiIndex < allPayments.length) {
+      const at = allPayments[uiIndex];
+      const method = String(at?.coType ?? at?.coPaymentMethod ?? '').toLowerCase();
+      if (!method || method === payType) {
+        return uiIndex;
+      }
+    }
+    for (let i = allPayments.length - 1; i >= 0; i--) {
+      const method = String(allPayments[i]?.coType ?? allPayments[i]?.coPaymentMethod ?? '').toLowerCase();
+      if (method === payType) {
+        return i;
+      }
+    }
+    return this.resolveLastPersistedPaymentIndexForAutomatedPrepaid();
+  }
+
   private resolveAutomatedPrepaid(type: string, index: number, skipValidateToSend: boolean = false): void {
-    this.createAutomatedPrepaid = false;
+    if (!this.hasRemnantOrCreditAutomatedPrepaid()) {
+      this.createAutomatedPrepaid = false;
+    }
     this.syncExchangeRateToCollectionHeader();
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
@@ -2672,8 +2939,7 @@ export class CollectionService {
     }
 
     this.checkTiposPago();
-    const isRemnantOrCreditPrepaid = this.hasConfirmedDiscountRemnantPrepaid()
-      || this.creditBalancePrepaidAmount > 0;
+    const isRemnantOrCreditPrepaid = this.hasRemnantOrCreditAutomatedPrepaid();
     if (this.createAutomatedPrepaid) {
       if (isRemnantOrCreditPrepaid) {
         this.ensureAutomatedPrepaidPaymentTemplate();
@@ -2971,7 +3237,7 @@ export class CollectionService {
     return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
   }
 
-  async calcularMontos(type: string, index: number): Promise<boolean> {
+  async calcularMontos(type: string, index: number, forceRecalc: boolean = false): Promise<boolean> {
     this.syncExchangeRateToCollectionHeader();
     this.montoTotalPagado = 0;
     if (this.tipoPagoEfectivo) {
@@ -3026,7 +3292,7 @@ export class CollectionService {
       this.montoTotalPagadoConversion = this.convertirMonto(this.montoTotalPagado, 0, this.collection.coCurrency);
     }
 
-    await this.calculatePayment(type, index);
+    await this.calculatePayment(type, index, forceRecalc);
     if (this.coTypeModule == "0") {
       if (this.createAutomatedPrepaid) {
         this.onCollectionValidToSend(true);
@@ -3426,9 +3692,9 @@ export class CollectionService {
     return !this.hasPaymentText(this.collection?.txConversion);
   }
 
-  /** Comentario obligatorio solo si `requiredComment` y el texto está vacío. */
+  /** Comentario obligatorio: config global o anticipo automático remanente/NCR. */
   public hasRequiredCommentFieldError(): boolean {
-    if (!this.requiredComment) {
+    if (!this.isCommentRequiredForSend()) {
       return false;
     }
     return !this.hasPaymentText(this.collection?.txComment);
@@ -3436,7 +3702,7 @@ export class CollectionService {
 
   /** Alinea `validComment` con el texto persistido (reapertura / antes de Enviar). */
   public syncCommentValidityFromCollection(): void {
-    if (!this.requiredComment) {
+    if (!this.isCommentRequiredForSend()) {
       this.validComment = true;
       return;
     }
@@ -3451,6 +3717,9 @@ export class CollectionService {
   public hasIncompleteDocumentAmountToPay(): boolean {
     const coType = String(this.collection?.coType ?? '0');
     if (this.hideDocuments || coType === '1' || coType === '2') {
+      return false;
+    }
+    if (this.isZeroCashCoverageScenario()) {
       return false;
     }
 
@@ -4183,7 +4452,14 @@ export class CollectionService {
       const positiveLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
       const negativeLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaNegativa);
       if (delta > 0) {
-        return delta <= positiveLimit;
+        if (delta <= positiveLimit) {
+          return true;
+        }
+        if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
+          const prepaidEligible = this.resolvePrepaidEligibleExcessInCollectionCurrency(delta);
+          return prepaidEligible >= this.getAutomatedPrepaidActivationThreshold();
+        }
+        return false;
       }
       if (delta < 0) {
         return Math.abs(delta) <= negativeLimit;
@@ -4302,6 +4578,7 @@ export class CollectionService {
   public resetCobroPaymentCoverageSessionState(): void {
     this.discountRemnantPrepaidByDocument.clear();
     this.discountRemnantPrepaidAmount = 0;
+    this.automatedPrepaidInformMessageShown = false;
     this.isFullyCoveredCollection = false;
     this.efectivoRequerido = 0;
     this.creditBalancePrepaidAmount = 0;
@@ -6203,19 +6480,18 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   ///////////////////QUERYS////////////////
 
-  getAllBanks(dbServ: SQLiteObject, idEnterprise: number) {
+  getAllBanks(dbServ: SQLiteObject, idEnterprise: number): Promise<void> {
     this.listBanks = [] as Bank[];
 
-
-    var selectStatement = 'SELECT * FROM banks WHERE id_enterprise = ?';
-    dbServ.executeSql(selectStatement, [idEnterprise]).then(data => {
+    const selectStatement = 'SELECT * FROM banks WHERE id_enterprise = ?';
+    return dbServ.executeSql(selectStatement, [idEnterprise]).then(data => {
       if (this.clientBankAccount) {
         this.listBanks.push({
           idBank: 0,
-          coBank: "Nueva Cuenta",
-          naBank: "Nueva Cuenta",
+          coBank: 'Nueva Cuenta',
+          naBank: 'Nueva Cuenta',
           coEnterprise: this.collection.coEnterprise,
-          idEnterprise: this.collection.idEnterprise
+          idEnterprise: this.collection.idEnterprise,
         });
       }
       for (let i = 0; i < data.rows.length; i++) {
@@ -6228,7 +6504,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           idEnterprise: item.id_enterprise,
         });
       }
-    })
+    });
   }
 
   clearDocumentSalesState(): void {
@@ -8961,9 +9237,14 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     enqueuePending: boolean = true,
   ): Promise<string | null> {
     this.syncExchangeRateToCollectionHeader();
+    this.ensureAutomatedPrepaidPaymentTemplate();
     const prepaidAmounts = this.resolveAutomatedPrepaidDocumentAmounts();
     const excessAmount = prepaidAmounts.nuAmount;
     const excessConversion = prepaidAmounts.nuAmountConversion;
+    if ((Number(excessAmount) || 0) <= 0) {
+      console.error('createAnticipoCollection: monto de anticipo <= 0; no se persiste');
+      return Promise.resolve(null);
+    }
     const rate = this.getEffectiveExchangeRate();
 
     let inserStatement = "INSERT OR REPLACE INTO collections (" +
@@ -9005,6 +9286,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
 
     let newCoCollection = this.dateServ.generateCO(0);
+    const anticipoStCollection = this.COLLECT_STATUS_TO_SEND;
+    const anticipoStDelivery = this.COLLECT_STATUS_TO_SEND;
     return dbServ.executeSql(inserStatement,
       [
         0,
@@ -9013,8 +9296,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.idClient,
         collection.coClient,
         collection.lbClient,
-        collection.stCollection,
-        collection.stDelivery,
+        anticipoStCollection,
+        anticipoStDelivery,
         collection.daCollection,
         collection.daRate,
         collection.naResponsible,
@@ -9035,15 +9318,15 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         0,//collection.nuAmountIgtfConversion,
         excessAmount,//collection.nuAmountFinal,
         excessConversion,//collection.nuAmountFinalConversion,
-        collection.nuAmountDiscountTotal,//collection.nuAmountDiscountTotal,
-        collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
-        collection.nuIgtf,
-        collection.hasIGTF,
+        0,// anticipo hijo: sin descuentos del cobro padre (COB-PREPAID-006)
+        0,
         0,
         false,
-      ]).then(data => {
-        console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
-        return this.createAnticipoCollectionPayment(
+        0,
+        false,
+      ]).then(async (data) => {
+        console.log('CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT');
+        const paymentCo = await this.createAnticipoCollectionPayment(
           dbServ,
           collection,
           newCoCollection,
@@ -9051,10 +9334,187 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           excessConversion,
           enqueuePending,
         );
+        if (!paymentCo) {
+          console.error('createAnticipoCollection: fallo payment; eliminando anticipo huérfano', newCoCollection);
+          await dbServ.executeSql(
+            'DELETE FROM collection_payments WHERE co_collection = ?',
+            [newCoCollection],
+          ).catch(() => undefined);
+          await dbServ.executeSql(
+            'DELETE FROM collections WHERE co_collection = ?',
+            [newCoCollection],
+          ).catch(() => undefined);
+          return null;
+        }
+        return paymentCo;
       }).catch(e => {
         console.log(e);
         return null;
       })
+  }
+
+  /** WS/SQLite: `daValue` y `daCollectionPayment` sin `T` (YYYY-MM-DD HH:mm:ss). */
+  private normalizeCollectionPaymentDatesForWs(payment: CollectionPayment): void {
+    payment.daValue = this.dateServ.toDbDateTime(payment.daValue);
+    payment.daCollectionPayment = this.dateServ.toDbDateTime(payment.daCollectionPayment);
+  }
+
+  private paymentDateForWs(source?: string | null): string {
+    return this.dateServ.toDbDateTime(source ?? this.dateServ.hoyISO());
+  }
+
+  /** Valores SQL de pago EF mínimo para anticipo automático (remanente/NCR/Otros). */
+  private buildMinimalAutomatedAnticipoPaymentSqlValues(
+    newCoCollection: string,
+    excessAmount: number,
+    excessConversion: number,
+  ): unknown[] {
+    const today = this.paymentDateForWs();
+    return [
+      0,
+      newCoCollection,
+      0,
+      'ef',
+      0,
+      '',
+      '',
+      '',
+      '',
+      today,
+      today,
+      '1',
+      excessAmount,
+      excessConversion,
+      'ef',
+      0,
+      '',
+      '',
+      0,
+      '',
+      0,
+      '',
+    ];
+  }
+
+  /** Copia pago fuente del cobro padre sin idCollectionDetail (anticipo no tiene details). */
+  private buildCopiedAutomatedAnticipoPaymentSqlValues(
+    newCoCollection: string,
+    sourcePayment: CollectionPayment | null | undefined,
+    payType: string,
+    excessAmount: number,
+    excessConversion: number,
+  ): unknown[] {
+    return [
+      0,
+      newCoCollection,
+      0,
+      sourcePayment?.coPaymentMethod ?? payType,
+      sourcePayment?.idBank ?? 0,
+      sourcePayment?.nuPaymentDoc ?? '',
+      sourcePayment?.naBank ?? '',
+      sourcePayment?.coClientBankAccount ?? '',
+      sourcePayment?.nuClientBankAccount ?? '',
+      this.paymentDateForWs(sourcePayment?.daValue),
+      this.paymentDateForWs(sourcePayment?.daCollectionPayment),
+      String(sourcePayment?.nuCollectionPayment ?? '1'),
+      excessAmount,
+      excessConversion,
+      payType,
+      sourcePayment?.idDifferenceCode ?? 0,
+      sourcePayment?.coDifferenceCode ?? '',
+      sourcePayment?.nuBankAccount ?? '',
+      sourcePayment?.idTypeDocument ?? 0,
+      sourcePayment?.nuDocument ?? '',
+      sourcePayment?.idCodePhoneNumber ?? 0,
+      sourcePayment?.nuPhoneNumber ?? '',
+    ];
+  }
+
+  /**
+   * Normaliza payload WS de anticipo automático (co_type=1).
+   * Evita 400 por idCollectionDetail del padre, diff codes Otros o descuentos heredados.
+   */
+  sanitizePrepaidCollectionPayloadForSend(collection: Collection): void {
+    if (String(collection?.coType ?? '') !== '1') {
+      return;
+    }
+    collection.coType = '1';
+    collection.collectionDetails = [];
+    collection.nuAmountDiscountTotal = 0;
+    collection.nuAmountDiscountTotalConversion = 0;
+    collection.nuDifference = 0;
+    collection.nuDifferenceConversion = 0;
+    collection.hasIGTF = false;
+    collection.nuAmountIgtf = 0;
+    collection.nuAmountIgtfConversion = 0;
+    collection.nuIgtf = 0;
+    collection.document = undefined;
+    const total = Number(collection.nuAmountTotal ?? collection.nuAmountFinal ?? 0);
+    const totalConv = Number(collection.nuAmountTotalConversion ?? collection.nuAmountFinalConversion ?? total);
+    collection.nuAmountPaid = total;
+    collection.nuAmountPaidConversion = totalConv;
+    collection.nuAmountFinal = total;
+    collection.nuAmountFinalConversion = totalConv;
+
+    const payments = Array.isArray(collection.collectionPayments)
+      ? collection.collectionPayments
+      : [];
+    collection.collectionPayments = payments.map((payment) => {
+      const amount = Number(payment?.nuAmountPartial ?? total);
+      const amountConv = Number(payment?.nuAmountPartialConversion ?? totalConv);
+      const method = String(payment?.coType ?? payment?.coPaymentMethod ?? '').toLowerCase();
+      const needsMinimal = method === 'ot'
+        || Number(payment?.idCollectionDetail ?? 0) > 0
+        || Number(payment?.idDifferenceCode ?? 0) > 0;
+      if (!needsMinimal) {
+        payment.idCollectionDetail = 0;
+        payment.coCollection = collection.coCollection;
+        payment.nuAmountPartial = amount;
+        payment.nuAmountPartialConversion = amountConv;
+        this.normalizeCollectionPaymentDatesForWs(payment);
+        return payment;
+      }
+      return this.buildSyntheticAnticipoCollectionPayment(collection, amount, amountConv);
+    });
+  }
+
+  /** Pago EF mínimo para enviar anticipo (co_type=1) si SQLite no tiene fila de pago. */
+  buildSyntheticAnticipoCollectionPayment(
+    collection: Collection,
+    amount: number,
+    amountConversion: number,
+  ): CollectionPayment {
+    const normalizedAmount = Math.max(0, Number(amount) || 0);
+    const normalizedConversion = Math.max(0, Number(amountConversion) || 0);
+    const today = this.paymentDateForWs();
+    return new CollectionPayment(
+      null,
+      0,
+      collection.coCollection,
+      'ef',
+      0,
+      '',
+      '',
+      '',
+      '',
+      today,
+      today,
+      '1',
+      '',
+      normalizedAmount,
+      normalizedConversion,
+      'ef',
+      0,
+      true,
+      true,
+      0,
+      '',
+      '',
+      0,
+      '',
+      0,
+      '',
+    );
   }
 
   createAnticipoCollectionPayment(
@@ -9096,45 +9556,37 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       return Promise.resolve(null);
     }
 
-    const anticipoMeta = this.anticipoAutomatico[0];
-    const isSynthetic = anticipoMeta?.synthetic === true
+    let anticipoMeta = this.anticipoAutomatico[0];
+    let isSynthetic = anticipoMeta?.synthetic === true
       || Number(anticipoMeta?.posCollectionPayment) < 0;
-    const sourcePayment = !isSynthetic
+    let sourcePayment = !isSynthetic
       ? collection.collectionPayments?.[anticipoMeta.posCollectionPayment]
       : null;
 
     if (!isSynthetic && !sourcePayment) {
-      console.log('ERROR: no se encontro payment fuente para anticipo automatico');
-      return Promise.resolve(null);
+      console.warn('createAnticipoCollectionPayment: sin payment fuente; EF sintético');
+      isSynthetic = true;
+      anticipoMeta = { type: 'ef', posCollectionPayment: -1, synthetic: true };
+      sourcePayment = null;
     }
 
     const payType = String(anticipoMeta.type ?? sourcePayment?.coType ?? 'ef').toLowerCase() || 'ef';
-
-    return dbServ.executeSql(insertStatement,
-      [
-        0,
+    const useMinimalAnticipoPayment = isSynthetic
+      || this.hasRemnantOrCreditAutomatedPrepaid()
+      || payType === 'ot'
+      || Number(sourcePayment?.idCollectionDetail ?? 0) > 0
+      || Number(sourcePayment?.idDifferenceCode ?? 0) > 0;
+    const paymentValues = useMinimalAnticipoPayment
+      ? this.buildMinimalAutomatedAnticipoPaymentSqlValues(newCoCollection, excessAmount, excessConversion)
+      : this.buildCopiedAutomatedAnticipoPaymentSqlValues(
         newCoCollection,
-        sourcePayment?.idCollectionDetail ?? 0,
-        sourcePayment?.coPaymentMethod ?? payType,
-        sourcePayment?.idBank ?? 0,
-        sourcePayment?.nuPaymentDoc ?? '',
-        sourcePayment?.naBank ?? '',
-        sourcePayment?.coClientBankAccount ?? '',
-        sourcePayment?.nuClientBankAccount ?? '',
-        sourcePayment?.daValue ?? this.dateServ.hoyISO(),
-        sourcePayment?.daCollectionPayment ?? this.dateServ.hoyISO(),
-        sourcePayment?.nuCollectionPayment ?? 1,
+        sourcePayment,
+        payType,
         excessAmount,
         excessConversion,
-        payType,
-        sourcePayment?.idDifferenceCode ?? 0,
-        sourcePayment?.coDifferenceCode ?? '',
-        sourcePayment?.nuBankAccount ?? '',
-        sourcePayment?.idTypeDocument ?? 0,
-        sourcePayment?.nuDocument ?? '',
-        sourcePayment?.idCodePhoneNumber ?? 0,
-        sourcePayment?.nuPhoneNumber ?? '',
-      ]).then(data => {
+      );
+
+    return dbServ.executeSql(insertStatement, paymentValues).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
         if (enqueuePending) {
           this.saveSendCollection(newCoCollection);
@@ -9451,9 +9903,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           nuClientBankAccount: res.rows.item(i).nu_client_bank_account,
           //daValue: daValue,
           //daCollectionPayment: daCollectionPayment,
-          daValue: res.rows.item(i).da_value,
-          daCollectionPayment: res.rows.item(i).da_collection_payment,
-          nuCollectionPayment: res.rows.item(i).nu_client_bank_account,
+          daValue: this.dateServ.toDbDateTime(res.rows.item(i).da_value),
+          daCollectionPayment: this.dateServ.toDbDateTime(res.rows.item(i).da_collection_payment),
+          nuCollectionPayment: res.rows.item(i).nu_collection_payment,
           newNuClientBankAccount: res.rows.item(i).newNuClientBankAccount,
           nuAmountPartial: res.rows.item(i).nu_amount_partial,
           nuAmountPartialConversion: res.rows.item(i).nu_amount_partial_conversion,

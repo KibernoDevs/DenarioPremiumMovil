@@ -82,7 +82,7 @@ export class CobroComponent implements OnInit, OnDestroy {
     if (tab === 'documentos') {
       this.documentsTabMounted = true;
       setTimeout(() => {
-        void this.cobroDocuments?.refreshDocumentsForCurrentClient();
+        // Salto por error de Enviar: no recargar listado (preserva selección en memoria).
         this.cobroDocuments?.ensureDocumentsTableResizeObserver();
         this.cobroDocuments?.invalidateDocumentsTableLayoutCache();
         this.cobroDocuments?.scheduleDocumentsTableLayoutSync();

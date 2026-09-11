@@ -381,6 +381,7 @@ export class CobrosHeaderComponent implements OnInit {
 
       const db = this.synchronizationServices.getDatabase();
       const coCollection = this.collectService.collection.coCollection;
+      const prepaidSendSnapshot = this.collectService.captureAutomatedPrepaidSendSnapshot();
 
       const response = await this.collectService.saveCollection(
         db,
@@ -390,33 +391,56 @@ export class CobrosHeaderComponent implements OnInit {
       await this.adjuntoService.savePhotos(db, coCollection, 'cobros');
       console.log(response);
       this.collectService.applyPersistSucceededBaseline();
+      this.collectService.applyAutomatedPrepaidSendSnapshot(prepaidSendSnapshot);
 
       const shouldCreatePrepaid = await this.collectService.refreshAutomatedPrepaidBeforeSend();
+      console.log('[CobrosHeader] anticipo automático al Enviar', {
+        shouldCreatePrepaid,
+        remnant: this.collectService.discountRemnantPrepaidAmount,
+        creditBalance: this.collectService.creditBalancePrepaidAmount,
+      });
+
+      // 1) Cobro normal primero (COB-PREPAID-002): el hijo anticipo se crea/envía tras el padre.
+      const parentPending = this.collectService.buildCollectPendingBatch(coCollection);
+      let parentQueued = await this.services.insertPendingTransactionBatch(db, parentPending);
+      if (!parentQueued) {
+        parentQueued = await this.services.insertPendingTransaction(db, parentPending[0]);
+      }
+      this.collectService.sendCollection = true;
+      await this.autoSend.drainPendingQueue(12, [coCollection]);
+
+      // 2) Anticipo automático: mismo encolado que exceso de pago (saveSend → PendingTransaction).
       let anticipoCoCollection: string | null = null;
       if (shouldCreatePrepaid) {
+        this.collectService.ensureAutomatedPrepaidPaymentTemplate();
+        // enqueuePending=true (default): createAnticipoCollectionPayment → saveSendCollection
+        // → CobrosComponent.insertPendingTransaction + runPendingQueue (COB-PREPAID-002).
         anticipoCoCollection = await this.collectService.createAnticipoCollection(
           db,
           this.collectService.collection,
-          false,
+          true,
         );
-        console.log(anticipoCoCollection, ' SE CREO ANTICIPO AUTOMATICO');
+        if (!anticipoCoCollection) {
+          console.error('CobrosHeader: fallo al crear anticipo automático tras Enviar');
+        } else {
+          console.log('[CobrosHeader] anticipo encolado vía saveSend', anticipoCoCollection);
+          await this.autoSend.drainPendingQueue(12, [anticipoCoCollection]);
+          // Tras 400 el anticipo sale de pending → failed; reintentar si sigue sin id de servidor.
+          if (await this.autoSend.isCollectUnsent(anticipoCoCollection)) {
+            console.warn('[CobrosHeader] anticipo sin enviar; reintento directo', anticipoCoCollection);
+            await this.autoSend.sendCollectPendingNow(anticipoCoCollection);
+            await this.autoSend.drainPendingQueue(12, [anticipoCoCollection]);
+          }
+        }
         this.collectService.createAutomatedPrepaid = false;
         this.collectService.anticipoAutomatico = [];
       }
 
-      const transactions = this.collectService.buildCollectPendingBatch(
-        coCollection,
-        anticipoCoCollection,
-      );
-      await this.services.insertPendingTransactionBatch(db, transactions);
-      this.collectService.sendCollection = true;
-
-      // Esperar a que el spinner se cierre del todo antes de AutoSend (evita z-index overlap).
+      // Esperar a que el spinner se cierre del todo antes de alertas AutoSend (evita z-index overlap).
       await this.finishAfterSendNavigation();
       if (!online) {
         this.notifyOfflineCollectQueued();
       }
-      await this.autoSend.runPendingQueue();
     } finally {
       this.isSendingNormalCollection = false;
       await this.messageService.hideLoading();
