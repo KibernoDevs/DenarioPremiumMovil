@@ -10,3 +10,4 @@
 8. **requiredCommentOrder=true** → comentario obligatorio solo en editable; pedido enviado vacío sigue abriendo (**PED-COMMENT-001**).
 9. **userMustActivateGPS** → modal al Enviar sin GPS si está activo. `signatureOrder` solo muestra firma (no exige adjuntos).
 10. Enviar completo → confirmación `PED_PREGUNTA_GUARDADO` → éxito tras persistir + AutoSend.
+11. **userCanChangeUnits:** ausente/`true` → selector de unidad editable (salvo `unitByPriceList=true`). `false` → selector disabled; unidad actual se muestra.

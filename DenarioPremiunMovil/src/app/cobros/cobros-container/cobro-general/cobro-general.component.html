@@ -174,7 +174,7 @@
           value="this.collectService.collection.txComment" [maxlength]="textCommentMaxLength" [ngClass]="{
             'inp-write': shouldShowRequiredCommentError(),
             'no-validate': isSentDelivery
-          }" [required]="this.collectService.requiredComment"
+          }" [required]="this.collectService.isCommentRequiredForSend()"
           [readonly]="this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6">
         </ion-input>
         <app-text-comment-counter [value]="this.collectService.collection.txComment"

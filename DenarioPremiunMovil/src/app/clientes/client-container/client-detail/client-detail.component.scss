@@ -104,6 +104,24 @@ ion-modal.compartirDoc {
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
 
+ion-modal.clientDescriptionModal {
+  --width: 92%;
+  --max-width: 720px;
+  --height: 75%;
+  --border-radius: 8px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+.client-description-html {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.client-description-modal-body {
+  --padding-top: 12px;
+  --padding-bottom: 16px;
+}
+
 ion-modal.compartirDocPreview {
   --height: 85%;
   --min-width: 95%;

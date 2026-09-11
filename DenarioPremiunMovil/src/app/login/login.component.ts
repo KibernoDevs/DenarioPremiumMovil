@@ -262,10 +262,17 @@ export class LoginComponent implements OnInit {
               localStorage.setItem("login", login);
               localStorage.setItem("token", result.data.jwtAuthResponse.tokenDeAcceso);
               localStorage.setItem("lastUpdate", result.data.lastUpdate);
+              const prevHideFinance = (this.globalConfig.get('promoterHideFinance') || '')
+                .toLowerCase() === 'true';
               if (result.data.cliente)
                 this.globalConfig.setVars(result.data.variablesConfiguracionCliente)
               else
                 this.globalConfig.setVars(result.data.variablesConfiguracion)
+              const newHideFinance = (this.globalConfig.get('promoterHideFinance') || '')
+                .toLowerCase() === 'true';
+              if (prevHideFinance && !newHideFinance) {
+                localStorage.setItem('resyncClientsAfterFinanceUnlock', 'true');
+              }
 
               //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
               localStorage.setItem("idUser", result.data.idUser.toString());

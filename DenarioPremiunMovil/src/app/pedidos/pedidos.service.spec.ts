@@ -3,10 +3,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { Router } from '@angular/router';
+import { ModalController } from '@ionic/angular';
+import { Subject } from 'rxjs';
 
 import { OrderEditContext, PedidosService } from './pedidos.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ServicesService } from '../services/services.service';
+import { GlobalConfigService } from '../services/globalConfig/global-config.service';
+import { ClienteSelectorService } from '../cliente-selector/cliente-selector.service';
 import { OrderUtil } from '../modelos/orderUtil';
 
 describe('PedidosService', () => {
@@ -58,6 +62,11 @@ describe('PedidosService', () => {
         { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
         { provide: SynchronizationDBService, useValue: { getDatabase: () => mockDb } },
         { provide: ServicesService, useValue: servicesSpy },
+        { provide: ModalController, useValue: { create: () => Promise.resolve({ present: () => Promise.resolve() }) } },
+        {
+          provide: ClienteSelectorService,
+          useValue: { ClientChanged: new Subject(), checkClient: false, setup: () => undefined },
+        },
       ],
     });
     service = TestBed.inject(PedidosService);
@@ -260,6 +269,50 @@ describe('PedidosService', () => {
 
       expect(service.hasOrderFieldErrors()).toBeTrue();
       expect(service.getOrderValidationMessage()).toContain('Active GPS');
+    });
+  });
+
+  describe('userCanChangeUnits / disableUnitSelector', () => {
+    let config: GlobalConfigService;
+
+    beforeEach(() => {
+      config = TestBed.inject(GlobalConfigService);
+      config.variables = new Map<string, string>([]);
+    });
+
+    it('clave ausente o vacía queda true y selector ON', () => {
+      service.getConfig();
+      expect(service.userCanChangeUnits).toBeTrue();
+      expect(service.disableUnitSelector).toBeFalse();
+
+      config.variables.set('userCanChangeUnits', '');
+      service.getConfig();
+      expect(service.userCanChangeUnits).toBeTrue();
+      expect(service.disableUnitSelector).toBeFalse();
+    });
+
+    it('true deja selector ON si unitByPriceList=false', () => {
+      config.variables.set('userCanChangeUnits', 'true');
+      service.getConfig();
+      service.unitByPriceList = false;
+      expect(service.userCanChangeUnits).toBeTrue();
+      expect(service.disableUnitSelector).toBeFalse();
+    });
+
+    it('false deshabilita selector', () => {
+      config.variables.set('userCanChangeUnits', 'false');
+      service.getConfig();
+      service.unitByPriceList = false;
+      expect(service.userCanChangeUnits).toBeFalse();
+      expect(service.disableUnitSelector).toBeTrue();
+    });
+
+    it('unitByPriceList=true deshabilita selector aunque userCanChangeUnits=true', () => {
+      config.variables.set('userCanChangeUnits', 'true');
+      service.getConfig();
+      service.unitByPriceList = true;
+      expect(service.userCanChangeUnits).toBeTrue();
+      expect(service.disableUnitSelector).toBeTrue();
     });
   });
 });

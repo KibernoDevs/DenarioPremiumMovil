@@ -178,7 +178,7 @@
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" 
-                    [value]="product.idUnit" [disabled]= "orderServ.unitByPriceList"
+                    [value]="product.idUnit" [disabled]="orderServ.disableUnitSelector"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
                     (ionChange)="onSelectUnit($event, product)">
                     @for(unit of product.unitList; track unit.idUnit){
@@ -463,7 +463,7 @@
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
-                        [disabled]="orderServ.unitByPriceList"
+                        [disabled]="orderServ.disableUnitSelector"
                         (ionChange)="onSelectUnit($event, productoModal)">
                         <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{
                           unit.naUnit }}</ion-select-option>

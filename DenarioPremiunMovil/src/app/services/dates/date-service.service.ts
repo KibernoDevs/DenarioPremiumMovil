@@ -71,11 +71,10 @@ export class DateServiceService {
   // ...existing code...
 
   hoyISO() {
-    //devuelve un string ISO 8601 que representa la fecha de hoy, a la medianoche
-    //para usar con componentes ion-datetime
+    // ISO con T para ion-datetime (UI). PremiumWS/SQLite: toDbDateTime() → YYYY-MM-DD HH:mm:ss.
     var r = new Date();
     r.setHours(0, 0, 0, 0);
-    return r.toISOString().substring(0, 19);//.replace("T"," ");
+    return r.toISOString().substring(0, 19);
   }
   toISOString(input: string) {
     // tranforma una fecha en un string ISO 8601

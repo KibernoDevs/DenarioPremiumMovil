@@ -47,6 +47,7 @@ export class VisitasService {
   visitDirtySincePersist = false;
   sendValidationAttempted = false;
   sendBlockedByFields = false;
+  visitDirtyTrackingPaused = false;
   visitValidToSave = new Subject<Boolean>();
   visitValidToSend = new Subject<Boolean>();
   /** Salto a pestaña tras fallo de Enviar/Guardar (VIS-SEND-001). */
@@ -505,9 +506,7 @@ export class VisitasService {
       return true;
     }
     const visit = this.visit;
-    const daReal = (visit?.daReal ?? '').trim();
-    return daReal.length > 0
-      || visit?.stVisit === VISIT_STATUS_TO_SEND
+    return visit?.stVisit === VISIT_STATUS_TO_SEND
       || visit?.stVisit === VISIT_STATUS_VISITED;
   }
 
@@ -556,13 +555,27 @@ export class VisitasService {
     this.sendBlockedByFields = false;
   }
 
+  pauseVisitDirtyTracking(): void {
+    this.visitDirtyTrackingPaused = true;
+  }
+
+  resumeVisitDirtyTracking(): void {
+    this.visitDirtyTrackingPaused = false;
+  }
+
   markVisitDirty(): void {
+    if (this.visitDirtyTrackingPaused) {
+      return;
+    }
     this.visitDirtySincePersist = true;
   }
 
   notifyVisitEdited(ctx?: VisitEditContext): void {
     if (ctx) {
       this.setVisitEditContext(ctx);
+    }
+    if (this.visitDirtyTrackingPaused) {
+      return;
     }
     this.markVisitDirty();
     this.refreshSendBlockedState();
@@ -597,6 +610,7 @@ export class VisitasService {
     this.sendBlockedByFields = false;
     this.visitPersistedBaseline = false;
     this.visitDirtySincePersist = false;
+    this.visitDirtyTrackingPaused = false;
   }
 
   hasUnsavedVisitChanges(): boolean {

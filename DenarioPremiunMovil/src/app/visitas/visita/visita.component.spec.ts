@@ -41,6 +41,10 @@ describe('VisitaComponent', () => {
     resetVisitValidationUxFlags: jasmine.Spy<() => void>;
     resetVisitExitBaseline: jasmine.Spy<() => void>;
     markVisitOpenedFromPersistedCopy: jasmine.Spy<() => void>;
+    pauseVisitDirtyTracking: jasmine.Spy<() => void>;
+    resumeVisitDirtyTracking: jasmine.Spy<() => void>;
+    onVisitGeneralValid: jasmine.Spy<(valid: boolean) => void>;
+    setVisitEditContext: jasmine.Spy<(ctx: unknown) => void>;
     coordenadas: string;
     signatureVisit: string;
     userMustActivateGPS: boolean;
@@ -106,6 +110,10 @@ describe('VisitaComponent', () => {
       resetVisitValidationUxFlags: jasmine.createSpy('resetVisitValidationUxFlags'),
       resetVisitExitBaseline: jasmine.createSpy('resetVisitExitBaseline'),
       markVisitOpenedFromPersistedCopy: jasmine.createSpy('markVisitOpenedFromPersistedCopy'),
+      pauseVisitDirtyTracking: jasmine.createSpy('pauseVisitDirtyTracking'),
+      resumeVisitDirtyTracking: jasmine.createSpy('resumeVisitDirtyTracking'),
+      onVisitGeneralValid: jasmine.createSpy('onVisitGeneralValid'),
+      setVisitEditContext: jasmine.createSpy('setVisitEditContext'),
       coordenadas: '',
       signatureVisit: 'false',
       userMustActivateGPS: false,
@@ -289,6 +297,23 @@ describe('VisitaComponent', () => {
       component.onSelectMotive({ detail: { value: motive } });
 
       expect(component.comentarioRequerido).toBeFalse();
+    });
+  });
+
+  describe('VIS-REOPEN-001 seed General al reabrir', () => {
+    it('seed visita SAVED sin daInitial deja General iniciada y Enviar ON / Guardar OFF', () => {
+      visitServ.editVisit = true;
+      visitServ.visit = buildVisit({ daInitial: '', daReal: '2026-08-03 11:00:00' });
+      component.fromWeb = false;
+      component.initialLock = false;
+      (component as any).seedVisitGeneralFromPersisted(visitServ.visit);
+      (component as any).refreshVisitGeneralValid();
+      visitServ.markVisitOpenedFromPersistedCopy();
+
+      expect((component as any).isVisitStarted()).toBeTrue();
+      expect(component.hasClient).toBeTrue();
+      expect(component.direccionCliente.idAddress).toBe(1);
+      expect(visitServ.onVisitGeneralValid).toHaveBeenCalledWith(true);
     });
   });
 });

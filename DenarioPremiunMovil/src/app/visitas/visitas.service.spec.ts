@@ -8,7 +8,7 @@ import { SynchronizationDBService } from '../services/synchronization/synchroniz
 import { EventoVisita } from '../modelos/evento-visita';
 import { IncidenceType } from '../modelos/tables/incidenceType';
 import { IncidenceMotive } from '../modelos/tables/incidenceMotive';
-import { VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from '../utils/appConstants';
+import { VISIT_STATUS_SAVED, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from '../utils/appConstants';
 
 describe('VisitasService', () => {
   let service: VisitasService;
@@ -304,6 +304,38 @@ describe('VisitasService', () => {
       service.updateSendButtonAvailability();
       expect(saveEnabled).toBeFalse();
       expect(sendEnabled).toBeFalse();
+    });
+  });
+
+  describe('VIS-REOPEN-001 reapertura SAVED', () => {
+    it('SAVED con daReal leftover no es read-only', () => {
+      service.visit.stVisit = VISIT_STATUS_SAVED;
+      service.visit.daReal = '2026-08-03 12:00:00';
+      service.generalTabValidForSave = true;
+      service.setVisitEditContext(baseContext());
+      service.markVisitOpenedFromPersistedCopy();
+      let saveEnabled: boolean | undefined;
+      let sendEnabled: boolean | undefined;
+      service.visitValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
+      service.visitValidToSend.subscribe((v: Boolean) => sendEnabled = !!v);
+
+      service.updateSaveButtonAvailability();
+      service.updateSendButtonAvailability();
+      expect(service.isVisitReadOnlyForEdit()).toBeFalse();
+      expect(saveEnabled).toBeFalse();
+      expect(sendEnabled).toBeTrue();
+    });
+
+    it('notifyVisitEdited no marca dirty durante pause de hidratación', () => {
+      service.generalTabValidForSave = true;
+      service.setVisitEditContext(baseContext());
+      service.markVisitOpenedFromPersistedCopy();
+      service.pauseVisitDirtyTracking();
+      service.notifyVisitEdited();
+      expect(service.visitDirtySincePersist).toBeFalse();
+      service.resumeVisitDirtyTracking();
+      service.notifyVisitEdited();
+      expect(service.visitDirtySincePersist).toBeTrue();
     });
   });
 

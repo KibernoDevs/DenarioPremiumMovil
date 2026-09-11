@@ -116,13 +116,11 @@
 
 
 
-    @if(hideFinancePromotor){
+    @if(isPromotor){
 
     <ion-row>
 
       @for(modulo of modulosPromotor; track modulo.id){
-
-      @if(modulo.id !== 10){
 
       <ion-col size="6">
 
@@ -137,42 +135,6 @@
           </a>
 
         </ng-container>
-
-      </ion-col>
-
-      }
-
-      }
-
-    </ion-row>
-
-
-
-
-
-    <!-- Fila aparte, centrada, solo para el id 10 -->
-
-    <ion-row>
-
-      @for(modulo of modulosPromotor; track modulo.id){
-
-      <ion-col size="6" offset="3">
-
-        @if(modulo.id === 10){
-
-        <ng-container>
-
-          <a class="ion-text-center" expand="block" (click)="goToModule(modulo)">
-
-            <img alt="" class="image-size" [src]="modulo.imgIcon" />
-
-            <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
-
-          </a>
-
-        </ng-container>
-
-        }
 
       </ion-col>
 

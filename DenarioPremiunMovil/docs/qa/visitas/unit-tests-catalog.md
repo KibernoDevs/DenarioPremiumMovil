@@ -37,6 +37,8 @@ Los unitarios validan **lógica de botones Guardar/Enviar** y validación al cli
 | **VIS-SEND-001** | `fromWeb` + `initialLock` → `VIS_MSJ_ERROR_NOT_STARTED`. |
 | **VIS-SEND-001** | `required_event` + motivo vacío → evento incompleto. |
 | **VIS-SEND-001** | `stVisit` TO_SEND o VISITED / viewOnly → read-only, botones OFF. |
+| **VIS-REOPEN-001** | SAVED + `daReal` leftover → no read-only; Enviar ON / Guardar OFF. |
+| **VIS-REOPEN-001** | Pause dirty en hidratación: `notifyVisitEdited` no marca dirty. |
 | **VIS-SEND-001** | `signatureVisit` sin adjuntos → **no** error (solo UI). |
 
 ## Fuera de unitarios (manual / N/A)

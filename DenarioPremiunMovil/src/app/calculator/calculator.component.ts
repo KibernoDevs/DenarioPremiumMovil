@@ -9,11 +9,12 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Conversion } from '../modelos/tables/conversion';
+import { DraggableFabDirective } from '../directives/draggable-fab.directive';
 
 @Component({
   selector: 'app-calculator',
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule, DraggableFabDirective],
   templateUrl: './calculator.component.html',
   styleUrls: ['./calculator.component.scss'],
 })

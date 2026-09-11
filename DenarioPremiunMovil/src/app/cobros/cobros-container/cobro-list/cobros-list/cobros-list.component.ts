@@ -148,8 +148,7 @@ export class CobrosListComponent implements OnInit {
         this.collectService.documentSales = [] as DocumentSale[];
         this.collectService.documentSalesBackup = [] as DocumentSale[];
         this.collectService.mapDocumentsSales.clear();
-        this.collectService.createAutomatedPrepaid = false;
-        this.collectService.anticipoAutomatico = [];
+        this.collectService.resetCobroPaymentCoverageSessionState();
         this.collectService.montoTotalPagado = 0;
         this.collectService.montoTotalPagar = 0;
         this.collectService.coTypeModule = this.collectService.collection.coType.toString();

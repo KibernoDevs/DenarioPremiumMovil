@@ -102,6 +102,12 @@ export class AutoSendService implements OnInit {
   async runPendingQueue(): Promise<void> {
     if (this.isProcessingPending) {
       this.pendingQueueDirty = true;
+      // COB-PREPAID-002: esperar al pase activo (p. ej. ngOnInit) y reintentar; no retornar
+      // antes de tiempo o el anticipo recién encolado queda sin procesar en este Enviar.
+      await this.waitForPendingQueueIdle();
+      if (this.pendingQueueDirty) {
+        return this.runPendingQueue();
+      }
       return;
     }
 
@@ -126,7 +132,148 @@ export class AutoSendService implements OnInit {
     }
   }
 
+  /** Drena la cola tras encolar cobro+anticipo (COB-PREPAID-002). */
+  async drainPendingQueue(
+    maxAttempts: number = 12,
+    waitForCoTransactions: string[] = [],
+  ): Promise<void> {
+    const targets = waitForCoTransactions.filter(co => String(co ?? '').trim().length > 0);
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await this.runPendingQueue();
+      const targetsStillPending = targets.length > 0
+        ? await this.hasPendingCoTransactions(targets)
+        : false;
+      if (!targetsStillPending && !this.isProcessingPending && !this.pendingQueueDirty) {
+        return;
+      }
+      if (targets.length === 0 && !this.isProcessingPending && !this.pendingQueueDirty) {
+        return;
+      }
+      await this.delay(40);
+    }
+    if (targets.length > 0) {
+      const remaining = await this.filterPendingCoTransactions(targets);
+      if (remaining.length > 0) {
+        console.warn('[AutoSendService] Pendientes sin drenar tras Enviar', remaining);
+      }
+    }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async hasPendingCoTransactions(coTransactions: string[]): Promise<boolean> {
+    const pending = await this.filterPendingCoTransactions(coTransactions);
+    return pending.length > 0;
+  }
+
+  /** Envía un cobro/anticipo concreto (COB-PREPAID-002/006). Usar tras encolar el anticipo hijo. */
+  async sendCollectPendingNow(coTransaction: string): Promise<boolean> {
+    const co = String(coTransaction ?? '').trim();
+    if (!co) {
+      return false;
+    }
+    return this.dispatchCollectTransaction(co);
+  }
+
+  async isCollectPending(coTransaction: string): Promise<boolean> {
+    const co = String(coTransaction ?? '').trim();
+    if (!co) {
+      return false;
+    }
+    return this.hasPendingCoTransactions([co]);
+  }
+
+  /** true si el cobro/anticipo sigue local sin id de servidor (incluye 400 → failed_transactions). */
+  async isCollectUnsent(coTransaction: string): Promise<boolean> {
+    const co = String(coTransaction ?? '').trim();
+    if (!co) {
+      return false;
+    }
+    const collect = await this.collectionService.getCollection(this.dbService.getDatabase(), co);
+    const coCollection = String(collect?.coCollection ?? '').trim();
+    if (!coCollection) {
+      return false;
+    }
+    if (Number(collect.idCollection ?? 0) > 0) {
+      return false;
+    }
+    const stDelivery = Number(collect.stDelivery ?? 0);
+    const stCollection = Number(collect.stCollection ?? 0);
+    return stDelivery === COLLECT_STATUS_TO_SEND || stCollection === COLLECT_STATUS_TO_SEND;
+  }
+
+  /**
+   * Reencola anticipos automáticos (co_type=1) Por Enviar que quedaron fuera de pending
+   * tras un 400 u otro fallo de cola (COB-PREPAID-006).
+   */
+  private async requeueUnsentAutomatedPrepaidCollects(): Promise<void> {
+    const db = this.dbService.getDatabase();
+    const rows = await db.executeSql(
+      `SELECT c.co_collection AS co_collection FROM collections c
+       WHERE c.co_type = 1
+         AND IFNULL(c.id_collection, 0) = 0
+         AND c.st_delivery = ?
+         AND NOT EXISTS (
+           SELECT 1 FROM pending_transactions p
+           WHERE p.co_transaction = c.co_collection AND p.type = 'collect'
+         )`,
+      [COLLECT_STATUS_TO_SEND],
+    ).catch(() => ({ rows: { length: 0, item: () => null } }));
+
+    for (let i = 0; i < rows.rows.length; i++) {
+      const co = String(rows.rows.item(i).co_collection ?? '').trim();
+      if (!co) {
+        continue;
+      }
+      await db.executeSql(
+        'DELETE FROM failed_transactions WHERE co_transaction = ? AND type = ?',
+        [co, 'collect'],
+      ).catch(() => undefined);
+      await this.services.insertPendingTransaction(
+        db,
+        new PendingTransaction(co, 0, 'collect'),
+      );
+      console.log('[AutoSendService] anticipo Por Enviar reencolado', co);
+    }
+  }
+
+  private async filterPendingCoTransactions(coTransactions: string[]): Promise<string[]> {
+    if (coTransactions.length === 0) {
+      return [];
+    }
+    const placeholders = coTransactions.map(() => '?').join(',');
+    const rows = await this.dbService.getDatabase().executeSql(
+      `SELECT co_transaction FROM pending_transactions WHERE co_transaction IN (${placeholders})`,
+      coTransactions,
+    ).catch(() => ({ rows: { length: 0, item: () => null } }));
+
+    const remaining: string[] = [];
+    for (let i = 0; i < rows.rows.length; i++) {
+      const co = String(rows.rows.item(i).co_transaction ?? '').trim();
+      if (co.length > 0) {
+        remaining.push(co);
+      }
+    }
+    return remaining;
+  }
+
+  private waitForPendingQueueIdle(): Promise<void> {
+    return new Promise((resolve) => {
+      const tick = (): void => {
+        if (!this.isProcessingPending) {
+          resolve();
+          return;
+        }
+        setTimeout(tick, 25);
+      };
+      tick();
+    });
+  }
+
   private async executePendingQueuePass(): Promise<void> {
+    await this.requeueUnsentAutomatedPrepaidCollects();
     const pending = await this.getPendingTransaction();
     this.pendingTransaction = pending;
     if (pending.length > 0) {
@@ -327,8 +474,9 @@ export class AutoSendService implements OnInit {
     };
 
     const collect = await this.collectionService.getCollection(this.dbService.getDatabase(), coTransaction);
-    if (!collect) {
-      console.warn("[AutoSendService] Sin datos de cobro " + coTransaction);
+    const coCollectionLoaded = String(collect?.coCollection ?? '').trim();
+    if (!coCollectionLoaded) {
+      console.warn('[AutoSendService] Sin datos de cobro en SQLite', coTransaction);
       return true;
     }
 
@@ -365,13 +513,41 @@ export class AutoSendService implements OnInit {
     }
 
     this.collectionService.sanitizeLoadedSeparateIgtfAmounts(request.collection);
+    if (coType === 1) {
+      this.collectionService.sanitizePrepaidCollectionPayloadForSend(request.collection);
+    }
 
-    const payments = request.collection?.collectionPayments ?? [];
+    let payments = request.collection?.collectionPayments ?? [];
     const details = request.collection?.collectionDetails ?? [];
     let send = true;
     switch (coType) {
       case 0:
       case 1:
+        if (payments.length === 0 && coType === 1) {
+          const prepaidAmount = Number(
+            request.collection.nuAmountTotal
+            ?? request.collection.nuAmountFinal
+            ?? 0,
+          );
+          if (prepaidAmount > 0) {
+            console.warn('[AutoSendService] Anticipo sin payment en SQLite; payload EF sintético', {
+              coCollection: coTransaction,
+              prepaidAmount,
+            });
+            payments = [
+              this.collectionService.buildSyntheticAnticipoCollectionPayment(
+                request.collection,
+                prepaidAmount,
+                Number(
+                  request.collection.nuAmountTotalConversion
+                  ?? request.collection.nuAmountFinalConversion
+                  ?? prepaidAmount,
+                ),
+              ),
+            ];
+            request.collection.collectionPayments = payments;
+          }
+        }
         if (payments.length === 0) {
           send = false;
         }
@@ -399,6 +575,12 @@ export class AutoSendService implements OnInit {
     }
 
     if (!send) {
+      console.warn('[AutoSendService] Cobro/anticipo sin payload mínimo; se omite envío', {
+        coCollection: coTransaction,
+        coType,
+        payments: payments.length,
+        details: details.length,
+      });
       return true;
     }
 

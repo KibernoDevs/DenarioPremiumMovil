@@ -22,6 +22,7 @@ import { CobrosComponent } from './cobros/cobros.component';
 import { DevolucionesComponent } from './devoluciones/devoluciones.component';
 import { InventariosComponent } from './inventarios/inventarios.component';
 import { DepositosComponent } from './depositos/depositos.component';
+import { promoterRestrictedRouteGuard } from './guards/promoter-hide-finance.guard';
 
 
 const routes: Routes = [
@@ -35,7 +36,7 @@ const routes: Routes = [
     pathMatch: 'full'
   },
 
-  { path: 'vendedores', component: VendedoresComponent },
+  { path: 'vendedores', component: VendedoresComponent, canActivate: [promoterRestrictedRouteGuard] },
   { path: 'login', component: LoginComponent },
   { path: 'pedidos', component: PedidosComponent },
   { path: 'pedido', component: PedidoComponent },
@@ -49,10 +50,10 @@ const routes: Routes = [
   { path: 'visitas', component: VisitasComponent },
   { path: 'visita', component: VisitaComponent },
   { path: 'listaVisitas', component: ListaVisitaComponent },
-  { path: 'cobros', component: CobrosComponent },
-  { path: 'devoluciones', component: DevolucionesComponent },
+  { path: 'cobros', component: CobrosComponent, canActivate: [promoterRestrictedRouteGuard] },
+  { path: 'devoluciones', component: DevolucionesComponent, canActivate: [promoterRestrictedRouteGuard] },
   { path: 'inventarios', component: InventariosComponent },
-  { path: 'depositos', component: DepositosComponent },
+  { path: 'depositos', component: DepositosComponent, canActivate: [promoterRestrictedRouteGuard] },
 
 ];
 

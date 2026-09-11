@@ -56,6 +56,7 @@ export class DepositService {
 
   public listTransactionStatusDeposits: TransactionStatuses[] = [];
   public depositRefused: TransactionStatuses[] = [];
+  public depositSended: TransactionStatuses[] = [];
 
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
@@ -233,12 +234,9 @@ export class DepositService {
 
   isDepositReadOnlyForEdit(): boolean {
     const stDelivery = Number(this.deposit?.stDelivery ?? 0);
-    const stDeposit = Number(this.deposit?.stDeposit ?? 0);
     return stDelivery === DEPOSITO_STATUS_TO_SEND
       || stDelivery === DEPOSITO_STATUS_SENT
-      || stDelivery === 6
-      || stDeposit === DEPOSIT_APPROVAL_STATUS_REJECTED
-      || stDeposit === 6;
+      || stDelivery === 6;
   }
 
   /**
@@ -1531,21 +1529,15 @@ export class DepositService {
           item.nuAmountDoc = Number.isFinite(rawAmt) ? rawAmt : 0;
           this.listDeposits.push(item);
           let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
-
-
-            item.stDelivery == null ? 0 : item.stDelivery;
-            if (item.idDeposit == 0) {
-              item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
-              item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
-            }
-
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,
               coDeposit: item.coDeposit,
               stDeposit: item.stDeposit,
               stDelivery: item.stDelivery,
               daDeposit: this.normalizeDaDeposit(item.daDeposit),
-              naStatus: status,
+              naStatus: typeof status === 'object' && status != null
+                ? String((status as { na_status?: string }).na_status ?? '')
+                : '',
               nuAmountDoc: item.nuAmountDoc.toFixed(this.parteDecimal),
               coCurrency: item.coCurrency,
               coBank: item.coBank
@@ -1750,12 +1742,23 @@ export class DepositService {
     return value;
   }
 
+  checkRequireApproval(db: SQLiteObject): Promise<boolean> {
+    const selectStatement =
+      'SELECT require_approval as requireApproval FROM transaction_types WHERE id_transaction_type = 6';
+    let requireApproval = false;
+    return db.executeSql(selectStatement, []).then((res) => {
+      requireApproval = res.rows.item(0).requireApproval === 'true';
+      return requireApproval;
+    }).catch(() => Promise.resolve(requireApproval));
+  }
+
   /**
    * Clasifica transaction_statuses de depósitos (tipo 6) como Cobros hace con tipo 3.
    * status_action = 2 → depósito rechazado → liberar cobros del detalle.
    */
   async checkHistoricDeposits(db: SQLiteObject): Promise<boolean> {
     this.depositRefused = [] as TransactionStatuses[];
+    this.depositSended = [] as TransactionStatuses[];
     try {
       const list = Array.isArray(this.listTransactionStatusDeposits)
         ? this.listTransactionStatusDeposits
@@ -1823,8 +1826,18 @@ export class DepositService {
         if (idStatus == null) {
           continue;
         }
-        if (statusMap.get(String(idStatus)) === DEPOSIT_APPROVAL_STATUS_REJECTED) {
-          this.depositRefused.push(ts);
+        switch (statusMap.get(String(idStatus))) {
+          case 1:
+            this.depositSended.push(ts);
+            break;
+          case 2:
+            this.depositRefused.push(ts);
+            break;
+          case 3:
+            this.depositSended.push(ts);
+            break;
+          default:
+            break;
         }
       }
     } catch (err) {
@@ -1973,7 +1986,7 @@ export class DepositService {
     if (deposit !== 0 && resolvedNaStatus) {
       return resolvedNaStatus;
     }
-    return this.getStatusLabel(delivery, resolvedNaStatus);
+    return this.getStatus(delivery, resolvedNaStatus);
   }
 
   private resolveNaStatusLabel(naStatus: unknown): string {
@@ -1994,7 +2007,7 @@ export class DepositService {
     return String(naStatus).trim();
   }
 
-  getStatusLabel(status: number, naStatus: unknown): string {
+  getStatus(status: number, naStatus: unknown): string {
     switch (status) {
       case DELIVERY_STATUS_SAVED:
         return this.depositTags.get('DEP_DEV_SAVED') ?? '';

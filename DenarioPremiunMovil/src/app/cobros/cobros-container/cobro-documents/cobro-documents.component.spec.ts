@@ -47,7 +47,9 @@ describe('CobrosDocumentComponent', () => {
         .and.callFake((n: number) => n),
       buildDiscountRemnantPrepaidMessage: jasmine.createSpy('buildDiscountRemnantPrepaidMessage')
         .and.callFake((n: number) => `¿anticipo ${n}?`),
+      automatedPrepaid: true,
       ensureAutomatedPrepaidPaymentTemplate: jasmine.createSpy('ensureAutomatedPrepaidPaymentTemplate'),
+      syncAddPaymentMethodDisabledState: jasmine.createSpy('syncAddPaymentMethodDisabledState'),
       collection: {
         collectionDetails: [],
       },
@@ -280,6 +282,45 @@ describe('CobrosDocumentComponent', () => {
     expect(component.shouldShowDocumentRetentionSendError(0)).toBeFalse();
   });
 
+  describe('COB-PARTIAL-001 pago parcial por documento', () => {
+    it('documento nuevo no hereda el toggle parcial del documento anterior', () => {
+      collectServiceMock.alwaysPartialPayment = false;
+      collectServiceMock.isChangePaymentPartialPersistence = true;
+      collectServiceMock.isPaymentPartial = true;
+
+      const result = (component as any).resolvePartialPaymentForOpenDocument(
+        { inPaymentPartial: false, isSave: false },
+        { inPaymentPartial: false, isSave: false },
+      );
+
+      expect(result).toBeFalse();
+    });
+
+    it('documento con parcial editado conserva su propio flag', () => {
+      collectServiceMock.alwaysPartialPayment = false;
+      collectServiceMock.isChangePaymentPartialPersistence = false;
+      collectServiceMock.isPaymentPartial = false;
+
+      const result = (component as any).resolvePartialPaymentForOpenDocument(
+        { inPaymentPartial: true, isSave: false },
+        { inPaymentPartial: true, isSave: false },
+      );
+
+      expect(result).toBeTrue();
+    });
+
+    it('documento guardado usa inPaymentPartial persistido', () => {
+      collectServiceMock.alwaysPartialPayment = false;
+
+      const result = (component as any).resolvePartialPaymentForOpenDocument(
+        { inPaymentPartial: true, isSave: true },
+        { inPaymentPartial: false, isSave: true },
+      );
+
+      expect(result).toBeTrue();
+    });
+  });
+
   describe('COB-DISC-002 maxCollectDiscount', () => {
     beforeEach(() => {
       collectServiceMock.maxCollectDiscount = 10;
@@ -307,6 +348,29 @@ describe('CobrosDocumentComponent', () => {
       expect(component.alertMessageOpen).toBeTrue();
       expect(collectServiceMock.mensaje).toContain('10');
       expect(collectServiceMock.mensaje).toContain('2');
+    });
+
+    it('destilda el último descuento que excede maxCollectDiscount (20% + 65% con tope 80%)', () => {
+      collectServiceMock.maxCollectDiscount = 80;
+      collectServiceMock.collectDiscounts = [
+        { idCollectDiscount: 10, nuCollectDiscount: 20, naCollectDiscount: 'D20', requireInput: false },
+        { idCollectDiscount: 11, nuCollectDiscount: 65, naCollectDiscount: 'D65', requireInput: false },
+      ];
+
+      component.toggleTempSelection(10);
+      expect(collectServiceMock.tempSelectedCollectDiscounts.map((d: any) => d.idCollectDiscount))
+        .toEqual([10]);
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(20);
+
+      const checkbox = { checked: true } as HTMLIonCheckboxElement;
+      const event = { detail: { checked: true }, target: checkbox } as unknown as CustomEvent;
+      component.toggleTempSelection(11, event);
+
+      expect(collectServiceMock.tempSelectedCollectDiscounts.map((d: any) => d.idCollectDiscount))
+        .toEqual([10]);
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(20);
+      expect(checkbox.checked).toBeFalse();
+      expect(component.alertMessageOpen).toBeTrue();
     });
 
     it('setNu que excede quita el descuento y muestra disponible', () => {
@@ -361,6 +425,7 @@ describe('CobrosDocumentComponent', () => {
     });
 
     it('accept con remanente abre confirmación y no aplica aún', async () => {
+      collectServiceMock.automatedPrepaid = true;
       await component.acceptCollectDiscounts();
 
       expect(component.alertDiscountRemnantOpen).toBeTrue();
@@ -368,14 +433,36 @@ describe('CobrosDocumentComponent', () => {
       expect(component.applyCollectDiscounts).not.toHaveBeenCalled();
     });
 
+    it('COB-DISC-004b: remanente con automatedPrepaid OFF aplica clamp sin modal', async () => {
+      collectServiceMock.automatedPrepaid = false;
+      await component.acceptCollectDiscounts();
+
+      expect(component.alertDiscountRemnantOpen).toBeFalse();
+      expect(collectServiceMock.clearDiscountRemnantPrepaidForDocument).toHaveBeenCalledWith('FAC-1');
+      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: true });
+    });
+
     it('confirm Sí aplica full y registra remanente', async () => {
       (component as any).pendingDiscountRemnantInCollection = 50;
+      const callOrder: string[] = [];
+      collectServiceMock.setDiscountRemnantPrepaidForDocument.and.callFake(() => {
+        callOrder.push('setRemnant');
+      });
+      (component.applyCollectDiscounts as jasmine.Spy).and.callFake(async () => {
+        callOrder.push('apply');
+      });
+      collectServiceMock.syncAddPaymentMethodDisabledState.and.callFake(() => {
+        callOrder.push('sync');
+      });
+
       await component.setResultDiscountRemnant({ detail: { role: 'confirm' } });
 
-      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: false });
+      expect(callOrder).toEqual(['setRemnant', 'apply', 'sync']);
       expect(collectServiceMock.setDiscountRemnantPrepaidForDocument)
         .toHaveBeenCalledWith('FAC-1', 50);
+      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: false });
       expect(collectServiceMock.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      expect(collectServiceMock.syncAddPaymentMethodDisabledState).toHaveBeenCalled();
       expect(component.assignDiscountsOpen).toBeFalse();
     });
 

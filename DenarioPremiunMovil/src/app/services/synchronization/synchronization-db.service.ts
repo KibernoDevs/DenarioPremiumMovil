@@ -489,6 +489,17 @@ export class SynchronizationDBService {
     })
   }
 
+  /** Retrocede cursor incremental sin borrar filas locales. */
+  resetTableSyncCursor(idTable: number): Promise<void> {
+    const epoch = '1970-01-01 00:00:00.000';
+    return this.database.executeSql(
+      'UPDATE versionsTables SET last_update = ? WHERE id_table = ?',
+      [epoch, idTable],
+    ).then(() => undefined).catch(error => {
+      console.log('resetTableSyncCursor error', error);
+    });
+  }
+
   updateVersionsTables(lastUpdate: string, idTable: number) {
     const tableMeta = this.tables.find(table => table.id === idTable);
     const nameTable = tableMeta?.nameTable ?? '';
@@ -1738,8 +1749,12 @@ export class SynchronizationDBService {
             this.collectionService.lockDocumentSales(this.database);
           });
       })
-      void this.depositService.checkHistoricDeposits(this.database).then(() => {
-        return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+      this.depositService.checkRequireApproval(this.database).then((res) => {
+        if (res) {
+          void this.depositService.checkHistoricDeposits(this.database).then(() => {
+            return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+          });
+        }
       });
       return res;
     }).catch(e => {
