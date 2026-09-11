@@ -487,6 +487,17 @@ export class SynchronizationDBService {
     })
   }
 
+  /** Retrocede cursor incremental sin borrar filas locales. */
+  resetTableSyncCursor(idTable: number): Promise<void> {
+    const epoch = '1970-01-01 00:00:00.000';
+    return this.database.executeSql(
+      'UPDATE versionsTables SET last_update = ? WHERE id_table = ?',
+      [epoch, idTable],
+    ).then(() => undefined).catch(error => {
+      console.log('resetTableSyncCursor error', error);
+    });
+  }
+
   updateVersionsTables(lastUpdate: string, idTable: number) {
     const tableMeta = this.tables.find(table => table.id === idTable);
     const nameTable = tableMeta?.nameTable ?? '';
