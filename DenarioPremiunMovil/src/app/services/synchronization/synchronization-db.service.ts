@@ -985,12 +985,15 @@ export class SynchronizationDBService {
       ') ' +
       'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
+    const imageServices = this.injector.get(ImageServicesService);
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      const storedImage = imageServices.stripProductImageForStorage(obj.image);
+      obj.image = storedImage;
       statements.push([insertStatement, [obj.idProduct, obj.coProduct, obj.naProduct,
       obj.coPrimaryUnit, obj.coProductStructure, obj.idProductStructure, obj.txDimension,
       obj.txPacking, obj.points, obj.nuPriority, obj.featuredProduct,
-      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax, obj.image ?? null]]);
+      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax, storedImage]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

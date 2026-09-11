@@ -63,7 +63,27 @@ export class ImageServicesService {
   ) { }
 
   isProductImagesFromDatabase(): boolean {
-    return this.globalConfig.get('productImagesFromDatabase').toLowerCase() === 'true';
+    const flag = this.globalConfig.get('productImagesFromDatabase');
+    return flag != null && flag.toLowerCase() === 'true';
+  }
+
+  /** Base64 puro para persistir en SQLite (sin prefijo data:image). */
+  stripProductImageForStorage(raw: unknown): string | null {
+    if (raw == null || typeof raw !== 'string') {
+      return null;
+    }
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (trimmed.startsWith('data:image/')) {
+      const idx = trimmed.indexOf('base64,');
+      if (idx >= 0) {
+        const payload = trimmed.substring(idx + 7).trim();
+        return payload || null;
+      }
+    }
+    return trimmed;
   }
 
   normalizeProductImageBase64(raw: string | null | undefined): string | null {
