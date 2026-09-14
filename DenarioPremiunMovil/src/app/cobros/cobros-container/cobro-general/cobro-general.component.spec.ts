@@ -140,4 +140,115 @@ describe('CobrosGeneralComponent', () => {
     expect(hydrated.nuevaCuenta).toBe('0123-NUEVA');
     expect(hydrated.numeroCuenta).toBe('0102-RECEPTOR');
   });
+
+  it('COB-CH-001: buildHydratedChequePayment restores banco emisor in bankAccountSelected', () => {
+    collectServiceMock.listBanks = [
+      { idBank: 7, coBank: 'BANCO-7', naBank: 'Banco Provincial', coEnterprise: '', idEnterprise: 0 },
+    ];
+    collectServiceMock.bankAccountSelected = [];
+
+    const payment = {
+      idBank: 7,
+      naBank: 'Banco Provincial',
+      coClientBankAccount: 'Banco Provincial',
+      nuPaymentDoc: 'CH-001',
+      nuAmountPartial: 50,
+      nuAmountPartialConversion: 50,
+      daValue: '2026-08-04',
+      daCollectionPayment: '2026-08-05',
+      isAnticipoPrepaid: false,
+    } as CollectionPayment;
+
+    const hydrated = (component as any).buildHydratedChequePayment(payment, 0);
+
+    expect(hydrated.nombreBanco).toBe('Banco Provincial');
+    expect(hydrated.idBanco).toBe(7);
+    expect(collectServiceMock.bankAccountSelected[0]?.naBank).toBe('Banco Provincial');
+    expect(collectServiceMock.bankAccountSelected[0]?.idBank).toBe(7);
+  });
+
+  it('COB-CH-001: buildHydratedChequePayment falls back to coClientBankAccount when naBank is empty', () => {
+    collectServiceMock.listBanks = [
+      { idBank: 3, coBank: '0102', naBank: 'Banco de Venezuela', coEnterprise: '', idEnterprise: 0 },
+    ];
+    collectServiceMock.bankAccountSelected = [];
+
+    const payment = {
+      idBank: 0,
+      naBank: '',
+      coClientBankAccount: '0102',
+      nuPaymentDoc: 'CH-002',
+      nuAmountPartial: 80,
+      nuAmountPartialConversion: 80,
+      daValue: '2026-08-04',
+      daCollectionPayment: '2026-08-05',
+      isAnticipoPrepaid: false,
+    } as CollectionPayment;
+
+    const hydrated = (component as any).buildHydratedChequePayment(payment, 1);
+
+    expect(hydrated.nombreBanco).toBe('Banco de Venezuela');
+    expect(collectServiceMock.bankAccountSelected[1]?.naBank).toBe('Banco de Venezuela');
+  });
+
+  it('COB-PM-001: buildHydratedPagoMovilPayment restores emisor and destino pickers', () => {
+    collectServiceMock.listBanks = [
+      { idBank: 4, coBank: '0104', naBank: 'Banco Mercantil', coEnterprise: '', idEnterprise: 0 },
+    ];
+    collectServiceMock.bankAccountSelected = [];
+    collectServiceMock.clientBankAccountSelected = [];
+    collectServiceMock.typeDocumentList = [{ coTypeDocument: 'V', idTypeDocument: 1 }];
+    collectServiceMock.codePhoneNumberList = [{ coCodePhoneNumber: '0414', idCodePhoneNumber: 1 }];
+
+    const payment = {
+      idBank: 9,
+      naBank: 'Cuenta Receptora',
+      nuBankAccount: '0102-9999',
+      coClientBankAccount: '0104',
+      nuPaymentDoc: 'PM-REF',
+      nuDocument: '12345678',
+      nuPhoneNumber: '04141234567',
+      nuAmountPartial: 100,
+      nuAmountPartialConversion: 100,
+      daValue: '2026-08-04',
+      isAnticipoPrepaid: false,
+    } as CollectionPayment;
+
+    const bankAccounts = [
+      { idBank: 9, naBank: 'Cuenta Receptora', nuAccount: '0102-9999' },
+    ];
+
+    const hydrated = (component as any).buildHydratedPagoMovilPayment(payment, 0, bankAccounts);
+
+    expect(hydrated.nombreBancoEmisor).toBe('Banco Mercantil');
+    expect(collectServiceMock.bankAccountSelected[0]?.naBank).toBe('Banco Mercantil');
+    expect(hydrated.nombreBancoDestino).toBe('Cuenta Receptora');
+    expect(collectServiceMock.clientBankAccountSelected[0]?.nuAccount).toBe('0102-9999');
+  });
+
+  it('COB-DE-001: buildHydratedDepositoPayment restores receptor account picker', () => {
+    collectServiceMock.bankAccountSelected = [];
+
+    const payment = {
+      idBank: 2,
+      naBank: 'Banco Banesco',
+      nuClientBankAccount: '0134-5555',
+      nuPaymentDoc: 'DEP-001',
+      nuAmountPartial: 200,
+      nuAmountPartialConversion: 200,
+      daValue: '2026-08-04',
+      isAnticipoPrepaid: false,
+    } as CollectionPayment;
+
+    const bankAccounts = [
+      { idBank: 2, naBank: 'Banco Banesco', nuAccount: '0134-5555' },
+      { idBank: 2, naBank: 'Banco Banesco', nuAccount: '0134-0000' },
+    ];
+
+    const hydrated = (component as any).buildHydratedDepositoPayment(payment, 0, bankAccounts);
+
+    expect(hydrated.numeroCuenta).toBe('0134-5555');
+    expect(collectServiceMock.bankAccountSelected[0]?.nuAccount).toBe('0134-5555');
+    expect(collectServiceMock.bankAccountSelected[0]?.naBank).toBe('Banco Banesco');
+  });
 });

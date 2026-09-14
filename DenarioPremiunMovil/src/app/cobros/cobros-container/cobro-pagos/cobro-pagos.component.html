@@ -721,13 +721,19 @@
               }
             </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-item>
+              <ion-item [disabled]="isOtrosMontoLocked()">
                 <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}" label-placement="floating"
                   fill="outline" color="primary" type="text" inputmode="numeric"
-                  [value]="getDisplay(otros, ot,'ot') || '0,00'" (keydown)="onMontoKeyDown($event, otros, ot, 'ot')"
+                  [readonly]="isOtrosMontoLocked()" [disabled]="isOtrosMontoLocked()"
+                  [value]="getDisplay(otros, ot,'ot') || '0,00'"
+                  (keydown)="onMontoKeyDown($event, otros, ot, 'ot')"
                   (ionInput)="onMontoInput($event, otros, ot, 'ot')" (focus)="onMontoFocus(otros, ot, 'ot')"
-                  (blur)="onMontoBlur(otros, ot, 'ot')" class="customInput"
-                  [ngClass]="{'inp-write': shouldShowPaymentFieldError('ot', ot, 'monto')}">
+                  (blur)="onMontoBlur(otros, ot, 'ot')"
+                  class="customInput"
+                  [ngClass]="{
+                    'inp-disabled-readonly': isOtrosMontoLocked(),
+                    'inp-write': shouldShowPaymentFieldError('ot', ot, 'monto')
+                  }">
                 </ion-input>
               </ion-item>
               @if (shouldShowPaymentFieldError('ot', ot, 'monto')) {

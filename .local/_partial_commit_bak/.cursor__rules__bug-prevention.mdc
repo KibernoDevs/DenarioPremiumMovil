@@ -1,0 +1,53 @@
+---
+description: Checklist corta para no repetir bugs ya mapeados; detalle en BUGS.md
+alwaysApply: true
+---
+
+# Prevencion de bugs conocidos
+
+Historial completo (sintoma, causa, fix, evitar): ver `BUGS.md` en la raiz del repo.
+Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
+
+## Antes de cambiar codigo
+
+1. Si el sintoma ya suena a una entrada de `BUGS.md`, leerla antes de proponer otro fix.
+2. Cambios pequenos y localizados; no “arreglar de pasada” SQL/sync/listados.
+3. No mutar estado compartido solo para cuadrar una vista (ej. no reescribir `saldo1/saldo2` del cliente en detalle).
+
+## Cobros / Transferencia / Enviar
+
+- Completitud TR != tolerancia. Revisar `clientBankAccount`, `nuevaCuenta` vs cuenta existente.
+- Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
+- Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
+- `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
+- Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
+- Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
+- Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
+- Pago parcial: toggle y `inPaymentPartial` son por documento; no heredar vía `isChangePaymentPartialPersistence` / `isPaymentPartial` global al abrir otro doc (`COB-PARTIAL-001`).
+- Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
+- Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
+- Total General = `nuAmountTotal` (no `montoTotalPagado`); al reabrir no pisar con `forceRecalc` si UI de pagos aún vacía (`COB-TOTAL-001`).
+- Total Monto Doc. = bruto (`nuBalanceDocOriginal`); Monto Saldo = bruto − pagado; no mutar `nuBalanceDoc` UI con remaining de parcial (`COB-TOTAL-002`).
+- Faltante (`nuAmountDiscount`) → 0 en Guardado: refrescar `montoTotalPagar` (no exigir faltante > 0 para Guardar; no congelar con `paid < net` / preserve) — `COB-FALT-001`.
+- `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
+- Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
+- Fecha TR/PM al cambiar: escribir `daValue` y `daCollectionPayment` (reabrir usa `daValue`); ver `COB-DATE-001`.
+
+## Inventarios
+
+- Buscador productos: no refiltrar con `.includes()` crudo tras SQL GLOB accent-insensitive; normalizar tildes en memoria (`INV-SEARCH-001`).
+
+## Vendedor
+
+- No bloquear UI con `showLoading` esperando `userservice/userinformation`; empresas desde SQLite, métricas en background (`VND-LOAD-001`).
+
+## Clientes / saldos
+
+- Saldo display (lista/detalle): buckets `document_sales` local/hard por empresa — no particionar por `c.co_currency` mentiroso (`CLI-SALDOS-001`).
+- No mutar `client.coCurrency` solo para cuadrar Saldo; crédito/cobros/pedidos usan la moneda del cliente.
+- Lista y detalle: misma regla (`resolveClientBalanceTotals` con semántica docs).
+
+
+## Al cerrar un bug
+
+Agregar entrada en `BUGS.md` y, si cabe, una linea en esta checklist (maximo ~50 lineas totales en este archivo).

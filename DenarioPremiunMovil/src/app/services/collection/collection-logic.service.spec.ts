@@ -296,7 +296,7 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(800);
     });
 
-    it('COB-DISC-004: descuento > saldo muestra deuda FACT y efectivoRequerido 0', async () => {
+    it('COB-DISC-004: descuento > saldo → monto a pagar 0 y efectivoRequerido 0', async () => {
       setupEditableCollection([
         makeDetail({
           idDocument: 10,
@@ -314,7 +314,7 @@ describe('CollectionService', () => {
 
       await service.calculatePayment('', 0, true, true);
 
-      expect(service.montoTotalPagar).toBe(100);
+      expect(service.montoTotalPagar).toBe(0);
       expect(service.efectivoRequerido).toBe(0);
       expect(service.isFullyCoveredCollection).toBeTrue();
       expect(service.collection.nuDifference).toBe(0);
@@ -372,7 +372,7 @@ describe('CollectionService', () => {
       expect(service.isAddPaymentMethodDisabled()).toBeFalse();
     });
 
-    it('COB-NCR-PREPAID-001: NCR excede FACT → monto facturas, anticipo 500, efectivo 0', async () => {
+    it('COB-NCR-PREPAID-001: NCR excede FACT → monto a pagar 0, anticipo 500, efectivo 0', async () => {
       setupEditableCollection([
         makeDetail({
           idDocument: 10,
@@ -397,8 +397,29 @@ describe('CollectionService', () => {
 
       await service.calculatePayment('', 0, true, true);
 
-      expect(service.montoTotalPagar).toBe(1000);
+      expect(service.montoTotalPagar).toBe(0);
       expect(service.creditBalancePrepaidAmount).toBe(500);
+      expect(service.efectivoRequerido).toBe(0);
+      expect(service.isFullyCoveredCollection).toBeTrue();
+    });
+
+    it('COB-DISC-004e: descuento = saldo neto 0 → monto a pagar 0 y cobro cubierto', async () => {
+      setupEditableCollection([
+        makeDetail({
+          idDocument: 10,
+          coDocument: 'FAC-100',
+          nuBalanceDoc: 100,
+          nuBalanceDocOriginal: 100,
+          nuAmountCollectDiscount: 100,
+          nuAmountPaid: 100,
+          nuAmountPaidConversion: 100,
+        }),
+      ]);
+      service.automatedPrepaid = true;
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(0);
       expect(service.efectivoRequerido).toBe(0);
       expect(service.isFullyCoveredCollection).toBeTrue();
     });
@@ -1902,8 +1923,8 @@ describe('CollectionService', () => {
         spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
       }
 
-      it('USD: exceso 1.54 con prepaidRangeAmount=1 crea anticipo (umbral = solo prepaid)', () => {
-        setupUsdPrepaidScenario(1.54);
+      it('USD: excedente tras tol+ con prepaidRangeAmount=1 crea anticipo', () => {
+        setupUsdPrepaidScenario(11.54, { prepaidRangeAmount: 1, rangoPositiva: 10 });
 
         const prepaidExcess = (service as any).getPrepaidExcessAmount();
         expect(prepaidExcess).toBeCloseTo(1.54, 2);
@@ -1912,14 +1933,23 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-PREPAID-005: umbral = prepaidRangeAmount; exceso bajo mínimo no crea', () => {
+      it('USD: exceso dentro de tol+ alto no crea anticipo', () => {
+        setupUsdPrepaidScenario(1.54, { prepaidRangeAmount: 1, rangoPositiva: 100000 });
+
+        expect((service as any).getPrepaidExcessAmount()).toBe(0);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+      });
+
+      it('COB-PREPAID-005: umbral = prepaidRangeAmount sobre excedente tras tol+', () => {
         setupUsdPrepaidScenario(14, { prepaidRangeAmount: 50, rangoPositiva: 10 });
         expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+        expect((service as any).resolvePrepaidEligibleExcessInCollectionCurrency(14)).toBe(4);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
 
-        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(50);
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(60);
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
@@ -1935,8 +1965,8 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('umbral exacto: exceso = prepaidRangeAmount crea anticipo', () => {
-        setupUsdPrepaidScenario(50, { prepaidRangeAmount: 50, rangoPositiva: 10 });
+      it('umbral exacto: excedente tras tol+ = prepaidRangeAmount crea anticipo', () => {
+        setupUsdPrepaidScenario(60, { prepaidRangeAmount: 50, rangoPositiva: 10 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
@@ -1956,31 +1986,113 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-TOL-DEC-001: prepaid 0.5; exceso 0.4 no crea; 0.5 sí (tol+ no suma al umbral)', () => {
-        setupUsdPrepaidScenario(0.4, { prepaidRangeAmount: 0.5, rangoPositiva: 0.5 });
+      it('COB-TOL-DEC-001: prepaid 0.5; excedente tras tol+ 0.4 no crea; 0.5 sí', () => {
+        setupUsdPrepaidScenario(0.9, { prepaidRangeAmount: 0.5, rangoPositiva: 0.5 });
         expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(0.5);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
 
-        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(0.5);
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(1);
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-PREPAID-005: tol+ 49.99 + prepaid 50; exceso 50 crea anticipo (caso QA)', () => {
+      it('COB-PREPAID-005: tol+ 49.99 + prepaid 50; excedente bruto 100 crea anticipo (caso QA)', () => {
         service.parteDecimal = 2;
-        setupUsdPrepaidScenario(50, { prepaidRangeAmount: 50, rangoPositiva: 49.99 });
+        setupUsdPrepaidScenario(100, { prepaidRangeAmount: 50, rangoPositiva: 49.99 });
 
         expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(50);
+        expect((service as any).resolvePrepaidEligibleExcessInCollectionCurrency(100)).toBe(50.01);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('COB-TOL-DEC-002: prepaid 0.01 redondeado; exceso 0.01 crea; 0.009 no', () => {
+      it('COB-PREPAID-005: tol+ 10, prepaid 1; pagos 105/110 sin anticipo, 111 anticipo 1', () => {
+        service.automatedPrepaid = true;
+        service.coTypeModule = '0';
+        service.existPartialPayment = false;
+        service.prepaidRangeAmount = 1;
+        service.prepaidRangeCurrency = 'USD';
         service.parteDecimal = 2;
-        setupUsdPrepaidScenario(0.009, { prepaidRangeAmount: 0.01, rangoPositiva: 49.99 });
+        service.tolerancia0 = true;
+        service.TipoTolerancia = 0;
+        service.RangoToleranciaPositiva = 10;
+        service.MonedaTolerancia = 'USD';
+        service.montoTotalPagar = 100;
+        service.collection = { coCurrency: 'USD', collectionPayments: [{ coType: 'ef', nuAmount: 105 }] } as any;
+        spyOn(service as any, 'syncMontosPagadosFromPayments').and.callFake(() => {
+          service.montoTotalPagado = Number(service.montoTotalPagado) || 0;
+        });
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+        spyOn(service as any, 'checkTiposPago').and.stub();
+        spyOn(service as any, 'setAutomatedPrepaid').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ef' }];
+        });
+        spyOn(service, 'validateToSend').and.stub();
+        spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
+        spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+        spyOn((service as any).currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+
+        const assertScenario = (paid: number, expectPrepaid: boolean, expectedEligible?: number) => {
+          service.montoTotalPagado = paid;
+          service.createAutomatedPrepaid = false;
+          service.anticipoAutomatico = [];
+          (service as any).resolveAutomatedPrepaid('ef', 0);
+          expect(service.createAutomatedPrepaid).toBe(expectPrepaid);
+          if (expectedEligible != null) {
+            const raw = paid - 100;
+            expect((service as any).resolvePrepaidEligibleExcessInCollectionCurrency(raw)).toBe(expectedEligible);
+          }
+          expect((service as any).computeIsWithinTolerancia()).toBeTrue();
+        };
+
+        assertScenario(105, false, 0);
+        assertScenario(110, false, 0);
+        assertScenario(111, true, 1);
+      });
+
+      it('COB-PREPAID-005: tol+ 10, prepaid 5; 114 sin anticipo, 115 anticipo 5', () => {
+        service.automatedPrepaid = true;
+        service.coTypeModule = '0';
+        service.existPartialPayment = false;
+        service.prepaidRangeAmount = 5;
+        service.prepaidRangeCurrency = 'USD';
+        service.parteDecimal = 2;
+        service.tolerancia0 = true;
+        service.TipoTolerancia = 0;
+        service.RangoToleranciaPositiva = 10;
+        service.MonedaTolerancia = 'USD';
+        service.montoTotalPagar = 100;
+        service.collection = { coCurrency: 'USD', collectionPayments: [{ coType: 'ef', nuAmount: 115 }] } as any;
+        spyOn(service as any, 'syncMontosPagadosFromPayments').and.stub();
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+        spyOn(service as any, 'checkTiposPago').and.stub();
+        spyOn(service as any, 'setAutomatedPrepaid').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ef' }];
+        });
+        spyOn(service, 'validateToSend').and.stub();
+        spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
+        spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+        spyOn((service as any).currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+
+        service.montoTotalPagado = 114;
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+        expect((service as any).computeIsWithinTolerancia()).toBeFalse();
+
+        service.montoTotalPagado = 115;
+        service.createAutomatedPrepaid = false;
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+        expect((service as any).resolvePrepaidEligibleExcessInCollectionCurrency(15)).toBe(5);
+        expect((service as any).computeIsWithinTolerancia()).toBeTrue();
+      });
+
+      it('COB-TOL-DEC-002: prepaid 0.01 redondeado; excedente tras tol+ 0.01 crea; 0.004 no', () => {
+        service.parteDecimal = 2;
+        setupUsdPrepaidScenario(0.004, { prepaidRangeAmount: 0.01, rangoPositiva: 0 });
 
         expect((service as any).getAutomatedPrepaidActivationThreshold()).toBe(0.01);
 
@@ -2039,6 +2151,202 @@ describe('CollectionService', () => {
 
         expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
         expect(service.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      });
+
+      it('COB-PREPAID-006: remanente de descuento no se bloquea por existPartialPayment al Enviar', () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.existPartialPayment = true;
+        service.discountRemnantPrepaidAmount = 50;
+        service.collection = { coCurrency: 'USD', nuDifference: 0, nuDifferenceConversion: 0 } as any;
+        service.anticipoAutomatico = [];
+        spyOn(service, 'ensureAutomatedPrepaidPaymentTemplate').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: -1, synthetic: true }];
+        });
+
+        expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+      });
+
+      it('COB-PREPAID-006: forceRecalc con stDelivery TO_SEND recalcula creditBalancePrepaidAmount (NCR)', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_TO_SEND,
+          stCollection: service.COLLECT_STATUS_TO_SEND,
+          nuAmountTotal: 0,
+          nuAmountTotalConversion: 0,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+              nuAmountPaidConversion: 1000,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+              nuAmountPaidConversion: -1500,
+            },
+          ],
+          collectionPayments: [],
+        } as any;
+
+        await service.calculatePayment('', 0, true, true);
+
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+      });
+
+      it('COB-PREPAID-006: refreshAutomatedPrepaidBeforeSend con TO_SEND detecta NCR para anticipo', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.localCurrency = { coCurrency: 'USD' } as any;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_TO_SEND,
+          stCollection: service.COLLECT_STATUS_TO_SEND,
+          nuAmountTotal: 0,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+            },
+          ],
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            nuAmountPartial: 0,
+          }],
+        } as any;
+        service.pagoOtros = [{ monto: 0, nombre: 'cierre' } as any];
+
+        const shouldCreate = await service.refreshAutomatedPrepaidBeforeSend();
+
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+        expect(shouldCreate).toBeTrue();
+      });
+
+      it('COB-PREPAID-006: NCR > FACT habilita anticipo automático al Enviar', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.existPartialPayment = false;
+        service.collection = {
+          coCurrency: 'USD',
+          nuDifference: 0,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              coTypeDoc: 'FACT',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+              nuAmountPaidConversion: 1000,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              coTypeDoc: 'NCR',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+              nuAmountPaidConversion: -1500,
+            },
+          ],
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            nuAmountPartial: 0,
+            nuPaymentDoc: 'cierre',
+          }],
+        } as any;
+        service.pagoOtros = [{ monto: 0, nombre: 'cierre' } as any];
+
+        await service.calculatePayment('', 0, true, true);
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+
+        service.anticipoAutomatico = [];
+        spyOn(service, 'ensureAutomatedPrepaidPaymentTemplate').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ot', posCollectionPayment: 0 }];
+        });
+
+        expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+      });
+
+      it('COB-PREPAID-006: remanente en mapa habilita refresh aunque amount aún no esté sincronizado', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.discountRemnantPrepaidAmount = 0;
+        service.setDiscountRemnantPrepaidForDocument('FAC-100', 50);
+        service.discountRemnantPrepaidAmount = 0;
+        service.collection = {
+          coCurrency: 'USD',
+          nuDifference: 0,
+          collectionDetails: [],
+        } as any;
+        service.anticipoAutomatico = [];
+        spyOn(service, 'calcularMontos').and.callFake(async (_type, _index, forceRecalc) => {
+          expect(forceRecalc).toBeTrue();
+          service.discountRemnantPrepaidAmount = 50;
+          return true;
+        });
+
+        const shouldCreate = await service.refreshAutomatedPrepaidBeforeSend();
+
+        expect(shouldCreate).toBeTrue();
+        expect(service.anticipoAutomatico.length).toBeGreaterThan(0);
+      });
+
+      it('COB-PREPAID-006: refreshAutomatedPrepaidBeforeSend conserva remanente tras recalcular', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.collection = {
+          coType: '0',
+          coCurrency: 'USD',
+          nuDifference: 0,
+          nuDifferenceConversion: 0,
+          collectionDetails: [{
+            idDocument: 10,
+            coDocument: 'FAC-100',
+            nuAmountCollectDiscount: 150,
+            nuAmountPaid: 100,
+          }],
+          collectionPayments: [{ coType: 'ot', coPaymentMethod: 'ot', nuAmountPartial: 0 }],
+        } as any;
+        service.documentSales = [{
+          idDocument: 10,
+          coDocument: 'FAC-100',
+          isSelected: true,
+          positionCollecDetails: 0,
+        } as DocumentSale];
+        service.pagoOtros = [{ monto: 0, nombre: 'x' } as any];
+        service.setDiscountRemnantPrepaidForDocument('FAC-100', 50);
+        spyOn(service, 'calcularMontos').and.callFake(async () => {
+          service.isFullyCoveredCollection = true;
+          service.efectivoRequerido = 0;
+          return true;
+        });
+
+        const shouldCreate = await service.refreshAutomatedPrepaidBeforeSend();
+
+        expect(shouldCreate).toBeTrue();
+        expect(service.discountRemnantPrepaidAmount).toBe(50);
+        expect(service.anticipoAutomatico.length).toBeGreaterThan(0);
       });
 
       it('COB-DISC-004b: shouldCreateAutomatedPrepaidOnSend false con remanente si automatedPrepaid OFF', () => {
@@ -2183,6 +2491,25 @@ describe('CollectionService', () => {
         expect(service.saveSendCollection).toHaveBeenCalledWith('ANT-NEW-2');
       });
 
+      it('COB-PREPAID-006: sin payment fuente usa EF sintético y persiste anticipo', async () => {
+        service.anticipoAutomatico = [{ type: 'ot', posCollectionPayment: 99 }];
+        const collection = buildSourceCollection();
+        collection.collectionPayments = [];
+        const db = { executeSql: jasmine.createSpy('executeSql').and.resolveTo({}) } as any;
+
+        const result = await service.createAnticipoCollectionPayment(
+          db,
+          collection,
+          'ANT-SYN-1',
+          50,
+          50,
+          false,
+        );
+
+        expect(result).toBe('ANT-SYN-1');
+        expect(db.executeSql).toHaveBeenCalled();
+      });
+
       it('buildCollectPendingBatch ordena cobro → anticipo', () => {
         const onlyCobro = service.buildCollectPendingBatch('COB-1');
         expect(onlyCobro.length).toBe(1);
@@ -2192,6 +2519,119 @@ describe('CollectionService', () => {
         const withAnticipo = service.buildCollectPendingBatch('COB-1', 'ANT-1');
         expect(withAnticipo.map((t) => t.coTransaction)).toEqual(['COB-1', 'ANT-1']);
         expect(withAnticipo.every((t) => t.type === 'collect')).toBeTrue();
+      });
+
+      it('buildSyntheticAnticipoCollectionPayment expone EF mínimo para AutoSend', () => {
+        const payment = service.buildSyntheticAnticipoCollectionPayment(
+          { coCollection: 'ANT-1' } as any,
+          75,
+          75,
+        );
+        expect(payment.coPaymentMethod).toBe('ef');
+        expect(payment.coType).toBe('ef');
+        expect(payment.nuAmountPartial).toBe(75);
+      });
+
+      it('COB-PREPAID-006: ensureAutomatedPrepaidPaymentTemplate usa Otros monto 0 (NCR)', () => {
+        service.collection = {
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            nuAmountPartial: 0,
+            nuPaymentDoc: 'cierre',
+          }],
+        } as any;
+        service.anticipoAutomatico = [];
+        service.ensureAutomatedPrepaidPaymentTemplate();
+        expect(service.anticipoAutomatico[0].type).toBe('ot');
+        expect(service.anticipoAutomatico[0].posCollectionPayment).toBe(0);
+      });
+
+      it('COB-PREPAID-006: sanitizePrepaidCollectionPayloadForSend limpia Otros e idCollectionDetail', () => {
+        const collection = {
+          coType: 1,
+          coCollection: 'ANT-1',
+          nuAmountTotal: 50,
+          nuAmountTotalConversion: 50,
+          nuAmountDiscountTotal: 150,
+          collectionDetails: [{ coDocument: 'X' }],
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            idCollectionDetail: 99,
+            idDifferenceCode: 7,
+            coDifferenceCode: 'DIF',
+            nuAmountPartial: 50,
+            nuAmountPartialConversion: 50,
+          }],
+        } as any;
+        service.sanitizePrepaidCollectionPayloadForSend(collection);
+        expect(collection.coType).toBe('1');
+        expect(collection.collectionDetails.length).toBe(0);
+        expect(collection.nuAmountDiscountTotal).toBe(0);
+        expect(collection.collectionPayments[0].coPaymentMethod).toBe('ef');
+        expect(collection.collectionPayments[0].idCollectionDetail).toBe(0);
+        expect(collection.collectionPayments[0].idDifferenceCode).toBe(0);
+      });
+
+      it('COB-DATE-002: sanitizePrepaidCollectionPayloadForSend normaliza daValue sin T', () => {
+        const collection = {
+          coType: 1,
+          coCollection: 'ANT-DATE',
+          nuAmountTotal: 1,
+          nuAmountTotalConversion: 1,
+          collectionDetails: [],
+          collectionPayments: [{
+            coType: 'ef',
+            coPaymentMethod: 'ef',
+            daValue: '2026-09-11T04:00:00',
+            daCollectionPayment: '2026-09-11T04:00:00',
+            nuAmountPartial: 1,
+            nuAmountPartialConversion: 1,
+          }],
+        } as any;
+        service.sanitizePrepaidCollectionPayloadForSend(collection);
+        expect(collection.collectionPayments[0].daValue).toBe('2026-09-11 04:00:00');
+        expect(collection.collectionPayments[0].daCollectionPayment).toBe('2026-09-11 04:00:00');
+      });
+
+      it('COB-DATE-002: buildSyntheticAnticipoCollectionPayment usa formato WS en fechas', () => {
+        const payment = service.buildSyntheticAnticipoCollectionPayment(
+          { coCollection: 'ANT-SYN' } as any,
+          1,
+          1,
+        );
+        expect(payment.daValue).not.toContain('T');
+        expect(payment.daCollectionPayment).not.toContain('T');
+        expect(payment.daValue).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+        expect(payment.daCollectionPayment).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+      });
+
+      it('COB-PREPAID-006: comentario obligatorio en anticipo remanente/NCR aunque requiredComment OFF', () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.requiredComment = false;
+        service.createAutomatedPrepaid = true;
+        service.discountRemnantPrepaidAmount = 50;
+        service.collection = { coType: '0', txComment: '  ' } as any;
+
+        expect(service.isCommentRequiredForSend()).toBeTrue();
+        expect(service.hasRequiredCommentFieldError()).toBeTrue();
+
+        service.collection.txComment = 'Anticipo por descuento';
+        expect(service.hasRequiredCommentFieldError()).toBeFalse();
+      });
+
+      it('COB-PREPAID-006: isRemnantOrCreditOtrosMontoLocked con fila Otros', () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.createAutomatedPrepaid = true;
+        service.creditBalancePrepaidAmount = 10;
+        service.pagoOtros = [{ monto: 0 } as any];
+
+        expect(service.isRemnantOrCreditOtrosMontoLocked()).toBeTrue();
+        service.pagoOtros = [];
+        expect(service.isRemnantOrCreditOtrosMontoLocked()).toBeFalse();
       });
     });
 
@@ -2264,6 +2704,46 @@ describe('CollectionService', () => {
       service.syncAddPaymentMethodDisabledState();
 
       expect(service.isAddPaymentMethodDisabled()).toBeTrue();
+    });
+
+    it('COB-DISC-004f: cobro cubierto con descuento no exige DOCUMENTS_NOT_READY al Enviar', async () => {
+      service.coTypeModule = '0';
+      service.isFullyCoveredCollection = true;
+      service.efectivoRequerido = 0;
+      service.automatedPrepaid = true;
+      service.discountRemnantPrepaidByDocument.set('FAC-100', 50);
+      service.discountRemnantPrepaidAmount = 50;
+      service.isOpen = false;
+      service.collection = {
+        coType: '0',
+        stDelivery: service.COLLECT_STATUS_NEW,
+        stCollection: service.COLLECT_STATUS_NEW,
+        isSave: 0,
+        collectionDetails: [{
+          idDocument: 10,
+          coDocument: 'FAC-100',
+          nuAmountCollectDiscount: 150,
+          nuAmountPaid: 100,
+          hasDiscount: true,
+          collectionDetailDiscounts: [{ idCollectDiscount: 1 }],
+        }],
+        collectionPayments: [{ coType: 'ot', coPaymentMethod: 'ot', nuAmountPartial: 0, nuReference: 'x' }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 10,
+        coDocument: 'FAC-100',
+        isSelected: true,
+        isSave: false,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.pagoOtros = [{ monto: 0, nombre: 'x' } as any];
+      spyOn(service as any, 'syncPendingInputsBeforeSendValidation').and.stub();
+      spyOn(service as any, 'issueInvalidPaymentReferences').and.returnValue(Promise.resolve(null));
+
+      const issues = await service.collectCollectionSendIssues();
+
+      expect(issues.some(i => i.code === 'DOCUMENTS_NOT_READY')).toBeFalse();
+      expect(issues.some(i => i.code === 'NO_DOCUMENTS')).toBeFalse();
     });
 
     it('P1: hasValidDocumentSalesForSend requires selected ready document', () => {
