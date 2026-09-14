@@ -121,6 +121,27 @@ resultado hay que volver a medirlo.**
 
 ---
 
+## Bloque A-bis · Cambiar de cliente a mitad del inventario
+
+⚠ **Este bloque nace de un hallazgo de QA del 14/09 que los 136 casos del ciclo no
+cubrían**: nadie había probado cambiar de cliente con el inventario ya empezado. Los tres
+síntomas salen de la misma acción pero son fallos distintos, y conviene medirlos por
+separado o se arregla uno y se cierra el ticket entero.
+
+| ID | Escenario | Resultado esperado |
+|---|---|---|
+| DM-SUG-005 | Cargar productos para el cliente A, ir a **General** y cambiar al cliente B | El inventario se **reinicia**. Hoy los productos de A **siguen cargados** con B |
+| DM-SUG-006 | Tras el cambio, mirar el sugerido **en el Resumen** y luego **abrir el detalle** | Los dos deben coincidir. Hoy el resumen muestra el valor del cliente A y el detalle el de B — el cálculo se rehace, la pantalla no se refresca |
+| DM-SUG-007 | Tras el cambio, **enviar** | Si algo impide enviar, el mensaje debe decir **qué**. Hoy sale un error de GPS que no viene a cuento y la pestaña General se marca en rojo |
+| DM-SUG-008 | **Control:** el mismo inventario empezando de cero con el cliente B | Se envía sin problema ⇒ lo que falla es el arrastre, no el cliente ni los productos ni el GPS |
+
+**Qué medir en el modelo, para que el informe sirva de algo:** si al cambiar de cliente
+cambia el `idClient` pero no la lista de productos; si el sugerido del Resumen sale de una
+variable distinta de la del detalle; y **qué campo concreto invalida la pestaña General**.
+El rojo de la pestaña indica que la app sabe dónde está el problema y muestra otro mensaje.
+
+---
+
 ## Bloque B · El sugerido se GUARDA — lo nuevo
 
 El corazón del REQ. La cabecera guarda `days_since_last`, `days_until_next`,

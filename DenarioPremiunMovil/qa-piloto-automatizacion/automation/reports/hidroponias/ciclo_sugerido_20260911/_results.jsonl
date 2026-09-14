@@ -1,0 +1,136 @@
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-001","resultado":"PASS","ms":8000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-002","resultado":"PASS","ms":3000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-003","resultado":"PASS","ms":1141,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-004","resultado":"PASS","ms":1408,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-005","resultado":"PASS","ms":1500,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-006","resultado":"PASS","ms":1200,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-007","resultado":"PASS","ms":4800,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-008","resultado":"PASS","ms":2500,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-009","resultado":"PASS","ms":4000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-010","resultado":"PASS","ms":800,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-011","resultado":"PASS","ms":5200,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-012","resultado":"PASS","ms":3000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-013","resultado":"PASS","ms":2200,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-014","resultado":"PASS","ms":6500,"intentos":1,"bd":"BD-SAVED"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-015","resultado":"PASS","ms":12000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-016","resultado":"PASS","ms":5808,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-017","resultado":"PASS","ms":29000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-018","resultado":"PASS","ms":29274,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-019","resultado":"PASS","ms":2000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-020","resultado":"PASS","ms":3000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-021","resultado":"PASS","ms":9000,"intentos":1,"bd":"BD-FIELD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-022","resultado":"PASS","ms":2000,"intentos":1,"bd":"BD-SAVED"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-023","resultado":"PASS","ms":4200,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-024","resultado":"PASS","ms":4100,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-025","resultado":"PASS","ms":4100,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-026","resultado":"PASS","ms":4100,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-027","resultado":"PASS","ms":4000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-028","resultado":"PASS","ms":2000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-029","resultado":"PASS","ms":1000,"intentos":1,"bd":null}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"DEV-030","resultado":"PASS","ms":6500,"intentos":1,"bd":"BD-SAVED"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"FIX1-CASO-1-guardada-no-entra","resultado":"PASS","ms":180000,"intentos":1,"bd":"BD-SAVED"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"FIX1-CASO-2-enviada-resta","resultado":"PASS","ms":150000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"FIX1-CASO-3-recien-enviada-limite","resultado":"PASS","ms":74710,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"FIX1-CASO-4-calidad-no-resta","resultado":"PASS","ms":150000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"FIX1-CASO-5-guardada-y-enviada","resultado":"PASS","ms":150000,"intentos":1,"bd":"BD-OK"}
+{"run_id":"ciclo_sugerido_20260911","modulo":"devoluciones","caso":"HALLAZGO-C-sugerido-huerfano","resultado":"FAIL","ms":30000,"intentos":1,"bd":"BD-INFO"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-001", "resultado": "N-A", "ms": 4000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-002", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-003", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-010", "resultado": "PASS", "ms": 9000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-011", "resultado": "BLOCKED", "ms": 60000, "intentos": 1, "bd": "BD-INFO"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-012", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-013", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-014", "resultado": "PASS", "ms": 4000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-014b", "resultado": "N-A", "ms": 2000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-015", "resultado": "PASS", "ms": 240000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-016", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-017", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-018", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-019", "resultado": "PASS", "ms": 4000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-020", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-021", "resultado": "PASS", "ms": 12000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-022", "resultado": "PASS", "ms": 8000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-023", "resultado": "PASS", "ms": 4000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-024", "resultado": "PASS", "ms": 30000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-025", "resultado": "PASS", "ms": 20000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-026", "resultado": "PASS", "ms": 15000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-030", "resultado": "PASS", "ms": 6000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-031", "resultado": "PASS", "ms": 20000, "intentos": 1, "bd": "BD-FIELD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-032", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-033", "resultado": "PASS", "ms": 4000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-034", "resultado": "PASS", "ms": 3000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-035", "resultado": "PASS", "ms": 2000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-036", "resultado": "PASS", "ms": 300000, "intentos": 2, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-037", "resultado": "PASS", "ms": 8000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-038", "resultado": "PASS", "ms": 45000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-040", "resultado": "N-A", "ms": 2000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-041", "resultado": "PASS", "ms": 6000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-042", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-043", "resultado": "PASS", "ms": 12000, "intentos": 1, "bd": "BD-FIELD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-044", "resultado": "SKIP", "ms": 0, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-050", "resultado": "PASS", "ms": 50000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-051", "resultado": "PASS", "ms": 48000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-052", "resultado": "PASS", "ms": 49000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-053", "resultado": "PASS", "ms": 49000, "intentos": 1, "bd": "BD-SAVED"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-054", "resultado": "PASS", "ms": 40000, "intentos": 2, "bd": "BD-SAVED"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-055", "resultado": "PASS", "ms": 43000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-070", "resultado": "PASS", "ms": 8000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-071", "resultado": "PASS", "ms": 10000, "intentos": 1, "bd": "BD-FIELD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-075", "resultado": "PASS", "ms": 30000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-077", "resultado": "SKIP", "ms": 0, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-080", "resultado": "PASS", "ms": 600000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "inventario-y-sugerido", "caso": "DM-SUG-085", "resultado": "N-A", "ms": 3000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "TICKET-2-CASO-1", "resultado": "PASS", "ms": 420000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "TICKET-2-CASO-2", "resultado": "PASS", "ms": 300000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "TICKET-2-CONTEO-NULOS", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-040", "resultado": "N-A", "ms": 2000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-041", "resultado": "FAIL", "ms": 6000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-042", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-043", "resultado": "PASS", "ms": 40000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-045", "resultado": "PASS", "ms": 30000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-046", "resultado": "PASS", "ms": 20000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-060", "resultado": "PASS", "ms": 15000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-061", "resultado": "PASS", "ms": 8000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-062", "resultado": "PASS", "ms": 25000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-063", "resultado": "FAIL", "ms": 10000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-064", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-065", "resultado": "N-A", "ms": 3000, "intentos": 1, "bd": null}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-066", "resultado": "PASS", "ms": 5000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-074", "resultado": "PASS", "ms": 12000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-077", "resultado": "PASS", "ms": 60000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-081", "resultado": "PASS", "ms": 480000, "intentos": 3, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "DM-SUG-084", "resultado": "PASS", "ms": 60000, "intentos": 1, "bd": "BD-OK"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "HUERFANA-ENVIO", "resultado": "FAIL", "ms": 240000, "intentos": 1, "bd": "BD-INFO"}
+{"run_id": "ciclo_sugerido_20260911", "modulo": "pedidos", "caso": "FORM-CONTAMINADO", "resultado": "FAIL", "ms": 180000, "intentos": 5, "bd": null}
+{"modulo":"web","id":"DW-SUG-100","descripcion":"Guarda de playa + empresa + vendedor antes de leer nada","resultado":"PASS","nota":"host=denarioislacoche.ddns.net:8080 (Isla Coche, mismo host que el :8081 del movil); empresa HIDROPONIAS VENEZOLANAS C.A; vendedor 469 ROGER MUESES existe como opcion del filtro","ms":12000}
+{"modulo":"web","id":"DW-PED-020","descripcion":"Ticket 2: los 4 pedidos nuevos (178,179,180,181) aparecen en el listado","resultado":"PASS","nota":"los 4 en las primeras filas del rango por defecto 01/09-11/09, Estatus Enviado, ROGER MUESES. El 178 es el caso clave: sugerencia NO en la nube y se lista sin ayuda de filtros","ms":30000}
+{"modulo":"web","id":"DW-PED-021","descripcion":"Ticket 2: 166, 175 y 177 siguen invisibles en el listado","resultado":"FAIL","nota":"Defecto W1 reproduce. Rango 01/01/2020-31/12/2027, sin filtros, 200 filas por pagina y sin paginador: 178 filas, refs 1..181 menos 166,175,177 (los 3 con co_operation IS NULL). La consulta del listado NO se toco","ms":45000}
+{"modulo":"web","id":"DW-PED-022","descripcion":"Ticket 2: conteo web vs base","resultado":"FAIL","nota":"web 178 vs base 181, diferencia exactamente 3, y el conjunto faltante es identico al de co_operation IS NULL. No es muestreo ni recorte de rango","ms":10000}
+{"modulo":"web","id":"DW-PED-023","descripcion":"Ticket 2: los nulos SI salen por busqueda directa de No. Ref","resultado":"PASS","nota":"Confirma lo reportado por QA. Mismos filtros y mismo rango: 175 da 1 fila 1.223,60 USD; 177 da 1 fila 30,60 USD; 166 da 1 fila 8.118,50 USD. El arreglo pendiente es solo de la consulta del listado","ms":35000}
+{"modulo":"web","id":"DW-PED-024","descripcion":"El detalle de un pedido con co_operation nulo abre completo","resultado":"PASS","nota":"los 3 abren /pages/detallePedido con cabecera, lineas y montos. El dato esta sano; lo roto es como se lo busca","ms":15000}
+{"modulo":"web","id":"DM-SUG-072","descripcion":"Transacciones > Sugerencias de Pedido: aparecen ref 6 y ref 7 con cliente, fecha, lineas y estado","resultado":"PASS","nota":"ref 7: 11/09/2026 17:52:59, INSIDE MARKET, Lineas 2, Pedido vacio, Pedido enviado No. ref 6: 11/09/2026 17:38:25, HIPERMERCADO PARAMO, Lineas 6, Pedido 179, Pedido enviado Si","ms":20000}
+{"modulo":"web","id":"DM-SUG-072b","descripcion":"El listado trae solo las 7 sugerencias de la nube","resultado":"PASS","nota":"7 filas = 7 en client_stock_suggested_orders. Refs 1-3 de KEVIN WILCHES (id_user 468), 4-7 de ROGER MUESES (469)","ms":5000}
+{"modulo":"web","id":"DM-SUG-073","descripcion":"Cotejo termino por termino movil vs nube vs web, tolerancia 0","resultado":"PASS","nota":"88 comparaciones, 0 divergencias: 8 productos x 9 terminos + 2 cabeceras x 8 terminos. El centinela 046013ESP001BOL midio Dev. distribucion 6.0 tambien en la web. Las 2 ventas negativas (-1.0 y -19.0) se muestran sin clampear","ms":60000}
+{"modulo":"web","id":"DM-SUG-073b","descripcion":"La web no muestra menos terminos de los que guarda","resultado":"PASS","nota":"muestra mas: los 9 terminos en form:compareDT mas Qty pedido y Diferencia, mas Algoritmo, Lineas y los enlaces a inventario y pedido","ms":5000}
+{"modulo":"web","id":"DM-SUG-074","descripcion":"Las lineas del pedido 179 son los sugeridos mayores que 0 de la ref 6, ceros excluidos","resultado":"PASS","nota":"las 3 filas con Qty sugerida mayor que 0 traen Qty pedido igual y Diferencia 0 (HIDPROBER001BOL 150, TOMPROMAN001GRA 2.560, TOMPROCHE001CAJ 120); las 3 en 0 traen Qty pedido 0. El 179 tiene exactamente esas 3 lineas, 342,00+442,80+6.400,00 = 7.184,80 USD","ms":25000}
+{"modulo":"web","id":"DM-SUG-074c","descripcion":"Los sugeridos en 0 SI se listan en la vista de la sugerencia","resultado":"PASS","nota":"046013ESP001BOL, GERPROALF002CAJ y CAMPROCEB002ATA aparecen con sus 9 terminos completos. Consistente con el equipo: se guardan y se muestran en la sugerencia, se excluyen del pedido","ms":5000}
+{"modulo":"web","id":"DW-SUG-101","descripcion":"Una sugerencia Pendiente rotula su falta de pedido con texto propio","resultado":"PASS","nota":"ref 7 detalle: Pedido: Sin pedido enviado (no un Ref.: vacio). En el listado la misma condicion sale como Pedido guion / Pedido enviado No. Dos rotulos distintos, ambos correctos","ms":5000}
+{"modulo":"web","id":"DW-SUG-102","descripcion":"Las 2 sugerencias que nunca subieron NO aparecen en la web","resultado":"PASS","nota":"1789163276184.0 (cliente 104, origen del 178) y 1789163741436.0 (cliente 1702, la del NO de DM-SUG-053) sin fila, ni la huerfana 1789160290226.0. Correcto. Queda para el REQ decidir si por trazabilidad deberian subir","ms":8000}
+{"modulo":"web","id":"DW-SUG-103","descripcion":"El pedido 178 aparece, sin sugerencia consultable","resultado":"PASS","nota":"esta en el listado y su detalle abre completo. Matiz: detallePedido no enlaza a la sugerencia en NINGUN pedido, tampoco en el 179 que si la tiene (Observacion W4)","ms":12000}
+{"modulo":"web","id":"DW-WEB-001","descripcion":"Formato numerico de /pages/detalleSugerenciaPedido","resultado":"FAIL","nota":"Defecto W2 reproduce. El mismo numero 2560 sale 2,560 en detalleSugerenciaPedido y 2.560 en detallePedido (pedido 179). Terminos enteros con punto decimal: 15.0, 261.0, -19.0. Matiz honesto: detalleInventario tambien usa en-US para cantidades (10.00 UNIDAD), asi que el rotulo original contra el es-VE del resto de la web era demasiado amplio","ms":8000}
+{"modulo":"web","id":"DW-DEV-010","descripcion":"Las 3 devoluciones en /pages/devoluciones","resultado":"PASS","nota":"279, 280, 281, las tres Enviado, HIPERMERCADO PARAMO - PIEDRA AZUL, ROGER MUESES, hora local UTC-4 correcta (16:34:57 / 16:49:57 / 16:56:00)","ms":10000}
+{"modulo":"web","id":"DW-DEV-011","descripcion":"Devolucion 279 = Distribucion con sus cantidades","resultado":"PASS","nota":"Tipo Distribucion, responsable QA V1 11/09, precinto P0911D1, GERPROALF002CAJ 7 y 046013ESP001BOL 6, factura 20118282, motivo AA-AGUADO","ms":12000}
+{"modulo":"web","id":"DW-DEV-012","descripcion":"Devolucion 280 = Calidad con sus cantidades","resultado":"PASS","nota":"Tipo Calidad, precinto P0911D2, 046013ESP001BOL 4 y HIDPROBER001BOL 5","ms":12000}
+{"modulo":"web","id":"DW-DEV-013","descripcion":"Devolucion 281 = Distribucion, 1 linea","resultado":"PASS","nota":"Tipo Distribucion, precinto P0911D4, GERPROALF002CAJ 2","ms":12000}
+{"modulo":"web","id":"DW-DEV-014","descripcion":"La devolucion Guardada (centinela) no aparece","resultado":"PASS","nota":"co_return 1789159255271.0 con id_return=0 no subio y el listado no la inventa. Refs consecutivas 277-281 sin huecos","ms":4000}
+{"modulo":"web","id":"DW-INV-010","descripcion":"Los 5 inventarios en /pages/inventarios","resultado":"PASS","nota":"275,276,277,278,279 los cinco Enviado, ROGER MUESES, clientes 100113/104/100121/1702/203","ms":10000}
+{"modulo":"web","id":"DW-INV-011","descripcion":"Inventario 275: 6 lineas, incluidas las dos en cero","resultado":"PASS","nota":"046013ESP001BOL 10,00 / GERPROALF002CAJ 40,00 / HIDPROBER001BOL 0.00 / TOMPROMAN001GRA 5,00 / TOMPROCHE001CAJ 3,00 / CAMPROCEB002ATA 0.00. Las lineas en cero se muestran","ms":15000}
+{"modulo":"web","id":"DW-INV-012","descripcion":"Inventarios 276/277/278/279 con sus lineas","resultado":"PASS","nota":"276: 5 lineas (MAIZ 0, BERRO 4, ALBAHACA 0, ENSALADA 0, GRANO CHINO 3); 277: 2 (BERRO 1, ALFALFA 2); 278: 2 (CHERRY 1, ARANDANOS 2); 279: 1 (BERRO 1). Uno a uno con client_stock_detail_unit.qu_stock","ms":40000}
+{"modulo":"web","id":"DW-INV-013","descripcion":"Enlace cruzado inventario hacia pedido","resultado":"PASS","nota":"275 da Ref.: 179 y 276 da Ref.: 178. En 277/278/279 la etiqueta Ver Pedido Relacionado se renderiza sin boton, correcto. Cotejado contra client_stock.id_order (179,178,NULL,NULL,NULL)","ms":20000}
+{"modulo":"web","id":"DW-INV-014","descripcion":"El inventario 276 enlaza al pedido 178 aunque su sugerencia nunca subio","resultado":"PASS","nota":"hallazgo: la cadena inventario-pedido sobrevive cuando la sugerencia queda en local; el servidor resolvio id_client_stock=276 desde el co_client_stock. El unico eslabon que se pierde es la sugerencia","ms":8000}
+{"modulo":"web","id":"DW-PED-025","descripcion":"Como presenta la web el pedido 181 (sugerencia huerfana)","resultado":"PASS","nota":"Observacion W5, no FAIL. Se lista normal (245,70 USD, 1 item, Enviado) y el detalle abre completo, pero la etiqueta Inventario relacionado NI SE RENDERIZA y no hay boton Ref.: alguno: ni vacio, ni roto, ni error. La web lee id_client_stock (NULL) y nunca el co_client_stock colgado 1789160266062.0, asi que queda indistinguible de un pedido normal. Contraste: 179 da Ref.: 275, 178 da Ref.: 276, 180 nada, 181 nada","ms":25000}
+{"modulo":"web","id":"DW-PED-026","descripcion":"Montos y conversion de los 4 pedidos nuevos","resultado":"PASS","nota":"Monto Total de la web = suma de order_detail.nu_amount_total en los 4: 27,68 / 7.184,80 / 6,27 / 245,70 USD. Conversion exacta a 814,69 BS = 1 USD","ms":15000}
+{"modulo":"web","id":"DW-PED-027","descripcion":"Cotejo fuerte del monto con mezcla de monedas","resultado":"N-A","nota":"sin dato: los 4 pedidos van enteros en USD, IVA 0 y sin descuentos, asi que nu_amount_total == nu_amount_final y cotejar contra el campo equivocado tambien daria PASS. No se puede fabricar desde la web (seria escritura)","ms":0}
+{"modulo":"web","id":"DW-PED-028","descripcion":"Casos de escritura del bloque F (DM-SUG-075/076/077)","resultado":"N-A","nota":"exigen operar el dispositivo; esta vuelta es de solo lectura. Medidos en la vuelta 2","ms":0}
+{"modulo":"web","id":"DW-SUG-104","descripcion":"DM-SUG-011 la suma del despacho","resultado":"N-A","nota":"sigue BLOCKED desde la vuelta 1 por falta de dato (dos facturas del mismo producto el mismo dia). No se destraba desde la web","ms":0}

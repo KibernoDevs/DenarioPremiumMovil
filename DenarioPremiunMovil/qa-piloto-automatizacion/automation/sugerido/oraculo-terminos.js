@@ -28,10 +28,23 @@ function q(sql) {
   return JSON.parse(out);
 }
 
-/** La fecha del inventario anterior manda: fija la ventana de devoluciones y de cambios. */
+/**
+ * La fecha del inventario anterior manda: fija la ventana de devoluciones y de cambios.
+ *
+ * 🔴 `id_client_stock <> 0` NO es un adorno: es la guarda que usa la app.
+ *    Un inventario que todavía no subió a la nube tiene `id_client_stock = 0`, y la app
+ *    NO lo toma como «inventario anterior» — solo cuenta el que el servidor ya confirmó.
+ *    Sin esta condición el oráculo elige un inventario que la app ignora, todos los
+ *    términos salen corridos y la corrida reporta un FAIL que no existe.
+ *
+ *    Medido el 11/09/2026 (hidroponias, vuelta 2 del ciclo): la build de
+ *    `SaveSuggestedOrder` trae la guarda en `getPreviousClientStock`, y no estaba en el
+ *    `src/` de la rama de QA — otra razón para leer el bundle vivo y no el working tree.
+ */
 function contexto(idClient, idAddressClient, hoy = new Date()) {
   const prev = q('select co_client_stock, da_client_stock from client_stocks where id_client=' + idClient +
-    ' and id_address_client=' + idAddressClient + ' order by da_client_stock desc limit 1');
+    ' and id_address_client=' + idAddressClient + ' and id_client_stock <> 0' +
+    ' order by da_client_stock desc limit 1');
   if (!prev.length) return { previo: null, daysSinceLast: 1, dateLastInventory: null };
   const da = prev[0].da_client_stock;
   const d0 = new Date(da.slice(0, 10) + 'T00:00:00Z');

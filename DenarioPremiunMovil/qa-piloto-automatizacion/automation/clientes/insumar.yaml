@@ -9,15 +9,16 @@ cliente_id: insumar
 cliente_nombre: "INSUMAR DISTRIBUIDOR"    # Confirmado 20260603: nombre en app
 # ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
-db_name: insumar_P1                       # ✅ CONFIRMADO 2026-08-13 (current_database()). La base es
-                                          #   `insumar_P1`, NO `insumar` — con el slug daba
-                                          #   "database does not exist" y el cotejo quedaba BD-N/A.
-                                          # ⚠ ACCIÓN EQUIPO (QA no toca secrets): el bloque
-                                          #   "# Cliente: insumar" de secrets/qa-db.env trae un
-                                          #   QA_DB_URL con la base vieja, y en query.js el DSN
-                                          #   TIENE PRECEDENCIA sobre este db_name ⇒ agregar
-                                          #   `QA_DB_NAME=insumar_P1` a ese bloque (o corregir la URL)
-                                          #   para que el cotejo funcione sin overrides.
+db_name: insumar                          # ✅ CONFIRMADO 2026-09-11 (current_database()) y con
+                                          #   GRANT verificado sobre 14 tablas.
+                                          # 📌 HISTORIA, para que nadie la repita: entre agosto y
+                                          #   septiembre la base se llamó `insumar_P1`, y este perfil
+                                          #   lo registró. El 11/09 `pg_database` ya NO lista esa base:
+                                          #   solo existe `insumar`. Un `db_name` vencido no falla
+                                          #   ruidosamente — o da "database does not exist", o peor,
+                                          #   lee de otro sitio y el cotejo miente.
+                                          # ⚠ El DSN de secrets/qa-db.env TIENE PRECEDENCIA sobre este
+                                          #   campo: si algún día no cuadran, manda el del secrets.
 
 vgs:
   multiCurrency: true                     # Confirmado 20260603: lista muestra Saldo BS y Saldo US$
