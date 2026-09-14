@@ -16,6 +16,14 @@ export function formatClientForList(
   return co || name;
 }
 
+/** Nombre para PDF / export (misma regla que detalle: na_client con fallback lb_client). */
+export function resolveClientNameForExport(
+  naClient: string | null | undefined,
+  lbClient: string | null | undefined
+): string {
+  return normalizeClientField(naClient) || normalizeClientField(lbClient);
+}
+
 export function formatClientForTab(
   naClient: string | null | undefined,
   coClient: string | null | undefined,
