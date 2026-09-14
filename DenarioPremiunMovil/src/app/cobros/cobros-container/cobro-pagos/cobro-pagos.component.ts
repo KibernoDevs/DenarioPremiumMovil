@@ -455,6 +455,10 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
           newPagoOtros.monto = 0;
         }
         this.collectService.pagoOtros.push(newPagoOtros);
+        this.syncPaymentDateFields(
+          newPagoOtros.posCollectionPayment,
+          this.toDbDateTime(newPagoOtros.fecha)
+        );
         newPago = newPagoOtros;
         break;
       }
@@ -692,6 +696,10 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
         } else {
           this.collectService.pagoOtros[index].fecha = this.toDbDateTime(fecha);
         }
+        this.syncPaymentDateFields(
+          this.collectService.pagoOtros[index].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoOtros[index].fecha)
+        );
         this.collectService.notifyCollectionEdited();
         break;
       }
@@ -923,8 +931,10 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
       case "ot": {
         this.collectService.pagoOtros[i].fecha = this.dateServ.hoyISO();
-        this.collectService.collection.collectionPayments![this.collectService.pagoOtros[i].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoOtros[i].fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoOtros[i].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoOtros[i].fecha)
+        );
         this.collectService.notifyCollectionEdited();
         break;
       }
@@ -1002,10 +1012,6 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.nuAmountPartialConversion =
           this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.daValue
-          = this.dateServ.hoyISOFullTime();
         break;
       }
     }

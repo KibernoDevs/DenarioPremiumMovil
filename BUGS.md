@@ -201,6 +201,50 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-005] Anticipo automático por descuento: conversión = mismo monto sin tasa
+
+- **Síntoma:** Anticipo hijo (remanente descuento) con `nuAmount` correcto en moneda de anticipo (ej. 81 USD) pero `nuAmountConversion` repetía 81 en la otra moneda (BSD) en lugar de 81 × tasa.
+- **Causa:** `resolveAutomatedPrepaidDocumentAmounts` cuando `prepaidCurrency === collection.coCurrency` sumaba remanentes 1:1 en conversión sin `convertirMonto`.
+- **Fix:** `resolveAutomatedPrepaidAmountConversion` aplica `convertirMonto(nuAmount, tasa, coCurrency)` con multimoneda; fallback cruzado solo si no hay tasa.
+- **Evitar:** No copiar `nuAmount` a `nuAmountConversion` cuando las monedas coinciden; usar la misma regla que `resolveDetailAmountConversion`.
+- **Archivos:** `collection-logic.service.ts`, `collection-logic.service.spec.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-PREPAID-004] Mensaje anticipo automático mostraba moneda del cobro (USD) en lugar de prepaidCurrency
+
+- **Síntoma:** Modal/alerta de anticipo (remanente descuento o exceso) con monto correcto en moneda de anticipo (ej. BSD) pero etiqueta **USD** (`collection.coCurrency`).
+- **Causa:** `resolveAutomatedPrepaidCurrency` solo leía `this.prepaidCurrency` en memoria; si venía vacío tras sync usaba fallback del cobro. Tags solo con `{amount}` mezclaban moneda en un solo placeholder.
+- **Fix:** `resolveConfiguredPrepaidCurrency` lee `globalConfig.prepaidCurrency`; plantillas con `{currency}` + `{amount}`; tags `COB_MSG_*` actualizados.
+- **Evitar:** No usar `collection.coCurrency` en textos de anticipo automático si hay `prepaidCurrency` en config.
+- **Archivos:** `collection-logic.service.ts`, `collection-logic.service.spec.ts`, `application_tags.sql`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-RATE-001] Selector de tasa oculto con showConversion OFF en módulo cob
+
+- **Síntoma:** En General (Cobros) se ve Fecha tasa y moneda, pero no el selector de tasa (`rateList` con valores); `showConversion=false` en consola.
+- **Causa:** `cobro-general.component.html` exigía `showConversion` (módulo moneda cob) para pintar el `ion-select` de tasa; esa flag solo debe gobernar columnas de conversión en documentos/total, no la elección de tasa del cobro.
+- **Fix:** Selector (y tasa en solo lectura Por Enviar/Enviado) visible con `multiCurrency` + `haveRate` + `historicoTasa`; tasa en pestaña Total con `multiCurrency` sin `showConversion`.
+- **Evitar:** No acoplar selector de tasa ni `nuValueLocal` de cabecera a `currency_modules.showConversion`.
+- **Archivos:** `cobro-general.component.html`, `cobro-total.component.html`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-DISC-005] Descuento de factura distorsiona descuento de cobro (%)
+
+- **Síntoma:** Factura con `document_sales.nu_amount_discount` > 0; al aplicar descuento de cobro (ej. 80 %) el Total Descuento y Monto a pagar son erróneos (magnitudes ~tasa o signos invertidos); en ambientes con descuento de factura en 0 no ocurre.
+- **Causa:** `computeCollectDiscountPreview` trataba `documentSale.nuAmountDiscount` como factor multiplicativo sobre `nuAmountBase` (`base − base × valor`); ese campo es monto de descuento de factura (solo UI), ya reflejado en saldo/total.
+- **Fix:** Base del % de cobro = `nuAmountBase` del documento; no restar ni multiplicar por descuento de factura.
+- **Evitar:** No usar `document_sales.nuAmountDiscount` en neto, descuento de cobro ni envío; deducciones de cobro = `collection_detail` (faltante, collect discount, retenciones).
+- **Archivos:** `cobro-documents.component.ts`, `cobro-documents.component.spec.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DISC-004] Descuento > saldo: monto factura, efectivo 0, Otros y anticipo
 
 - **Síntoma:** Con descuento que supera el saldo y `automatedPrepaid=true`, `montoTotalPagar` quedaba en 0; no se podía agregar Otros; Enviar fallaba con pagado=0 aunque el remanente debía ser anticipo.
@@ -269,13 +313,13 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
-## [COB-DATE-001] Fecha TR/PM elegida se pierde al Guardar/reabrir
+## [COB-DATE-001] Fecha TR/PM/OT elegida se pierde al Guardar/reabrir o Enviar
 
-- **Síntoma:** En Pagos, elegir fecha distinta a hoy (ej. Transferencia `01/08/2026`) se ve bien en UI; tras Guardar/Enviar y reabrir aparece hoy.
-- **Causa:** `getFechaValor` (y rutas `getFecha`/`onOpenCalendar`) de TR/PM solo actualizaban `daCollectionPayment`. La hidratación en `loadPayments` usa `fecha: payment.daValue`, que quedaba en “hoy” (set al crear/seleccionar banco). Depósito ya escribía `daValue`.
-- **Fix:** Al cambiar fecha TR/PM, sincronizar ambos campos (`daValue` + `daCollectionPayment`) vía `syncPaymentDateFields`.
-- **Evitar:** No persistir solo `daCollectionPayment` si la UI rehidrata desde `daValue`. No mezclar el modelo de fecha de Cheque (`fechaValor` → `daValue`).
-- **Tests:** `cobro-pagos.component.spec.ts` describe `COB-DATE-001` (TR y PM).
+- **Síntoma:** En Pagos, elegir fecha distinta a hoy (ej. Transferencia `01/08/2026`, Otros `13/09`) se ve bien en UI; en web/reapertura aparece hoy (ej. `14/09`). Muy visible con anticipo automático por descuento (línea Otros monto 0).
+- **Causa:** TR/PM: `getFechaValor` solo actualizaba `daCollectionPayment`; reabrir usa `daValue`. **Otros:** mismo hueco en `getFechaValor`/`onOpenCalendar`; además `applyMontoToCollection('ot')` (incl. `flushPendingPaymentInputsBeforeSend` pre-Enviar) reescribía `daValue`/`daCollectionPayment` con `hoyISOFullTime()`.
+- **Fix:** Sincronizar ambos campos (`daValue` + `daCollectionPayment`) vía `syncPaymentDateFields` al cambiar fecha OT; no tocar fechas al volcar monto Otros (como TR/PM).
+- **Evitar:** No persistir solo `daCollectionPayment` si la UI rehidrata desde `daValue`. No resetear fechas en `applyMontoToCollection` salvo EF (fecha valor implícita). No mezclar el modelo de fecha de Cheque (`fechaValor` → `daValue`).
+- **Tests:** `cobro-pagos.component.spec.ts` describe `COB-DATE-001` (TR, PM y OT + flush pre-envío).
 - **Archivos:** `cobro-pagos.component.ts` (+ spec); checklist bug-prevention.
 - **Estado:** fixed (pendiente QA dispositivo).
 
