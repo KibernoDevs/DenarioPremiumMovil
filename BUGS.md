@@ -201,6 +201,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-007] Anticipo por exceso de pago: monto en USD con etiqueta BSD
+
+- **Síntoma:** Modal “anticipo automático por excedente” con `{currency}` BSD correcto pero `{amount}` = excedente post-tol+ en **moneda del cobro** (ej. 1,82 USD mostrado como BSD 1,82). Persistencia/envío del anticipo hijo con el mismo error.
+- **Causa:** Con `prepaidCurrency` ≠ `collection.coCurrency`, `resolveAutomatedPrepaidDocumentAmounts` sumaba `getPrepaidExcessAmount()` (moneda `prepaidRangeCurrency`, a menudo = cobro) a `nuAmount` del anticipo (moneda `prepaidCurrency`).
+- **Fix:** En rama cruzada, excedente elegible → `convertCollectionAmountToPrepaidCurrency(excessInCollection)`; umbral/activación sigue en `getPrepaidExcessAmount` + `prepaidRangeAmount`.
+- **Evitar:** No reutilizar `getPrepaidExcessAmount()` para `nuAmount`/mensaje/persistencia; separar moneda de umbral vs moneda del documento anticipo.
+- **Tests:** `collection-logic.service.spec.ts` `COB-PREPAID-007` (caso 1,82 USD → BSD × tasa).
+- **Archivos:** `collection-logic.service.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-PREPAID-005] Anticipo automático por descuento: conversión = mismo monto sin tasa
 
 - **Síntoma:** Anticipo hijo (remanente descuento) con `nuAmount` correcto en moneda de anticipo (ej. 81 USD) pero `nuAmountConversion` repetía 81 en la otra moneda (BSD) en lugar de 81 × tasa.
