@@ -41,7 +41,6 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
    * Flag para mostrar el mensaje de automated prepaid solo una vez por ciclo de true.
    * Se resetea cuando createAutomatedPrepaid pasa a false.
    */
-  private hasShownAutomatedPrepaidMsg = false;
 
   readonly textFieldMinLength = TEXT_COMMENT_MIN_LENGTH;
   /** nu_payment_doc VARCHAR(50) */
@@ -127,6 +126,7 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
       );
     }
     this.collectService.syncAddPaymentMethodDisabledState();
+    this.lockZeroCashOtrosMontos();
   }
 
   ngOnDestroy(): void {
@@ -451,7 +451,14 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
         } else {
           newPagoOtros.fecha = this.dateServ.hoyISO();
         }
+        if (this.collectService.allowsZeroCashOtrosPayment()) {
+          newPagoOtros.monto = 0;
+        }
         this.collectService.pagoOtros.push(newPagoOtros);
+        this.syncPaymentDateFields(
+          newPagoOtros.posCollectionPayment,
+          this.toDbDateTime(newPagoOtros.fecha)
+        );
         newPago = newPagoOtros;
         break;
       }
@@ -474,6 +481,11 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
       // inicializa mapas inmediatamente (puedes usar ensureInitFor en vez de estas líneas)
       this.centsMap[uid] = Math.round((newPago.monto ?? 0) * this.getMultiplier());
       this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
+    }
+
+    if (type === 'ot' && this.collectService.allowsZeroCashOtrosPayment() && newPago) {
+      const otIndex = this.collectService.pagoOtros.length - 1;
+      this.applyMontoToCollection(0, otIndex, 'ot');
     }
 
     void this.collectService.notifyCollectionEdited();
@@ -684,6 +696,10 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
         } else {
           this.collectService.pagoOtros[index].fecha = this.toDbDateTime(fecha);
         }
+        this.syncPaymentDateFields(
+          this.collectService.pagoOtros[index].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoOtros[index].fecha)
+        );
         this.collectService.notifyCollectionEdited();
         break;
       }
@@ -756,6 +772,7 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
         payment.coClientBankAccount
           = this.collectService.pagoCheque[index].nombreBanco;
 
+        payment.idBank = this.collectService.pagoCheque[index].idBanco;
         payment.naBank
           = this.collectService.pagoCheque[index].nombreBanco;
 
@@ -914,8 +931,10 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
       case "ot": {
         this.collectService.pagoOtros[i].fecha = this.dateServ.hoyISO();
-        this.collectService.collection.collectionPayments![this.collectService.pagoOtros[i].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoOtros[i].fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoOtros[i].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoOtros[i].fecha)
+        );
         this.collectService.notifyCollectionEdited();
         break;
       }
@@ -993,10 +1012,6 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.nuAmountPartialConversion =
           this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.daValue
-          = this.dateServ.hoyISOFullTime();
         break;
       }
     }
@@ -1318,16 +1333,17 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   checkCreateAutomatedPrepaid() {
-    if (!this.collectService.recentOpenCollect && this.collectService.createAutomatedPrepaid && !this.hasShownAutomatedPrepaidMsg) {
-      this.automatedPrepaidAlertMessage = this.collectService.buildAutomatedPrepaidMessage();
-      this.alertMessageOpen = true;
-      this.hasShownAutomatedPrepaidMsg = true;
+    if (!this.collectService.shouldShowAutomatedPrepaidInformMessage()) {
+      return;
     }
-
+    this.automatedPrepaidAlertMessage = this.collectService.buildAutomatedPrepaidMessage();
+    this.alertMessageOpen = true;
+    this.collectService.markAutomatedPrepaidInformMessageShown();
   }
 
 
   validatePaymentMethodsForSend(): void {
+    this.lockZeroCashOtrosMontos();
     void this.collectService.notifyCollectionEdited();
     this.refreshSendUxAfterFieldChange();
   }
@@ -1342,10 +1358,6 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
   validatePayment(type: string, index: number) {
     this.collectService.alertMessageOpen = false;
-    // Si createAutomatedPrepaid pasa a false, resetea el flag para volver a mostrar el mensaje en el próximo ciclo
-    if (!this.collectService.createAutomatedPrepaid) {
-      this.hasShownAutomatedPrepaidMsg = false;
-    }
 
     const canRecalculateAmount = this.canRecalculatePaymentAmount(type, index);
     if (!canRecalculateAmount) {
@@ -1555,6 +1567,24 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
       && !this.collectService.hasAddedPaymentMethodForSendUx();
   }
 
+  isOtrosMontoLocked(): boolean {
+    return this.collectService.allowsZeroCashOtrosPayment()
+      || this.collectService.isRemnantOrCreditOtrosMontoLocked();
+  }
+
+  private lockZeroCashOtrosMontos(): void {
+    if (!this.isOtrosMontoLocked()) {
+      return;
+    }
+    this.collectService.pagoOtros.forEach((pago, index) => {
+      pago.monto = 0;
+      this.applyMontoToCollection(0, index, 'ot');
+      const uid = this.ensureInitFor(pago);
+      this.centsMap[uid] = 0;
+      this.displayMap[uid] = this.formatFromMinorUnits(0);
+    });
+  }
+
   isPaymentTypeSelectable(tipoPago: { type?: string }): boolean {
     if (!this.shouldRestrictPaymentMethodsToOtros()) {
       return true;
@@ -1680,6 +1710,9 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onMontoInput(event: any, pago: any, index: number, type: string) {
+    if (type === 'ot' && this.isOtrosMontoLocked()) {
+      return;
+    }
     // Support Ionic's ionInput and native InputEvent shapes
     const detail = event?.detail ?? {};
     const inputEvent = detail?.event ?? event;
@@ -1777,7 +1810,10 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onMontoKeyDown(event: any, pago: any, index: number, type: string) {
-
+    if (type === 'ot' && this.isOtrosMontoLocked()) {
+      event?.preventDefault?.();
+      return;
+    }
 
     const hasPartial = !!(this.collectService.collection &&
       Array.isArray(this.collectService.collection.collectionDetails) &&

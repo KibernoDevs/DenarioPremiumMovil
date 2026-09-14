@@ -39,6 +39,9 @@ describe('CobroPagosComponent', () => {
       isAddPaymentMethodDisabled: jasmine.createSpy('isAddPaymentMethodDisabled').and.returnValue(false),
       syncAddPaymentMethodDisabledState: jasmine.createSpy('syncAddPaymentMethodDisabledState'),
       allowsZeroCashOtrosPayment: jasmine.createSpy('allowsZeroCashOtrosPayment').and.returnValue(false),
+      isRemnantOrCreditOtrosMontoLocked: jasmine
+        .createSpy('isRemnantOrCreditOtrosMontoLocked')
+        .and.returnValue(false),
       hasAddedPaymentMethodForSendUx: jasmine.createSpy('hasAddedPaymentMethodForSendUx').and.returnValue(false),
       blockSaveAndSendForInvalidPayments: jasmine.createSpy('blockSaveAndSendForInvalidPayments'),
       lengthMethodPaid: 0,
@@ -49,6 +52,8 @@ describe('CobroPagosComponent', () => {
       collectionTags: new Map<string, string>(),
       cleanString: (value: string) => value,
       buildAutomatedPrepaidMessage: jasmine.createSpy('buildAutomatedPrepaidMessage').and.returnValue('Mensaje anticipo automático'),
+      shouldShowAutomatedPrepaidInformMessage: jasmine.createSpy('shouldShowAutomatedPrepaidInformMessage').and.returnValue(false),
+      markAutomatedPrepaidInformMessageShown: jasmine.createSpy('markAutomatedPrepaidInformMessageShown'),
       createAutomatedPrepaid: false,
       recentOpenCollect: false,
     };
@@ -212,6 +217,50 @@ describe('CobroPagosComponent', () => {
     expect(payment.daCollectionPayment).toBe('2026-08-01');
   });
 
+  it('COB-DATE-001: getFechaValor OT writes daValue and daCollectionPayment', () => {
+    collectionServiceMock.validateCollectionDate = false;
+    collectionServiceMock.pagoOtros = [{
+      fecha: '2026-09-14',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ot',
+      coPaymentMethod: 'ot',
+      daValue: '2026-09-14 00:00:00',
+      daCollectionPayment: '2026-09-14 00:00:00',
+    }];
+
+    component.getFechaValor('2026-09-13', 0, 'ot');
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(collectionServiceMock.pagoOtros[0].fecha).toBe('2026-09-13');
+    expect(payment.daValue).toBe('2026-09-13');
+    expect(payment.daCollectionPayment).toBe('2026-09-13');
+  });
+
+  it('COB-DATE-001: flushPendingPaymentInputsBeforeSend OT no pisa fecha elegida', () => {
+    collectionServiceMock.validateCollectionDate = false;
+    collectionServiceMock.pagoOtros = [{
+      monto: 100,
+      fecha: '2026-09-13',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ot',
+      coPaymentMethod: 'ot',
+      nuAmountPartial: 100,
+      daValue: '2026-09-13 00:00:00',
+      daCollectionPayment: '2026-09-13 00:00:00',
+    }];
+    collectionServiceMock.syncExchangeRateToCollectionHeader.and.returnValue(1);
+
+    component.flushPendingPaymentInputsBeforeSend();
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(payment.daValue).toBe('2026-09-13 00:00:00');
+    expect(payment.daCollectionPayment).toBe('2026-09-13 00:00:00');
+  });
+
   it('COB-UX-SEND-002: addTipoPago refreshes Enviar button availability', () => {
     component.addTipoPago('ef');
 
@@ -220,8 +269,7 @@ describe('CobroPagosComponent', () => {
   });
 
   it('COB-PREPAID-003: checkCreateAutomatedPrepaid usa mensaje dedicado aunque mensaje global sea de adjuntos', () => {
-    collectionServiceMock.createAutomatedPrepaid = true;
-    collectionServiceMock.recentOpenCollect = false;
+    collectionServiceMock.shouldShowAutomatedPrepaidInformMessage.and.returnValue(true);
     collectionServiceMock.mensaje = 'Para poder enviar el Cobro, debe agregar al menos un adjunto';
 
     component.checkCreateAutomatedPrepaid();
@@ -229,6 +277,36 @@ describe('CobroPagosComponent', () => {
     expect(collectionServiceMock.buildAutomatedPrepaidMessage).toHaveBeenCalled();
     expect(component.automatedPrepaidAlertMessage).toBe('Mensaje anticipo automático');
     expect(component.alertMessageOpen).toBeTrue();
+    expect(collectionServiceMock.markAutomatedPrepaidInformMessageShown).toHaveBeenCalled();
     expect(collectionServiceMock.mensaje).toBe('Para poder enviar el Cobro, debe agregar al menos un adjunto');
+  });
+
+  it('COB-DISC-004f: remanente confirmado no repite modal de anticipo en Pagos', () => {
+    collectionServiceMock.shouldShowAutomatedPrepaidInformMessage.and.returnValue(false);
+
+    component.checkCreateAutomatedPrepaid();
+
+    expect(collectionServiceMock.buildAutomatedPrepaidMessage).not.toHaveBeenCalled();
+    expect(component.alertMessageOpen).toBeFalse();
+  });
+
+  it('COB-PREPAID-006: Otros monto bloqueado en anticipo remanente/NCR', () => {
+    collectionServiceMock.allowsZeroCashOtrosPayment.and.returnValue(false);
+    collectionServiceMock.isRemnantOrCreditOtrosMontoLocked.and.returnValue(true);
+
+    expect(component.isOtrosMontoLocked()).toBeTrue();
+  });
+
+  it('COB-DISC-004f: Otros monto bloqueado en cobro cubierto', () => {
+    collectionServiceMock.allowsZeroCashOtrosPayment.and.returnValue(true);
+    collectionServiceMock.isRemnantOrCreditOtrosMontoLocked.and.returnValue(false);
+    collectionServiceMock.pagoOtros = [{ monto: 50, posCollectionPayment: 0 } as any];
+    collectionServiceMock.collection.collectionPayments = [{ coType: 'ot', nuAmountPartial: 50 }];
+
+    expect(component.isOtrosMontoLocked()).toBeTrue();
+    (component as any).lockZeroCashOtrosMontos();
+
+    expect(collectionServiceMock.pagoOtros[0].monto).toBe(0);
+    expect(collectionServiceMock.collection.collectionPayments[0].nuAmountPartial).toBe(0);
   });
 });

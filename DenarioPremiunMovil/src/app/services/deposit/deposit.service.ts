@@ -628,8 +628,8 @@ export class DepositService {
       txComment: "",
       nuValueLocal: 0,
       idCurrency: 0,
-      stDeposit: 0,
-      stDelivery: 0,
+      stDeposit: DEPOSITO_STATUS_NEW,
+      stDelivery: DEPOSITO_STATUS_NEW,
       isEdit: true,
       isEditTotal: false,
       isSave: false,
@@ -975,17 +975,31 @@ export class DepositService {
             deposit.daDeposit = localDaDeposit;
           }
 
-          const isLocalUnsynced =
-            local.stDeposit === this.DEPOSITO_STATUS_SAVED ||
-            local.stDeposit === this.DEPOSITO_STATUS_TO_SEND;
           const serverHasNoId = deposit.idDeposit == null || Number(deposit.idDeposit) === 0;
+          const isLocalMobilePipeline =
+            local.stDelivery === this.DEPOSITO_STATUS_NEW
+            || local.stDelivery === this.DEPOSITO_STATUS_SAVED
+            || local.stDelivery === this.DEPOSITO_STATUS_TO_SEND;
+          const isLocallySent =
+            local.stDelivery === this.DEPOSITO_STATUS_SENT
+            && local.stDeposit === this.DEPOSITO_STATUS_SENT
+            && Number(local.idDeposit ?? 0) > 0;
 
-          if (isLocalUnsynced && serverHasNoId) {
+          if (isLocalMobilePipeline && serverHasNoId) {
             deposit.stDeposit = local.stDeposit;
             deposit.stDelivery = local.stDelivery;
             if (local.idDeposit != null && Number(local.idDeposit) > 0) {
               deposit.idDeposit = local.idDeposit;
             }
+          } else if (
+            isLocallySent
+            && Number(deposit.idDeposit ?? 0) === Number(local.idDeposit ?? 0)
+            && Number(deposit.stDeposit ?? 0) !== DEPOSIT_APPROVAL_STATUS_REJECTED
+          ) {
+            // POST local exitoso: no dejar que sync pise Enviado con st_deposit=3 (default Web).
+            deposit.stDeposit = local.stDeposit;
+            deposit.stDelivery = local.stDelivery;
+            deposit.idDeposit = local.idDeposit;
           }
 
           // Si ya quedó rechazado por transaction_statuses, no dejar que sync de deposits lo pise.
@@ -1411,6 +1425,64 @@ export class DepositService {
     })
   }
 
+  /** Depósito persistido listo para POST (cabecera + cobros + estatus TO_SEND). */
+  isDepositReadyForSend(deposit: Deposit | null | undefined): boolean {
+    if (!deposit?.coDeposit?.trim()) {
+      return false;
+    }
+    if (!String(deposit.coBank ?? '').trim() || !String(deposit.coCurrency ?? '').trim()) {
+      return false;
+    }
+    const collectionIds = Array.isArray(deposit.collectionIds) ? deposit.collectionIds : [];
+    const collects = Array.isArray(deposit.depositCollect) ? deposit.depositCollect : [];
+    if (collectionIds.length === 0 && collects.length === 0) {
+      return false;
+    }
+    return Number(deposit.stDelivery ?? 0) === this.DEPOSITO_STATUS_TO_SEND;
+  }
+
+  normalizeDepositSendStatuses(deposit: Deposit): void {
+    const stDelivery = Number(deposit.stDelivery ?? 0);
+    const stDeposit = Number(deposit.stDeposit ?? 0);
+    if (stDelivery === this.DEPOSITO_STATUS_TO_SEND && stDeposit === this.DEPOSITO_STATUS_NEW) {
+      deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
+    }
+  }
+
+  async fetchDepositCollectRowsForSend(dbServ: SQLiteObject, coDeposit: string): Promise<DepositCollect[]> {
+    try {
+      const res = await dbServ.executeSql(
+        'SELECT * FROM deposit_collects WHERE co_deposit = ?',
+        [coDeposit],
+      );
+      const collects: DepositCollect[] = [];
+      for (let i = 0; i < res.rows.length; i++) {
+        collects.push(this.mapLocalDepositCollectRow(res.rows.item(i) as Record<string, unknown>));
+      }
+      return collects;
+    } catch (e) {
+      console.log('[fetchDepositCollectRowsForSend] error:', e);
+      return [];
+    }
+  }
+
+  async prepareDepositForSend(dbServ: SQLiteObject, coDeposit: string): Promise<Deposit | null> {
+    const deposit = await this.getDeposit(dbServ, coDeposit);
+    if (!deposit?.coDeposit?.trim()) {
+      return null;
+    }
+
+    deposit.depositCollect = await this.fetchDepositCollectRowsForSend(dbServ, coDeposit);
+    const rawIds = await this.getIdsDepositCollect(dbServ, coDeposit);
+    deposit.collectionIds = Array.isArray(rawIds)
+      ? rawIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
+      : [];
+
+    this.normalizeDepositSendStatuses(deposit);
+
+    return this.isDepositReadyForSend(deposit) ? deposit : null;
+  }
+
   getDepositCollect(dbServ: SQLiteObject, coDeposit: string) {
     /* Alias explícitos: SELECT * JOIN duplica nombres (co_collection, id_collection, ...) y SQLite/Cordova
        dejan un solo valor; además antes se reusaba una sola referencia DepositCollect en el bucle. */
@@ -1483,9 +1555,8 @@ export class DepositService {
 
 
     }).catch(e => {
-      let deposit = {} as Deposit;
       console.log(e);
-      return deposit;
+      return [] as number[];
     })
   }
 
@@ -1528,7 +1599,11 @@ export class DepositService {
               (rawRow as Record<string, unknown>)['nu_amount_doc']);
           item.nuAmountDoc = Number.isFinite(rawAmt) ? rawAmt : 0;
           this.listDeposits.push(item);
-          let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
+          const idDepositForHistory = Number(item.idDeposit ?? 0);
+          const statusPromise = idDepositForHistory > 0
+            ? this.historyTransaction.getStatusTransaction(dbServ, 6, idDepositForHistory)
+            : Promise.resolve(null);
+          const p = statusPromise.then(status => {
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,
               coDeposit: item.coDeposit,
@@ -1914,6 +1989,29 @@ export class DepositService {
     }
   }
 
+  /** Tras POST exitoso: lista en memoria muestra Enviado sin reabrir Depósitos. */
+  applySentStatusToInMemoryLists(coDeposit: string, idDeposit: number): void {
+    const co = String(coDeposit ?? '').trim();
+    if (!co || !Number.isFinite(idDeposit) || idDeposit <= 0) {
+      return;
+    }
+    for (const deposit of this.listDeposits ?? []) {
+      if (String(deposit.coDeposit ?? '').trim() === co) {
+        deposit.idDeposit = idDeposit;
+        deposit.stDeposit = DEPOSITO_STATUS_SENT;
+        deposit.stDelivery = DEPOSITO_STATUS_SENT;
+      }
+    }
+    for (const item of this.itemListaDepositos ?? []) {
+      if (String(item.coDeposit ?? '').trim() === co) {
+        item.idDeposit = idDeposit;
+        item.stDeposit = DEPOSITO_STATUS_SENT;
+        item.stDelivery = DEPOSITO_STATUS_SENT;
+        item.naStatus = '';
+      }
+    }
+  }
+
   /** Refresca stDeposit en listas en memoria para que la UI muestre Rechazado sin reentrar. */
   private applyRefusedStatusToInMemoryLists(refused: TransactionStatuses[]): void {
     for (const ts of refused) {
@@ -1978,10 +2076,22 @@ export class DepositService {
     }
   }
 
+  /** Guardado / Por Enviar / nuevo: etiqueta solo desde st_delivery (pipeline móvil). */
+  isLocalDepositPipelineStatus(stDeposit: number, stDelivery: number): boolean {
+    const delivery = Number(stDelivery);
+    return delivery === DEPOSITO_STATUS_NEW
+      || delivery === DEPOSITO_STATUS_SAVED
+      || delivery === DEPOSITO_STATUS_TO_SEND;
+  }
+
   getStatusOrderName(stDeposit: number, stDelivery: number, naStatus: unknown): string {
     const delivery = Number(stDelivery);
     const deposit = Number(stDeposit);
     const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
+
+    if (this.isLocalDepositPipelineStatus(deposit, delivery)) {
+      return this.getStatus(delivery, resolvedNaStatus);
+    }
 
     if (deposit !== 0 && resolvedNaStatus) {
       return resolvedNaStatus;
@@ -2010,12 +2120,12 @@ export class DepositService {
   getStatus(status: number, naStatus: unknown): string {
     switch (status) {
       case DELIVERY_STATUS_SAVED:
-        return this.depositTags.get('DEP_DEV_SAVED') ?? '';
+        return this.depositTags.get('DEP_DEV_SAVED') ?? 'Guardado';
       case DELIVERY_STATUS_TO_SEND:
-        return this.depositTags.get('DEP_DEV_TO_BE_SENDED') ?? '';
+        return this.depositTags.get('DEP_DEV_TO_BE_SENDED') ?? 'Por Enviar';
       case DELIVERY_STATUS_SENT:
         return naStatus == null || String(naStatus).trim() === ''
-          ? (this.depositTags.get('DEP_DEV_SENDED') ?? '')
+          ? (this.depositTags.get('DEP_DEV_SENDED') ?? 'Enviado')
           : String(naStatus);
       case 6:
         if (naStatus == null || String(naStatus).trim() === '') {

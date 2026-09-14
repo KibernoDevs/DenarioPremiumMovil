@@ -80,6 +80,12 @@
   --border-color: #e60c0c !important;
 }
 
+.inp-disabled-readonly {
+  --background: var(--ion-color-light, #f4f5f8);
+  --color: var(--ion-color-medium, #92949c);
+  opacity: 1;
+}
+
 .campoObligatorio {
   font-size: 0.75rem;
   display: block;

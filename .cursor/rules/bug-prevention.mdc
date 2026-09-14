@@ -18,11 +18,15 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 
 - Completitud TR != tolerancia. Revisar `clientBankAccount`, `nuevaCuenta` vs cuenta existente.
 - Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
+- Al hidratar Cheque emisor: restaurar `bankAccountSelected[pos]` desde `listBanks` (`idBank`/`naBank`/`coClientBankAccount`); persistir `idBank` al seleccionar — `COB-CH-001`.
+- PM emisor: mismo picker que Cheque; **no** usar `payment.idBank` (es destino); restaurar desde `coClientBankAccount` — `COB-PM-001`. Cargar `listBanks` antes de `loadPayments`.
+- Depósito/PM destino/TR receptor: cruzar `idBank` + `nuAccount` al restaurar pickers de cuentas; fallback si falta en catálogo — `COB-DE-001`.
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
 - Tolerancia absoluta cross-currency: rango en `MonedaTolerancia` → cobro local = `× tasa` (no `convertirMonto(..., coCurrency)`); ver `COB-TOL-001`.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
-- Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
-- Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
+- Anticipo automático: primero absorbe tol+ (`resolvePrepaidEligibleExcessInCollectionCurrency`); umbral `prepaidRangeAmount` sobre el remanente; ver `COB-PREPAID-005`.
+- Anticipo automático al Enviar: batch cobro→anticipo + `drainPendingQueue` con esos coTransaction (no dos `runPendingQueue` sueltos); refresh con `forceRecalc`; AutoSend EF sintético si anticipo sin payment; ver `COB-PREPAID-002` / `COB-PREPAID-006`.
+- Remanente descuento / NCR > FACT: no bloquear anticipo con `existPartialPayment`; `refreshAutomatedPrepaidBeforeSend` no debe vaciar plantilla — `COB-PREPAID-006`.
 - Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
 - Retención multi-doc (`coType` 2): Enviar exige completitud por documento, no solo suma > 0 (`COB-RET-001`); Guardar tras General válida (`COB-SAVE-001`).
@@ -35,7 +39,8 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Enviar: colector `collectCollectionSendIssues` evalúa TODAS las reglas aplicables (campos, tolerancia, refs, adjuntos); modal = primer issue, UI pinta todos — `COB-SEND-ALL-001`.
 - Monto a pagar (`nuAmountPaid`) y montos de pago en SQLite: validar en `hasSendFieldErrors` aunque la UI de Pagos aún no esté hidratada — `COB-SEND-UX-001`.
 - Enviar con FACT + NCR: `hasIncompleteDocumentAmountToPay` acepta `nuAmountPaid` negativo en notas de crédito/saldo negativo (no solo `> 0`) — `COB-SEND-AMT-001`.
-- Descuento > saldo: remanente/anticipo solo con `automatedPrepaid`; `montoTotalPagar` = deuda FACT, `efectivoRequerido` = 0, Otros monto 0 + diff code — `COB-DISC-004`.
+- Descuento > saldo / neto ≤ 0: remanente/anticipo solo con `automatedPrepaid`; `montoTotalPagar` = 0, `efectivoRequerido` = 0, Otros monto 0 bloqueado + diff code — `COB-DISC-004`. Remanente confirmado: poblar mapa **antes** de `calculatePayment`; modal remanente en Documentos (no repetir `buildAutomatedPrepaidMessage` en Pagos); Enviar no dispara `DOCUMENTS_NOT_READY` con descuento sin guardar; salto a Documentos por error no recarga listado — `COB-DISC-004f`.
+- Cambiar de cobro: `resetCobroPaymentCoverageSessionState()` en sesión nueva/reapertura (mapa remanente, cobro cubierto, `createAutomatedPrepaid`) — `COB-SESSION-002`.
 - NCR > FACT (neto < 0): anticipo `creditBalancePrepaidAmount`; neto ≥ 0 sin cambio (800) — `COB-NCR-PREPAID-001` / `COB-DOC-NEG-001`.
 - `enableDifferenceCodes`: selector de código en Otros obligatorio al Enviar (rojo + mensaje) — `COB-DIFF-001`.
 - Pago Móvil: teléfono (prefijo + 7 dígitos) obligatorio en Enviar como el resto de campos PM — `COB-PM-PHONE-001`.
@@ -43,6 +48,8 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
 - Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
 - Fecha TR/PM al cambiar: escribir `daValue` y `daCollectionPayment` (reabrir usa `daValue`); ver `COB-DATE-001`.
+- Pagos Cobros WS/SQLite: `daValue`/`daCollectionPayment` = `YYYY-MM-DD HH:mm:ss` (`toDbDateTime`); no `hoyISO()` con `T` al persistir/enviar — `COB-DATE-002`.
+- Anticipo remanente/NCR: Otros monto bloqueado (gris/disabled); comentario obligatorio al Enviar aunque `requiredComment` OFF — `COB-PREPAID-006`.
 
 ## Inventarios
 
