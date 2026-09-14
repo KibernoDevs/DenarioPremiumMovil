@@ -1,8 +1,26 @@
-These are Cordova resources. You can replace icon.png and splash.png and run
-`ionic cordova resources` to generate custom icons and splash screens for your
-app. See `ionic cordova resources --help` for details.
+# Recursos nativos (icono y splash)
 
-Cordova reference documentation:
+Fuentes en esta carpeta:
 
-- Icons: https://cordova.apache.org/docs/en/latest/config_ref/images.html
-- Splash Screens: https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-splashscreen/
+| Archivo | Uso |
+|---------|-----|
+| `icon-only.png` | Icono iOS/Android (1024×1024) |
+| `splash.png` | Splash modo claro |
+| `splash2.png` | Splash modo oscuro (dark) |
+
+## Capacitor (recomendado)
+
+Genera icono y splash en el proyecto iOS:
+
+```bash
+cd DenarioPremiunMovil
+npm run assets:ios
+```
+
+Salida: `ios/App/App/Assets.xcassets/AppIcon.appiconset/` y `Splash.imageset/`.
+
+Los PNG versionados en git están en la raíz del repo (`.gitignore` con excepciones para esos paths).
+
+## Cordova (legacy)
+
+Ver documentación Cordova si usas `config.xml` / `ionic cordova resources`.
