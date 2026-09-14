@@ -32,6 +32,7 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   public document!: DocumentSale[];
   public allDocuments: DocumentSale[] = [];
   public readonly DOCUMENT_SALES_PAGE_SIZE = 30;
+  private static readonly DOCUMENTS_TABLE_LAYOUT_MAX_RETRIES = 8;
   public documentSalesCurrentPage = 0;
   public documentSalesTotalRows = 0;
   public documentsTableLayoutReady = true;
@@ -117,6 +118,10 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subjectClientShareModalOpen = this.clientLogic.closeClientShareModal.subscribe((open: Boolean) => {
       this.clientShareModalOpen = false;
     });
+
+    if (this.clientLogic.segment === 'docVentas' && this.documentSalesTotalRows > 0) {
+      this.markDocumentsTableLayoutPending();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -433,7 +438,14 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     const headerCols = this.getDocumentsTableColumns(headerRow);
     const bodyRows = Array.from(bodyGrid.querySelectorAll('ion-row'));
 
-    if (headerCols.length === 0 || bodyRows.length === 0) {
+    if (headerCols.length === 0) {
+      return false;
+    }
+
+    if (bodyRows.length === 0) {
+      if (this.documentSalesTotalRows > 0) {
+        return false;
+      }
       this.completeDocumentsTableLayout();
       return true;
     }
@@ -535,11 +547,22 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
         this.documentsTableLayoutFrame = 0;
         const synced = this.syncDocumentsTableLayout();
 
-        if (!synced && retryCount < 2) {
+        if (!synced && retryCount < ClienteComponent.DOCUMENTS_TABLE_LAYOUT_MAX_RETRIES) {
           this.scheduleDocumentsTableLayoutSync(retryCount + 1, false);
         }
       });
     });
+  }
+
+  /** Tras volver del detalle de un documento (recreación del componente en iOS). */
+  refreshDocumentsTableLayoutAfterReturn(): void {
+    if (this.clientLogic.segment !== 'docVentas' || this.documentSalesTotalRows === 0) {
+      return;
+    }
+
+    this.resetDocumentsTableScroll();
+    this.invalidateDocumentsTableLayoutCache();
+    this.scheduleDocumentsTableLayoutSync();
   }
 
   viewCoordenada(verCrear: Boolean, client: Client, module: string) {

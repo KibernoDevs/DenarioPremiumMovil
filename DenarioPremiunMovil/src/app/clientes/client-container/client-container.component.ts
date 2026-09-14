@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { ClienteComponent } from './client-detail/client-detail.component';
 import { Router } from '@angular/router';
 import { Client } from 'src/app/modelos/tables/client';
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
@@ -21,6 +22,8 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
   standalone: false
 })
 export class ClienteContainerComponent implements OnInit {
+
+  @ViewChild(ClienteComponent) clientDetailRef?: ClienteComponent;
 
   public clientLogic = inject(ClientLogicService);
   public router = inject(Router);
@@ -76,18 +79,24 @@ export class ClienteContainerComponent implements OnInit {
         this.clientLogic.clienteNuevoBlancoImg = true;
         this.clientLogic.clientDetailComponent = true;
       } else if (this.clientLogic.clientDocumentSaleComponent) {
-        if (this.clientLogic.opendDocClick) {
-          //aca tengo que ir directo a la pestaña de documentos, como lo hago???
+        const returnToDocumentsTab = this.clientLogic.opendDocClick;
+        if (returnToDocumentsTab) {
           this.clientLogic.opendDocClick = false;
-          this.clientLogic.clientDocumentSaleComponent = false;
-          this.clientLogic.clientDetailComponent = true;
+        }
+        this.clientLogic.clientDocumentSaleComponent = false;
+        this.clientLogic.clientDetailComponent = true;
+        if (returnToDocumentsTab) {
           this.clientLogic.segment = 'docVentas';
-        } else {
-          this.clientLogic.clientDocumentSaleComponent = false;
-          this.clientLogic.clientDetailComponent = true;
+          this.scheduleClientDocumentsTableRelayout();
         }
       }
     });
+  }
+
+  private scheduleClientDocumentsTableRelayout(): void {
+    window.setTimeout(() => {
+      this.clientDetailRef?.refreshDocumentsTableLayoutAfterReturn();
+    }, 50);
   }
 
   clientList() {
