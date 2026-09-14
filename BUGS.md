@@ -201,6 +201,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-RATE-001] Selector de tasa oculto con showConversion OFF en módulo cob
+
+- **Síntoma:** En General (Cobros) se ve Fecha tasa y moneda, pero no el selector de tasa (`rateList` con valores); `showConversion=false` en consola.
+- **Causa:** `cobro-general.component.html` exigía `showConversion` (módulo moneda cob) para pintar el `ion-select` de tasa; esa flag solo debe gobernar columnas de conversión en documentos/total, no la elección de tasa del cobro.
+- **Fix:** Selector (y tasa en solo lectura Por Enviar/Enviado) visible con `multiCurrency` + `haveRate` + `historicoTasa`; tasa en pestaña Total con `multiCurrency` sin `showConversion`.
+- **Evitar:** No acoplar selector de tasa ni `nuValueLocal` de cabecera a `currency_modules.showConversion`.
+- **Archivos:** `cobro-general.component.html`, `cobro-total.component.html`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-DISC-005] Descuento de factura distorsiona descuento de cobro (%)
+
+- **Síntoma:** Factura con `document_sales.nu_amount_discount` > 0; al aplicar descuento de cobro (ej. 80 %) el Total Descuento y Monto a pagar son erróneos (magnitudes ~tasa o signos invertidos); en ambientes con descuento de factura en 0 no ocurre.
+- **Causa:** `computeCollectDiscountPreview` trataba `documentSale.nuAmountDiscount` como factor multiplicativo sobre `nuAmountBase` (`base − base × valor`); ese campo es monto de descuento de factura (solo UI), ya reflejado en saldo/total.
+- **Fix:** Base del % de cobro = `nuAmountBase` del documento; no restar ni multiplicar por descuento de factura.
+- **Evitar:** No usar `document_sales.nuAmountDiscount` en neto, descuento de cobro ni envío; deducciones de cobro = `collection_detail` (faltante, collect discount, retenciones).
+- **Archivos:** `cobro-documents.component.ts`, `cobro-documents.component.spec.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DISC-004] Descuento > saldo: monto factura, efectivo 0, Otros y anticipo
 
 - **Síntoma:** Con descuento que supera el saldo y `automatedPrepaid=true`, `montoTotalPagar` quedaba en 0; no se podía agregar Otros; Enviar fallaba con pagado=0 aunque el remanente debía ser anticipo.

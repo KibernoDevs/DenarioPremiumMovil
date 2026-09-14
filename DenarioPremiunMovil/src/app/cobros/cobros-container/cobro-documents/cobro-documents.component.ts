@@ -4328,6 +4328,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   /**
    * Preview de descuentos: montos y remanente vs saldo.
    * `clampToBalance=false` permite monto > saldo (para detectar remanente / anticipo).
+   * El descuento de factura (`document_sales.nuAmountDiscount`) es solo informativo; no entra en la base del % de cobro (COB-DISC-005).
    */
   computeCollectDiscountPreview(clampToBalance: boolean): {
     baseBalance: number;
@@ -4351,10 +4352,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const parteDecimal = Number.parseInt(String(this.globalConfig.get('parteDecimal') ?? '0'), 10) || 0;
     const factor = Math.pow(10, parteDecimal);
 
-    const detailBase = Number(this.collectService.documentSaleOpen.nuAmountBase ?? 0);
-    const percentDiscount = Number(this.collectService.documentSaleOpen.nuAmountDiscount ?? 0);
-    const discountBase = detailBase * percentDiscount;
-    let detailBaseNew = detailBase - discountBase;
+    const detailBase = Math.max(0, Number(this.collectService.documentSaleOpen.nuAmountBase ?? 0));
+    let detailBaseNew = detailBase;
     const monedaDoc = this.collectService.documentSaleOpen.coCurrency;
     let viewBalance = 0;
     if (this.collectService.collection.coCurrency == monedaDoc) {

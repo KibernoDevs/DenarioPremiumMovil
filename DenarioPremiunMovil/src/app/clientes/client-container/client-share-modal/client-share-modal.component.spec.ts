@@ -8,13 +8,17 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
+import { Share } from '@capacitor/share';
 
 describe('ClientShareModalComponent', () => {
   let component: ClientShareModalComponent;
   let fixture: ComponentFixture<ClientShareModalComponent>;
   let clientLogic: jasmine.SpyObj<Pick<ClientLogicService,
     'canShowConversion' | 'getPrimaryCurrencyLabel' | 'getSecondaryCurrencyLabel' | 'localCurrencyDefault'
-    | 'clientTags' | 'clientTagsDenario' | 'closeClientShareModalFunction' | 'message' | 'documentsSaleSelectShared'>>;
+    | 'clientTags' | 'clientTagsDenario' | 'closeClientShareModalFunction' | 'message' | 'documentsSaleSelectShared'
+    | 'empresaSeleccionada' | 'enterpriseServ'>>;
+  let pdfCreator: jasmine.SpyObj<PdfCreatorService>;
+  let imageServices: jasmine.SpyObj<Pick<ImageServicesService, 'getLogoBase64ForEnterprise'>>;
 
   const buildDoc = (overrides: Partial<DocumentSale> = {}): DocumentSale => ({
     coDocument: 'FAC-1',
@@ -28,6 +32,9 @@ describe('ClientShareModalComponent', () => {
   } as DocumentSale);
 
   beforeEach(waitForAsync(() => {
+    pdfCreator = jasmine.createSpyObj('PdfCreatorService', ['generateSummaryPdfDoc', 'savePdf']);
+    imageServices = jasmine.createSpyObj('ImageServicesService', ['getLogoBase64ForEnterprise']);
+
     clientLogic = jasmine.createSpyObj('ClientLogicService', [
       'canShowConversion',
       'getPrimaryCurrencyLabel',
@@ -38,11 +45,20 @@ describe('ClientShareModalComponent', () => {
       clientTags: new Map<string, string>(),
       clientTagsDenario: new Map<string, string>([['DENARIO_BOTON_CANCELAR', 'Cancelar']]),
       documentsSaleSelectShared: [],
+      empresaSeleccionada: { naEnterprise: 'Empresa QA', nuRif: 'J-1', txAddress: 'Dir' },
+      enterpriseServ: { getEnterprises: () => [] },
       message: {
         showLoading: () => Promise.resolve(),
         hideLoading: () => Promise.resolve(),
       },
     });
+
+    pdfCreator.generateSummaryPdfDoc.and.returnValue(Promise.resolve({
+      output: () => 'data:application/pdf;base64,abc',
+    } as any));
+    pdfCreator.savePdf.and.returnValue(Promise.resolve({ uri: 'file:///tmp/test.pdf' }));
+    imageServices.getLogoBase64ForEnterprise.and.returnValue(Promise.resolve(null));
+    spyOn(Share, 'share').and.returnValue(Promise.resolve({} as any));
 
     clientLogic.canShowConversion.and.returnValue(false);
     clientLogic.getPrimaryCurrencyLabel.and.returnValue('USD');
@@ -64,8 +80,8 @@ describe('ClientShareModalComponent', () => {
           },
         },
         { provide: GlobalConfigService, useValue: { get: () => 'RIF' } },
-        { provide: PdfCreatorService, useValue: {} },
-        { provide: ImageServicesService, useValue: {} },
+        { provide: PdfCreatorService, useValue: pdfCreator },
+        { provide: ImageServicesService, useValue: imageServices },
       ],
     }).compileComponents();
 
@@ -94,6 +110,23 @@ describe('ClientShareModalComponent', () => {
   it('CLI-CURRENCY-PDF: toPrimaryCurrency convierte a USD cuando doc es BS y default es fuerte', () => {
     const doc = buildDoc({ coCurrency: 'BS', nuAmountTotal: 737.88 });
     expect(component.toPrimaryCurrency(737.88, doc)).toBe('1');
+  });
+
+  it('CLI-PDF-001: clientNameForExport usa lbClient si naClient está vacío', () => {
+    component.client = { coClient: 'C1', naClient: '', lbClient: 'Distribuidora QA' } as any;
+    expect(component.clientNameForExport).toBe('Distribuidora QA');
+  });
+
+  it('CLI-PDF-001: exportPdf usa etiqueta Cliente y lbClient si naClient vacío', async () => {
+    component.client = { coClient: 'C1', naClient: '', lbClient: 'Distribuidora QA' } as any;
+    component.document = [buildDoc()];
+
+    await component.exportPdf();
+
+    expect(pdfCreator.generateSummaryPdfDoc).toHaveBeenCalled();
+    const payload = pdfCreator.generateSummaryPdfDoc.calls.mostRecent().args[0];
+    const clienteMeta = payload.meta?.find((m: { label: string }) => m.label === 'Cliente');
+    expect(clienteMeta?.value).toBe('Distribuidora QA');
   });
 
   it('CLI-CURRENCY-PDF: toPrimaryCurrency devuelve local cuando localCurrencyDefault=true', () => {

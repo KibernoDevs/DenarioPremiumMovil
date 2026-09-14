@@ -92,7 +92,7 @@
       </ion-col>
 
 
-      @if (this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.haveRate &&
+      @if (this.collectService.multiCurrency && this.collectService.haveRate &&
       this.collectService.historicoTasa && (this.collectService.collection.stDelivery ==
       this.collectService.COLLECT_STATUS_NEW ||
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED)) {
@@ -114,7 +114,7 @@
         </div>
       </ion-col>
       }
-      @if ( this.collectService.multiCurrency && this.collectService.showConversion &&
+      @if (this.collectService.multiCurrency &&
       (
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND ||
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT  ||

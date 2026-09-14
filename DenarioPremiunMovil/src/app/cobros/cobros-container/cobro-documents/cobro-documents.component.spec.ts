@@ -487,5 +487,30 @@ describe('CobrosDocumentComponent', () => {
       expect(clamped?.discountTotal).toBe(100);
       expect(clamped?.remnantInCollectionCurrency).toBe(0);
     });
+
+    it('COB-DISC-005: descuento de factura no altera base del % de cobro', () => {
+      collectServiceMock.documentSaleOpen = {
+        coDocument: 'FAC-1',
+        nuAmountBase: 197.5,
+        nuAmountDiscount: 39.5,
+        coCurrency: 'USD',
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        positionCollecDetails: 0,
+      };
+      collectServiceMock.documentSalesView = [{ nuBalance: 195.88, coDocument: 'FAC-1' }];
+      collectServiceMock.selectedCollectDiscounts = [1];
+      collectServiceMock.tempSelectedCollectDiscounts = [
+        { idCollectDiscount: 1, nuCollectDiscount: 80, nuAmountCollectDiscount: 0 },
+      ];
+      collectServiceMock.collectDiscounts = [
+        { idCollectDiscount: 1, nuCollectDiscount: 80 },
+      ];
+      (component as any).manualCollectDiscountAmount = 0;
+
+      const preview = component.computeCollectDiscountPreview(false);
+      expect(preview?.discountTotal).toBe(158);
+      expect(preview?.baseBalance).toBe(195.88);
+    });
   });
 });
