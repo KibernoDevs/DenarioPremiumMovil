@@ -201,6 +201,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-DISC-005] Descuento de factura distorsiona descuento de cobro (%)
+
+- **Síntoma:** Factura con `document_sales.nu_amount_discount` > 0; al aplicar descuento de cobro (ej. 80 %) el Total Descuento y Monto a pagar son erróneos (magnitudes ~tasa o signos invertidos); en ambientes con descuento de factura en 0 no ocurre.
+- **Causa:** `computeCollectDiscountPreview` trataba `documentSale.nuAmountDiscount` como factor multiplicativo sobre `nuAmountBase` (`base − base × valor`); ese campo es monto de descuento de factura (solo UI), ya reflejado en saldo/total.
+- **Fix:** Base del % de cobro = `nuAmountBase` del documento; no restar ni multiplicar por descuento de factura.
+- **Evitar:** No usar `document_sales.nuAmountDiscount` en neto, descuento de cobro ni envío; deducciones de cobro = `collection_detail` (faltante, collect discount, retenciones).
+- **Archivos:** `cobro-documents.component.ts`, `cobro-documents.component.spec.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DISC-004] Descuento > saldo: monto factura, efectivo 0, Otros y anticipo
 
 - **Síntoma:** Con descuento que supera el saldo y `automatedPrepaid=true`, `montoTotalPagar` quedaba en 0; no se podía agregar Otros; Enviar fallaba con pagado=0 aunque el remanente debía ser anticipo.
