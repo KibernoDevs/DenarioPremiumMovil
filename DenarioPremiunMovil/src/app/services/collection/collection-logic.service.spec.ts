@@ -2145,16 +2145,48 @@ describe('CollectionService', () => {
           ['COB_MSG_AUTOMATED_PREPAID', 'Anticipo por {currency} {amount}.'],
         ]);
         service.prepaidCurrency = 'BSD';
+        service.multiCurrency = true;
         service.collection = { coCurrency: 'USD', nuDifference: 0, nuDifferenceConversion: 0 } as any;
         service.discountRemnantPrepaidAmount = 0;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(100);
         spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
         spyOn(service, 'getEffectiveExchangeRate').and.returnValue(788);
-        spyOn(service, 'convertirMonto').and.returnValue(100);
-        spyOn(service, 'getAutomatedPrepaidExcessAmount').and.returnValue(100);
-        spyOn((service as any).currencyService, 'formatNumber').and.returnValue('100,00');
+        spyOn(service, 'convertirMonto').and.callFake(
+          (monto: number, _rate: number, currency: string) => (currency === 'USD' ? monto * 788 : monto / 788),
+        );
+        spyOn((service as any).currencyService, 'formatNumber').and.returnValue('78.800,00');
 
-        expect(service.buildAutomatedPrepaidMessage()).toBe('Anticipo por BSD 100,00.');
+        expect(service.buildAutomatedPrepaidMessage()).toBe('Anticipo por BSD 78.800,00.');
+      });
+
+      it('COB-PREPAID-007: excedente tras tol+ en nuAmount usa prepaidCurrency (USD cobro → BSD anticipo)', () => {
+        service.prepaidCurrency = 'BSD';
+        service.prepaidRangeCurrency = 'USD';
+        service.multiCurrency = true;
+        service.tolerancia0 = true;
+        service.TipoTolerancia = 0;
+        service.existPartialPayment = false;
+        service.collection = {
+          coCurrency: 'USD',
+          nuDifference: 0,
+          nuDifferenceConversion: 0,
+          nuValueLocal: 788,
+        } as any;
+        service.currencySelected = { localCurrency: 'false', coCurrency: 'USD' } as any;
+        service.currencyConversion = { coCurrency: 'BSD' } as any;
+        spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(11.82);
+        spyOn(service as any, 'resolvePrepaidEligibleExcessInCollectionCurrency').and.returnValue(1.82);
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+        spyOn(service, 'getEffectiveExchangeRate').and.returnValue(788);
+        spyOn(service, 'convertirMonto').and.callFake(
+          (monto: number, _rate: number, currency: string) => (currency === 'USD' ? monto * 788 : monto / 788),
+        );
+
+        const amounts = service.resolveAutomatedPrepaidDocumentAmounts();
+
+        expect(amounts.coCurrency).toBe('BSD');
+        expect(amounts.nuAmount).toBeCloseTo(1.82 * 788, 2);
+        expect((service as any).getPrepaidExcessAmount()).toBeCloseTo(1.82, 2);
       });
 
       it('COB-DISC-003: remanente se suma al monto de anticipo en prepaidCurrency', () => {

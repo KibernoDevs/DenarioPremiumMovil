@@ -2487,7 +2487,11 @@ export class CollectionService {
         + remnantInCollection
         + creditExcessInCollection;
     } else {
-      nuAmount = Math.max(0, this.getAutomatedPrepaidExcessAmount()) + remnantPrepaid + creditExcessPrepaid;
+      // Monto del anticipo en prepaidCurrency; umbral sigue en getPrepaidExcessAmount (prepaidRangeCurrency).
+      const excessPrepaid = this.convertCollectionAmountToPrepaidCurrency(
+        Math.max(0, excessInCollection),
+      );
+      nuAmount = excessPrepaid + remnantPrepaid + creditExcessPrepaid;
       crossCurrencyFallback = Math.max(0, excessInCollection)
         + remnantInCollection
         + creditExcessInCollection;
