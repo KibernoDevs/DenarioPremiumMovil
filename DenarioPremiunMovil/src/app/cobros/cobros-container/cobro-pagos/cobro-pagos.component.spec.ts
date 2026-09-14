@@ -217,6 +217,50 @@ describe('CobroPagosComponent', () => {
     expect(payment.daCollectionPayment).toBe('2026-08-01');
   });
 
+  it('COB-DATE-001: getFechaValor OT writes daValue and daCollectionPayment', () => {
+    collectionServiceMock.validateCollectionDate = false;
+    collectionServiceMock.pagoOtros = [{
+      fecha: '2026-09-14',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ot',
+      coPaymentMethod: 'ot',
+      daValue: '2026-09-14 00:00:00',
+      daCollectionPayment: '2026-09-14 00:00:00',
+    }];
+
+    component.getFechaValor('2026-09-13', 0, 'ot');
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(collectionServiceMock.pagoOtros[0].fecha).toBe('2026-09-13');
+    expect(payment.daValue).toBe('2026-09-13');
+    expect(payment.daCollectionPayment).toBe('2026-09-13');
+  });
+
+  it('COB-DATE-001: flushPendingPaymentInputsBeforeSend OT no pisa fecha elegida', () => {
+    collectionServiceMock.validateCollectionDate = false;
+    collectionServiceMock.pagoOtros = [{
+      monto: 100,
+      fecha: '2026-09-13',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ot',
+      coPaymentMethod: 'ot',
+      nuAmountPartial: 100,
+      daValue: '2026-09-13 00:00:00',
+      daCollectionPayment: '2026-09-13 00:00:00',
+    }];
+    collectionServiceMock.syncExchangeRateToCollectionHeader.and.returnValue(1);
+
+    component.flushPendingPaymentInputsBeforeSend();
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(payment.daValue).toBe('2026-09-13 00:00:00');
+    expect(payment.daCollectionPayment).toBe('2026-09-13 00:00:00');
+  });
+
   it('COB-UX-SEND-002: addTipoPago refreshes Enviar button availability', () => {
     component.addTipoPago('ef');
 
