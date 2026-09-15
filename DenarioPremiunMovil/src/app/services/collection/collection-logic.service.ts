@@ -2409,13 +2409,38 @@ export class CollectionService {
     return normalizedExcess;
   }
 
-  /** Moneda del anticipo automático persistido (config prepaidCurrency o moneda del cobro). */
+  /** Moneda del anticipo automático (config `prepaidCurrency`; fallback moneda del cobro). */
   public resolveAutomatedPrepaidCurrency(): string {
-    const configured = String(this.prepaidCurrency ?? '').trim();
+    const configured = this.resolveConfiguredPrepaidCurrency();
     if (configured) {
       return configured;
     }
-    return String(this.collection?.coCurrency ?? '');
+    return String(this.collection?.coCurrency ?? '').trim();
+  }
+
+  /** Lee `prepaidCurrency` del servicio o globalConfig (sync puede no haber rellenado el campo aún). */
+  private resolveConfiguredPrepaidCurrency(): string {
+    let configured = String(this.prepaidCurrency ?? '').trim();
+    if (!configured) {
+      configured = this.parseConfigString('prepaidCurrency').trim();
+      if (configured) {
+        this.prepaidCurrency = configured;
+      }
+    }
+    return configured;
+  }
+
+  private formatAutomatedPrepaidMessageTemplate(template: string, amount: number): string {
+    const currency = this.resolveConfiguredPrepaidCurrency()
+      || String(this.collection?.coCurrency ?? '').trim();
+    const formattedAmount = this.currencyService.formatNumber(amount);
+    if (template.includes('{currency}')) {
+      return template
+        .replace(/\{currency\}/g, currency)
+        .replace(/\{amount\}/g, formattedAmount);
+    }
+    const amountLabel = `${currency} ${formattedAmount}`.trim();
+    return template.replace(/\{amount\}/g, amountLabel);
   }
 
   private resolveCurrencyIdByCoCurrency(coCurrency: string): number {
@@ -2436,6 +2461,7 @@ export class CollectionService {
     nuAmount: number;
     nuAmountConversion: number;
   } {
+    this.syncExchangeRateToCollectionHeader();
     const coCurrency = this.resolveAutomatedPrepaidCurrency();
     const idCurrency = this.resolveCurrencyIdByCoCurrency(coCurrency);
     const rawExcessInCollection = this.syncPrepaidDifferenceAmounts();
@@ -2452,21 +2478,60 @@ export class CollectionService {
     const creditExcessInCollection = Math.max(0, Number(this.creditBalancePrepaidAmount) || 0);
     const creditExcessPrepaid = this.convertCollectionAmountToPrepaidCurrency(creditExcessInCollection);
 
+    let nuAmount = 0;
+    let crossCurrencyFallback = 0;
+
     if (coCurrency === this.collection.coCurrency) {
-      return {
-        coCurrency,
-        idCurrency,
-        nuAmount: Math.max(0, excessInCollection) + remnantPrepaid + creditExcessPrepaid,
-        nuAmountConversion: Math.max(0, excessConversionStored) + remnantInCollection + creditExcessInCollection,
-      };
+      nuAmount = Math.max(0, excessInCollection) + remnantPrepaid + creditExcessPrepaid;
+      crossCurrencyFallback = Math.max(0, excessConversionStored)
+        + remnantInCollection
+        + creditExcessInCollection;
+    } else {
+      // Monto del anticipo en prepaidCurrency; umbral sigue en getPrepaidExcessAmount (prepaidRangeCurrency).
+      const excessPrepaid = this.convertCollectionAmountToPrepaidCurrency(
+        Math.max(0, excessInCollection),
+      );
+      nuAmount = excessPrepaid + remnantPrepaid + creditExcessPrepaid;
+      crossCurrencyFallback = Math.max(0, excessInCollection)
+        + remnantInCollection
+        + creditExcessInCollection;
     }
+
+    const nuAmountConversion = this.resolveAutomatedPrepaidAmountConversion(
+      nuAmount,
+      coCurrency,
+      crossCurrencyFallback,
+    );
 
     return {
       coCurrency,
       idCurrency,
-      nuAmount: Math.max(0, this.getAutomatedPrepaidExcessAmount()) + remnantPrepaid + creditExcessPrepaid,
-      nuAmountConversion: Math.max(0, excessInCollection) + remnantInCollection + creditExcessInCollection,
+      nuAmount,
+      nuAmountConversion,
     };
+  }
+
+  /**
+   * Conversión del anticipo automático a la moneda opuesta (misma regla que detalles de cobro).
+   * Evita copiar el mismo número cuando prepaidCurrency = moneda del cobro (COB-PREPAID-005).
+   */
+  private resolveAutomatedPrepaidAmountConversion(
+    nuAmount: number,
+    prepaidCoCurrency: string,
+    crossCurrencyFallback: number,
+  ): number {
+    const normalized = Math.max(0, Number(nuAmount) || 0);
+    if (normalized <= 0) {
+      return 0;
+    }
+    const rate = this.getEffectiveExchangeRate();
+    if (this.multiCurrency && rate >= 1) {
+      const converted = this.convertirMonto(normalized, rate, prepaidCoCurrency);
+      if (converted > 0) {
+        return converted;
+      }
+    }
+    return Math.max(0, Number(crossCurrencyFallback) || 0);
   }
 
   /** Convierte monto en moneda del cobro a moneda de anticipo (`prepaidCurrency`). */
@@ -2566,19 +2631,15 @@ export class CollectionService {
 
   public buildDiscountRemnantPrepaidMessage(remnantInPrepaidCurrency: number): string {
     const template = this.collectionTags.get('COB_MSG_DISCOUNT_REMNANT_PREPAID')
-      ?? 'El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por {amount}?';
-    const currency = this.resolveAutomatedPrepaidCurrency();
-    const amountLabel = `${currency} ${this.currencyService.formatNumber(remnantInPrepaidCurrency)}`.trim();
-    return template.replace('{amount}', amountLabel);
+      ?? 'El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por {currency} {amount}?';
+    return this.formatAutomatedPrepaidMessageTemplate(template, remnantInPrepaidCurrency);
   }
 
   public buildAutomatedPrepaidMessage(): string {
     const template = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')
-      ?? 'Se creará un anticipo automático por el monto excedente de {amount}. Se enviará un anticipo junto al cobro.';
-    const currency = this.resolveAutomatedPrepaidCurrency();
+      ?? 'Se creará un anticipo automático por el monto excedente de {currency} {amount}. Se enviará un anticipo junto al cobro.';
     const amounts = this.resolveAutomatedPrepaidDocumentAmounts();
-    const amountLabel = `${currency} ${this.currencyService.formatNumber(amounts.nuAmount)}`.trim();
-    return template.replace('{amount}', amountLabel);
+    return this.formatAutomatedPrepaidMessageTemplate(template, amounts.nuAmount);
   }
 
   /**

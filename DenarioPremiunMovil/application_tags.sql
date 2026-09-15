@@ -355,7 +355,8 @@ INSERT INTO public.application_tags(
 	('COB_EMPTY_SEPARATE_IGTF_PAY','COB','COBROS','ESP','Pago separado IGTF'),
 	('COB_IGTF_LABEL','COB','COBROS','ESP','IGTF'),
 	('COB_DAVOUCHER','COB','COBROS','ESP','Fecha Comp Ret'),
-	('COB_MSG_AUTOMATED_PREPAID','COB','COBROS','ESP','Se creará un anticipo automático por el monto excedente de {amount}. Se enviará un anticipo junto al cobro.'),
+	('COB_MSG_AUTOMATED_PREPAID','COB','COBROS','ESP','Se creará un anticipo automático por el monto excedente de {currency} {amount}. Se enviará un anticipo junto al cobro.'),
+	('COB_MSG_DISCOUNT_REMNANT_PREPAID','COB','COBROS','ESP','El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por {currency} {amount}?'),
 	('COB_LABEL_MONTO','COB','COBROS','ESP','Monto'),
 	('COB_LABEL_NRO_RECIBO','COB','COBROS','ESP','Nro. Recibo'),
 	('COB_LABEL_ANTICIPO_AUTOMATICO','COB','COBROS','ESP','Este pago creó el anticipo automático'),
@@ -919,7 +920,12 @@ INSERT INTO public.application_tags(
 	('DEP_DEV_STATUS', 'DEP', 'DEPOSITOS', 'ENG', 'Status'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ESP', 'Fecha'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return'),
-	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado');
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado'),
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ENG','Saved'),
+	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ESP', 'Por Enviar'),
+	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ENG', 'To Send'),
+	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ESP', 'Enviado'),
+	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ENG', 'Sent');
 
 
 --	MENSAJES

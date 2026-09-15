@@ -913,9 +913,11 @@ export class AutoSendService implements OnInit {
       case 'collect':
         this.updateTransaction(result.coTransaction, result.collectionId, result.type);
         return;
-      case 'deposit':
-        this.updateTransaction(result.coTransaction, result.depositId, result.type);
+      case 'deposit': {
+        const depositId = Number(result.depositId ?? result.idDeposit ?? 0);
+        await this.updateTransaction(result.coTransaction, depositId, result.type);
         return;
+      }
       default:
         return;
     }
@@ -1233,9 +1235,10 @@ export class AutoSendService implements OnInit {
       case 'deposit': {
         await db.executeSql(
           'UPDATE deposits SET id_deposit= ?, st_deposit= ?, st_delivery = ? WHERE co_deposit= ?',
-          [idTransaction, DEPOSITO_STATUS_SENT, 1, coTransaction],
+          [idTransaction, DEPOSITO_STATUS_SENT, DELIVERY_STATUS_SENT, coTransaction],
         );
         console.log('UPDATE EXITOSO deposit', coTransaction);
+        this.depositService.applySentStatusToInMemoryLists(coTransaction, idTransaction);
         await this.adjuntoService.sendPhotos(db, idTransaction, 'depositos', coTransaction);
         break;
       }

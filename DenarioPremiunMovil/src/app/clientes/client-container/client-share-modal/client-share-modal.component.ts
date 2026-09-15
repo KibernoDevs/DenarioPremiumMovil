@@ -8,6 +8,7 @@ import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.serv
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { resolveClientNameForExport } from 'src/app/utils/client-display.util';
 
 @Component({
   selector: 'app-client-share-modal',
@@ -43,6 +44,11 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
 
   get secondaryCurrencyLabel(): string {
     return this.clientLogic.getSecondaryCurrencyLabel();
+  }
+
+  /** Alineado con detalle de cliente y meta del PDF (naClient → lbClient). */
+  get clientNameForExport(): string {
+    return resolveClientNameForExport(this.client?.naClient, this.client?.lbClient);
   }
 
   ngOnInit(): void {
@@ -244,7 +250,10 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
           logoBase64,
         },
         meta: [
-          { label: `${tags.get('CLI_DETAIL_NOMBRE') ?? 'Nombre'}:`, value: client.naClient ?? '' },
+          {
+            label: 'Cliente',
+            value: resolveClientNameForExport(client.naClient, client.lbClient),
+          },
           { label: `${tags.get('CLI_DETAIL_CODIGO') ?? 'Codigo'}:`, value: client.coClient ?? '' },
           { label: `${tags.get('CLI_DETAIL_LISTA_PRECIO') ?? 'Lista precio'}:`, value: client.naPriceList ?? '' },
           { label: `${this.tagRif}:`, value: client.nuRif ?? '' },
