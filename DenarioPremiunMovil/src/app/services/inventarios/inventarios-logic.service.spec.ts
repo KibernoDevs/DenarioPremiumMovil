@@ -472,6 +472,7 @@ describe('InventariosLogicService', () => {
       expect(service.newClientStock.coClientStock).toBe('INV1');
       expect(service.newClientStock.idEnterprise).toBe(2);
       expect(service.newClientStock.txComment).toBe('keep');
+      expect(service.newClientStock.coordenada).toBe('1,1');
       expect(service.newClientStock.daysUntilNext).toBe(1);
       expect(service.newClientStock.daysSinceLast).toBe(1);
     });

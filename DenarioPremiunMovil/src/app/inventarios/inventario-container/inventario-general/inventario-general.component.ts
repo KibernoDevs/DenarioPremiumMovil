@@ -106,6 +106,7 @@ export class InventarioGeneralComponent implements OnInit, AfterViewInit {
     this.daysUntilNextInventory = this.inventariosLogicService.resolvePositiveInventoryDays(
       this.inventariosLogicService.newClientStock.daysUntilNext
     );
+    this.hydrateLocalGpsFromStock();
   }
 
   ngAfterViewInit() {
@@ -125,6 +126,7 @@ export class InventarioGeneralComponent implements OnInit, AfterViewInit {
   initInventario() {
     this.inventariosLogicService.initInventario = false;
     this.inventariosLogicService.cliente = {} as Client;
+    this.hydrateLocalGpsFromStock();
 
     if (this.cambieCLiente){
       this.inventariosLogicService.cliente = this.newClient;
@@ -322,6 +324,43 @@ export class InventarioGeneralComponent implements OnInit, AfterViewInit {
     return this.inventariosLogicService.newClientStock.stDelivery !== DELIVERY_STATUS_TO_SEND;
   }
 
+  /** INV-GPS-001: no pisar GPS del draft con el campo local vacío (ngSwitch). */
+  private gpsCoordinateValue(value: string | null | undefined): string {
+    return (value ?? '').toString().trim();
+  }
+
+  private hydrateLocalGpsFromStock(): void {
+    if (this.gpsCoordinateValue(this.coordenada)) {
+      return;
+    }
+    const fromStock = this.gpsCoordinateValue(this.inventariosLogicService.newClientStock?.coordenada);
+    if (fromStock) {
+      this.coordenada = this.inventariosLogicService.newClientStock.coordenada;
+    }
+  }
+
+  private syncGpsOnClientSelect(): void {
+    const local = this.gpsCoordinateValue(this.coordenada);
+    if (local) {
+      this.inventariosLogicService.newClientStock.coordenada = this.coordenada;
+      return;
+    }
+    const persisted = this.gpsCoordinateValue(this.inventariosLogicService.newClientStock?.coordenada);
+    if (persisted) {
+      this.coordenada = this.inventariosLogicService.newClientStock.coordenada;
+      return;
+    }
+    if (!this.inventariosLogicService.userMustActivateGPS) {
+      return;
+    }
+    this.geoServ.getCurrentPosition().then(coords => {
+      if (coords?.length) {
+        this.coordenada = coords;
+        this.inventariosLogicService.newClientStock.coordenada = coords;
+      }
+    });
+  }
+
   setClientfromSelector(cliente: Client) {
     if (cliente) {
       if (!this.canModifyClient()
@@ -355,7 +394,7 @@ export class InventarioGeneralComponent implements OnInit, AfterViewInit {
         this.inventariosLogicService.newClientStock.coUser = localStorage.getItem('coUser') || "[]";
         this.inventariosLogicService.enterpriseClientStock = this.inventariosLogicService.empresaSeleccionada;
         this.inventariosLogicService.newClientStock.txComment = this.txComment;
-        this.inventariosLogicService.newClientStock.coordenada = this.coordenada;
+        this.syncGpsOnClientSelect();
         this.syncClientChangeGuard(cliente);
         this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(), this.inventariosLogicService.cliente.idClient).then((result) => {
           if (result) {
@@ -485,6 +524,7 @@ export class InventarioGeneralComponent implements OnInit, AfterViewInit {
   private async applyClientChangeReset(newClient: Client): Promise<void> {
     const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
     this.inventariosLogicService.resetStockDraftOnClientChange();
+    this.hydrateLocalGpsFromStock();
     this.daysSinceLastInventory = 1;
     this.daysUntilNextInventory = 1;
     this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')

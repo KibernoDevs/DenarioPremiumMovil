@@ -46,6 +46,8 @@ describe('InventarioGeneralComponent', () => {
         daysSinceLastInventory: 99,
         daysUntilNextInventory: 99,
         daClientStock: '',
+        gpsCoordinateValue: InventarioGeneralComponent.prototype['gpsCoordinateValue'],
+        hydrateLocalGpsFromStock: InventarioGeneralComponent.prototype['hydrateLocalGpsFromStock'],
       };
 
       await InventarioGeneralComponent.prototype['applyClientChangeReset'].call(
@@ -118,6 +120,8 @@ describe('InventarioGeneralComponent', () => {
         dbServ: { getDatabase: () => ({}) },
         txComment: '',
         coordenada: '',
+        gpsCoordinateValue: InventarioGeneralComponent.prototype['gpsCoordinateValue'],
+        syncGpsOnClientSelect: InventarioGeneralComponent.prototype['syncGpsOnClientSelect'],
         syncClientChangeGuard: InventarioGeneralComponent.prototype['syncClientChangeGuard'],
       };
 
@@ -167,6 +171,100 @@ describe('InventarioGeneralComponent', () => {
       InventarioGeneralComponent.prototype.ngAfterViewInit.call(ctx);
 
       expect(finalize).toHaveBeenCalled();
+    });
+  });
+
+  describe('INV-GPS-001 GPS al cambiar cliente', () => {
+    const bindGps = (ctx: any) => {
+      ctx.gpsCoordinateValue = InventarioGeneralComponent.prototype['gpsCoordinateValue'];
+      ctx.hydrateLocalGpsFromStock = InventarioGeneralComponent.prototype['hydrateLocalGpsFromStock'];
+      ctx.syncGpsOnClientSelect = InventarioGeneralComponent.prototype['syncGpsOnClientSelect'];
+      return ctx;
+    };
+
+    it('setClientfromSelector no pisa GPS del servicio si el campo local está vacío', async () => {
+      const inventariosLogicService = {
+        newClientStock: {
+          idClient: 1,
+          coClientStock: 'INV1',
+          stDelivery: 0,
+          coordenada: '10,20',
+          clientStockDetails: [],
+        },
+        empresaSeleccionada: { idEnterprise: 1, coEnterprise: 'E1' },
+        cliente: { idClient: 1 },
+        inventarioSent: false,
+        isEdit: false,
+        userMustActivateGPS: true,
+        hasStockContentForClientChangeGuard: () => false,
+        getAllAddressByClient: jasmine.createSpy('addr').and.resolveTo(true),
+        onClientStockValid: jasmine.createSpy('valid'),
+        notifyStockEdited: jasmine.createSpy('notify'),
+        inventarioTags: new Map(),
+      };
+      const loading = Promise.resolve();
+      const ctx: any = bindGps({
+        inventariosLogicService,
+        clientSelectorService: { checkClient: false, clienteAnterior: null },
+        canModifyClient: () => true,
+        message: { showLoading: () => loading, hideLoading: () => undefined },
+        dateServ: { generateCO: () => 'CO', hoyISOFullTime: () => 'now' },
+        dbServ: { getDatabase: () => ({}) },
+        txComment: '',
+        coordenada: '',
+        syncClientChangeGuard: InventarioGeneralComponent.prototype['syncClientChangeGuard'],
+        geoServ: { getCurrentPosition: jasmine.createSpy('geo') },
+      });
+
+      InventarioGeneralComponent.prototype.setClientfromSelector.call(ctx, {
+        idClient: 2,
+        coClient: 'C2',
+        lbClient: 'B',
+        naClient: 'B',
+      } as any);
+      await loading;
+      await Promise.resolve();
+
+      expect(inventariosLogicService.newClientStock.coordenada).toBe('10,20');
+      expect(ctx.coordenada).toBe('10,20');
+      expect(ctx.geoServ.getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('syncGpsOnClientSelect conserva GPS del draft si el local está vacío', () => {
+      const inventariosLogicService = {
+        newClientStock: { coordenada: '10,20' },
+        userMustActivateGPS: true,
+      };
+      const ctx: any = bindGps({
+        inventariosLogicService,
+        coordenada: '',
+        geoServ: { getCurrentPosition: jasmine.createSpy('geo') },
+      });
+
+      InventarioGeneralComponent.prototype['syncGpsOnClientSelect'].call(ctx);
+
+      expect(inventariosLogicService.newClientStock.coordenada).toBe('10,20');
+      expect(ctx.coordenada).toBe('10,20');
+      expect(ctx.geoServ.getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('syncGpsOnClientSelect reobtiene GPS si ambos están vacíos y userMustActivateGPS', async () => {
+      const inventariosLogicService = {
+        newClientStock: { coordenada: '' },
+        userMustActivateGPS: true,
+      };
+      const ctx: any = bindGps({
+        inventariosLogicService,
+        coordenada: '',
+        geoServ: { getCurrentPosition: jasmine.createSpy('geo').and.resolveTo('9,9') },
+      });
+
+      InventarioGeneralComponent.prototype['syncGpsOnClientSelect'].call(ctx);
+      await ctx.geoServ.getCurrentPosition.calls.mostRecent().returnValue;
+
+      expect(ctx.geoServ.getCurrentPosition).toHaveBeenCalled();
+      expect(ctx.coordenada).toBe('9,9');
+      expect(inventariosLogicService.newClientStock.coordenada).toBe('9,9');
     });
   });
 });

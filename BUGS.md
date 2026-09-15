@@ -373,6 +373,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-GPS-001] Cambio de cliente borra GPS y bloquea Enviar
+
+- **Síntoma:** En Inventarios con `userMustActivateGPS=true`, al cambiar de cliente se pierde la coordenada y Enviar pide GPS aunque ya se había obtenido.
+- **Causa:** `resetStockDraftOnClientChange` conserva `coordenada`, pero `setClientfromSelector` la pisa con el campo local `this.coordenada` (vacío; General se recrea con `*ngSwitchCase`).
+- **Fix:** `syncGpsOnClientSelect` escribe GPS local solo si hay valor; si no, reusa la del draft; si ambos vacíos y la config exige GPS, reobtiene. Hidratar el campo local desde el servicio en `ngOnInit`/`initInventario`/`applyClientChangeReset`.
+- **Evitar:** No asignar `newClientStock.coordenada = this.coordenada` si el local está vacío. GPS de Enviar vive en el servicio (`hasMissingGpsCoordinate`).
+- **Tests:** `inventario-general.component.spec.ts` describe `INV-GPS-001`; `inventarios-logic.service.spec.ts` aserta GPS en reset de cliente.
+- **Archivos:** `inventario-general.component.ts` (+ spec), `inventarios-logic.service.spec.ts`; checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-CLIENT-001] Toma del cliente anterior queda al cambiar cliente
 
 - **Síntoma:** En Inventarios, pestaña General: se toma inventario del cliente A, se cambia a cliente B y la toma (ítems/cantidades) de A sigue en B. Guardar/Enviar contamina datos.
