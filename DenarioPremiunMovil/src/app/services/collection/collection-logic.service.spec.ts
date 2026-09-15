@@ -2310,6 +2310,51 @@ describe('CollectionService', () => {
         expect(service.creditBalancePrepaidAmount).toBe(500);
       });
 
+      it('COB-PREPAID-008: cobro SAVED con NCR no usa nuAmountTotal obsoleto ni pierde creditBalance', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.localCurrency = { coCurrency: 'USD' } as any;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+          stCollection: service.COLLECT_STATUS_SAVED,
+          nuAmountTotal: 1000,
+          nuAmountFinal: 1000,
+          nuAmountPaid: 1000,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+            },
+          ],
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            nuAmountPartial: 0,
+          }],
+        } as any;
+        service.pagoOtros = [{ monto: 0, nombre: 'cierre' } as any];
+
+        await service.calculatePayment('', 0, false, true);
+
+        expect(service.montoTotalPagar).toBe(0);
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+
+        const shouldCreate = await service.refreshAutomatedPrepaidBeforeSend();
+        expect(shouldCreate).toBeTrue();
+      });
+
       it('COB-PREPAID-006: refreshAutomatedPrepaidBeforeSend con TO_SEND detecta NCR para anticipo', async () => {
         service.coTypeModule = '0';
         service.automatedPrepaid = true;

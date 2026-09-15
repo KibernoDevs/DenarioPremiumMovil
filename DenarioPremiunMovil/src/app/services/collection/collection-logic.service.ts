@@ -1120,6 +1120,8 @@ export class CollectionService {
       this.applyCollectionIgtfAmountFields(this.normalizeIgtfPrice(this.montoIgtf));
       this.syncCollectionDetailsIgtfAmounts();
       this.syncCollectionIgtfFields();
+      const accumulatedNet = this.accumulateAmountToPayFromCollectionDetails();
+      this.resolveFullyCoveredCollectionTotals(accumulatedNet.monto, accumulatedNet.montoConversion);
       this.resolveAutomatedPrepaid(type, index);
       this.syncAddPaymentMethodDisabledState();
       return Promise.resolve(this.createAutomatedPrepaid);
@@ -1773,11 +1775,13 @@ export class CollectionService {
   }
 
   private resolvePersistedNetAmountSum(): number {
-    const fromDetailsOrDocuments = this.resolvePersistedAmountToPayFromDocuments();
-    if (fromDetailsOrDocuments > 0) {
-      return fromDetailsOrDocuments;
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    if (details.length > 0) {
+      return this.accumulateAmountToPayFromCollectionDetails().monto;
     }
-    return 0;
+    return this.resolvePersistedAmountToPayFromDocuments();
   }
 
   private resolvePersistedNetAmountSumConversion(): number {
@@ -1854,6 +1858,11 @@ export class CollectionService {
     const netSum = Number(preferredNetSum ?? 0) > 0
       ? Number(preferredNetSum)
       : this.resolvePersistedNetAmountSum();
+
+    const hasDetails = (this.collection?.collectionDetails?.length ?? 0) > 0;
+    if (hasDetails && netSum <= 0) {
+      return 0;
+    }
 
     if (netSum <= 0) {
       return Number(
@@ -2853,16 +2862,17 @@ export class CollectionService {
 
       if (this.hasRemnantOrCreditAutomatedPrepaid()) {
         this.createAutomatedPrepaid = true;
-        this.ensureAutomatedPrepaidPaymentTemplate();
-        return this.shouldCreateAutomatedPrepaidOnSend();
       }
 
       this.resolveAutomatedPrepaid('', 0, true);
-      if (
-        this.createAutomatedPrepaid
-        && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)
-      ) {
-        this.resetAutomatedPrepaid();
+
+      if (this.createAutomatedPrepaid
+        && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)) {
+        if (this.hasRemnantOrCreditAutomatedPrepaid()) {
+          this.ensureAutomatedPrepaidPaymentTemplate();
+        } else {
+          this.resetAutomatedPrepaid();
+        }
       }
       return this.shouldCreateAutomatedPrepaidOnSend();
     });
