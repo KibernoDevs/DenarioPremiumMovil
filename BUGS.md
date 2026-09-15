@@ -279,6 +279,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-NCR-PREPAID-002] Aviso informativo anticipo por NCR (solo Aceptar)
+
+- **Síntoma:** Con FACT+NCR y saldo a favor, no había modal informativo como en exceso de pago; el usuario no veía monto/moneda del anticipo antes de Pagos. Tras el primer aviso no volvía a mostrarse al repetir la selección.
+- **Causa:** `shouldShowAutomatedPrepaidInformMessage` excluía `creditBalancePrepaidAmount > 0`; flag `creditBalancePrepaidInformMessageShown` limitaba a una vez; además exigía `createAutomatedPrepaid`.
+- **Fix:** `buildCreditBalancePrepaidInformMessage` + alerta en Documentos (solo Aceptar); tag `COB_MSG_NCR_CREDIT_PREPAID`; mostrar siempre que `creditBalancePrepaidAmount > 0` y `automatedPrepaid` (sin flag de una sola vez).
+- **Evitar:** No reutilizar modal de remanente descuento (confirm/cancel); no mostrar en Pagos el aviso de exceso de pago para NCR.
+- **Archivos:** `collection-logic.service.ts`, `cobro-documents.component.ts/html`, `application_tags.sql`, specs.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-DOC-NEG-002] NCR queda seleccionada al quitar la factura inicial
+
+- **Síntoma:** Se elige factura válida, luego NCR; al destildar la factura la nota de crédito sigue seleccionada (cobro inválido que no se permitía como primer documento).
+- **Causa:** Al deseleccionar solo se eliminaba el detail del documento pulsado; no se reconciliaba “solo saldos negativos”; deuda positiva se infería por detail aunque el doc ya no estuviera seleccionado; la vista (`documentSalesView`) no se sincronizaba al destildar.
+- **Fix:** Tras deseleccionar, si no queda deuda positiva **seleccionada**, destildar NCR y quitar de `collectionDetails`; fallback por `coDocument`; `syncDocumentSelectionAtIndex` en baja.
+- **Evitar:** No dejar `collectionDetails` solo con NCR sin factura deudora.
+- **Archivos:** `cobro-documents.component.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DIFF-001] Código de diferencia obligatorio en Otros (`enableDifferenceCodes`)
 
 - **Síntoma:** Con `enableDifferenceCodes=true` el selector de código en método Otros no se exigía al Enviar (o se bloqueaba Enviar sin mensaje/UI en rojo).
