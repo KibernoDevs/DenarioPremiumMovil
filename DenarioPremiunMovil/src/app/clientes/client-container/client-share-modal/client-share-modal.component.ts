@@ -122,32 +122,46 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     return this.formatNumber(rate);
   }
 
-  toLocalCurrency(hardAmount: number, doc: DocumentSale): string {
-    if (doc.coCurrency == this.localCurrency) {
-      return this.formatNumber(hardAmount);
+  /** Misma regla que detalle de cliente (client-detail.convertirMonto). */
+  convertirMonto(monto: number, rate: number, currency: string): string {
+    if (currency === this.localCurrency) {
+      return this.formatNumber(
+        this.cleanFormattedNumber(this.formatNumber(monto / rate)),
+      );
     }
-    return this.formatNumber(this.currencyService.toLocalCurrency(hardAmount));
+    return this.formatNumber(
+      this.cleanFormattedNumber(this.formatNumber(monto * rate)),
+    );
   }
 
-  toHardCurrency(localAmount: number, doc: DocumentSale): string {
-    if (doc.coCurrency == this.hardCurrency) {
-      return this.formatNumber(localAmount);
+  oppositeCoCurrency(coCurrency: string): string {
+    return this.currencyService.oppositeCoCurrency(coCurrency);
+  }
+
+  private cleanFormattedNumber(str: string): number {
+    return Number(
+      str.trim().replace(/\./g, '').replace(/,/g, '.'),
+    );
+  }
+
+  /** Monto/saldo en moneda del documento (como la tabla de detalle). */
+  formatDocumentAmountInDocCurrency(amount: number, doc: DocumentSale): string {
+    return `${this.formatNumber(amount)} ${doc.coCurrency ?? ''}`.trim();
+  }
+
+  /** Columna de conversión alineada con detalle de cliente. */
+  formatDocumentAmountConversion(amount: number, doc: DocumentSale): string {
+    const rate = Number(this.currencyService.localValue);
+    const converted = this.convertirMonto(amount, rate, doc.coCurrency ?? '');
+    return `${converted} ${this.oppositeCoCurrency(doc.coCurrency ?? '')}`.trim();
+  }
+
+  formatExchangeRateCell(): string {
+    const rate = this.getDeviceExchangeRateForDisplay();
+    if (!rate) {
+      return '';
     }
-    return this.formatNumber(this.currencyService.toHardCurrency(localAmount));
-  }
-
-  /** Monto en moneda primaria según currency_modules.localCurrencyDefault (CLI). */
-  toPrimaryCurrency(amount: number, doc: DocumentSale): string {
-    return this.clientLogic.localCurrencyDefault
-      ? this.toLocalCurrency(amount, doc)
-      : this.toHardCurrency(amount, doc);
-  }
-
-  /** Monto en moneda secundaria (columna de conversión). */
-  toSecondaryCurrency(amount: number, doc: DocumentSale): string {
-    return this.clientLogic.localCurrencyDefault
-      ? this.toHardCurrency(amount, doc)
-      : this.toLocalCurrency(amount, doc);
+    return `${rate} ${this.localCurrency}`.trim();
   }
 
   private buildPdfColumns(showConversion: boolean) {
@@ -164,12 +178,12 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     }
 
     columns.push(
-      { label: `${tags.get('CLI_DETAIL_MONTO') ?? 'Monto'} ${this.primaryCurrencyLabel}`, align: 'center', width: '9%', noWrap: true },
+      { label: tags.get('CLI_DETAIL_MONTO') ?? 'Monto', align: 'center', width: '9%', noWrap: true },
     );
 
     if (showConversion) {
       columns.push({
-        label: `${tags.get('CLI_DETAIL_MONTO') ?? 'Monto'} ${this.secondaryCurrencyLabel}`,
+        label: tags.get('CLI_DETAIL_MONTO_CONVERSION') ?? 'Monto conversión',
         align: 'center',
         width: '9%',
         noWrap: true,
@@ -177,12 +191,12 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     }
 
     columns.push(
-      { label: `${tags.get('CLI_DETAIL_SALDO') ?? 'Saldo'} ${this.primaryCurrencyLabel}`, align: 'center', width: '9%', noWrap: true },
+      { label: tags.get('CLI_DETAIL_SALDO') ?? 'Saldo', align: 'center', width: '9%', noWrap: true },
     );
 
     if (showConversion) {
       columns.push({
-        label: `${tags.get('CLI_DETAIL_SALDO') ?? 'Saldo'} ${this.secondaryCurrencyLabel}`,
+        label: tags.get('CLI_DETAIL_SALDO_CONVERSION') ?? 'Saldo conversión',
         align: 'center',
         width: '9%',
         noWrap: true,
@@ -207,19 +221,19 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
       ];
 
       if (showConversion) {
-        row.push(this.getDeviceExchangeRateForDisplay());
+        row.push(this.formatExchangeRateCell());
       }
 
-      row.push(this.toPrimaryCurrency(documento.nuAmountTotal, documento));
+      row.push(this.formatDocumentAmountInDocCurrency(documento.nuAmountTotal, documento));
 
       if (showConversion) {
-        row.push(this.toSecondaryCurrency(documento.nuAmountTotal, documento));
+        row.push(this.formatDocumentAmountConversion(documento.nuAmountTotal, documento));
       }
 
-      row.push(this.toPrimaryCurrency(documento.nuBalance, documento));
+      row.push(this.formatDocumentAmountInDocCurrency(documento.nuBalance, documento));
 
       if (showConversion) {
-        row.push(this.toSecondaryCurrency(documento.nuBalance, documento));
+        row.push(this.formatDocumentAmountConversion(documento.nuBalance, documento));
       }
 
       row.push(String(documento.daDocument ?? ''), String(documento.daDueDate ?? ''));

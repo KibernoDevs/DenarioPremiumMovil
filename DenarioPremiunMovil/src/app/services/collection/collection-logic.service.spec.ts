@@ -2140,6 +2140,43 @@ describe('CollectionService', () => {
         );
       });
 
+      it('COB-NCR-PREPAID-002: dispatchCreditBalancePrepaidInform tras calculatePayment con saldo a favor', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.recentOpenCollect = false;
+        service.creditBalancePrepaidAmount = 0;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 400,
+              inPaymentPartial: true,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -500,
+              nuBalanceDocOriginal: -500,
+              nuAmountPaid: -500,
+            },
+          ],
+          collectionPayments: [],
+        } as any;
+
+        const informSpy = jasmine.createSpy('creditBalanceInform');
+        service.registerCreditBalancePrepaidInformHandler(informSpy);
+
+        await service.calculatePayment('', 0, true, true);
+
+        expect(service.creditBalancePrepaidAmount).toBeGreaterThan(0);
+        expect(informSpy).toHaveBeenCalled();
+      });
+
       it('COB-NCR-PREPAID-002: buildCreditBalancePrepaidInformMessage usa prepaidCurrency', () => {
         service.collectionTags = new Map([
           ['COB_MSG_NCR_CREDIT_PREPAID', 'Anticipo NCR {currency} {amount}.'],
@@ -2308,6 +2345,51 @@ describe('CollectionService', () => {
         await service.calculatePayment('', 0, true, true);
 
         expect(service.creditBalancePrepaidAmount).toBe(500);
+      });
+
+      it('COB-PREPAID-008: cobro SAVED con NCR no usa nuAmountTotal obsoleto ni pierde creditBalance', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.localCurrency = { coCurrency: 'USD' } as any;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+          stCollection: service.COLLECT_STATUS_SAVED,
+          nuAmountTotal: 1000,
+          nuAmountFinal: 1000,
+          nuAmountPaid: 1000,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+            },
+          ],
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            nuAmountPartial: 0,
+          }],
+        } as any;
+        service.pagoOtros = [{ monto: 0, nombre: 'cierre' } as any];
+
+        await service.calculatePayment('', 0, false, true);
+
+        expect(service.montoTotalPagar).toBe(0);
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+
+        const shouldCreate = await service.refreshAutomatedPrepaidBeforeSend();
+        expect(shouldCreate).toBeTrue();
       });
 
       it('COB-PREPAID-006: refreshAutomatedPrepaidBeforeSend con TO_SEND detecta NCR para anticipo', async () => {

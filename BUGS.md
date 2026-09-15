@@ -283,8 +283,8 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 - **Síntoma:** Con FACT+NCR y saldo a favor, no había modal informativo como en exceso de pago; el usuario no veía monto/moneda del anticipo antes de Pagos. Tras el primer aviso no volvía a mostrarse al repetir la selección.
 - **Causa:** `shouldShowAutomatedPrepaidInformMessage` excluía `creditBalancePrepaidAmount > 0`; flag `creditBalancePrepaidInformMessageShown` limitaba a una vez; además exigía `createAutomatedPrepaid`.
-- **Fix:** `buildCreditBalancePrepaidInformMessage` + alerta en Documentos (solo Aceptar); tag `COB_MSG_NCR_CREDIT_PREPAID`; mostrar siempre que `creditBalancePrepaidAmount > 0` y `automatedPrepaid` (sin flag de una sola vez).
-- **Evitar:** No reutilizar modal de remanente descuento (confirm/cancel); no mostrar en Pagos el aviso de exceso de pago para NCR.
+- **Fix:** `buildCreditBalancePrepaidInformMessage` + alerta en Documentos (solo Aceptar); tag `COB_MSG_NCR_CREDIT_PREPAID`; mostrar siempre que `creditBalancePrepaidAmount > 0` y `automatedPrepaid` (sin flag de una sola vez). Tras cada `calculatePayment` válido se dispara `dispatchCreditBalancePrepaidInformUi` (parcial, descuentos, reapertura vía handler registrado + `tryDispatch` al montar/pestaña Documentos).
+- **Evitar:** No reutilizar modal de remanente descuento (confirm/cancel); no mostrar en Pagos el aviso de exceso de pago para NCR; no acoplar el aviso solo a `selectDocumentSale`.
 - **Archivos:** `collection-logic.service.ts`, `cobro-documents.component.ts/html`, `application_tags.sql`, specs.
 - **Estado:** fixed (pendiente QA dispositivo).
 
@@ -632,6 +632,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Fix:** Quitar `hasMissingSignatureAttachments` de Enviar en esos módulos. `signature*` queda solo UI. Cobros sigue con `required*Attachments`. Visitas: firma dibujada solo si incidencia transportista `required_signature`.
 - **Evitar:** No tratar `signature*` como required attachments. Si negocio necesita adjunto obligatorio fuera de Cobros, hay que añadir un flag `required*` dedicado (como Cobros).
 - **Archivos:** `return-logic`, `inventarios-logic`, `deposit.service`, `pedidos.service`, `visitas.service`, `client-logic`, specs + bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [CLI-PDF-003] Modal/PDF documentos distinto al detalle de cliente
+
+- **Síntoma:** Vista previa compartir y PDF mostraban montos/saldos en moneda primaria/secundaria (`localCurrencyDefault` + `toLocal/toHard`); la tabla de documentos de venta muestra monto en moneda del doc + columna conversión con `convertirMonto` y tasa `localValue`.
+- **Causa:** `client-share-modal` reutilizaba `toPrimaryCurrency`/`toSecondaryCurrency` en lugar del mismo formato que `client-detail`.
+- **Fix:** `formatDocumentAmountInDocCurrency`, `formatDocumentAmountConversion`, `formatExchangeRateCell`; PDF con mismas columnas/etiquetas que detalle.
+- **Evitar:** No mezclar buckets primario/secundario con columnas “moneda doc + conversión” en exportación de documentos.
+- **Archivos:** `client-share-modal.component.ts/html`, spec.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-PREPAID-008] Anticipo automático no se generaba al Enviar cobro guardado (NCR)
+
+- **Síntoma:** Cobro SAVED con FACT+NCR y saldo a favor: al Enviar no se creaba anticipo aunque en borrador sí aplicaba la lógica.
+- **Causa:** `resolvePersistedNetAmountSum` ignoraba netos ≤ 0 y caía en `nuAmountTotal` obsoleto del header; rama preserve SAVED no recalculaba `creditBalancePrepaidAmount`; `refreshAutomatedPrepaidBeforeSend` podía quedar sin plantilla de pago.
+- **Fix:** Neto desde `collectionDetails` (incluye negativos); si hay details y neto ≤ 0, monto a pagar = 0; en preserve, `resolveFullyCoveredCollectionTotals`; refresh asegura `ensureAutomatedPrepaidPaymentTemplate` tras recalc.
+- **Evitar:** No usar `> 0` al agregar neto de details; no confiar en header si details contradicen.
+- **Archivos:** `collection-logic.service.ts`, spec COB-PREPAID-008.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
