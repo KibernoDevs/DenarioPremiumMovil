@@ -79,6 +79,7 @@ describe('ClientShareModalComponent', () => {
             formatNumber: (n: number) => String(n),
             toLocalCurrency: (n: number) => n * 737.88,
             toHardCurrency: (n: number) => n / 737.88,
+            oppositeCoCurrency: (c: string) => (c === 'BS' ? 'USD' : 'BS'),
           },
         },
         { provide: GlobalConfigService, useValue: { get: () => 'RIF' } },
@@ -110,19 +111,22 @@ describe('ClientShareModalComponent', () => {
     clientLogic.canShowConversion.and.returnValue(true);
     component.document = [buildDoc({ nuValueLocal: 100 })];
 
-    expect(component.getDeviceExchangeRateForDisplay()).toBe('788');
+    expect(component.formatExchangeRateCell()).toBe('788 BS');
     const rows = (component as unknown as { buildPdfRows: (s: boolean) => string[][] }).buildPdfRows(true);
-    expect(rows[0][4]).toBe('788');
+    expect(rows[0][4]).toBe('788 BS');
   });
 
-  it('CLI-CURRENCY-PDF: toPrimaryCurrency devuelve monto en moneda fuerte cuando doc es USD', () => {
-    const doc = buildDoc({ coCurrency: 'USD', nuAmountTotal: 100 });
-    expect(component.toPrimaryCurrency(100, doc)).toBe('100');
+  it('CLI-PDF-003: modal/PDF muestran monto en moneda del documento como detalle', () => {
+    const doc = buildDoc({ coCurrency: 'USD', nuAmountTotal: 100, nuBalance: 50 });
+    expect(component.formatDocumentAmountInDocCurrency(100, doc)).toBe('100 USD');
+    expect(component.formatDocumentAmountInDocCurrency(50, doc)).toBe('50 USD');
   });
 
-  it('CLI-CURRENCY-PDF: toPrimaryCurrency convierte a USD cuando doc es BS y default es fuerte', () => {
+  it('CLI-PDF-003: conversión usa convertirMonto del detalle (no toLocal/toHard)', () => {
+    const currency = TestBed.inject(CurrencyService) as { localValue: number };
+    currency.localValue = 737.88;
     const doc = buildDoc({ coCurrency: 'BS', nuAmountTotal: 737.88 });
-    expect(component.toPrimaryCurrency(737.88, doc)).toBe('1');
+    expect(component.formatDocumentAmountConversion(737.88, doc)).toBe('1 USD');
   });
 
   it('CLI-PDF-001: clientNameForExport usa lbClient si naClient está vacío', () => {
@@ -142,11 +146,4 @@ describe('ClientShareModalComponent', () => {
     expect(clienteMeta?.value).toBe('Distribuidora QA');
   });
 
-  it('CLI-CURRENCY-PDF: toPrimaryCurrency devuelve local cuando localCurrencyDefault=true', () => {
-    Object.defineProperty(clientLogic, 'localCurrencyDefault', { value: true, configurable: true });
-    clientLogic.getPrimaryCurrencyLabel.and.returnValue('BS');
-
-    const doc = buildDoc({ coCurrency: 'BS', nuAmountTotal: 100 });
-    expect(component.toPrimaryCurrency(100, doc)).toBe('100');
-  });
 });
