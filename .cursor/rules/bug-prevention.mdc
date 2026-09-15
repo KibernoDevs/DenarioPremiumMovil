@@ -63,6 +63,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - GPS al cambiar cliente: no pisar `coordenada` del draft con campo local vacío; reobtener solo si falta y `userMustActivateGPS` — `INV-GPS-001`.
 - Pedido Sugerido (despacho/devolución): solo docs enviados (`id_return` / `id_client_stock <> 0`); no Guardado — `INV-SUG-001`.
 - Pedido Sugerido al enviar: persistir/adjuntar moneda del selector PED (`idCurrency`/`coCurrency`); no POST null — `INV-SUG-002`.
+- Pedido Sugerido: no persistir al abrir preview; flag al pulsar; persist/POST con inventario 1/2/3 — `INV-SUG-003`.
 
 ## Depósitos
 

@@ -80,4 +80,38 @@ describe('InventarioActividadesComponent', () => {
       expect(component.inventoryRows[0].suggestedEntries).toEqual([]);
     });
   });
+
+  describe('INV-SUG-003 preview no persiste', () => {
+    it('preguntarSugerirPedido no llama saveSuggestedOrderSnapshot', async () => {
+      (inventariosLogicService as any).calcularTotalesSugerenciaPedido = jasmine.createSpy(
+        'calcularTotalesSugerenciaPedido',
+      ).and.resolveTo();
+      (inventariosLogicService as any).saveSuggestedOrderSnapshot = jasmine.createSpy(
+        'saveSuggestedOrderSnapshot',
+      ).and.resolveTo();
+      (inventariosLogicService as any).markPendingSuggestedOrderPersist = jasmine.createSpy(
+        'markPendingSuggestedOrderPersist',
+      );
+      (inventariosLogicService as any).productsSuggested = [];
+      (inventariosLogicService as any).inventarioTags = new Map<string, string>();
+      (inventariosLogicService as any).empresaSeleccionada = { idEnterprise: 1 };
+      inventariosLogicService.newClientStock = {
+        coClientStock: 'CS-1',
+        clientStockDetails: [],
+        daysSinceLast: 1,
+        daysUntilNext: 1,
+      } as any;
+      (component.orderServ as { getTag?: (k: string) => string }).getTag = () => 'Moneda';
+      spyOn(component.modalCtrl, 'create').and.resolveTo({
+        present: () => Promise.resolve(),
+        onDidDismiss: () => Promise.resolve({ role: 'cancel', data: undefined }),
+      } as any);
+
+      await component.preguntarSugerirPedido();
+
+      expect(inventariosLogicService.markPendingSuggestedOrderPersist).toHaveBeenCalledWith('CS-1');
+      expect(inventariosLogicService.calcularTotalesSugerenciaPedido).toHaveBeenCalled();
+      expect(inventariosLogicService.saveSuggestedOrderSnapshot).not.toHaveBeenCalled();
+    });
+  });
 });

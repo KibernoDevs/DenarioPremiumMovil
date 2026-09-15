@@ -93,6 +93,8 @@ export class InventariosLogicService {
   private suggestedOrderAttachOnStockSend = new Map<string, boolean>();
   /** Envío pedido desde sugerencia: adjuntar snapshot si existe (obligatorio). */
   private forceSuggestedOrderAttachOnStockSend = new Set<string>();
+  /** Pulso Pedido Sugerido: persistir/adjuntar al Guardar o Enviar inventario. */
+  private pendingSuggestedOrderPersist = new Set<string>();
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
   public clientClientStock: Client = {} as Client;
@@ -517,6 +519,9 @@ export class InventariosLogicService {
     this.idProductsSuggested = [];
     this.idProductsUnitsSuggested = [];
     this.idUnitsSuggested = [];
+    if (preservedTransaction.coClientStock) {
+      this.clearSuggestedOrderSendFlags(preservedTransaction.coClientStock);
+    }
   }
 
   /** INV-CLIENT-001: borra details/units persistidos del draft; no toca el header. */
@@ -1072,6 +1077,20 @@ export class InventariosLogicService {
     };
   }
 
+  markPendingSuggestedOrderPersist(coClientStock: string | null | undefined): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.pendingSuggestedOrderPersist.add(coClientStock);
+  }
+
+  hasPendingSuggestedOrderPersist(coClientStock: string | null | undefined): boolean {
+    if (!coClientStock) {
+      return false;
+    }
+    return this.pendingSuggestedOrderPersist.has(coClientStock);
+  }
+
   setAttachSuggestedOrderOnStockSend(coClientStock: string, attach: boolean): void {
     if (!coClientStock) {
       return;
@@ -1105,6 +1124,7 @@ export class InventariosLogicService {
     }
     this.suggestedOrderAttachOnStockSend.delete(coClientStock);
     this.forceSuggestedOrderAttachOnStockSend.delete(coClientStock);
+    this.pendingSuggestedOrderPersist.delete(coClientStock);
   }
 
   hasSuggestedOrderCurrency(
@@ -1203,6 +1223,61 @@ export class InventariosLogicService {
     return snapshot;
   }
 
+  isPersistedInventoryDeliveryStatus(stDelivery: number | null | undefined): boolean {
+    const st = Number(stDelivery);
+    return st === DELIVERY_STATUS_SENT
+      || st === DELIVERY_STATUS_TO_SEND
+      || st === DELIVERY_STATUS_SAVED;
+  }
+
+  async hasRelatedPersistedInventory(
+    dbServ: SQLiteObject,
+    coClientStock: string | null | undefined,
+  ): Promise<boolean> {
+    if (!coClientStock) {
+      return false;
+    }
+    try {
+      const data = await dbServ.executeSql(
+        'SELECT st_delivery FROM client_stocks WHERE co_client_stock = ? LIMIT 1',
+        [coClientStock],
+      );
+      if (data.rows.length < 1) {
+        return false;
+      }
+      return this.isPersistedInventoryDeliveryStatus(data.rows.item(0).st_delivery);
+    } catch (e) {
+      console.log('[hasRelatedPersistedInventory]', e);
+      return false;
+    }
+  }
+
+  async deleteOrphanSuggestedOrderSnapshots(dbServ: SQLiteObject): Promise<void> {
+    const persistedStatuses = [DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SAVED];
+    try {
+      await dbServ.executeSql(
+        'DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order IN ('
+        + 'SELECT co_client_stock_suggested_order FROM client_stock_suggested_orders '
+        + 'WHERE NOT EXISTS ('
+        + 'SELECT 1 FROM client_stocks cs '
+        + 'WHERE cs.co_client_stock = client_stock_suggested_orders.co_client_stock '
+        + 'AND cs.st_delivery IN (?, ?, ?)'
+        + '))',
+        persistedStatuses,
+      );
+      await dbServ.executeSql(
+        'DELETE FROM client_stock_suggested_orders WHERE NOT EXISTS ('
+        + 'SELECT 1 FROM client_stocks cs '
+        + 'WHERE cs.co_client_stock = client_stock_suggested_orders.co_client_stock '
+        + 'AND cs.st_delivery IN (?, ?, ?)'
+        + ')',
+        persistedStatuses,
+      );
+    } catch (e) {
+      console.log('[deleteOrphanSuggestedOrderSnapshots]', e);
+    }
+  }
+
   async saveSuggestedOrderSnapshot(
     dbServ: SQLiteObject,
     moneda?: CurrencyEnterprise,
@@ -1210,6 +1285,10 @@ export class InventariosLogicService {
     const stock = this.newClientStock;
     const coClientStock = stock.coClientStock;
     if (!coClientStock) {
+      return;
+    }
+    const relatedPersisted = await this.hasRelatedPersistedInventory(dbServ, coClientStock);
+    if (!relatedPersisted) {
       return;
     }
 
@@ -1819,6 +1898,21 @@ export class InventariosLogicService {
     });
   }
 
+  private async persistSuggestedOrderAfterClientStockSave(dbServ: SQLiteObject): Promise<void> {
+    if (!this.suggestedOrder) {
+      return;
+    }
+    if (!this.hasPendingSuggestedOrderPersist(this.newClientStock.coClientStock)) {
+      return;
+    }
+    const hasDetails = (this.newClientStock.clientStockDetails?.length ?? 0) > 0;
+    if (!hasDetails) {
+      return;
+    }
+    await this.refreshSuggestedOrdersIfEnabled(dbServ);
+    await this.saveSuggestedOrderSnapshot(dbServ);
+  }
+
   async getAllSuggestedOrderSnapshots(dbServ: SQLiteObject): Promise<ItemListaPedidoSugerido[]> {
     const select = 'SELECT s.id_client_stock_suggested_order, s.co_client_stock_suggested_order, s.co_client_stock, '
       + 's.id_client_stock, s.id_client, s.co_client, s.id_address_client, s.co_address_client, s.id_enterprise, '
@@ -1826,12 +1920,15 @@ export class InventariosLogicService {
       + 's.id_currency, s.co_currency, s.da_suggested, s.nu_details, s.co_order, s.id_order, s.in_order_sent, '
       + 'COALESCE(cs.lb_client, c.lb_client, \'\') AS lb_client, COALESCE(cs.da_client_stock, \'\') AS da_client_stock '
       + 'FROM client_stock_suggested_orders s '
-      + 'LEFT JOIN client_stocks cs ON cs.co_client_stock = s.co_client_stock '
+      + 'INNER JOIN client_stocks cs ON cs.co_client_stock = s.co_client_stock '
       + 'LEFT JOIN clients c ON c.id_client = s.id_client '
+      + 'WHERE cs.st_delivery IN (?, ?, ?) '
       + 'ORDER BY s.da_suggested DESC';
+    const persistedStatuses = [DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SAVED];
 
     try {
-      const data = await dbServ.executeSql(select, []);
+      await this.deleteOrphanSuggestedOrderSnapshots(dbServ);
+      const data = await dbServ.executeSql(select, persistedStatuses);
       const items: ItemListaPedidoSugerido[] = [];
       for (let i = 0; i < data.rows.length; i++) {
         const row = data.rows.item(i);
@@ -2151,6 +2248,7 @@ export class InventariosLogicService {
       await dbServ.sqlBatch(batch);
       console.log("SE GUARDO CLIENT_STOCKS");
       await this.saveClientStocksDetails(dbServ,this.newClientStock.coClientStock, this.newClientStock.clientStockDetails);
+      await this.persistSuggestedOrderAfterClientStockSave(dbServ);
     } catch (e) {
       console.log("ERROR GUARDAR CLIENT_STOCKS");
       console.log(e);

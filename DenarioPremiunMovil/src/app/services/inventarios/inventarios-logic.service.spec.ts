@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { InventariosLogicService } from './inventarios-logic.service';
 import { Inventarios } from 'src/app/modelos/inventarios';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { ClientStockSuggestedOrder } from 'src/app/modelos/tables/client-stock-suggested-order';
 
 describe('InventariosLogicService', () => {
@@ -459,6 +459,7 @@ describe('InventariosLogicService', () => {
       service.typeDep = true;
       service.productsSuggested = [{ idProduct: 1 }] as any;
       service.idProductsSuggested = [1];
+      service.markPendingSuggestedOrderPersist('INV1');
 
       service.resetStockDraftOnClientChange();
 
@@ -475,6 +476,7 @@ describe('InventariosLogicService', () => {
       expect(service.newClientStock.coordenada).toBe('1,1');
       expect(service.newClientStock.daysUntilNext).toBe(1);
       expect(service.newClientStock.daysSinceLast).toBe(1);
+      expect(service.hasPendingSuggestedOrderPersist('INV1')).toBeFalse();
     });
 
     it('deletePersistedStockDetails borra units y details del co_client_stock', async () => {
@@ -650,6 +652,7 @@ describe('InventariosLogicService', () => {
     });
 
     it('saveSuggestedOrderSnapshot no inserta moneda null si hay default', async () => {
+      spyOn(service, 'hasRelatedPersistedInventory').and.resolveTo(true);
       spyOn(service, 'getSuggestedOrderSnapshotByClientStock').and.resolveTo(null);
       spyOn(service.dateServ, 'generateCO').and.returnValue('CO-SUG-1');
       service.productsSuggested = [];
@@ -738,6 +741,151 @@ describe('InventariosLogicService', () => {
         [2, '$', 'CO-SUG-1'],
       );
       expect(snapshot.idCurrency).toBe(2);
+    });
+  });
+
+  describe('INV-SUG-003 sugerencia solo con inventario persistido', () => {
+    const stockBase = {
+      coClientStock: 'CS-1',
+      idClientStock: null,
+      idClient: 1,
+      coClient: 'C1',
+      idAddressClient: 2,
+      coAddressClient: 'A1',
+      idEnterprise: 9,
+      coEnterprise: 'E1',
+      idUser: 3,
+      coUser: 'U1',
+      daysSinceLast: 1,
+      daysUntilNext: 1,
+      clientStockDetails: [{ idProduct: 1 }],
+    };
+
+    it('hasRelatedPersistedInventory false si no hay client_stocks', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0 } }),
+      } as any;
+
+      const ok = await service.hasRelatedPersistedInventory(dbMock, 'CS-1');
+      expect(ok).toBeFalse();
+    });
+
+    it('hasRelatedPersistedInventory false si inventario NEW', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: { length: 1, item: () => ({ st_delivery: DELIVERY_STATUS_NEW }) },
+        }),
+      } as any;
+
+      const ok = await service.hasRelatedPersistedInventory(dbMock, 'CS-1');
+      expect(ok).toBeFalse();
+    });
+
+    it('hasRelatedPersistedInventory true si Guardado o Por enviar', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: { length: 1, item: () => ({ st_delivery: DELIVERY_STATUS_SAVED }) },
+        }),
+      } as any;
+      expect(await service.hasRelatedPersistedInventory(dbMock, 'CS-1')).toBeTrue();
+
+      dbMock.executeSql.and.resolveTo({
+        rows: { length: 1, item: () => ({ st_delivery: DELIVERY_STATUS_TO_SEND }) },
+      });
+      expect(await service.hasRelatedPersistedInventory(dbMock, 'CS-1')).toBeTrue();
+    });
+
+    it('saveSuggestedOrderSnapshot no inserta si inventario no persistido', async () => {
+      spyOn(service, 'hasRelatedPersistedInventory').and.resolveTo(false);
+      spyOn(service, 'getSuggestedOrderSnapshotByClientStock').and.resolveTo(null);
+      service.newClientStock = { ...stockBase } as any;
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0 } }),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.saveSuggestedOrderSnapshot(dbMock);
+
+      expect(dbMock.sqlBatch).not.toHaveBeenCalled();
+    });
+
+    it('saveSuggestedOrderSnapshot inserta si inventario Guardado', async () => {
+      spyOn(service, 'hasRelatedPersistedInventory').and.resolveTo(true);
+      spyOn(service, 'getSuggestedOrderSnapshotByClientStock').and.resolveTo(null);
+      spyOn(service.currencyService, 'setup').and.resolveTo();
+      spyOn(service.dateServ, 'generateCO').and.returnValue('CO-SUG-1');
+      service.productsSuggested = [];
+      service.newClientStock = { ...stockBase } as any;
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0 } }),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.saveSuggestedOrderSnapshot(dbMock);
+
+      expect(dbMock.sqlBatch).toHaveBeenCalled();
+    });
+
+    it('saveClientStock persiste sugerencia si suggestedOrder ON y hay flag', async () => {
+      spyOn(service as any, 'mergeStoredClientStockLinks').and.resolveTo();
+      spyOn(service, 'saveClientStocksDetails').and.resolveTo();
+      spyOn(service, 'refreshSuggestedOrdersIfEnabled').and.resolveTo();
+      spyOn(service, 'saveSuggestedOrderSnapshot').and.resolveTo();
+      service.suggestedOrder = true;
+      service.newClientStock = { ...stockBase } as any;
+      service.markPendingSuggestedOrderPersist('CS-1');
+      const dbMock = {
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.saveClientStock(dbMock, false);
+
+      expect(service.saveSuggestedOrderSnapshot).toHaveBeenCalled();
+    });
+
+    it('saveClientStock no persiste sugerencia si suggestedOrder ON sin flag', async () => {
+      spyOn(service as any, 'mergeStoredClientStockLinks').and.resolveTo();
+      spyOn(service, 'saveClientStocksDetails').and.resolveTo();
+      spyOn(service, 'saveSuggestedOrderSnapshot').and.resolveTo();
+      service.suggestedOrder = true;
+      service.newClientStock = { ...stockBase } as any;
+      const dbMock = {
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.saveClientStock(dbMock, false);
+
+      expect(service.saveSuggestedOrderSnapshot).not.toHaveBeenCalled();
+    });
+
+    it('saveClientStock no persiste sugerencia si suggestedOrder OFF', async () => {
+      spyOn(service as any, 'mergeStoredClientStockLinks').and.resolveTo();
+      spyOn(service, 'saveClientStocksDetails').and.resolveTo();
+      spyOn(service, 'saveSuggestedOrderSnapshot').and.resolveTo();
+      service.suggestedOrder = false;
+      service.newClientStock = { ...stockBase } as any;
+      const dbMock = {
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.saveClientStock(dbMock, false);
+
+      expect(service.saveSuggestedOrderSnapshot).not.toHaveBeenCalled();
+    });
+
+    it('getAllSuggestedOrderSnapshots INNER JOIN y filtra st_delivery persistido', async () => {
+      spyOn(service, 'deleteOrphanSuggestedOrderSnapshots').and.resolveTo();
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0 } }),
+      } as any;
+
+      await service.getAllSuggestedOrderSnapshots(dbMock);
+
+      const sql = String(dbMock.executeSql.calls.mostRecent().args[0]);
+      const params = dbMock.executeSql.calls.mostRecent().args[1] as number[];
+      expect(sql).toContain('INNER JOIN client_stocks');
+      expect(sql).toContain('cs.st_delivery IN (?, ?, ?)');
+      expect(params).toEqual([DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SAVED]);
     });
   });
 });

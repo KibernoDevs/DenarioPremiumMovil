@@ -284,8 +284,9 @@ export class InventarioHeaderComponent implements OnInit {
       db,
       coClientStock,
     );
+    const pendingSuggested = this.inventariosLogicService.hasPendingSuggestedOrderPersist(coClientStock);
 
-    if (snapshot) {
+    if (snapshot || pendingSuggested) {
       this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
       this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_SUGGESTED_ORDER')
         ?? '¿Desea enviar también la sugerencia de pedido?';

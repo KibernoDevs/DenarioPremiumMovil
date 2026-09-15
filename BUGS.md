@@ -361,6 +361,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-SUG-003] Ver Pedido Sugerido y salir sin Guardar creaba sugerencia huérfana
+
+- **Síntoma:** Abrir Pedido Sugerido en un inventario nuevo y salir sin Guardar/Enviar dejaba una sugerencia en la lista, sin inventario relacionado persistido.
+- **Causa:** `preguntarSugerirPedido` llamaba `saveSuggestedOrderSnapshot` al abrir el preview (solo lectura). El header iba a SQLite aunque `client_stocks` no existiera o estuviera NEW.
+- **Fix:** Preview solo calcula en memoria. Pulso Pedido Sugerido marca flag RAM. Snapshot solo si hay `client_stocks` con `st_delivery` Guardado/Por enviar/Enviado **y** flag. Persistencia al `saveClientStock` con flag. Enviar inventario abre adjuntar si hay snapshot **o** flag (no exige SQLite previo). Lista INNER JOIN + filtro; se borran huérfanos al listar.
+- **Evitar:** No persistir sugerencia al abrir preview. No listar `client_stock_suggested_orders` sin inventario 1/2/3. No adjuntar POST si nunca pulsó Pedido Sugerido. No exigir snapshot SQLite para el modal de Enviar si el flag está ON.
+- **Tests:** `inventarios-logic.service.spec.ts`, `inventario-actividades.component.spec.ts` y `inventario-header.component.spec.ts` describe `INV-SUG-003`.
+- **Archivos:** `inventario-actividades.component.ts`, `inventario-header.component.ts`, `inventarios-logic.service.ts` (+ specs); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-DAYS-001] Pedido Sugerido NaN tras cambio de cliente
 
 - **Síntoma:** Tras cambiar de cliente en Inventarios, General muestra “Días para siguiente Inventario” = 1. Al inventariar productos y pulsar Pedido Sugerido el cálculo da NaN. Al volver a General el campo queda vacío.

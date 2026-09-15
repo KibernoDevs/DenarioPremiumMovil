@@ -144,8 +144,10 @@ public modalCtrl = inject(ModalController);
   }
   async preguntarSugerirPedido(){
     const db = this.dbServ.getDatabase();
+    this.inventariosLogicService.markPendingSuggestedOrderPersist(
+      this.inventariosLogicService.newClientStock.coClientStock,
+    );
     await this.inventariosLogicService.calcularTotalesSugerenciaPedido(db);
-    await this.inventariosLogicService.saveSuggestedOrderSnapshot(db);
 
       const modal = await this.modalCtrl.create({
       component: InventarioSugeridoPreviewComponent,
