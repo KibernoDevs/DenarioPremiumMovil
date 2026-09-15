@@ -30,6 +30,7 @@ import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
 import { InvoiceDetailUnit } from 'src/app/modelos/tables/invoiceDetailUnit';
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
+import { CurrencyService } from '../currency/currency.service';
 import {
   ClientStockSuggestedOrder,
   ClientStockSuggestedOrderDetail,
@@ -52,6 +53,7 @@ export class InventariosLogicService {
   public adjuntoService = inject(AdjuntoService);
   public historyTransaction = inject(HistoryTransaction);
   public orderDbServ = inject(PedidosDbService);
+  public currencyService = inject(CurrencyService);
 
 
   public initInventario: Boolean = true;
@@ -453,6 +455,86 @@ export class InventariosLogicService {
       return 1;
     }
     return n;
+  }
+
+  /** INV-CLIENT-001: confirmar cambio de cliente solo con toma o adjuntos (como Pedidos). */
+  hasStockContentForClientChangeGuard(): boolean {
+    const details = this.newClientStock.clientStockDetails ?? [];
+    return details.length > 0 || this.adjuntoService.hasItems();
+  }
+
+  /** INV-CLIENT-001: rearmar guard del selector tras agregar cantidades. */
+  armClientChangeGuardAfterStockEdit(selector: {
+    checkClient: boolean;
+    clienteAnterior: Client | null;
+  }): void {
+    if (!this.hasStockContentForClientChangeGuard()) {
+      selector.checkClient = false;
+      return;
+    }
+    selector.checkClient = true;
+    const client = this.cliente?.idClient ? this.cliente : this.clientClientStock;
+    if (client?.idClient) {
+      selector.clienteAnterior = client;
+    }
+  }
+
+  /**
+   * INV-CLIENT-001: vacía productos/cantidades/sugerido del draft.
+   * Conserva código de transacción, status, fecha, empresa, comentario y GPS.
+   */
+  resetStockDraftOnClientChange(): void {
+    const preservedTransaction = {
+      coClientStock: this.newClientStock.coClientStock,
+      idClientStock: this.newClientStock.idClientStock,
+      stDelivery: this.newClientStock.stDelivery,
+      stClientStock: this.newClientStock.stClientStock,
+      daClientStock: this.newClientStock.daClientStock,
+      idEnterprise: this.newClientStock.idEnterprise,
+      coEnterprise: this.newClientStock.coEnterprise,
+      txComment: this.newClientStock.txComment,
+      coordenada: this.newClientStock.coordenada,
+    };
+
+    this.selectedClient = false;
+    this.disableSaveButton = true;
+    this.cannotSendClientStock = true;
+    this.alertMessage = false;
+    this.alertMessageOpen = false;
+    this.initInventario = false;
+
+    this.newClientStock = {} as ClientStocks;
+    this.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
+    this.newClientStock.productList = [] as ProductUtil[];
+    Object.assign(this.newClientStock, preservedTransaction);
+    this.newClientStock.daysSinceLast = 1;
+    this.newClientStock.daysUntilNext = 1;
+    this.productTypeStocksMap = new Map<number, number>();
+    this.typeStocks = [] as Inventarios[];
+    this.typeExh = false;
+    this.typeDep = false;
+    this.productsSuggested = [];
+    this.idProductsSuggested = [];
+    this.idProductsUnitsSuggested = [];
+    this.idUnitsSuggested = [];
+  }
+
+  /** INV-CLIENT-001: borra details/units persistidos del draft; no toca el header. */
+  async deletePersistedStockDetails(dbServ: SQLiteObject, coClientStock: string): Promise<void> {
+    if (!coClientStock) {
+      return;
+    }
+    try {
+      await dbServ.sqlBatch([
+        [
+          'DELETE FROM client_stocks_details_units WHERE co_client_stock_detail IN (SELECT co_client_stock_detail FROM client_stocks_details WHERE co_client_stock = ?)',
+          [coClientStock],
+        ],
+        ['DELETE FROM client_stocks_details WHERE co_client_stock = ?', [coClientStock]],
+      ]);
+    } catch (e) {
+      console.log('[INV-CLIENT-001] deletePersistedStockDetails', e);
+    }
   }
 
   initClientStockDetails() {
@@ -1025,6 +1107,102 @@ export class InventariosLogicService {
     this.forceSuggestedOrderAttachOnStockSend.delete(coClientStock);
   }
 
+  hasSuggestedOrderCurrency(
+    moneda: { idCurrency?: number | null; coCurrency?: string | null } | null | undefined,
+  ): boolean {
+    const id = Number(moneda?.idCurrency);
+    const co = String(moneda?.coCurrency ?? '').trim();
+    return Number.isFinite(id) && id > 0 && co.length > 0;
+  }
+
+  resolveDefaultSuggestedOrderCurrency(enterprise?: Enterprise | null): CurrencyEnterprise | null {
+    if (!this.currencyService.multimoneda) {
+      return this.currencyService.getLocalCurrency() ?? null;
+    }
+    if (!enterprise?.idEnterprise) {
+      return this.currencyService.getLocalCurrency() ?? null;
+    }
+    const currencyModuleEnabled = this.globalConfig.get('currencyModule')?.toLocaleLowerCase() === 'true';
+    const pedModule = this.currencyService.getCurrencyModule('ped');
+    if (currencyModuleEnabled && pedModule?.idModule > 0) {
+      return pedModule.localCurrencyDefault
+        ? this.currencyService.getLocalCurrency()
+        : this.currencyService.getHardCurrency();
+    }
+    if (enterprise.coCurrencyDefault) {
+      return this.currencyService.getCurrency(enterprise.coCurrencyDefault) ?? null;
+    }
+    return this.currencyService.getLocalCurrency() ?? null;
+  }
+
+  resolveSuggestedOrderCurrencyToPersist(
+    moneda?: CurrencyEnterprise | null,
+    existing?: Pick<ClientStockSuggestedOrder, 'idCurrency' | 'coCurrency'> | null,
+    enterprise?: Enterprise | null,
+  ): CurrencyEnterprise | null {
+    if (this.hasSuggestedOrderCurrency(moneda)) {
+      return moneda as CurrencyEnterprise;
+    }
+    if (this.hasSuggestedOrderCurrency(existing)) {
+      return {
+        idCurrency: existing!.idCurrency,
+        coCurrency: existing!.coCurrency,
+      } as CurrencyEnterprise;
+    }
+    return this.resolveDefaultSuggestedOrderCurrency(enterprise);
+  }
+
+  async persistSuggestedOrderHeaderCurrency(
+    dbServ: SQLiteObject,
+    snapshot: ClientStockSuggestedOrder,
+    moneda?: CurrencyEnterprise | null,
+    enterprise?: Enterprise | null,
+  ): Promise<CurrencyEnterprise | null> {
+    if (!snapshot.coClientStockSuggestedOrder) {
+      return null;
+    }
+    await this.currencyService.setup(dbServ);
+    const resolvedEnterprise = enterprise?.idEnterprise
+      ? enterprise
+      : ({
+        idEnterprise: snapshot.idEnterprise,
+        coEnterprise: snapshot.coEnterprise,
+      } as Enterprise);
+    const resolved = this.resolveSuggestedOrderCurrencyToPersist(moneda, snapshot, resolvedEnterprise);
+    if (!this.hasSuggestedOrderCurrency(resolved)) {
+      return null;
+    }
+    try {
+      await dbServ.executeSql(
+        'UPDATE client_stock_suggested_orders SET id_currency = ?, co_currency = ? WHERE co_client_stock_suggested_order = ?',
+        [resolved!.idCurrency, resolved!.coCurrency, snapshot.coClientStockSuggestedOrder],
+      );
+    } catch (e) {
+      console.log('[persistSuggestedOrderHeaderCurrency]', e);
+      return null;
+    }
+    snapshot.idCurrency = resolved!.idCurrency;
+    snapshot.coCurrency = resolved!.coCurrency;
+    return resolved;
+  }
+
+  applySuggestedOrderCurrencyFallback(snapshot: ClientStockSuggestedOrder): ClientStockSuggestedOrder {
+    if (this.hasSuggestedOrderCurrency(snapshot)) {
+      return snapshot;
+    }
+    const enterprise = {
+      idEnterprise: snapshot.idEnterprise,
+      coEnterprise: snapshot.coEnterprise,
+    } as Enterprise;
+    const fallback = this.resolveDefaultSuggestedOrderCurrency(enterprise);
+    if (!this.hasSuggestedOrderCurrency(fallback)) {
+      return snapshot;
+    }
+    snapshot.idCurrency = fallback!.idCurrency;
+    snapshot.coCurrency = fallback!.coCurrency;
+    return snapshot;
+  }
+
   async saveSuggestedOrderSnapshot(
     dbServ: SQLiteObject,
     moneda?: CurrencyEnterprise,
@@ -1035,7 +1213,16 @@ export class InventariosLogicService {
       return;
     }
 
+    await this.currencyService.setup(dbServ);
     const existing = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    const enterprise = this.empresaSeleccionada?.idEnterprise
+      ? this.empresaSeleccionada
+      : ({
+        idEnterprise: stock.idEnterprise,
+        coEnterprise: stock.coEnterprise,
+        coCurrencyDefault: this.empresaSeleccionada?.coCurrencyDefault,
+      } as Enterprise);
+    const resolvedCurrency = this.resolveSuggestedOrderCurrencyToPersist(moneda, existing, enterprise);
     const coSuggestedOrder = existing?.coClientStockSuggestedOrder ?? this.dateServ.generateCO(0);
 
     if (existing?.coClientStockSuggestedOrder) {
@@ -1101,8 +1288,8 @@ export class InventariosLogicService {
       stock.daysSinceLast ?? 1,
       stock.daysUntilNext ?? 1,
       this.suggestedOrderByDispatchAndReturn ? 1 : 0,
-      moneda?.idCurrency ?? existing?.idCurrency ?? null,
-      moneda?.coCurrency ?? existing?.coCurrency ?? null,
+      resolvedCurrency?.idCurrency ?? null,
+      resolvedCurrency?.coCurrency ?? null,
       this.dateServ.hoyISOFullTime(),
       details.length,
       existing?.coOrder ?? null,
@@ -1532,6 +1719,7 @@ export class InventariosLogicService {
         estimatedDailyUnits: d.estimatedDailyUnits,
       })) ?? [],
     });
+    this.applySuggestedOrderCurrencyFallback(copy);
     if (nullifyServerIds) {
       copy.idClientStockSuggestedOrder = null;
       for (const detail of copy.details) {

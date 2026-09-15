@@ -181,6 +181,15 @@ export class InventarioSugeridoListComponent implements OnInit {
     const empresa = this.resolveEnterpriseFromSnapshot(snapshot);
     this.orderServ.empresaSeleccionada = empresa;
     await this.orderServ.setup();
+    const monedaPersistida = await this.inventariosLogicService.persistSuggestedOrderHeaderCurrency(
+      db,
+      snapshot,
+      monedaSeleccionadaSugerencia,
+      empresa,
+    );
+    if (monedaPersistida) {
+      monedaSeleccionadaSugerencia = monedaPersistida;
+    }
 
     const preview = this.inventariosLogicService.mapSnapshotToPreviewData(snapshot);
     const cliente = await this.orderServ.getClient(snapshot.idClient);

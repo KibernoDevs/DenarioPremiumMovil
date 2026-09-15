@@ -17,30 +17,23 @@ describe('InventarioGeneralComponent', () => {
   });
 
   describe('INV-DAYS-001 applyClientChangeReset', () => {
-    it('restores daysUntilNext and daysSinceLast to 1 after client wipe', () => {
+    it('restores daysUntilNext and daysSinceLast to 1 after client wipe', async () => {
       const inventariosLogicService = {
-        alertMessage: true,
-        selectedClient: true,
-        inventarioSent: true,
-        disableSaveButton: false,
-        cannotSendClientStock: false,
         newClientStock: {
           coClientStock: 'INV1',
-          idClientStock: 9,
-          stDelivery: 1,
-          stClientStock: 1,
-          daClientStock: '2026-01-01',
           daysUntilNext: 7,
           daysSinceLast: 3,
         },
-        productTypeStocksMap: new Map(),
-        typeStocks: [{ id: 1 }],
-        initInventario: true,
-        inventarioTagsDenario: new Map([
-          ['DENARIO_BOTON_ACEPTAR', 'Aceptar'],
-          ['DENARIO_BOTON_CANCELAR', 'Cancelar'],
-        ]),
-        alertMessageOpen: true,
+        resetStockDraftOnClientChange: jasmine.createSpy('reset').and.callFake(function (this: any) {
+          this.newClientStock = {
+            coClientStock: 'INV1',
+            daClientStock: '2026-01-01',
+            daysUntilNext: 1,
+            daysSinceLast: 1,
+          };
+        }),
+        deletePersistedStockDetails: jasmine.createSpy('deleteDetails').and.resolveTo(),
+        inventarioTagsDenario: new Map([['DENARIO_BOTON_ACEPTAR', 'Aceptar']]),
       };
       const ctx: any = {
         inventariosLogicService,
@@ -50,18 +43,18 @@ describe('InventarioGeneralComponent', () => {
         dateServ: { hoyISOFullTime: () => 'now' },
         viewOnly: false,
         alertButtons: [{ text: '' }],
-        alertButtons2: [{ text: '' }, { text: '' }],
-        changeClient: true,
         daysSinceLastInventory: 99,
         daysUntilNextInventory: 99,
         daClientStock: '',
       };
 
-      InventarioGeneralComponent.prototype['applyClientChangeReset'].call(
+      await InventarioGeneralComponent.prototype['applyClientChangeReset'].call(
         ctx,
         { idClient: 2 } as any,
       );
 
+      expect(inventariosLogicService.resetStockDraftOnClientChange).toHaveBeenCalled();
+      expect(inventariosLogicService.deletePersistedStockDetails).toHaveBeenCalled();
       expect(inventariosLogicService.newClientStock.daysUntilNext).toBe(1);
       expect(inventariosLogicService.newClientStock.daysSinceLast).toBe(1);
       expect(ctx.daysUntilNextInventory).toBe(1);
@@ -89,6 +82,91 @@ describe('InventarioGeneralComponent', () => {
 
       expect(inventariosLogicService.newClientStock.daysUntilNext).toBe(1);
       expect(ctx.daysUntilNextInventory).toBe(1);
+    });
+  });
+
+  describe('INV-CLIENT-001 guard y reset al cambiar cliente', () => {
+    it('setClientfromSelector no vacía la toma (reset solo por ClientChanged)', () => {
+      const inventariosLogicService = {
+        newClientStock: {
+          idClient: 1,
+          coClientStock: 'INV1',
+          stDelivery: 0,
+          clientStockDetails: [{ idProduct: 9 }],
+        },
+        empresaSeleccionada: { idEnterprise: 1, coEnterprise: 'E1' },
+        cliente: { idClient: 1 },
+        inventarioSent: false,
+        isEdit: false,
+        hasStockContentForClientChangeGuard: () => true,
+        getAllAddressByClient: jasmine.createSpy('addr').and.resolveTo(true),
+        onClientStockValid: jasmine.createSpy('valid'),
+        notifyStockEdited: jasmine.createSpy('notify'),
+        resetStockDraftOnClientChange: jasmine.createSpy('reset'),
+        inventarioTags: new Map(),
+      };
+      const clientSelectorService = {
+        checkClient: false,
+        clienteAnterior: null as any,
+      };
+      const ctx: any = {
+        inventariosLogicService,
+        clientSelectorService,
+        canModifyClient: () => true,
+        message: { showLoading: () => Promise.resolve(), hideLoading: () => undefined },
+        dateServ: { generateCO: () => 'CO', hoyISOFullTime: () => 'now' },
+        dbServ: { getDatabase: () => ({}) },
+        txComment: '',
+        coordenada: '',
+        syncClientChangeGuard: InventarioGeneralComponent.prototype['syncClientChangeGuard'],
+      };
+
+      InventarioGeneralComponent.prototype.setClientfromSelector.call(ctx, {
+        idClient: 2,
+        coClient: 'C2',
+        lbClient: 'B',
+        naClient: 'B',
+      } as any);
+
+      expect(inventariosLogicService.resetStockDraftOnClientChange).not.toHaveBeenCalled();
+      expect(inventariosLogicService.newClientStock.clientStockDetails.length).toBe(1);
+    });
+
+    it('syncClientChangeGuard activa checkClient solo con toma o adjuntos', () => {
+      const clientSelectorService = { checkClient: false, clienteAnterior: null as any };
+      const inventariosLogicService = {
+        inventarioSent: false,
+        hasStockContentForClientChangeGuard: () => true,
+      };
+      const ctx: any = {
+        clientSelectorService,
+        inventariosLogicService,
+        canModifyClient: () => true,
+      };
+      const client = { idClient: 7 } as any;
+
+      InventarioGeneralComponent.prototype['syncClientChangeGuard'].call(ctx, client);
+
+      expect(clientSelectorService.checkClient).toBeTrue();
+      expect(clientSelectorService.clienteAnterior).toBe(client);
+
+      inventariosLogicService.hasStockContentForClientChangeGuard = () => false;
+      InventarioGeneralComponent.prototype['syncClientChangeGuard'].call(ctx, client);
+      expect(clientSelectorService.checkClient).toBeFalse();
+      expect(clientSelectorService.clienteAnterior).toBe(client);
+    });
+
+    it('ngAfterViewInit rearma el selector si hay idClient y toma', () => {
+      const finalize = jasmine.createSpy('finalize');
+      const ctx: any = {
+        rearmSelectorAfterTabRestore: InventarioGeneralComponent.prototype['rearmSelectorAfterTabRestore'],
+        shouldEnableClientChangeGuard: () => true,
+        finalizeSavedInventoryClientGuard: finalize,
+      };
+
+      InventarioGeneralComponent.prototype.ngAfterViewInit.call(ctx);
+
+      expect(finalize).toHaveBeenCalled();
     });
   });
 });

@@ -49,4 +49,53 @@ describe('InventarioProductListComponent', () => {
       expect(component.getVisibleProducts().length).toBe(3);
     });
   });
+
+  describe('INV-CLIENT-001 arm guard al persistir cantidad', () => {
+    it('applyRowsToInventory llama armClientChangeGuardAfterStockEdit', () => {
+      const component = Object.create(
+        InventarioProductListComponent.prototype,
+      ) as InventarioProductListComponent;
+      const arm = jasmine.createSpy('arm');
+      const detail = {
+        idProduct: 1,
+        clientStockDetailUnits: [] as any[],
+      };
+      component.inventariosLogicService = {
+        productSelected: { idProduct: 1, coProduct: 'P1', naProduct: 'Prod' },
+        typeStocks: [],
+        newClientStock: {
+          coClientStock: 'INV1',
+          coEnterprise: 'E',
+          idEnterprise: 1,
+          clientStockDetails: [detail],
+        },
+        productTypeStocksMap: new Map(),
+        notifyStockEdited: jasmine.createSpy('notify'),
+        armClientChangeGuardAfterStockEdit: arm,
+      } as any;
+      component.modalInventoryType = 'exh';
+      component.expirationBatch = false;
+      component.dateServ = { generateCO: () => 'U1' } as any;
+      component.refreshInventoriedProducts = () => undefined;
+      component.clientSelectorService = { checkClient: false, clienteAnterior: null } as any;
+
+      (component as any).applyRowsToInventory([
+        {
+          cantidad: 2,
+          lote: '',
+          fechaVencimiento: '2026-01-01',
+          unidad: {
+            idProductUnit: 1,
+            coProductUnit: 'PU',
+            idUnit: 1,
+            coUnit: 'UN',
+            quUnit: 1,
+            naUnit: 'UND',
+          },
+        },
+      ]);
+
+      expect(arm).toHaveBeenCalled();
+    });
+  });
 });

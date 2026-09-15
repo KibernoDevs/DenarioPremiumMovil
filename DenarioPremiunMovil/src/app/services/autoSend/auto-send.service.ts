@@ -780,6 +780,7 @@ export class AutoSendService implements OnInit {
         coTransaction,
       );
       if (snapshot && this.inventariosLogicService.shouldAttachSuggestedOrderOnStockSend(coTransaction)) {
+        await this.inventariosLogicService.currencyService.setup(db);
         request.clientStockSuggestedOrder = this.inventariosLogicService.prepareSuggestedOrderSnapshotForUpload(
           snapshot,
           clientStock.stDelivery == DELIVERY_STATUS_TO_SEND,

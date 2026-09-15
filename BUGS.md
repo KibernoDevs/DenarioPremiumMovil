@@ -349,6 +349,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-SUG-002] Sugerencia de pedido se enviaba con `id_currency`/`co_currency` null
+
+- **Síntoma:** Al enviar inventario adjuntando sugerencia de pedido (o al POST del snapshot), moneda iba null aunque el selector de Pedidos mostraba una moneda.
+- **Causa:** `saveSuggestedOrderSnapshot` al abrir el preview persistía el header sin moneda. El POST copia SQLite (`prepareSuggestedOrderSnapshotForUpload`). Lista al confirmar no actualizaba `id_currency`/`co_currency`.
+- **Fix:** Resolver moneda (selector → snapshot existente → default módulo `ped`) al guardar; UPDATE al confirmar desde lista; fallback en upload si SQLite sigue null.
+- **Evitar:** No adjuntar `clientStockSuggestedOrder` con moneda vacía si hay default PED resoluble. No guardar snapshot de preview sin completar moneda.
+- **Tests:** `inventarios-logic.service.spec.ts` describe `INV-SUG-002`.
+- **Archivos:** `inventarios-logic.service.ts`, `inventario-sugerido-list.component.ts`, `auto-send.service.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-DAYS-001] Pedido Sugerido NaN tras cambio de cliente
 
 - **Síntoma:** Tras cambiar de cliente en Inventarios, General muestra “Días para siguiente Inventario” = 1. Al inventariar productos y pulsar Pedido Sugerido el cálculo da NaN. Al volver a General el campo queda vacío.
@@ -357,6 +369,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Evitar:** No recrear `{} as ClientStocks` sin reponer `daysUntilNext`/`daysSinceLast`. No escribir `undefined` al servicio desde `ionChange` (`undefined < 1` es `false`).
 - **Tests:** `inventario-general.component.spec.ts` y `inventarios-logic.service.spec.ts` describe `INV-DAYS-001`.
 - **Archivos:** `inventario-general.component.ts`, `inventarios-logic.service.ts` (+ specs); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-CLIENT-001] Toma del cliente anterior queda al cambiar cliente
+
+- **Síntoma:** En Inventarios, pestaña General: se toma inventario del cliente A, se cambia a cliente B y la toma (ítems/cantidades) de A sigue en B. Guardar/Enviar contamina datos.
+- **Causa:** General se destruye con `*ngSwitchCase`. El flag local `changeClient` se pierde. `cliente-selector.handleUpdateClientList` pone `checkClient = false`. `setClientfromSelector` aplicaba el cliente nuevo sin vaciar `clientStockDetails`/`typeStocks`.
+- **Fix:** Mismo contrato que Pedidos: modal `CLI_RESET_CONFIRMA` del selector si hay toma o adjuntos. Aceptar → `ClientChanged` reset de details/typeStocks/sugerido + borrar SQLite details del draft; aplicar B. Cancelar → cierra modal, queda A. Rearmar `checkClient`/`clienteAnterior` en `ngAfterViewInit` y tras persistir cantidades.
+- **Evitar:** No guardar el guard de cambio de cliente en el componente de General (muere al cambiar de pestaña). No aplicar cliente nuevo por `clienteSeleccionado` sin reset si ya hay toma. Tras `updateClientList`, reponer `checkClient` si hay contenido.
+- **Tests:** `inventarios-logic.service.spec.ts`, `inventario-general.component.spec.ts`, `inventario-product-list.component.spec.ts` describe `INV-CLIENT-001`.
+- **Archivos:** `inventario-general.component.ts` (+ html/spec), `inventarios-logic.service.ts` (+ spec), `inventario-product-list.component.ts` (+ spec); checklist bug-prevention.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---

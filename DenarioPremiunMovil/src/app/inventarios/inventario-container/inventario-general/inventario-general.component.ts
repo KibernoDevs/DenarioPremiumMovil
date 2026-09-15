@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, Input, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, inject, ViewChild } from '@angular/core';
 import { ClienteSelectorComponent } from 'src/app/cliente-selector/cliente-selector.component';
 import { Client } from 'src/app/modelos/tables/client';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
@@ -8,14 +8,12 @@ import { InventariosLogicService } from 'src/app/services/inventarios/inventario
 import { COLOR_AMARILLO, DELIVERY_STATUS_NEW, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
-import { ClientStocks, ClientStocksDetail, ClientStocksDetailUnits } from 'src/app/modelos/tables/client-stocks';
+import { ClientStocksDetail, ClientStocksDetailUnits } from 'src/app/modelos/tables/client-stocks';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { Subscription } from 'rxjs/internal/Subscription';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
-import { Inventarios } from 'src/app/modelos/inventarios';
-import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -34,7 +32,7 @@ import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util
   styleUrls: ['./inventario-general.component.scss'],
   standalone: false
 })
-export class InventarioGeneralComponent implements OnInit {
+export class InventarioGeneralComponent implements OnInit, AfterViewInit {
 
   readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
   readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
@@ -63,7 +61,6 @@ export class InventarioGeneralComponent implements OnInit {
   public checkAddressClient!: boolean;
 
   public viewOnly: boolean = false;
-  public changeClient: boolean = false;
   public newClient!: Client;
   public cambieCLiente: boolean = false;
   public direccionAnterior!: number;
@@ -72,20 +69,6 @@ export class InventarioGeneralComponent implements OnInit {
   daysSinceLastInventory: number = 1;
   daysUntilNextInventory: number = 1;
   public alertButtons = [
-    /*  {
-      text: '',
-      role: 'cancel'
-     }, */
-    {
-      text: '',
-      role: 'confirm'
-    },
-  ];
-  public alertButtons2 = [
-    {
-      text: '',
-      role: 'cancel'
-    },
     {
       text: '',
       role: 'confirm'
@@ -96,10 +79,7 @@ export class InventarioGeneralComponent implements OnInit {
     if (!this.canModifyClient()) {
       return;
     }
-    this.applyClientChangeReset(client);
-    this.setClientfromSelector(client);
-    this.configureClientChangeGuard(client);
-    this.message.hideLoading();
+    void this.onConfirmedClientChange(client);
   })
 
   constructor(private clientSelectorService: ClienteSelectorService) { }
@@ -110,17 +90,12 @@ export class InventarioGeneralComponent implements OnInit {
     this.viewOnly = this.inventariosLogicService.inventarioSent.valueOf();
     if (this.inventariosLogicService.initInventario) {
       this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
-      this.alertButtons2[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')!
-      this.alertButtons2[1].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       //ESTO PARA HACER EL PROCESO DE CARGA 1 SOLA VEZ Y NO CADA VEZ QUE SE LE DE A LA PESTANA GENERAL
       this.initInventario()
       this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
-      //this.daClientStock = this.dateServ.hoyISOFullTime();
       this.inventariosLogicService.alertMessage = false;
       this.inventariosLogicService.alertMessageOpen = false;
       this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
-      /* this.daClientStock = this.dateServ.hoyISOFullTime();
-      this.inventariosLogicService.fechaMenor = this.dateServ.hoyISO();    */
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
     }
@@ -133,7 +108,9 @@ export class InventarioGeneralComponent implements OnInit {
     );
   }
 
-
+  ngAfterViewInit() {
+    this.rearmSelectorAfterTabRestore();
+  }
 
   ngOnDestroy() {
     this.ClientChangeSubscription.unsubscribe();
@@ -159,15 +136,7 @@ export class InventarioGeneralComponent implements OnInit {
       await this.enterpriseServ.setup(this.dbServ.getDatabase());
       this.inventariosLogicService.listaEmpresa = this.enterpriseServ.empresas;
       if (!this.inventariosLogicService.inventarioSent && this.canModifyClient()) {
-        //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
-        //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
-        this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
-        /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
-          this.inventariosLogicService.client = client;
-          this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
-
-
-         }) */
+        this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
       }
       this.orderServ.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
       await this.orderServ.setup();
@@ -184,7 +153,6 @@ export class InventarioGeneralComponent implements OnInit {
           //ESTOY REALIZANDO UN INVENTARIO DESDE 0
           this.inventariosLogicService.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
           this.geoServ.getCurrentPosition().then(coords => { this.coordenada = coords });
-          //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
           this.inventariosLogicService.onClientStockValid(false);
           this.message.hideLoading();
 
@@ -335,7 +303,6 @@ export class InventarioGeneralComponent implements OnInit {
     this.daysUntilNextInventory = 1;
     this.daClientStock = this.inventariosLogicService.newClientStock.daClientStock;
     this.coordenada = "";
-    this.changeClient = false;
     this.cambieCLiente = false;
 
     if (this.inventariosLogicService.userMustActivateGPS) {
@@ -345,7 +312,7 @@ export class InventarioGeneralComponent implements OnInit {
       });
     }
 
-    this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
+    this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
     this.orderServ.empresaSeleccionada = enterprise;
     await this.orderServ.setup();
 
@@ -361,68 +328,51 @@ export class InventarioGeneralComponent implements OnInit {
         && cliente.idClient != this.inventariosLogicService.newClientStock.idClient) {
         return;
       }
-      if (cliente.idClient != this.inventariosLogicService.newClientStock.idClient && this.changeClient) {
-        this.newClient = cliente;
-        this.inventariosLogicService.alertMessage = true;
-        this.inventariosLogicService.message = this.clientSelectorService.tags.get('CLI_RESET_CONFIRMA')
-          ?? 'Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción.';
-        return;
-      } else {
-        this.message.showLoading().then(() => {
-          if (this.canModifyClient()) {
-            this.changeClient = true;
-            this.clientSelectorService.checkClient = true;
+      this.message.showLoading().then(() => {
+        this.newClient = {} as Client;
+        this.inventariosLogicService.isEdit = true;
+
+        const isNewInventory = !this.inventariosLogicService.newClientStock.coClientStock;
+        if (isNewInventory) {
+          this.inventariosLogicService.newClientStock.coClientStock = this.dateServ.generateCO(0);
+          this.inventariosLogicService.newClientStock.idClientStock = 0; // este se va a actualizar con la repsuesta del API
+          this.inventariosLogicService.newClientStock.daClientStock = this.dateServ.hoyISOFullTime();
+          this.inventariosLogicService.newClientStock.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+          this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW;
+        }
+
+        this.inventariosLogicService.cliente = cliente;
+        this.inventariosLogicService.cliente.naClient = cliente.naClient || cliente.lbClient;
+        this.inventariosLogicService.clientStockValid = true;
+        this.inventariosLogicService.nombreCliente = cliente.lbClient;
+        this.inventariosLogicService.clientClientStock = this.inventariosLogicService.cliente;
+        this.inventariosLogicService.newClientStock.idClient = this.inventariosLogicService.cliente.idClient;
+        this.inventariosLogicService.newClientStock.coClient = this.inventariosLogicService.cliente.coClient;
+        this.inventariosLogicService.newClientStock.lbClient = this.inventariosLogicService.cliente.lbClient;
+        this.inventariosLogicService.newClientStock.idEnterprise = this.inventariosLogicService.empresaSeleccionada.idEnterprise;
+        this.inventariosLogicService.newClientStock.coEnterprise = this.inventariosLogicService.empresaSeleccionada.coEnterprise;
+        this.inventariosLogicService.newClientStock.idUser = Number(localStorage.getItem("idUser"));
+        this.inventariosLogicService.newClientStock.coUser = localStorage.getItem('coUser') || "[]";
+        this.inventariosLogicService.enterpriseClientStock = this.inventariosLogicService.empresaSeleccionada;
+        this.inventariosLogicService.newClientStock.txComment = this.txComment;
+        this.inventariosLogicService.newClientStock.coordenada = this.coordenada;
+        this.syncClientChangeGuard(cliente);
+        this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(), this.inventariosLogicService.cliente.idClient).then((result) => {
+          if (result) {
+            this.direccionAnterior = this.inventariosLogicService.newClientStock.idAddressClient;
+            this.coDireccionAnterior = this.inventariosLogicService.newClientStock.coAddressClient;
+            this.inventariosLogicService.selectedClient = true;
+            this.inventariosLogicService.onClientStockValid(true);
+            this.inventariosLogicService.notifyStockEdited();
+          } else {
+            this.inventariosLogicService.selectedClient = false;
+            this.inventariosLogicService.onClientStockValid(false);
+            this.inventariosLogicService.message = this.inventariosLogicService.inventarioTags.get('INV_ERROR_LIST_ADDRESS')!;
+            this.inventariosLogicService.alertMessageOpen = true;
           }
-          this.newClient = {} as Client;
-          this.inventariosLogicService.isEdit = true;
-
-          const isNewInventory = !this.inventariosLogicService.newClientStock.coClientStock;
-          if (isNewInventory) {
-            this.inventariosLogicService.newClientStock.coClientStock = this.dateServ.generateCO(0);
-            this.inventariosLogicService.newClientStock.idClientStock = 0; // este se va a actualizar con la repsuesta del API
-            this.inventariosLogicService.newClientStock.daClientStock = this.dateServ.hoyISOFullTime();
-            this.inventariosLogicService.newClientStock.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
-            this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW;
-          }
-
-          this.inventariosLogicService.cliente = cliente;
-          this.inventariosLogicService.cliente.naClient = cliente.naClient || cliente.lbClient;
-          this.inventariosLogicService.clientStockValid = true;
-          this.inventariosLogicService.nombreCliente = cliente.lbClient;
-          this.inventariosLogicService.clientClientStock = this.inventariosLogicService.cliente;
-          //this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise);
-          this.inventariosLogicService.newClientStock.idClient = this.inventariosLogicService.cliente.idClient;
-          this.inventariosLogicService.newClientStock.coClient = this.inventariosLogicService.cliente.coClient;
-          this.inventariosLogicService.newClientStock.lbClient = this.inventariosLogicService.cliente.lbClient;
-          this.inventariosLogicService.newClientStock.idEnterprise = this.inventariosLogicService.empresaSeleccionada.idEnterprise;
-          this.inventariosLogicService.newClientStock.coEnterprise = this.inventariosLogicService.empresaSeleccionada.coEnterprise;
-          this.inventariosLogicService.newClientStock.idUser = Number(localStorage.getItem("idUser"));
-          this.inventariosLogicService.newClientStock.coUser = localStorage.getItem('coUser') || "[]";
-          this.inventariosLogicService.enterpriseClientStock = this.inventariosLogicService.empresaSeleccionada;
-          this.inventariosLogicService.newClientStock.txComment = this.txComment;
-          this.inventariosLogicService.newClientStock.coordenada = this.coordenada;
-          this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(), this.inventariosLogicService.cliente.idClient).then((result) => {
-            if (result) {
-              this.direccionAnterior = this.inventariosLogicService.newClientStock.idAddressClient;
-              this.coDireccionAnterior = this.inventariosLogicService.newClientStock.coAddressClient;
-              this.inventariosLogicService.selectedClient = true;
-              this.inventariosLogicService.onClientStockValid(true);
-              this.inventariosLogicService.notifyStockEdited();
-            } else {
-              //setTimeout(() => {
-              this.inventariosLogicService.selectedClient = false;
-              this.inventariosLogicService.onClientStockValid(false);
-              this.inventariosLogicService.message = this.inventariosLogicService.inventarioTags.get('INV_ERROR_LIST_ADDRESS')!;
-              this.inventariosLogicService.alertMessageOpen = true;
-              //}, 500);
-
-            }
-            this.message.hideLoading();
-          });
+          this.message.hideLoading();
         });
-
-      }
-
+      });
     }
     else {
       console.log("cliente vacio");
@@ -457,7 +407,6 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   getFechaValor() {
-    // this.dateServ.hoyISO();
     if (this.inventariosLogicService.newClientStock.stDelivery != 3)
       this.inventariosLogicService.newClientStock.daClientStock = this.daClientStock;
   }
@@ -476,28 +425,40 @@ export class InventarioGeneralComponent implements OnInit {
   setResult() {
     this.inventariosLogicService.alertMessageOpen = false;
   }
-  setResult2(ev: any) {
-    if (ev.detail.role === 'confirm') {
-      this.applyClientChangeReset(this.newClient);
-      this.setClientfromSelector(this.newClient);
-      if (this.canModifyClient()) {
-        this.configureClientChangeGuard(this.newClient);
-      }
-    } else {
-      this.inventariosLogicService.alertMessage = false;
-    }
+
+  private async onConfirmedClientChange(client: Client): Promise<void> {
+    await this.applyClientChangeReset(client);
+    this.setClientfromSelector(client);
+    this.clientSelectorService.checkClient = false;
+    this.clientSelectorService.clienteAnterior = client;
+    this.message.hideLoading();
   }
 
   private shouldEnableClientChangeGuard(): boolean {
     return !this.inventariosLogicService.inventarioSent
       && this.inventariosLogicService.newClientStock.idClient != undefined
-      && this.canModifyClient();
+      && this.canModifyClient()
+      && this.inventariosLogicService.hasStockContentForClientChangeGuard();
   }
 
-  private configureClientChangeGuard(client: Client): void {
-    this.changeClient = true;
-    this.clientSelectorService.checkClient = true;
+  private syncClientChangeGuard(client: Client): void {
+    if (!this.canModifyClient() || this.inventariosLogicService.inventarioSent || !client?.idClient) {
+      this.clientSelectorService.checkClient = false;
+      return;
+    }
     this.clientSelectorService.clienteAnterior = client;
+    this.clientSelectorService.checkClient = this.inventariosLogicService.hasStockContentForClientChangeGuard();
+  }
+
+  private rearmSelectorAfterTabRestore(): void {
+    if (!this.shouldEnableClientChangeGuard()) {
+      const client = this.inventariosLogicService.cliente;
+      if (client?.idClient) {
+        this.syncClientChangeGuard(client);
+      }
+      return;
+    }
+    this.finalizeSavedInventoryClientGuard();
   }
 
   private finalizeSavedInventoryClientGuard(): void {
@@ -505,7 +466,7 @@ export class InventarioGeneralComponent implements OnInit {
       return;
     }
     const client = this.inventariosLogicService.cliente;
-    this.configureClientChangeGuard(client);
+    this.syncClientChangeGuard(client);
     const enterprise = this.inventariosLogicService.empresaSeleccionada;
     if (this.selectorCliente && enterprise?.idEnterprise) {
       this.selectorCliente.setup(
@@ -516,44 +477,28 @@ export class InventarioGeneralComponent implements OnInit {
         true,
         'inv'
       );
+      void this.selectorCliente.updateClientList(enterprise.idEnterprise)
+        .then(() => this.syncClientChangeGuard(client));
     }
   }
 
-  private applyClientChangeReset(newClient: Client): void {
-    this.inventariosLogicService.alertMessage = false;
-    this.changeClient = false;
-    this.inventariosLogicService.selectedClient = false;
-    this.inventariosLogicService.inventarioSent = false;
-    this.inventariosLogicService.disableSaveButton = true;
-    this.inventariosLogicService.cannotSendClientStock = true;
-
-    const preservedTransaction = {
-      coClientStock: this.inventariosLogicService.newClientStock.coClientStock,
-      idClientStock: this.inventariosLogicService.newClientStock.idClientStock,
-      stDelivery: this.inventariosLogicService.newClientStock.stDelivery,
-      stClientStock: this.inventariosLogicService.newClientStock.stClientStock,
-      daClientStock: this.inventariosLogicService.newClientStock.daClientStock,
-    };
-
-    this.inventariosLogicService.newClientStock = {} as ClientStocks;
-    this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
-    this.inventariosLogicService.newClientStock.productList = [] as ProductUtil[];
-    Object.assign(this.inventariosLogicService.newClientStock, preservedTransaction);
-    this.inventariosLogicService.newClientStock.daysSinceLast = 1;
-    this.inventariosLogicService.newClientStock.daysUntilNext = 1;
+  private async applyClientChangeReset(newClient: Client): Promise<void> {
+    const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
+    this.inventariosLogicService.resetStockDraftOnClientChange();
     this.daysSinceLastInventory = 1;
     this.daysUntilNextInventory = 1;
-    this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
-    this.inventariosLogicService.typeStocks = [] as Inventarios[];
-    this.inventariosLogicService.initInventario = false;
-    this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
-    this.alertButtons2[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')!
-    this.alertButtons2[1].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+    this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')
+      ?? 'Aceptar';
     this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
-    this.daClientStock = preservedTransaction.daClientStock || this.dateServ.hoyISOFullTime();
-    this.inventariosLogicService.alertMessageOpen = false;
+    this.daClientStock = this.inventariosLogicService.newClientStock.daClientStock || this.dateServ.hoyISOFullTime();
     this.newClient = newClient;
     this.cambieCLiente = false;
+    if (coClientStock) {
+      await this.inventariosLogicService.deletePersistedStockDetails(
+        this.dbServ.getDatabase(),
+        coClientStock,
+      );
+    }
   }
 
   onSucursalSelect() {
@@ -587,7 +532,6 @@ export class InventarioGeneralComponent implements OnInit {
             text: aceptar,
             role: 'cancel',
             handler: () => {
-              //console.log('Alert canceled');
               this.inventariosLogicService.newClientStock.idAddressClient = this.direccionAnterior;
               this.inventariosLogicService.newClientStock.coAddressClient = this.coDireccionAnterior;
             },

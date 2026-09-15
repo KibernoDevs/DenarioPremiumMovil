@@ -18,6 +18,7 @@ import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, V
 import { Subscription } from 'rxjs/internal/Subscription';
 import { InfiniteScrollCustomEvent, IonInfiniteScroll } from '@ionic/angular';
 import { Unit } from 'src/app/modelos/tables/unit';
+import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 
 interface InventoryLotRow {
   cantidad: number | null;
@@ -45,6 +46,7 @@ export class InventarioProductListComponent implements OnInit {
   public productStructureService = inject(ProductStructureService);
   public productService = inject(ProductService);
   public inventariosLogicService = inject(InventariosLogicService)
+  public clientSelectorService = inject(ClienteSelectorService);
   public globalConfig = inject(GlobalConfigService);
   public dateServ = inject(DateServiceService);
   public services = inject(ServicesService);
@@ -431,6 +433,7 @@ export class InventarioProductListComponent implements OnInit {
     this.inventariosLogicService.typeExh = this.inventariosLogicService.typeStocks.some(stock => stock.tipo === 'exh');
     this.inventariosLogicService.typeDep = this.inventariosLogicService.typeStocks.some(stock => stock.tipo === 'dep');
     this.inventariosLogicService.notifyStockEdited();
+    this.inventariosLogicService.armClientChangeGuardAfterStockEdit(this.clientSelectorService);
     this.refreshInventoriedProducts();
   }
 
