@@ -636,6 +636,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [CLI-PDF-003] Modal/PDF documentos distinto al detalle de cliente
+
+- **Síntoma:** Vista previa compartir y PDF mostraban montos/saldos en moneda primaria/secundaria (`localCurrencyDefault` + `toLocal/toHard`); la tabla de documentos de venta muestra monto en moneda del doc + columna conversión con `convertirMonto` y tasa `localValue`.
+- **Causa:** `client-share-modal` reutilizaba `toPrimaryCurrency`/`toSecondaryCurrency` en lugar del mismo formato que `client-detail`.
+- **Fix:** `formatDocumentAmountInDocCurrency`, `formatDocumentAmountConversion`, `formatExchangeRateCell`; PDF con mismas columnas/etiquetas que detalle.
+- **Evitar:** No mezclar buckets primario/secundario con columnas “moneda doc + conversión” en exportación de documentos.
+- **Archivos:** `client-share-modal.component.ts/html`, spec.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-PREPAID-008] Anticipo automático no se generaba al Enviar cobro guardado (NCR)
+
+- **Síntoma:** Cobro SAVED con FACT+NCR y saldo a favor: al Enviar no se creaba anticipo aunque en borrador sí aplicaba la lógica.
+- **Causa:** `resolvePersistedNetAmountSum` ignoraba netos ≤ 0 y caía en `nuAmountTotal` obsoleto del header; rama preserve SAVED no recalculaba `creditBalancePrepaidAmount`; `refreshAutomatedPrepaidBeforeSend` podía quedar sin plantilla de pago.
+- **Fix:** Neto desde `collectionDetails` (incluye negativos); si hay details y neto ≤ 0, monto a pagar = 0; en preserve, `resolveFullyCoveredCollectionTotals`; refresh asegura `ensureAutomatedPrepaidPaymentTemplate` tras recalc.
+- **Evitar:** No usar `> 0` al agregar neto de details; no confiar en header si details contradicen.
+- **Archivos:** `collection-logic.service.ts`, spec COB-PREPAID-008.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.

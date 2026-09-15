@@ -52,6 +52,8 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Fecha TR/PM al cambiar: escribir `daValue` y `daCollectionPayment` (reabrir usa `daValue`); ver `COB-DATE-001`.
 - Pagos Cobros WS/SQLite: `daValue`/`daCollectionPayment` = `YYYY-MM-DD HH:mm:ss` (`toDbDateTime`); no `hoyISO()` con `T` al persistir/enviar — `COB-DATE-002`.
 - Anticipo remanente/NCR: Otros monto bloqueado (gris/disabled); comentario obligatorio al Enviar aunque `requiredComment` OFF — `COB-PREPAID-006`.
+- Cobro SAVED + NCR: neto desde details (no header obsoleto); preserve recalcula `creditBalancePrepaidAmount` — `COB-PREPAID-008`.
+- Clientes export PDF/modal: misma presentación que tabla detalle (moneda doc + `convertirMonto`) — `CLI-PDF-003`.
 
 ## Inventarios
 
