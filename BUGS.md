@@ -658,6 +658,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-009] Anticipo remanente/NCR se perdía al reabrir cobro guardado
+
+- **Síntoma:** Tras Guardar y volver a abrir el cobro, no se reactivaba anticipo automático por descuento > saldo ni por NCR/saldo a favor (UI Pagos, plantilla Otros, Enviar inconsistente).
+- **Causa:** `resetCobroPaymentCoverageSessionState` y General limpiaban mapa `discountRemnantPrepaidByDocument` / flags; remanente confirmado no se persistía en SQLite; `resolveAutomatedPrepaid` no activaba con `existPartialPayment`; recálculo al reabrir sin `forceRecalc` podía quedar en preserve.
+- **Fix:** `rehydrateDiscountRemnantPrepaidFromPersistedDetails` + `rehydrateAutomatedPrepaidForPersistedCollection` tras hidratar pagos; remanente/NCR activa `createAutomatedPrepaid` aunque haya parcial; refresh antes de Enviar rehidrata mapa antes del recalc.
+- **Evitar:** No asumir que el mapa de remanente sobrevive al abrir cobro; rehidratar desde details antes de recalcular anticipo.
+- **Archivos:** `collection-logic.service.ts`, `cobro-general.component.ts`, spec COB-PREPAID-009.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.

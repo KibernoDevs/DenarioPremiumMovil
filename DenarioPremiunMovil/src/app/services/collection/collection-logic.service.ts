@@ -2858,8 +2858,95 @@ export class CollectionService {
     }
   }
 
+  /**
+   * Reconstruye remanente de descuento confirmado desde details persistidos (mapa solo en memoria).
+   * COB-PREPAID-009: cobro guardado/reabierto no pierde anticipo por descuento > saldo.
+   */
+  rehydrateDiscountRemnantPrepaidFromPersistedDetails(): void {
+    if (this.coTypeModule !== '0' || !this.automatedPrepaid) {
+      return;
+    }
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    if (details.length === 0) {
+      return;
+    }
+
+    for (const detail of details) {
+      if (!this.isPersistedCollection() && detail?.isSave !== true) {
+        continue;
+      }
+      const coDocument = String(detail.coDocument ?? '').trim();
+      if (!coDocument) {
+        continue;
+      }
+      const collectDiscount = Number(detail.nuAmountCollectDiscount ?? 0);
+      if (!(collectDiscount > 0)) {
+        continue;
+      }
+
+      const docIndex = this.findDocumentSaleIndexForDetail(detail);
+      const backup = docIndex >= 0 ? this.documentSalesBackup[docIndex] : undefined;
+      const doc = docIndex >= 0 ? this.documentSales[docIndex] : undefined;
+      const isLiveOpen = docIndex >= 0 && this.isOpen && this.indexDocumentSaleOpen === docIndex;
+      const isDocumentSaved = (doc?.isSave === true || detail?.isSave === true) && !isLiveOpen;
+      const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
+      if (!(gross > 0)) {
+        continue;
+      }
+
+      const totalDeductions = this.getDetailDeductionsForTotals(
+        detail,
+        isDocumentSaved,
+        backup,
+        docIndex,
+      );
+      const otherDeductions = Math.max(0, totalDeductions - collectDiscount);
+      const maxUsefulCollectDiscount = Math.max(0, gross - otherDeductions);
+      const remnantInCollectionCurrency = Math.max(0, collectDiscount - maxUsefulCollectDiscount);
+      if (remnantInCollectionCurrency > 0) {
+        this.setDiscountRemnantPrepaidForDocument(coDocument, remnantInCollectionCurrency);
+      }
+    }
+  }
+
+  /**
+   * Tras reabrir cobro persistido: remanente/NCR, plantilla de anticipo y Enviar.
+   * COB-PREPAID-009.
+   */
+  async rehydrateAutomatedPrepaidForPersistedCollection(): Promise<void> {
+    if (this.coTypeModule !== '0' || !this.automatedPrepaid || !this.isPersistedCollection()) {
+      return;
+    }
+
+    this.rehydrateDiscountRemnantPrepaidFromPersistedDetails();
+    await this.calcularMontos('', 0, true);
+    this.syncDiscountRemnantPrepaidTotal();
+
+    if (this.hasRemnantOrCreditAutomatedPrepaid()) {
+      this.createAutomatedPrepaid = true;
+    }
+
+    this.resolveAutomatedPrepaid('', 0, true);
+
+    if (this.createAutomatedPrepaid
+      && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)) {
+      if (this.hasRemnantOrCreditAutomatedPrepaid()) {
+        this.ensureAutomatedPrepaidPaymentTemplate();
+      }
+    }
+
+    this.checkTiposPago();
+    await this.validateToSend();
+    this.updateSendButtonAvailability();
+    this.syncAddPaymentMethodDisabledState();
+  }
+
   refreshAutomatedPrepaidBeforeSend(): Promise<boolean> {
     this.syncExchangeRateToCollectionHeader();
+    this.rehydrateDiscountRemnantPrepaidFromPersistedDetails();
+    this.syncDiscountRemnantPrepaidTotal();
     // forceRecalc: stDelivery ya es TO_SEND al Enviar; evitar rama preserve/nuAmountTotal.
     return this.calcularMontos('', 0, true).then(async () => {
       this.syncDiscountRemnantPrepaidTotal();
@@ -3020,19 +3107,22 @@ export class CollectionService {
     }
     this.syncExchangeRateToCollectionHeader();
 
-    if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
-      if (this.creditBalancePrepaidAmount > 0) {
-        const creditPrepaid = this.convertCollectionAmountToPrepaidCurrency(this.creditBalancePrepaidAmount);
-        if (creditPrepaid >= this.getAutomatedPrepaidActivationThreshold()) {
+    if (this.automatedPrepaid && this.coTypeModule === '0') {
+      const remnantOrCredit = this.hasRemnantOrCreditAutomatedPrepaid();
+      if (remnantOrCredit) {
+        if (this.creditBalancePrepaidAmount > 0) {
+          const creditPrepaid = this.convertCollectionAmountToPrepaidCurrency(this.creditBalancePrepaidAmount);
+          if (creditPrepaid >= this.getAutomatedPrepaidActivationThreshold()) {
+            this.createAutomatedPrepaid = true;
+          }
+        } else if (this.hasConfirmedDiscountRemnantPrepaid()) {
           this.createAutomatedPrepaid = true;
         }
-      } else if (!this.hasConfirmedDiscountRemnantPrepaid()) {
+      } else if (!this.existPartialPayment) {
         const prepaidExcess = this.getPrepaidExcessAmount();
         if (prepaidExcess >= this.getAutomatedPrepaidActivationThreshold()) {
           this.createAutomatedPrepaid = true;
         }
-      } else {
-        this.createAutomatedPrepaid = true;
       }
     }
 
