@@ -113,18 +113,27 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     return this.currencyService.formatNumber(num);
   }
 
+  /** Tasa vigente en el dispositivo (misma que detalle de cliente / CLI_DETAIL_TASA). */
+  getDeviceExchangeRateForDisplay(): string {
+    const rate = Number(this.currencyService.localValue);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      return '';
+    }
+    return this.formatNumber(rate);
+  }
+
   toLocalCurrency(hardAmount: number, doc: DocumentSale): string {
     if (doc.coCurrency == this.localCurrency) {
       return this.formatNumber(hardAmount);
     }
-    return this.formatNumber(this.currencyService.toLocalCurrencyByNuValueLocal(hardAmount, doc.nuValueLocal));
+    return this.formatNumber(this.currencyService.toLocalCurrency(hardAmount));
   }
 
   toHardCurrency(localAmount: number, doc: DocumentSale): string {
     if (doc.coCurrency == this.hardCurrency) {
       return this.formatNumber(localAmount);
     }
-    return this.formatNumber(this.currencyService.toHardCurrencyByNuValueLocal(localAmount, doc.nuValueLocal));
+    return this.formatNumber(this.currencyService.toHardCurrency(localAmount));
   }
 
   /** Monto en moneda primaria según currency_modules.localCurrencyDefault (CLI). */
@@ -198,7 +207,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
       ];
 
       if (showConversion) {
-        row.push(this.formatNumber(documento.nuValueLocal));
+        row.push(this.getDeviceExchangeRateForDisplay());
       }
 
       row.push(this.toPrimaryCurrency(documento.nuAmountTotal, documento));

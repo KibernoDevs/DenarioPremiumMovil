@@ -92,6 +92,14 @@ describe('CobrosDocumentComponent', () => {
     };
   }));
 
+  it('displayDocumentSaleComment oculta null y literales null', () => {
+    expect(component.displayDocumentSaleComment(null)).toBe('');
+    expect(component.displayDocumentSaleComment(undefined)).toBe('');
+    expect(component.displayDocumentSaleComment('null')).toBe('');
+    expect(component.displayDocumentSaleComment(' NULL ')).toBe('');
+    expect(component.displayDocumentSaleComment('Nota cliente')).toBe('Nota cliente');
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -511,6 +519,102 @@ describe('CobrosDocumentComponent', () => {
       const preview = component.computeCollectDiscountPreview(false);
       expect(preview?.discountTotal).toBe(158);
       expect(preview?.baseBalance).toBe(195.88);
+    });
+  });
+
+  it('COB-NCR-PREPAID-002: maybeShowCreditBalancePrepaidInform abre alerta solo Aceptar', () => {
+    collectServiceMock.shouldShowCreditBalancePrepaidInformMessage = jasmine
+      .createSpy('shouldShowCreditBalancePrepaidInformMessage')
+      .and.returnValue(true);
+    collectServiceMock.buildCreditBalancePrepaidInformMessage = jasmine
+      .createSpy('buildCreditBalancePrepaidInformMessage')
+      .and.returnValue('Anticipo por saldo a favor.');
+    (component as any).maybeShowCreditBalancePrepaidInform();
+
+    expect(component.alertCreditBalancePrepaidOpen).toBeTrue();
+    expect(collectServiceMock.mensaje).toBe('Anticipo por saldo a favor.');
+  });
+
+  describe('COB-DOC-NEG-002 orphan negative document selection', () => {
+    beforeEach(() => {
+      collectServiceMock.coTypeModule = '0';
+      collectServiceMock.haveDocumentSale = true;
+      collectServiceMock.collection = {
+        collectionDetails: [{ coDocument: 'NCR-1' }],
+        collectionPayments: [],
+        nuAmountFinal: 0,
+        nuDifference: 0,
+        nuDifferenceConversion: 0,
+      };
+      collectServiceMock.documentSales = [
+        {
+          coDocument: 'FAC-1',
+          nuBalance: 1000,
+          isSelected: false,
+          isSave: false,
+          positionCollecDetails: -1,
+          inPaymentPartial: false,
+          nuAmountPaid: 1000,
+          daDueDate: '',
+          nuVaucherRetention: '',
+          nuAmountRetention: 0,
+          nuAmountRetention2: 0,
+        },
+        {
+          coDocument: 'NCR-1',
+          nuBalance: -500,
+          isSelected: true,
+          isSave: false,
+          positionCollecDetails: 0,
+          inPaymentPartial: false,
+          nuAmountPaid: -500,
+          daDueDate: '',
+          nuVaucherRetention: '',
+          nuAmountRetention: 0,
+          nuAmountRetention2: 0,
+        },
+      ];
+      collectServiceMock.documentSalesBackup = JSON.parse(JSON.stringify(collectServiceMock.documentSales));
+      collectServiceMock.documentSalesView = JSON.parse(JSON.stringify(collectServiceMock.documentSales));
+      collectServiceMock.calculatePayment = jasmine.createSpy('calculatePayment').and.resolveTo(false);
+      collectServiceMock.onCollectionValidToSend = jasmine.createSpy('onCollectionValidToSend');
+      collectServiceMock.pagoEfectivo = [];
+      collectServiceMock.pagoCheque = [];
+      collectServiceMock.pagoDeposito = [];
+      collectServiceMock.pagoTransferencia = [];
+      collectServiceMock.pagoOtros = [];
+      collectServiceMock.bankAccountSelected = [];
+      collectServiceMock.montoTotalPagar = 0;
+      collectServiceMock.montoTotalPagarConversion = 0;
+      collectServiceMock.montoTotalPagado = 0;
+      collectServiceMock.montoTotalPagadoConversion = 0;
+    });
+
+    it('destilda NCR cuando no queda factura deudora seleccionada', () => {
+      (component as any).deselectOrphanNegativeBalanceDocuments();
+
+      expect(collectServiceMock.documentSales[1].isSelected).toBeFalse();
+      expect(collectServiceMock.documentSalesView[1].isSelected).toBeFalse();
+      expect(collectServiceMock.collection.collectionDetails.length).toBe(0);
+      expect(collectServiceMock.haveDocumentSale).toBeFalse();
+      expect(collectServiceMock.calculatePayment).toHaveBeenCalled();
+    });
+
+    it('COB-DOC-NEG-002: detail positivo no seleccionado no bloquea limpieza de NCR', () => {
+      collectServiceMock.collection.collectionDetails = [
+        { coDocument: 'FAC-1' },
+        { coDocument: 'NCR-1' },
+      ];
+      collectServiceMock.documentSales[0].positionCollecDetails = 0;
+      collectServiceMock.documentSales[1].positionCollecDetails = 1;
+      collectServiceMock.documentSalesBackup = JSON.parse(JSON.stringify(collectServiceMock.documentSales));
+      collectServiceMock.documentSalesView = JSON.parse(JSON.stringify(collectServiceMock.documentSales));
+
+      (component as any).deselectOrphanNegativeBalanceDocuments();
+
+      expect(collectServiceMock.documentSales[1].isSelected).toBeFalse();
+      expect(collectServiceMock.collection.collectionDetails.length).toBe(1);
+      expect(collectServiceMock.collection.collectionDetails[0].coDocument).toBe('FAC-1');
     });
   });
 });

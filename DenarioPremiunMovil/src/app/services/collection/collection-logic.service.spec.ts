@@ -2140,6 +2140,26 @@ describe('CollectionService', () => {
         );
       });
 
+      it('COB-NCR-PREPAID-002: buildCreditBalancePrepaidInformMessage usa prepaidCurrency', () => {
+        service.collectionTags = new Map([
+          ['COB_MSG_NCR_CREDIT_PREPAID', 'Anticipo NCR {currency} {amount}.'],
+        ]);
+        service.prepaidCurrency = 'BSD';
+        service.multiCurrency = true;
+        service.collection = { coCurrency: 'USD' } as any;
+        service.creditBalancePrepaidAmount = 500;
+        service.automatedPrepaid = true;
+        service.coTypeModule = '0';
+        service.recentOpenCollect = false;
+        spyOn(service, 'convertCollectionAmountToPrepaidCurrency').and.returnValue(1580);
+        spyOn((service as any).currencyService, 'formatNumber').and.returnValue('1.580,00');
+
+        expect(service.buildCreditBalancePrepaidInformMessage()).toBe('Anticipo NCR BSD 1.580,00.');
+        expect(service.shouldShowCreditBalancePrepaidInformMessage()).toBeTrue();
+        service.markCreditBalancePrepaidInformMessageShown();
+        expect(service.shouldShowCreditBalancePrepaidInformMessage()).toBeTrue();
+      });
+
       it('COB-PREPAID-004: plantilla con {currency} y {amount} no repite moneda del cobro', () => {
         service.collectionTags = new Map([
           ['COB_MSG_AUTOMATED_PREPAID', 'Anticipo por {currency} {amount}.'],
