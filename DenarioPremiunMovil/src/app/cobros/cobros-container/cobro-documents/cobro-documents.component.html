@@ -330,7 +330,7 @@
 
     <!-- COMENTARIO -->
     <ion-col size="6" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documentSale.colorRow}">
-      {{documentSale.txComment}}
+      {{displayDocumentSaleComment(documentSale.txComment)}}
     </ion-col>
     @if(shouldShowDocumentRetentionSendError(getSourceIndex(documentSale))){
     <ion-col size="12" class="ion-text-center col retention-send-error-hint">
@@ -561,11 +561,10 @@
                 <!-- SALDO CONVERSION -->
 
                 <!-- COMENTARIO DOCUMENTO-->
-                @if(this.collectService.documentSaleOpen.txComment != "" &&
-                this.collectService.documentSaleOpen.txComment != null){
+                @if(displayDocumentSaleComment(this.collectService.documentSaleOpen.txComment) !== ''){
                 <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO_DOCUMENTO')}}"
-                    label-placement="floating" fill="outline" value="{{this.collectService.documentSaleOpen.txComment}}"
+                    label-placement="floating" fill="outline" value="{{displayDocumentSaleComment(this.collectService.documentSaleOpen.txComment)}}"
                     color="primary" [readonly]="true"></ion-input>
                 </ion-col>
                 }
@@ -1191,11 +1190,10 @@
             <!-- SALDO CONVERSION -->
 
             <!-- COMENTARIO DOCUMENTO-->
-            @if(this.collectService.documentSaleOpen.txComment != "" &&
-            this.collectService.documentSaleOpen.txComment != null){
+            @if(displayDocumentSaleComment(this.collectService.documentSaleOpen.txComment) !== ''){
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO_DOCUMENTO')}}"
-                label-placement="floating" fill="outline" value="{{this.collectService.documentSaleOpen.txComment}}"
+                label-placement="floating" fill="outline" value="{{displayDocumentSaleComment(this.collectService.documentSaleOpen.txComment)}}"
                 color="primary" [readonly]="true"></ion-input>
             </ion-col>
             }
@@ -1550,5 +1548,10 @@
   header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
   message={{this.collectService.mensaje}} [buttons]="alertButtonsDiscountRemnant"
   (didDismiss)="setResultDiscountRemnant($event)"></ion-alert>
+
+<ion-alert [isOpen]="alertCreditBalancePrepaidOpen"
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
+  message={{this.collectService.mensaje}} [buttons]="alertButtons"
+  (didDismiss)="setResultCreditBalancePrepaid($event)"></ion-alert>
 
 <!-- <ion-button (click)="print()"></ion-button> -->

@@ -2614,7 +2614,6 @@ export class CollectionService {
 
   /** Evita repetir el modal de anticipo automático en Pagos (COB-DISC-004). */
   private automatedPrepaidInformMessageShown = false;
-
   public shouldShowAutomatedPrepaidInformMessage(): boolean {
     if (this.recentOpenCollect || !this.createAutomatedPrepaid) {
       return false;
@@ -2627,6 +2626,30 @@ export class CollectionService {
 
   public markAutomatedPrepaidInformMessageShown(): void {
     this.automatedPrepaidInformMessageShown = true;
+  }
+
+  /** Aviso NCR > FACT en Documentos: cada vez que hay saldo a favor (no una sola vez por sesión). */
+  public shouldShowCreditBalancePrepaidInformMessage(): boolean {
+    if (this.recentOpenCollect || !this.automatedPrepaid || this.coTypeModule !== '0') {
+      return false;
+    }
+    if (this.creditBalancePrepaidAmount <= 0 || this.hasConfirmedDiscountRemnantPrepaid()) {
+      return false;
+    }
+    return true;
+  }
+
+  /** @deprecated Ya no se suprime el aviso NCR; se mantiene por compatibilidad de llamadas. */
+  public markCreditBalancePrepaidInformMessageShown(): void {
+    /* noop — COB-NCR-PREPAID-002 */
+  }
+
+  /** Aviso informativo (solo Aceptar): anticipo por NCR que supera saldo a pagar. */
+  public buildCreditBalancePrepaidInformMessage(): string {
+    const prepaidAmount = this.convertCollectionAmountToPrepaidCurrency(this.creditBalancePrepaidAmount);
+    const template = this.collectionTags.get('COB_MSG_NCR_CREDIT_PREPAID')
+      ?? 'Se creará un anticipo automático por el saldo a favor de {currency} {amount}. Se enviará un anticipo junto al cobro.';
+    return this.formatAutomatedPrepaidMessageTemplate(template, prepaidAmount);
   }
 
   public buildDiscountRemnantPrepaidMessage(remnantInPrepaidCurrency: number): string {

@@ -81,6 +81,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public alertMessageOpen2: boolean = false;
   /** Confirmación COB-DISC-003: remanente de descuento → anticipo. */
   public alertDiscountRemnantOpen: boolean = false;
+  /** Aviso informativo COB-NCR-PREPAID-002: NCR > FACT → anticipo (solo Aceptar). */
+  public alertCreditBalancePrepaidOpen = false;
   private pendingDiscountRemnantInCollection = 0;
   private pendingDiscountClampToBalance = true;
   private hasShownPartialPayMessage: boolean = false;
@@ -1871,6 +1873,156 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.collectService.selectedCollectDiscounts = Array.from(new Set(ids));
   }
 
+  private isNegativeBalanceDocumentSale(documentSale: DocumentSale | undefined): boolean {
+    return Number(documentSale?.nuBalance ?? 0) < 0;
+  }
+
+  /** ¿Queda al menos un documento con saldo deudor (positivo) en el cobro? */
+  private collectionHasPositiveBalanceDocument(): boolean {
+    const cs = this.collectService;
+    for (const detail of cs.collection?.collectionDetails ?? []) {
+      const docIndex = cs.documentSales.findIndex(
+        d => String(d?.coDocument ?? '').trim() === String(detail?.coDocument ?? '').trim(),
+      );
+      const sale = docIndex >= 0 ? cs.documentSales[docIndex] : undefined;
+      if (!sale?.isSelected) {
+        continue;
+      }
+      const balance = Number(sale?.nuBalance ?? detail?.nuBalanceDoc ?? 0);
+      if (balance > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Si solo quedan NCR/saldos negativos seleccionados (sin factura deudora), destildar todos.
+   * COB-DOC-NEG-002: evita cobro huérfano tras quitar la factura inicial.
+   */
+  private deselectOrphanNegativeBalanceDocuments(): void {
+    if (this.collectionHasPositiveBalanceDocument()) {
+      return;
+    }
+    const negativeSelectedIndices: number[] = [];
+    for (let i = 0; i < this.collectService.documentSales.length; i++) {
+      const sale = this.collectService.documentSales[i];
+      if (sale?.isSelected && this.isNegativeBalanceDocumentSale(sale)) {
+        negativeSelectedIndices.push(i);
+      }
+    }
+    if (negativeSelectedIndices.length === 0) {
+      return;
+    }
+    negativeSelectedIndices.sort((a, b) => b - a).forEach((index) => {
+      this.removeDocumentSaleFromCollection(index, { skipRecalc: true });
+    });
+    void this.collectService.calculatePayment('', 0).then(() => {
+      this.cdr.detectChanges();
+    });
+  }
+
+  private removeDocumentSaleFromCollection(
+    index: number,
+    options?: { skipRecalc?: boolean },
+  ): void {
+    const cs = this.collectService;
+    if (index < 0 || index >= cs.documentSales.length) {
+      return;
+    }
+
+    cs.documentSales[index].daDueDate = '';
+    cs.documentSales[index].nuVaucherRetention = '';
+    cs.documentSales[index].nuAmountPaid = cs.documentSales[index].nuBalance;
+    cs.documentSales[index].nuAmountRetention = 0;
+    cs.documentSales[index].nuAmountRetention2 = 0;
+    cs.documentSales[index].isSelected = false;
+    cs.documentSales[index].isSave = false;
+    if (cs.documentSalesView[index]) {
+      cs.documentSalesView[index].isSave = false;
+    }
+
+    cs.documentSalesBackup[index] = JSON.parse(JSON.stringify(cs.documentSales[index]));
+    const coDocument = String(cs.documentSales[index].coDocument ?? '').trim();
+    let pos = cs.documentSales[index].positionCollecDetails;
+    let removedIndex = -1;
+    if (Number.isInteger(pos) && pos >= 0 && pos < cs.collection.collectionDetails.length) {
+      removedIndex = pos;
+      cs.collection.collectionDetails.splice(pos, 1);
+    } else if (coDocument) {
+      removedIndex = cs.collection.collectionDetails.findIndex(
+        d => String(d?.coDocument ?? '').trim() === coDocument,
+      );
+      if (removedIndex >= 0) {
+        cs.collection.collectionDetails.splice(removedIndex, 1);
+      } else {
+        console.warn('splice: posición inválida', pos);
+      }
+    }
+    if (removedIndex >= 0) {
+      for (let i = 0; i < cs.documentSales.length; i++) {
+        if (cs.documentSales[i].positionCollecDetails > removedIndex) {
+          cs.documentSales[i].positionCollecDetails -= 1;
+          cs.documentSalesBackup[i].positionCollecDetails -= 1;
+          if (cs.documentSalesView[i]) {
+            cs.documentSalesView[i].positionCollecDetails = cs.documentSales[i].positionCollecDetails;
+          }
+        }
+      }
+    }
+
+    cs.documentSales[index].positionCollecDetails = -1;
+    cs.documentSalesBackup[index].positionCollecDetails = -1;
+    if (cs.documentSalesView[index]) {
+      cs.documentSalesView[index].positionCollecDetails = -1;
+    }
+    cs.documentSales[index].inPaymentPartial = false;
+    cs.documentSalesBackup[index].inPaymentPartial = false;
+
+    if (cs.collection.collectionDetails.length === 0) {
+      cs.haveDocumentSale = false;
+      cs.disabledSelectCollectMethodDisabled = true;
+      cs.collection.collectionPayments = [] as CollectionPayment[];
+      cs.pagoEfectivo = [] as PagoEfectivo[];
+      cs.pagoCheque = [] as PagoCheque[];
+      cs.pagoDeposito = [] as PagoDeposito[];
+      cs.pagoTransferencia = [] as PagoTransferencia[];
+      cs.pagoOtros = [] as PagoOtros[];
+      cs.collection.nuAmountFinal = 0;
+      cs.montoTotalPagar = 0;
+      cs.montoTotalPagarConversion = 0;
+      cs.montoTotalPagado = 0;
+      cs.montoTotalPagadoConversion = 0;
+      cs.collection.nuDifference = 0;
+      cs.collection.nuDifferenceConversion = 0;
+      cs.bankAccountSelected = [] as BankAccount[];
+      cs.onCollectionValidToSend(false);
+    }
+
+    this.syncDocumentSelectionAtIndex(index, false);
+    cs.documentSales[index].isSave = false;
+    cs.documentSalesBackup[index].isSave = false;
+    if (cs.documentSalesView[index]) {
+      cs.documentSalesView[index].isSave = false;
+    }
+
+    if (!options?.skipRecalc) {
+      void cs.calculatePayment('', 0).then(() => {
+        this.maybeShowCreditBalancePrepaidInform();
+        this.cdr.detectChanges();
+      });
+    }
+  }
+
+  private maybeShowCreditBalancePrepaidInform(): void {
+    if (!this.collectService.shouldShowCreditBalancePrepaidInformMessage()) {
+      return;
+    }
+    this.collectService.mensaje = this.collectService.buildCreditBalancePrepaidInformMessage();
+    this.alertCreditBalancePrepaidOpen = true;
+    this.cdr.detectChanges();
+  }
+
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
     const index = indexDocumentSale >= 0
       ? indexDocumentSale
@@ -1908,75 +2060,16 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       this.initCollectionDetail(documentSale, index);
     } else {
-      //se reinician los valores del documento
-      this.collectService.documentSales[index].daDueDate = "";
-      this.collectService.documentSales[index].nuVaucherRetention = "";
-      this.collectService.documentSales[index].nuAmountPaid = this.collectService.documentSales[index].nuBalance;
-      this.collectService.documentSales[index].nuAmountRetention = 0;
-      this.collectService.documentSales[index].nuAmountRetention2 = 0;
-      this.collectService.documentSales[index].isSelected = false;
-      this.collectService.documentSales[index].isSave = false;
-      this.collectService.documentSalesView[index].isSave = false;
-
-      this.collectService.documentSalesBackup[index] = JSON.parse(JSON.stringify(this.collectService.documentSales[index]));
-      let pos;
-      pos = this.collectService.documentSales[index].positionCollecDetails;
-      console.log(pos);
-      // Eliminar solo el elemento en la posición `pos` con validación de rangos
-      if (Number.isInteger(pos) && pos >= 0 && pos < this.collectService.collection.collectionDetails.length) {
-        this.collectService.collection.collectionDetails.splice(pos, 1);
+      this.removeDocumentSaleFromCollection(index, { skipRecalc: true });
+      this.deselectOrphanNegativeBalanceDocuments();
+      if (this.collectService.collection.collectionDetails.length > 0) {
+        void this.collectService.calculatePayment('', 0).then(() => {
+          this.maybeShowCreditBalancePrepaidInform();
+          this.cdr.detectChanges();
+        });
       } else {
-        console.warn('splice: posición inválida', pos);
+        this.cdr.detectChanges();
       }
-      //Reordeno los positionCollecDetails
-      console.log(this.collectService.collection.collectionDetails)
-
-      for (let i = 0; i < this.collectService.documentSales.length; i++) {
-        if (this.collectService.documentSales[i].positionCollecDetails > pos) {
-          this.collectService.documentSales[i].positionCollecDetails -= 1;
-          this.collectService.documentSalesBackup[i].positionCollecDetails -= 1;
-        }
-        console.log(this.collectService.documentSales[i].positionCollecDetails);
-      }
-
-      this.collectService.documentSales[index].positionCollecDetails = -1;
-      this.collectService.documentSalesBackup[index].positionCollecDetails = -1;
-
-      this.collectService.documentSales[index].inPaymentPartial = false;
-      this.collectService.documentSalesBackup[index].inPaymentPartial = false;
-
-      if (this.collectService.collection.collectionDetails.length == 0) {
-
-
-        this.collectService.haveDocumentSale = false;
-        this.collectService.disabledSelectCollectMethodDisabled = true;
-
-        this.collectService.collection.collectionPayments = [] as CollectionPayment[];
-        this.collectService.pagoEfectivo = [] as PagoEfectivo[];
-        this.collectService.pagoCheque = [] as PagoCheque[];
-        this.collectService.pagoDeposito = [] as PagoDeposito[];
-        this.collectService.pagoTransferencia = [] as PagoTransferencia[];
-        this.collectService.pagoOtros = [] as PagoOtros[];
-        this.collectService.collection.nuAmountFinal = 0;
-        this.collectService.montoTotalPagar = 0;
-        this.collectService.montoTotalPagarConversion = 0;
-        this.collectService.montoTotalPagado = 0;
-        this.collectService.montoTotalPagadoConversion = 0;
-        this.collectService.collection.nuDifference = 0;
-        this.collectService.collection.nuDifferenceConversion = 0;
-
-        this.collectService.bankAccountSelected = [] as BankAccount[];
-
-        this.collectService.onCollectionValidToSend(false);
-      }
-
-      this.collectService.documentSales[index].isSelected = false
-      this.collectService.documentSalesBackup[index].isSelected = false;
-      this.collectService.documentSales[index].isSave = false
-      this.collectService.documentSalesBackup[index].isSave = false;
-      this.collectService.calculatePayment("", 0);
-      this.cdr.detectChanges();
-
     }
 
     this.collectService.markCollectionDirty();
@@ -2075,8 +2168,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.collection.coOriginalCollection = documentSale.coCollection;
     }
 
-    this.collectService.calculatePayment("", 0);
-    this.cdr.detectChanges();
+    void this.collectService.calculatePayment('', 0).then(() => {
+      this.maybeShowCreditBalancePrepaidInform();
+      this.cdr.detectChanges();
+    });
   }
 
   saveDocumentSale(action: Boolean) {
@@ -3306,6 +3401,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
+  setResultCreditBalancePrepaid(ev: any): void {
+    this.alertCreditBalancePrepaidOpen = false;
+    if (ev?.detail?.role === 'confirm') {
+      this.collectService.mensaje = '';
+    }
+    this.cdr.detectChanges();
+  }
+
   async setResultDiscountRemnant(ev: any): Promise<void> {
     this.alertDiscountRemnantOpen = false;
     const confirmed = ev?.detail?.role === 'confirm';
@@ -3378,6 +3481,22 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
     this.syncAmountPaidDisplayForOpen(cs.indexDocumentSaleOpen);
+  }
+
+  /** Comentario de documento en listado: no mostrar null/undefined ni literales "null". */
+  displayDocumentSaleComment(comment: unknown): string {
+    if (comment == null) {
+      return '';
+    }
+    const trimmed = String(comment).trim();
+    if (!trimmed) {
+      return '';
+    }
+    const lowered = trimmed.toLowerCase();
+    if (lowered === 'null' || lowered === 'undefined') {
+      return '';
+    }
+    return trimmed;
   }
 
   formatNumber(num: number) {
