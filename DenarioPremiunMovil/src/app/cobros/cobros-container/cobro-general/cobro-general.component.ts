@@ -539,10 +539,7 @@ export class CobrosGeneralComponent implements OnInit {
    * revalida Enviar de forma determinista (evita carrera al reabrir borrador).
    */
   private async refreshSendStateAfterPaymentsHydrated(): Promise<void> {
-    await this.collectService.calcularMontos('', 0);
-    this.collectService.checkTiposPago();
-    await this.collectService.validateToSend();
-    this.collectService.updateSendButtonAvailability();
+    await this.collectService.rehydrateAutomatedPrepaidForPersistedCollection();
   }
 
   initCollection() {

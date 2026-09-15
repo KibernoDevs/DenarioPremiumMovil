@@ -2392,6 +2392,68 @@ describe('CollectionService', () => {
         expect(shouldCreate).toBeTrue();
       });
 
+      it('COB-PREPAID-009: reabrir cobro SAVED restaura remanente descuento y anticipo NCR', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.prepaidRangeAmount = 1;
+        service.localCurrency = { coCurrency: 'USD' } as any;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+          stCollection: service.COLLECT_STATUS_SAVED,
+          isSave: 1,
+          nuAmountTotal: 1000,
+          nuAmountFinal: 1000,
+          collectionDetails: [
+            {
+              isSave: true,
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 100,
+              nuBalanceDocOriginal: 100,
+              nuAmountPaid: 0,
+              nuAmountCollectDiscount: 150,
+            },
+            {
+              isSave: true,
+              idDocument: 11,
+              coDocument: 'FAC-11',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+            },
+            {
+              isSave: true,
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+            },
+          ],
+          collectionPayments: [{
+            coType: 'ot',
+            coPaymentMethod: 'ot',
+            nuAmountPartial: 0,
+          }],
+        } as any;
+        service.pagoOtros = [{ monto: 0, nombre: 'cierre' } as any];
+        service.discountRemnantPrepaidByDocument.clear();
+        service.discountRemnantPrepaidAmount = 0;
+        service.createAutomatedPrepaid = false;
+        service.anticipoAutomatico = [];
+        service.existPartialPayment = true;
+
+        await service.rehydrateAutomatedPrepaidForPersistedCollection();
+
+        expect(service.discountRemnantPrepaidByDocument.has('FAC-10')).toBeTrue();
+        expect(service.discountRemnantPrepaidAmount).toBe(50);
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+        expect(service.anticipoAutomatico.length).toBeGreaterThan(0);
+        expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+      });
+
       it('COB-PREPAID-006: refreshAutomatedPrepaidBeforeSend con TO_SEND detecta NCR para anticipo', async () => {
         service.coTypeModule = '0';
         service.automatedPrepaid = true;
