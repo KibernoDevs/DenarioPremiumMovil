@@ -141,6 +141,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private clientChangedSub?: Subscription;
   private documentReloadSub?: Subscription;
   private unregisterSendValidationFlush?: () => void;
+  private unregisterCreditBalancePrepaidInform?: () => void;
 
 
   public alertButtons = [
@@ -208,6 +209,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         () => this.flushPendingDocumentInputsBeforeSend(),
       );
     }
+    if (typeof this.collectService.registerCreditBalancePrepaidInformHandler === 'function') {
+      this.unregisterCreditBalancePrepaidInform = this.collectService.registerCreditBalancePrepaidInformHandler(
+        () => this.maybeShowCreditBalancePrepaidInform(),
+      );
+      this.collectService.tryDispatchCreditBalancePrepaidInformUi();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -235,6 +242,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   ngOnDestroy(): void {
     this.unregisterSendValidationFlush?.();
+    this.unregisterCreditBalancePrepaidInform?.();
     this.clientChangedSub?.unsubscribe();
     this.documentReloadSub?.unsubscribe();
     this.documentsTableResizeObserver?.disconnect();
@@ -682,6 +690,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.resetDocumentsTableScroll();
     this.invalidateDocumentsTableLayoutCache();
     this.scheduleDocumentsTableLayoutSync(0, false);
+    this.collectService.tryDispatchCreditBalancePrepaidInformUi();
   }
 
   private initializeDocumentCurrencyFilter(): void {
@@ -2008,7 +2017,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (!options?.skipRecalc) {
       void cs.calculatePayment('', 0).then(() => {
-        this.maybeShowCreditBalancePrepaidInform();
         this.cdr.detectChanges();
       });
     }
@@ -2016,6 +2024,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   private maybeShowCreditBalancePrepaidInform(): void {
     if (!this.collectService.shouldShowCreditBalancePrepaidInformMessage()) {
+      return;
+    }
+    if (this.alertCreditBalancePrepaidOpen) {
       return;
     }
     this.collectService.mensaje = this.collectService.buildCreditBalancePrepaidInformMessage();
@@ -2064,7 +2075,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.deselectOrphanNegativeBalanceDocuments();
       if (this.collectService.collection.collectionDetails.length > 0) {
         void this.collectService.calculatePayment('', 0).then(() => {
-          this.maybeShowCreditBalancePrepaidInform();
           this.cdr.detectChanges();
         });
       } else {
@@ -2169,7 +2179,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     void this.collectService.calculatePayment('', 0).then(() => {
-      this.maybeShowCreditBalancePrepaidInform();
       this.cdr.detectChanges();
     });
   }

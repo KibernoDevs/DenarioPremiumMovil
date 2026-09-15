@@ -179,6 +179,8 @@ export class CollectionService {
   public lastSendIssues: CollectionSendIssue[] = [];
   /** Handlers de componentes para volcar inputs pendientes antes de validar Enviar. */
   private sendValidationFlushHandlers: Array<() => void> = [];
+  /** UI Documentos: aviso NCR / saldo a favor tras recalcular montos (COB-NCR-PREPAID-002). */
+  private creditBalancePrepaidInformHandlers: Array<() => void> = [];
   /** Evita bucle validateToSend → flush → setMonto → validateToSend (COB-SEND-FLUSH-001). */
   private sendValidationSyncInProgress = false;
   /** Razón de cambio de tasa obligatoria (pestaña General). */
@@ -1124,6 +1126,7 @@ export class CollectionService {
       this.resolveFullyCoveredCollectionTotals(accumulatedNet.monto, accumulatedNet.montoConversion);
       this.resolveAutomatedPrepaid(type, index);
       this.syncAddPaymentMethodDisabledState();
+      this.dispatchCreditBalancePrepaidInformUi();
       return Promise.resolve(this.createAutomatedPrepaid);
     } else {
       // COB-PREPAID-006: con forceRecalc recalcular desde documentos aunque ya esté TO_SEND
@@ -1279,6 +1282,7 @@ export class CollectionService {
     }
     this.syncCollectionIgtfFields();
     this.resolveAutomatedPrepaid(type, index, skipValidateToSend);
+    this.dispatchCreditBalancePrepaidInformUi();
     return Promise.resolve(this.createAutomatedPrepaid);
   }
 
@@ -3391,8 +3395,10 @@ export class CollectionService {
       if (this.createAutomatedPrepaid) {
         this.onCollectionValidToSend(true);
       }
-      if (this.recentOpenCollect)
+      if (this.recentOpenCollect) {
         this.recentOpenCollect = false;
+        this.dispatchCreditBalancePrepaidInformUi();
+      }
     }
     if (this.collection.collectionDetails.length > 0) {
       this.syncAddPaymentMethodDisabledState();
@@ -3477,6 +3483,38 @@ export class CollectionService {
         this.sendValidationFlushHandlers.splice(index, 1);
       }
     };
+  }
+
+  /** Registra modal informativo de anticipo por NCR (cobro-documents). */
+  public registerCreditBalancePrepaidInformHandler(handler: () => void): () => void {
+    this.creditBalancePrepaidInformHandlers.push(handler);
+    return () => {
+      const index = this.creditBalancePrepaidInformHandlers.indexOf(handler);
+      if (index >= 0) {
+        this.creditBalancePrepaidInformHandlers.splice(index, 1);
+      }
+    };
+  }
+
+  /** Reintenta aviso si el handler se registró después del recálculo (reapertura). */
+  public tryDispatchCreditBalancePrepaidInformUi(): void {
+    this.dispatchCreditBalancePrepaidInformUi();
+  }
+
+  private dispatchCreditBalancePrepaidInformUi(): void {
+    if (this.coTypeModule !== '0' || this.recentOpenCollect) {
+      return;
+    }
+    if (!this.shouldShowCreditBalancePrepaidInformMessage()) {
+      return;
+    }
+    for (const handler of this.creditBalancePrepaidInformHandlers) {
+      try {
+        handler();
+      } catch (err) {
+        console.error('dispatchCreditBalancePrepaidInformUi handler failed', err);
+      }
+    }
   }
 
   /**

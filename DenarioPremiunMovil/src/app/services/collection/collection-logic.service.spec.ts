@@ -2140,6 +2140,43 @@ describe('CollectionService', () => {
         );
       });
 
+      it('COB-NCR-PREPAID-002: dispatchCreditBalancePrepaidInform tras calculatePayment con saldo a favor', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.recentOpenCollect = false;
+        service.creditBalancePrepaidAmount = 0;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 400,
+              inPaymentPartial: true,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -500,
+              nuBalanceDocOriginal: -500,
+              nuAmountPaid: -500,
+            },
+          ],
+          collectionPayments: [],
+        } as any;
+
+        const informSpy = jasmine.createSpy('creditBalanceInform');
+        service.registerCreditBalancePrepaidInformHandler(informSpy);
+
+        await service.calculatePayment('', 0, true, true);
+
+        expect(service.creditBalancePrepaidAmount).toBeGreaterThan(0);
+        expect(informSpy).toHaveBeenCalled();
+      });
+
       it('COB-NCR-PREPAID-002: buildCreditBalancePrepaidInformMessage usa prepaidCurrency', () => {
         service.collectionTags = new Map([
           ['COB_MSG_NCR_CREDIT_PREPAID', 'Anticipo NCR {currency} {amount}.'],
