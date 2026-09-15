@@ -111,7 +111,7 @@
               </td>
               @if (showConversion) {
               <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">
-                {{ formatNumber(documento.nuValueLocal) }}
+                {{ getDeviceExchangeRateForDisplay() }}
               </td>
               }
               <td class="ion-text-center col" [style.color]="documento.nuAmountTotal > 0 ? 'Red' : 'Blue'">

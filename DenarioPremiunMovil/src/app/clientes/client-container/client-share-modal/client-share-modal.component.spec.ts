@@ -74,9 +74,11 @@ describe('ClientShareModalComponent', () => {
           useValue: {
             localCurrency: { coCurrency: 'BS' },
             hardCurrency: { coCurrency: 'USD' },
+            localValue: 737.88,
+            currencyRelation: 1,
             formatNumber: (n: number) => String(n),
-            toLocalCurrencyByNuValueLocal: (n: number) => n * 737.88,
-            toHardCurrencyByNuValueLocal: (n: number) => n / 737.88,
+            toLocalCurrency: (n: number) => n * 737.88,
+            toHardCurrency: (n: number) => n / 737.88,
           },
         },
         { provide: GlobalConfigService, useValue: { get: () => 'RIF' } },
@@ -100,6 +102,17 @@ describe('ClientShareModalComponent', () => {
   it('CLI-CURRENCY-PDF: localCurrencyDefault=false usa USD como primaria en etiquetas', () => {
     expect(component.primaryCurrencyLabel).toBe('USD');
     expect(component.secondaryCurrencyLabel).toBe('BS');
+  });
+
+  it('CLI-PDF-002: tasa export/PDF usa localValue del dispositivo, no nuValueLocal del doc', () => {
+    const currency = TestBed.inject(CurrencyService) as { localValue: number };
+    currency.localValue = 788;
+    clientLogic.canShowConversion.and.returnValue(true);
+    component.document = [buildDoc({ nuValueLocal: 100 })];
+
+    expect(component.getDeviceExchangeRateForDisplay()).toBe('788');
+    const rows = (component as unknown as { buildPdfRows: (s: boolean) => string[][] }).buildPdfRows(true);
+    expect(rows[0][4]).toBe('788');
   });
 
   it('CLI-CURRENCY-PDF: toPrimaryCurrency devuelve monto en moneda fuerte cuando doc es USD', () => {
