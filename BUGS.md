@@ -669,6 +669,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-010] Anticipo automático no se encolaba/enviaba tras Enviar cobro guardado
+
+- **Síntoma:** Cobro guardado con anticipo activo (NCR/remanente/exceso): el cobro padre se enviaba pero el anticipo hijo no (o quedaba local Por Enviar sin POST).
+- **Causa:** `refreshAutomatedPrepaidBeforeSend` tras `saveCollection` podía dejar `creditBalance`/mapa en 0; el hijo se encolaba vía `saveSend` (async sin await) y `drainPendingQueue` terminaba antes del INSERT en `pending_transactions`.
+- **Fix:** Pasar snapshot al refresh + `ensureCreditBalancePrepaidFromPersistedDetails` y merge si el recalc borra estado; crear anticipo con `enqueuePending=false` e `insertPendingTransactionBatch` await en header antes de drenar.
+- **Evitar:** No encolar anticipo automático solo con `saveSend` en el flujo Enviar del header; no confiar en un solo recalc post-guardado sin fallback desde snapshot/details.
+- **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, spec COB-PREPAID-010.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-PREPAID-011] coType numérico desviaba Enviar al flujo legacy y vaciaba anticipoAutomatico
+
+- **Síntoma:** Cobro guardado/reabierto con anticipo listo en UI; al Enviar el hijo no se creaba o `createAnticipoCollectionPayment` veía `anticipoAutomatico` vacío.
+- **Causa:** SQLite devuelve `co_type` como number; `coType === '0'` en header era false → bloque legacy (500-538) llamaba `finishAfterSendNavigation()` → `resetCollectionSessionState()` antes de terminar `createAnticipoCollection` (fire-and-forget).
+- **Fix:** Normalizar `coType` al cargar lista/detalle y antes de Enviar; rutear cobro 0/4 con `usesCollectSendWithOptionalAutomatedPrepaid()` → `sendNormalCollectionWithOptionalPrepaid`; legacy solo anticipo/retención/IGTF sin anticipo automático hijo.
+- **Evitar:** No comparar `collection.coType` con `=== '0'`/`'1'` sin normalizar; no resetear sesión antes de persistir pago del anticipo automático.
+- **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, `cobros-list.component.ts`, spec COB-PREPAID-011.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.

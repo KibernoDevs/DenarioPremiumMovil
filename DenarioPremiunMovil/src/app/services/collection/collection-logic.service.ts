@@ -2154,14 +2154,57 @@ export class CollectionService {
     }
   }
 
+  /** coType en SQLite suele ser number; UI/comparaciones usan string de dígito (COB-PREPAID-011). */
+  public normalizeCollectionCoTypeValue(raw: unknown): string {
+    if (raw === null || raw === undefined || raw === '') {
+      return '0';
+    }
+    return String(raw).trim();
+  }
+
+  public normalizeCollectionHeaderCoType(collection?: Collection | null): void {
+    const target = collection ?? this.collection;
+    if (!target) {
+      return;
+    }
+    target.coType = this.normalizeCollectionCoTypeValue(
+      target.coType ?? this.coTypeModule ?? '0',
+    ) as Collection['coType'];
+  }
+
+  public isNormalCobroCollectionType(collection?: Collection | null): boolean {
+    const coType = this.normalizeCollectionCoTypeValue(
+      collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '0',
+    );
+    return coType === '0';
+  }
+
+  /** Cobro normal + Cobro 2.5: mismo flujo Enviar con anticipo automático opcional. */
+  public usesCollectSendWithOptionalAutomatedPrepaid(collection?: Collection | null): boolean {
+    const coType = this.normalizeCollectionCoTypeValue(
+      collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '0',
+    );
+    return coType === '0' || coType === '4';
+  }
+
+  public isAnticipoCollectionType(collection?: Collection | null): boolean {
+    return this.normalizeCollectionCoTypeValue(
+      collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '0',
+    ) === '1';
+  }
+
+  public isRetentionCollectionType(collection?: Collection | null): boolean {
+    return this.normalizeCollectionCoTypeValue(
+      collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '0',
+    ) === '2';
+  }
+
   private isAnticipoCollection(collection?: Collection): boolean {
-    const coType = String(collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '');
-    return coType === '1';
+    return this.isAnticipoCollectionType(collection);
   }
 
   private isRetentionCollection(collection?: Collection): boolean {
-    const coType = String(collection?.coType ?? this.collection?.coType ?? this.coTypeModule ?? '');
-    return coType === '2';
+    return this.isRetentionCollectionType(collection);
   }
 
   private resolveDetailRetentionAmount(detail: CollectionDetail): number {
@@ -2922,6 +2965,7 @@ export class CollectionService {
 
     this.rehydrateDiscountRemnantPrepaidFromPersistedDetails();
     await this.calcularMontos('', 0, true);
+    this.ensureCreditBalancePrepaidFromPersistedDetails();
     this.syncDiscountRemnantPrepaidTotal();
 
     if (this.hasRemnantOrCreditAutomatedPrepaid()) {
@@ -2943,12 +2987,63 @@ export class CollectionService {
     this.syncAddPaymentMethodDisabledState();
   }
 
-  refreshAutomatedPrepaidBeforeSend(): Promise<boolean> {
+  /**
+   * Si el neto de details es negativo (NCR), asegura creditBalance tras persistir/guardar
+   * cuando resolveFullyCovered no corrió o el header quedó desalineado (COB-PREPAID-010).
+   */
+  private ensureCreditBalancePrepaidFromPersistedDetails(): void {
+    if (this.coTypeModule !== '0' || !this.automatedPrepaid || this.isRetentionCollection()) {
+      return;
+    }
+    if (this.creditBalancePrepaidAmount > 0) {
+      return;
+    }
+    const net = this.accumulateAmountToPayFromCollectionDetails().monto;
+    if (!(net < 0)) {
+      return;
+    }
+    this.creditBalancePrepaidAmount = Math.abs(net);
+    this.isFullyCoveredCollection = true;
+    this.efectivoRequerido = 0;
+    if (Number(this.montoTotalPagar ?? 0) > 0) {
+      this.montoTotalPagar = 0;
+      this.montoTotalPagarConversion = 0;
+      this.collection.nuAmountFinal = 0;
+      this.collection.nuAmountPaid = 0;
+      this.collection.nuAmountFinalConversion = 0;
+      this.collection.nuAmountPaidConversion = 0;
+    }
+  }
+
+  /** Restaura remanente/NCR del snapshot de Enviar si el recalc los borró (cobro guardado). */
+  private mergeAutomatedPrepaidStateAfterSendRecalc(
+    sendSnapshot: ReturnType<CollectionService['captureAutomatedPrepaidSendSnapshot']> | null | undefined,
+  ): void {
+    if (!sendSnapshot) {
+      return;
+    }
+    const hadRemnantOrCredit = (sendSnapshot.creditBalancePrepaidAmount ?? 0) > 0
+      || (sendSnapshot.discountRemnantPrepaidAmount ?? 0) > 0
+      || (sendSnapshot.discountRemnantPrepaidByDocument?.size ?? 0) > 0;
+    if (!hadRemnantOrCredit || this.hasRemnantOrCreditAutomatedPrepaid()) {
+      return;
+    }
+    this.applyAutomatedPrepaidSendSnapshot(sendSnapshot);
+    this.rehydrateDiscountRemnantPrepaidFromPersistedDetails();
+    this.syncDiscountRemnantPrepaidTotal();
+    this.ensureCreditBalancePrepaidFromPersistedDetails();
+  }
+
+  refreshAutomatedPrepaidBeforeSend(
+    sendSnapshot?: ReturnType<CollectionService['captureAutomatedPrepaidSendSnapshot']> | null,
+  ): Promise<boolean> {
     this.syncExchangeRateToCollectionHeader();
     this.rehydrateDiscountRemnantPrepaidFromPersistedDetails();
     this.syncDiscountRemnantPrepaidTotal();
     // forceRecalc: stDelivery ya es TO_SEND al Enviar; evitar rama preserve/nuAmountTotal.
     return this.calcularMontos('', 0, true).then(async () => {
+      this.ensureCreditBalancePrepaidFromPersistedDetails();
+      this.mergeAutomatedPrepaidStateAfterSendRecalc(sendSnapshot);
       this.syncDiscountRemnantPrepaidTotal();
 
       if (this.hasRemnantOrCreditAutomatedPrepaid()) {
@@ -2964,6 +3059,9 @@ export class CollectionService {
         } else {
           this.resetAutomatedPrepaid();
         }
+      } else if (this.hasRemnantOrCreditAutomatedPrepaid()
+        && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)) {
+        this.ensureAutomatedPrepaidPaymentTemplate();
       }
       return this.shouldCreateAutomatedPrepaidOnSend();
     });
@@ -9961,7 +10059,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.daCollection = res.rows.item(0).da_collection;
         collection.naResponsible = res.rows.item(0).na_responsible;
         collection.coCurrency = res.rows.item(0).co_currency;
-        collection.coType = res.rows.item(0).co_type;
+        collection.coType = this.normalizeCollectionCoTypeValue(res.rows.item(0).co_type) as Collection['coType'];
         collection.txComment = res.rows.item(0).tx_comment;
         collection.lbClient = res.rows.item(0).lb_client;
         collection.naClient = res.rows.item(0).lb_client;
@@ -10205,7 +10303,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         respCollect.daRate = res.rows.item(i).da_rate;
         respCollect.naResponsible = res.rows.item(i).na_responsible;
         respCollect.coCurrency = res.rows.item(i).co_currency;
-        respCollect.coType = res.rows.item(i).co_type;
+        respCollect.coType = this.normalizeCollectionCoTypeValue(res.rows.item(i).co_type) as Collection['coType'];
         respCollect.txComment = res.rows.item(i).tx_comment;
         respCollect.lbClient = res.rows.item(i).lb_client;
         respCollect.idClient = res.rows.item(i).id_client;
