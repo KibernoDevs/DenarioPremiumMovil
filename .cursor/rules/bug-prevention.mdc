@@ -54,6 +54,8 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Anticipo remanente/NCR: Otros monto bloqueado (gris/disabled); comentario obligatorio al Enviar aunque `requiredComment` OFF — `COB-PREPAID-006`.
 - Cobro SAVED + NCR: neto desde details (no header obsoleto); preserve recalcula `creditBalancePrepaidAmount` — `COB-PREPAID-008`.
 - Reabrir cobro guardado: rehidratar remanente descuento desde details + `rehydrateAutomatedPrepaidForPersistedCollection` (mapa no persistido); NCR/remanente activa anticipo aunque `existPartialPayment` — `COB-PREPAID-009`.
+- Enviar cobro guardado + anticipo: `refreshAutomatedPrepaidBeforeSend(snapshot)`; hijo con `enqueuePending=false` + pending await en header (no solo `saveSend`) — `COB-PREPAID-010`.
+- `coType` desde SQLite puede ser number: normalizar y usar `usesCollectSendWithOptionalAutomatedPrepaid()` (no `coType === '0'` crudo en header) — `COB-PREPAID-011`.
 - Clientes export PDF/modal: misma presentación que tabla detalle (moneda doc + `convertirMonto`) — `CLI-PDF-003`.
 
 ## Inventarios

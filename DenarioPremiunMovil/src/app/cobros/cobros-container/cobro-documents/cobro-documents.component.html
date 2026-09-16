@@ -341,16 +341,16 @@
   }
     </ion-grid>
       </div>
+      </div>
     </div>
   </div>
-</div>
 
 </div>
 }
 
 </div>
 
-@if(canShowDocumentPagination){
+  @if(canShowDocumentPagination){
 <nav class="document-pagination document-pagination--module-footer"
   aria-label="Paginacion de documentos">
     <button type="button" class="document-pagination__btn" (click)="goToPreviousDocumentsPage()"
@@ -370,7 +370,7 @@
       <ion-icon name="chevron-forward-outline"></ion-icon>
     </button>
   </nav>
-}
+  }
 </div>
 }
 
@@ -898,9 +898,9 @@
                   <ion-input label="{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}:"
                     [(ngModel)]="this.collectService.documentSaleOpen.daVoucher"
                     label-placement="floating" fill="outline" type="date_event" [id]="'inputCalendar'" [ngClass]="{
-                      'inp-write': this.collectService.validateDaVoucher,
-                      'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
-                    }" [disabled]="!this.collectService.validNuRetention">
+                                              'inp-write': this.collectService.validateDaVoucher,
+                                              'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
+                                            }" [disabled]="!this.collectService.validNuRetention">
                   </ion-input>
                   @if(collectService.sendValidationAttempted && this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
                   <ion-label color="danger" class="campoObligatorio">
@@ -931,12 +931,12 @@
 
                 <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
-                    label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
+                      label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                     [value]="displayRetention2 || formatFromCents(centsRetention2)"
                     (keydown)="onRetention2KeyDown($event)" (focus)="onRetention2Focus()" (blur)="onRetention2Blur()"
                     [disabled]="!this.collectService.validNuRetention" (paste)="onRetention2Paste($event)"
                     (input)="onRetention2Input($event)">
-                  </ion-input>
+                    </ion-input>
                 </ion-col>
                 }
                 }
@@ -954,55 +954,55 @@
             @if(this.collectService.enablePartialPayment){
             @if(!this.hasSelectedOrManualCollectDiscounts()){
             <ion-row class="detail-doc-modal-footer__partial-row">
-              <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
-                <ion-label>
-                  {{this.collectService.collectionTags.get('COB_PAGO_PARCIAL')}}:
-                </ion-label>
-              </ion-col>
-              <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
+                <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
+                  <ion-label>
+                    {{this.collectService.collectionTags.get('COB_PAGO_PARCIAL')}}:
+                  </ion-label>
+                </ion-col>
+                <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
                 <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.isPaymentPartial"
-                  (ionChange)="partialPay($event)">
-                </ion-toggle>
-              </ion-col>
-            </ion-row>
+                    (ionChange)="partialPay($event)">
+                  </ion-toggle>
+                </ion-col>
+              </ion-row>
             }
             }
 
             <!-- MONTO A PAGAR -->
             <ion-row>
-              <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                <ion-input
-                  label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
-                  label-placement="floating" fill="outline" color="primary" type="text"
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
+                label-placement="floating" fill="outline" color="primary" type="text"
                   [value]="displayAmountPaid || formatFromCents(centsAmountPaid) || currencyService.formatNumber(collectService.amountPaidDoc)"
-                  inputmode="numeric" (keydown)="onAmountPaidKeyDown($event)" (focus)="onAmountPaidFocus()"
-                  (blur)="onAmountPaidBlur()" (input)="onAmountPaidInput($event)" required class="customInput"
-                  [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
-                  min="0" [readonly]="!collectService.isPaymentPartial">
-                </ion-input>
+                inputmode="numeric" (keydown)="onAmountPaidKeyDown($event)" (focus)="onAmountPaidFocus()"
+                (blur)="onAmountPaidBlur()" (input)="onAmountPaidInput($event)" required class="customInput"
+                [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
+                min="0" [readonly]="!collectService.isPaymentPartial">
+              </ion-input>
                 @if(collectService.sendValidationAttempted && !this.collectService.amountPaid){
-                <ion-label color="danger" class="campoObligatorio">
-                  Este campo es obligatorio
-                </ion-label>
-                }
-              </ion-col>
+              <ion-label color="danger" class="campoObligatorio">
+                Este campo es obligatorio
+              </ion-label>
+              }
+            </ion-col>
             </ion-row>
 
             <!-- BOTONES -->
-            <ion-row>
+                <ion-row>
               <ion-col size="6" size-sm="6" size-xs="6">
-                <ion-button expand="block" size="small" color="light"
-                  (click)="saveDocumentSale(false)">{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
-                </ion-button>
-              </ion-col>
+                    <ion-button expand="block" size="small" color="light"
+                      (click)="saveDocumentSale(false)">{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
+                    </ion-button>
+                  </ion-col>
               <ion-col size="6" size-sm="6" size-xs="6">
-                <ion-button expand="block" size="small" class="botonAddVerde" (click)="saveDocumentSale(true)"
-                  [disabled]="disabledSaveButton">
-                  {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_GUARDAR')}}
-                </ion-button>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
+                    <ion-button expand="block" size="small" class="botonAddVerde" (click)="saveDocumentSale(true)"
+                      [disabled]="disabledSaveButton">
+                      {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_GUARDAR')}}
+                    </ion-button>
+                  </ion-col>
+                </ion-row>
+              </ion-grid>
         </ion-toolbar>
       </ion-footer>
     </ng-template>
@@ -1352,9 +1352,9 @@
               <ion-input label="{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}:"
                 [(ngModel)]="this.collectService.documentSaleOpen.daVoucher"
                 label-placement="floating" fill="outline" type="date_event" [id]="'inputCalendar'" [ngClass]="{
-                  'inp-write': this.collectService.validateDaVoucher,
-                  'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
-                }" [disabled]="!this.collectService.validNuRetention">
+                                      'inp-write': this.collectService.validateDaVoucher,
+                                      'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
+                                    }" [disabled]="!this.collectService.validNuRetention">
               </ion-input>
               @if(collectService.sendValidationAttempted && this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
               <ion-label color="danger" class="campoObligatorio">
@@ -1385,12 +1385,12 @@
 
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
-                label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
+                  label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                 [value]="displayRetention2 || formatFromCents(centsRetention2)"
                 (keydown)="onRetention2KeyDown($event)" (focus)="onRetention2Focus()" (blur)="onRetention2Blur()"
                 [disabled]="!this.collectService.validNuRetention" (paste)="onRetention2Paste($event)"
                 (input)="onRetention2Input($event)">
-              </ion-input>
+                </ion-input>
             </ion-col>
             }
             <!-- RETENCIONES LEGACY -->
@@ -1413,20 +1413,20 @@
       <ion-footer class="detail-doc-modal-footer">
         <ion-toolbar>
           <ion-grid class="contenedorModalActividades detail-doc-modal-footer__grid">
-            <ion-row>
+              <ion-row>
               <ion-col size="6" size-sm="6" size-xs="6">
-                <ion-button expand="block" size="small" color="light"
-                  (click)="saveDocumentSale(false)">{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
-                </ion-button>
-              </ion-col>
+                  <ion-button expand="block" size="small" color="light"
+                    (click)="saveDocumentSale(false)">{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
+                  </ion-button>
+                </ion-col>
               <ion-col size="6" size-sm="6" size-xs="6">
-                <ion-button expand="block" size="small" class="botonAddVerde" (click)="saveDocumentSale(true)"
-                  [disabled]="disabledSaveButton">
-                  {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_GUARDAR')}}
-                </ion-button>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
+                  <ion-button expand="block" size="small" class="botonAddVerde" (click)="saveDocumentSale(true)"
+                    [disabled]="disabledSaveButton">
+                    {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_GUARDAR')}}
+                  </ion-button>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
         </ion-toolbar>
       </ion-footer>
     </ng-template>

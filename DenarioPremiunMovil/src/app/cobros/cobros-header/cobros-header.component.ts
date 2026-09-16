@@ -393,7 +393,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.applyPersistSucceededBaseline();
       this.collectService.applyAutomatedPrepaidSendSnapshot(prepaidSendSnapshot);
 
-      const shouldCreatePrepaid = await this.collectService.refreshAutomatedPrepaidBeforeSend();
+      const shouldCreatePrepaid = await this.collectService.refreshAutomatedPrepaidBeforeSend(prepaidSendSnapshot);
       console.log('[CobrosHeader] anticipo automático al Enviar', {
         shouldCreatePrepaid,
         remnant: this.collectService.discountRemnantPrepaidAmount,
@@ -409,21 +409,28 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.sendCollection = true;
       await this.autoSend.drainPendingQueue(12, [coCollection]);
 
-      // 2) Anticipo automático: mismo encolado que exceso de pago (saveSend → PendingTransaction).
+      // 2) Anticipo automático: persistir hijo y encolar en pending con await (COB-PREPAID-010).
       let anticipoCoCollection: string | null = null;
       if (shouldCreatePrepaid) {
         this.collectService.ensureAutomatedPrepaidPaymentTemplate();
-        // enqueuePending=true (default): createAnticipoCollectionPayment → saveSendCollection
-        // → CobrosComponent.insertPendingTransaction + runPendingQueue (COB-PREPAID-002).
         anticipoCoCollection = await this.collectService.createAnticipoCollection(
           db,
           this.collectService.collection,
-          true,
+          false,
         );
         if (!anticipoCoCollection) {
           console.error('CobrosHeader: fallo al crear anticipo automático tras Enviar');
         } else {
-          console.log('[CobrosHeader] anticipo encolado vía saveSend', anticipoCoCollection);
+          const childPending = this.collectService.buildCollectPendingBatch(anticipoCoCollection);
+          let childQueued = await this.services.insertPendingTransactionBatch(db, childPending);
+          if (!childQueued) {
+            childQueued = await this.services.insertPendingTransaction(db, childPending[0]);
+          }
+          if (!childQueued) {
+            console.error('CobrosHeader: anticipo creado pero no se pudo encolar', anticipoCoCollection);
+          } else {
+            console.log('[CobrosHeader] anticipo encolado en pending_transactions', anticipoCoCollection);
+          }
           await this.autoSend.drainPendingQueue(12, [anticipoCoCollection]);
           // Tras 400 el anticipo sale de pending → failed; reintentar si sigue sin id de servidor.
           if (await this.autoSend.isCollectUnsent(anticipoCoCollection)) {
@@ -472,7 +479,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.sendBlockedByFields = true;
       this.collectService.updateSendButtonAvailability();
       const issue = blocking[0] ?? this.collectService.lastSendIssues[0];
-      if (this.collectService.collection.coType === '2') {
+      if (this.collectService.isRetentionCollectionType()) {
         this.collectService.retentionSendFocusDocIndex =
           this.collectService.findFirstIncompleteRetentionDocumentIndex();
       }
@@ -484,9 +491,10 @@ export class CobrosHeaderComponent implements OnInit {
     }
 
     this.collectService.collectionIsSave = true;
+    this.collectService.normalizeCollectionHeaderCoType(this.collectService.collection);
 
-    // Cobro normal Enviar: online=loading+AutoSend; offline=aviso cola.
-    if (this.collectService.collection.coType === '0') {
+    // Cobro normal / Cobro 2.5: flujo COB-PREPAID-002 (anticipo antes de reset de sesión).
+    if (this.collectService.usesCollectSendWithOptionalAutomatedPrepaid()) {
       this.collectService.collection.stDelivery = 2;
       this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
       void this.sendNormalCollectionWithOptionalPrepaid().catch(err => {
@@ -497,52 +505,45 @@ export class CobrosHeaderComponent implements OnInit {
       return;
     }
 
-    this.messageService.showLoading().then(async () => {
-      if (this.collectService.collection.coType === '1') {
-        await this.collectService.calcularMontos('', 0);
-        this.collectService.syncAnticipoTotalsBeforePersist();
-      }
-
-      this.collectService.collection.stDelivery = 2;
-      this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
-
-      this.collectService.saveCollection(
-        this.synchronizationServices.getDatabase(),
-        this.collectService.collection,
-        true,
-      ).then(response => {
-        this.adjuntoService.savePhotos(
-          this.synchronizationServices.getDatabase(),
-          this.collectService.collection.coCollection,
-          'cobros',
-        ).then(() => {
-          console.log(response);
-          this.collectService.applyPersistSucceededBaseline();
-          this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-          this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
-            if (shouldCreatePrepaid) {
-              this.collectService.createAnticipoCollection(
-                this.synchronizationServices.getDatabase(),
-                this.collectService.collection,
-              ).then(resp => {
-                console.log(resp, ' SE CREO ANTICIPO AUTOMATICO');
-                this.collectService.createAutomatedPrepaid = false;
-                this.collectService.anticipoAutomatico = [];
-              });
-            }
-
-            this.finishAfterSendNavigation();
-          });
-        });
-      });
+    void this.sendLegacyCollectionType().catch(err => {
+      console.error('CobrosHeader: error enviando cobro (legacy)', err);
+      this.collectService.collectionIsSave = false;
+      void this.messageService.hideLoading();
     });
+  }
+
+  /** Anticipo / retención / IGTF: sin anticipo automático hijo de cobro normal. */
+  private async sendLegacyCollectionType(): Promise<void> {
+    await this.messageService.showLoading();
+
+    if (this.collectService.isAnticipoCollectionType()) {
+      await this.collectService.calcularMontos('', 0);
+      this.collectService.syncAnticipoTotalsBeforePersist();
+    }
+
+    this.collectService.collection.stDelivery = 2;
+    this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
+
+    const db = this.synchronizationServices.getDatabase();
+    const coCollection = this.collectService.collection.coCollection;
+    const response = await this.collectService.saveCollection(
+      db,
+      this.collectService.collection,
+      true,
+    );
+    await this.adjuntoService.savePhotos(db, coCollection, 'cobros');
+    console.log(response);
+    this.collectService.applyPersistSucceededBaseline();
+    this.saveSendNewCollection(true, coCollection);
+    await this.finishAfterSendNavigation();
   }
 
   private persistSaveOnly(): void {
     this.collectService.collectionIsSave = true;
 
     this.messageService.showLoading().then(async () => {
-      if (this.collectService.collection.coType === '1') {
+      this.collectService.normalizeCollectionHeaderCoType(this.collectService.collection);
+      if (this.collectService.isAnticipoCollectionType()) {
         await this.collectService.calcularMontos('', 0);
         this.collectService.syncAnticipoTotalsBeforePersist();
       }
@@ -562,7 +563,7 @@ export class CobrosHeaderComponent implements OnInit {
         console.log(response);
         this.collectService.applyPersistSucceededBaseline();
         this.saveSendNewCollection(false, this.collectService.collection.coCollection);
-        switch (this.collectService.collection.coType) {
+        switch (this.collectService.normalizeCollectionCoTypeValue(this.collectService.collection.coType)) {
           case '0': {
             this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
             break;
@@ -614,7 +615,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.sendBlockedByFields = true;
         this.collectService.updateSendButtonAvailability();
         const issue = this.collectService.lastSendIssues[0];
-        if (this.collectService.collection.coType === '2') {
+        if (this.collectService.isRetentionCollectionType()) {
           this.collectService.retentionSendFocusDocIndex =
             this.collectService.findFirstIncompleteRetentionDocumentIndex();
         }
@@ -627,8 +628,9 @@ export class CobrosHeaderComponent implements OnInit {
 
       this.collectService.sendBlockedByFields = false;
       this.collectService.updateSendButtonAvailability();
+      this.collectService.normalizeCollectionHeaderCoType(this.collectService.collection);
 
-      switch (this.collectService.collection.coType) {
+      switch (this.collectService.normalizeCollectionCoTypeValue(this.collectService.collection.coType)) {
         case '0': {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
           break;

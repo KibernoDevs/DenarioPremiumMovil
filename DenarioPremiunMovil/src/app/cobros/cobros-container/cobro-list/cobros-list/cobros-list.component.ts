@@ -145,6 +145,7 @@ export class CobrosListComponent implements OnInit {
         this.collectService.enterpriseList = this.enterpriseServ.empresas;
         this.collectService.collection = {} as Collection;
         this.collectService.collection = this.collectService.listCollect[index];
+        this.collectService.normalizeCollectionHeaderCoType(this.collectService.collection);
         this.collectService.documentSales = [] as DocumentSale[];
         this.collectService.documentSalesBackup = [] as DocumentSale[];
         this.collectService.mapDocumentsSales.clear();

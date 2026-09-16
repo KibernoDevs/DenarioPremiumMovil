@@ -2454,6 +2454,69 @@ describe('CollectionService', () => {
         expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
       });
 
+      it('COB-PREPAID-011: coType numérico desde SQLite se normaliza a string', () => {
+        service.collection = { coType: 0 } as any;
+        service.normalizeCollectionHeaderCoType();
+        expect(service.collection.coType).toBe('0');
+        expect(service.isNormalCobroCollectionType()).toBeTrue();
+        expect(service.usesCollectSendWithOptionalAutomatedPrepaid()).toBeTrue();
+        service.collection = { coType: 4 } as any;
+        expect(service.usesCollectSendWithOptionalAutomatedPrepaid()).toBeTrue();
+        service.collection = { coType: 1 } as any;
+        expect(service.isAnticipoCollectionType()).toBeTrue();
+        expect(service.usesCollectSendWithOptionalAutomatedPrepaid()).toBeFalse();
+      });
+
+      it('COB-PREPAID-010: refresh al Enviar restaura snapshot si recalc pierde NCR (cobro guardado)', async () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.localCurrency = { coCurrency: 'USD' } as any;
+        service.collection = {
+          coCurrency: 'USD',
+          stDelivery: service.COLLECT_STATUS_TO_SEND,
+          stCollection: service.COLLECT_STATUS_TO_SEND,
+          nuAmountTotal: 1000,
+          nuAmountFinal: 1000,
+          collectionDetails: [
+            {
+              idDocument: 10,
+              coDocument: 'FAC-10',
+              nuBalanceDoc: 1000,
+              nuBalanceDocOriginal: 1000,
+              nuAmountPaid: 1000,
+            },
+            {
+              idDocument: 20,
+              coDocument: 'NCR-20',
+              nuBalanceDoc: -1500,
+              nuBalanceDocOriginal: -1500,
+              nuAmountPaid: -1500,
+            },
+          ],
+          collectionPayments: [{ coType: 'ot', coPaymentMethod: 'ot', nuAmountPartial: 0 }],
+        } as any;
+        service.pagoOtros = [{ monto: 0 } as any];
+        service.creditBalancePrepaidAmount = 500;
+        service.createAutomatedPrepaid = true;
+        service.anticipoAutomatico = [{ type: 'ot', posCollectionPayment: 0 }];
+        const sendSnapshot = service.captureAutomatedPrepaidSendSnapshot();
+
+        spyOn(service, 'calcularMontos').and.callFake(async () => {
+          service.creditBalancePrepaidAmount = 0;
+          service.discountRemnantPrepaidByDocument.clear();
+          service.discountRemnantPrepaidAmount = 0;
+          service.createAutomatedPrepaid = false;
+          service.anticipoAutomatico = [];
+          return true;
+        });
+
+        const shouldCreate = await service.refreshAutomatedPrepaidBeforeSend(sendSnapshot);
+
+        expect(service.creditBalancePrepaidAmount).toBe(500);
+        expect(shouldCreate).toBeTrue();
+        expect(service.anticipoAutomatico.length).toBeGreaterThan(0);
+      });
+
       it('COB-PREPAID-006: refreshAutomatedPrepaidBeforeSend con TO_SEND detecta NCR para anticipo', async () => {
         service.coTypeModule = '0';
         service.automatedPrepaid = true;

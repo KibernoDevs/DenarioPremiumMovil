@@ -445,7 +445,7 @@ export class CobrosGeneralComponent implements OnInit {
             this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
           }
           this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-          this.updateSelectedCurrency(this.collectService.collection.idCurrency);
+        this.updateSelectedCurrency(this.collectService.collection.idCurrency);
           return this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
         }).then(() => {
           this.collectService.restoreCollectionIgtfFields();
@@ -802,22 +802,22 @@ export class CobrosGeneralComponent implements OnInit {
               );
               this.collectService.syncAddPaymentMethodDisabledState();
             } else {
-              this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-                this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
-                this.getDocumentSalesFirstPageOptions()).then(() => {
-                  if (this.collectService.historicPartialPayment) {
-                    this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-                  }
-                  if (this.collectService.userCanSelectCollectDiscount) {
-                    this.collectService.getCollectDiscounts(
-                      this.synchronizationServices.getDatabase(),
-                      this.collectService.collection.idEnterprise
-                    );
-                  }
-                  this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+            this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
+              this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
+              this.getDocumentSalesFirstPageOptions()).then(() => {
+                if (this.collectService.historicPartialPayment) {
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+                }
+                if (this.collectService.userCanSelectCollectDiscount) {
+                  this.collectService.getCollectDiscounts(
+                    this.synchronizationServices.getDatabase(),
+                    this.collectService.collection.idEnterprise
+                  );
+                }
+                this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                   this.collectService.syncAddPaymentMethodDisabledState();
 
-                });
+              });
             }
           })
 
