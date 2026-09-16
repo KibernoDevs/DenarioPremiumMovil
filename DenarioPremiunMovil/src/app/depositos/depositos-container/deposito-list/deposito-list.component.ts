@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { InfiniteScrollCustomEvent } from '@ionic/angular';
+import { InfiniteScrollCustomEvent, ViewWillEnter } from '@ionic/angular';
 import { Deposit } from 'src/app/modelos/tables/deposit';
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
@@ -16,7 +16,7 @@ import { LOCAL_LIST_PAGE_SIZE, paginateFilteredList } from 'src/app/utils/local-
   styleUrls: ['./deposito-list.component.scss'],
   standalone: false
 })
-export class DepositoListComponent implements OnInit {
+export class DepositoListComponent implements OnInit, ViewWillEnter {
 
   public depositService = inject(DepositService)
   geoLoc = inject(GeolocationService);
@@ -65,6 +65,15 @@ export class DepositoListComponent implements OnInit {
       })
     }
     this.resetListPagination();
+  }
+
+  ionViewWillEnter(): void {
+    if (this.depositService.itemListaDepositos.length === 0) {
+      return;
+    }
+    void this.depositService.refreshDepositListApprovalLabels(this.db.getDatabase()).then(() => {
+      this.resetListPagination();
+    });
   }
 
   private matchesSearch(deposit: ItemListaDepositos): boolean {
@@ -205,7 +214,12 @@ export class DepositoListComponent implements OnInit {
     this.resetListPagination();
   }
 
-  getStatusOrderName(stDeposito: number, stDelivery: number, naStatus: unknown): string {
-    return this.depositService.getStatusOrderName(stDeposito, stDelivery, naStatus);
+  getStatusOrderName(
+    stDeposito: number,
+    stDelivery: number,
+    naStatus: unknown,
+    idDeposit?: number,
+  ): string {
+    return this.depositService.getStatusOrderName(stDeposito, stDelivery, naStatus, idDeposit);
   }
 }
