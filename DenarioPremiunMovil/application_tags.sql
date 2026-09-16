@@ -357,6 +357,7 @@ INSERT INTO public.application_tags(
 	('COB_DAVOUCHER','COB','COBROS','ESP','Fecha Comp Ret'),
 	('COB_MSG_AUTOMATED_PREPAID','COB','COBROS','ESP','Se creará un anticipo automático por el monto excedente de {currency} {amount}. Se enviará un anticipo junto al cobro.'),
 	('COB_MSG_DISCOUNT_REMNANT_PREPAID','COB','COBROS','ESP','El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por {currency} {amount}?'),
+	('COB_MSG_NCR_CREDIT_PREPAID','COB','COBROS','ESP','Se creará un anticipo automático por el saldo a favor de {currency} {amount}. Se enviará un anticipo junto al cobro.'),
 	('COB_LABEL_MONTO','COB','COBROS','ESP','Monto'),
 	('COB_LABEL_NRO_RECIBO','COB','COBROS','ESP','Nro. Recibo'),
 	('COB_LABEL_ANTICIPO_AUTOMATICO','COB','COBROS','ESP','Este pago creó el anticipo automático'),

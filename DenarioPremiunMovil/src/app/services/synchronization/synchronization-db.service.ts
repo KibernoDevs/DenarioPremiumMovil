@@ -1749,6 +1749,8 @@ export class SynchronizationDBService {
         if (res) {
           void this.depositService.checkHistoricDeposits(this.database).then(() => {
             return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+          }).then(() => {
+            return this.depositService.refreshDepositListApprovalLabels(this.database);
           });
         }
       });
@@ -1837,7 +1839,9 @@ export class SynchronizationDBService {
     return this.depositService.mergeSyncedDepositsWithLocal(this.database, arr).then((merged) => {
       return this.depositService.saveDepositBatch(this.database, merged).then((result) => {
         // Reaplica rechazo tras sync de deposits (la tabla llega después de transaction_statuses).
-        return this.depositService.releaseCollectsFromRefusedDeposits(this.database).then(() => result);
+        return this.depositService.releaseCollectsFromRefusedDeposits(this.database).then(() => {
+          return this.depositService.refreshDepositListApprovalLabels(this.database).then(() => result);
+        });
       });
     });
   }

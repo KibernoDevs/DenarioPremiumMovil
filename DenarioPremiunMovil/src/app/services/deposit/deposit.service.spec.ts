@@ -207,9 +207,20 @@ describe('DepositService', () => {
       expect(label).toBe('Guardado');
     });
 
-    it('getStatusOrderName con st_deposit=0 deriva de st_delivery como Cobros', () => {
+    it('getStatusOrderName borrador local sin id ignora na_status si st_delivery=0', () => {
       const label = service.getStatusOrderName(0, 0, { na_status: 'Recaudado' });
       expect(label).toBe('');
+    });
+
+    it('DEP-STATUS-001: con id servidor muestra Pendiente/Por Aprobar del historial', () => {
+      expect(service.getStatusOrderName(0, 0, 'Pendiente', 43)).toBe('Pendiente');
+      expect(service.getStatusOrderName(3, 0, 'Por Aprobar', 46)).toBe('Por Aprobar');
+    });
+
+    it('mapDepositHistoryStatusToNaStatus normaliza fila SQL y fallback Enviado', () => {
+      expect(service.mapDepositHistoryStatusToNaStatus({ na_status: ' Pendiente ' })).toBe('Pendiente');
+      expect(service.mapDepositHistoryStatusToNaStatus('Enviado')).toBe('');
+      expect(service.mapDepositHistoryStatusToNaStatus('Error al obtener el estado')).toBe('');
     });
 
     it('getStatusOrderName no deja en blanco con st_deposit=0 y st_delivery enviado', () => {
@@ -260,6 +271,7 @@ describe('DepositService', () => {
         service.itemListaDepositos[0].stDeposit,
         service.itemListaDepositos[0].stDelivery,
         service.itemListaDepositos[0].naStatus,
+        service.itemListaDepositos[0].idDeposit,
       )).toBe('Enviado');
     });
   });

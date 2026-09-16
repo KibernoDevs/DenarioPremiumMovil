@@ -1610,9 +1610,7 @@ export class DepositService {
               stDeposit: item.stDeposit,
               stDelivery: item.stDelivery,
               daDeposit: this.normalizeDaDeposit(item.daDeposit),
-              naStatus: typeof status === 'object' && status != null
-                ? String((status as { na_status?: string }).na_status ?? '')
-                : '',
+              naStatus: this.mapDepositHistoryStatusToNaStatus(status),
               nuAmountDoc: item.nuAmountDoc.toFixed(this.parteDecimal),
               coCurrency: item.coCurrency,
               coBank: item.coBank
@@ -2084,10 +2082,21 @@ export class DepositService {
       || delivery === DEPOSITO_STATUS_TO_SEND;
   }
 
-  getStatusOrderName(stDeposit: number, stDelivery: number, naStatus: unknown): string {
+  getStatusOrderName(
+    stDeposit: number,
+    stDelivery: number,
+    naStatus: unknown,
+    idDeposit?: number,
+  ): string {
     const delivery = Number(stDelivery);
     const deposit = Number(stDeposit);
     const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
+    const serverId = Number(idDeposit ?? 0);
+
+    // Depósito en servidor: etiqueta de aprobación Web (transaction_statuses).
+    if (serverId > 0 && resolvedNaStatus) {
+      return resolvedNaStatus;
+    }
 
     if (this.isLocalDepositPipelineStatus(deposit, delivery)) {
       return this.getStatus(delivery, resolvedNaStatus);
@@ -2097,6 +2106,88 @@ export class DepositService {
       return resolvedNaStatus;
     }
     return this.getStatus(delivery, resolvedNaStatus);
+  }
+
+  /** Normaliza respuesta de HistoryTransaction.getStatusTransaction (tipo 6). */
+  mapDepositHistoryStatusToNaStatus(status: unknown): string {
+    if (status == null) {
+      return '';
+    }
+    if (typeof status === 'object') {
+      return String((status as { na_status?: string }).na_status ?? '').trim();
+    }
+    if (typeof status === 'string') {
+      const trimmed = status.trim();
+      if (!trimmed || trimmed.startsWith('Error')) {
+        return '';
+      }
+      // Sin filas en historial el servicio devuelve "Enviado"; el fallback lo pone getStatus.
+      if (trimmed === 'Enviado') {
+        return '';
+      }
+      return trimmed;
+    }
+    return String(status).trim();
+  }
+
+  /**
+   * Tras sync: actualiza naStatus y st_deposit/st_delivery en lista en memoria
+   * (sin reconstruir toda la lista).
+   */
+  async refreshDepositListApprovalLabels(dbServ: SQLiteObject): Promise<void> {
+    if (!Array.isArray(this.itemListaDepositos) || this.itemListaDepositos.length === 0) {
+      return;
+    }
+
+    const serverIds = Array.from(new Set(
+      this.itemListaDepositos
+        .map((item) => Number(item.idDeposit ?? 0))
+        .filter((id) => id > 0),
+    ));
+    if (serverIds.length === 0) {
+      return;
+    }
+
+    const placeholders = serverIds.map(() => '?').join(',');
+    const rowById = new Map<number, { stDeposit: number; stDelivery: number }>();
+    try {
+      const res = await dbServ.executeSql(
+        `SELECT id_deposit, st_deposit, st_delivery FROM deposits WHERE id_deposit IN (${placeholders})`,
+        serverIds,
+      );
+      for (let i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        rowById.set(Number(row.id_deposit), {
+          stDeposit: Number(row.st_deposit ?? 0),
+          stDelivery: Number(row.st_delivery ?? 0),
+        });
+      }
+    } catch (err) {
+      console.error('[refreshDepositListApprovalLabels] deposits read error:', err);
+    }
+
+    await Promise.all(this.itemListaDepositos.map(async (item) => {
+      const id = Number(item.idDeposit ?? 0);
+      if (id <= 0) {
+        return;
+      }
+      const row = rowById.get(id);
+      if (row) {
+        item.stDeposit = row.stDeposit;
+        item.stDelivery = row.stDelivery;
+        const deposit = this.listDeposits?.find((d) => Number(d.idDeposit ?? 0) === id);
+        if (deposit) {
+          deposit.stDeposit = row.stDeposit;
+          deposit.stDelivery = row.stDelivery;
+        }
+      }
+      try {
+        const status = await this.historyTransaction.getStatusTransaction(dbServ, 6, id);
+        item.naStatus = this.mapDepositHistoryStatusToNaStatus(status);
+      } catch (err) {
+        console.error('[refreshDepositListApprovalLabels] history error:', err);
+      }
+    }));
   }
 
   private resolveNaStatusLabel(naStatus: unknown): string {
