@@ -1,0 +1,109 @@
+{
+ "tag": "act_vend_pedido",
+ "pre": {
+  "clas": "RDV",
+  "cumpl": "Pedido",
+  "d": "01/09/2026",
+  "h": "15/09/2026"
+ },
+ "marcados": 7,
+ "listaMedio": [
+  "ALEJANDRA RODRIGUEZ",
+  "ALEJANDRA RODRIGUEZ",
+  "EVA MEDINA",
+  "EVA MEDINA",
+  "LEANDRO REBOLLEDO",
+  "LEANDRO REBOLLEDO",
+  "MARIA JOSE PEREZ",
+  "MARIA JOSE PEREZ",
+  "MIGUEL PARRA",
+  "MIGUEL PARRA",
+  "VIVIANA ESCALANTE",
+  "VIVIANA ESCALANTE",
+  "YENNI ALVAREZ",
+  "YENNI ALVAREZ"
+ ],
+ "total": "7",
+ "cabec": [
+  "Vendedor",
+  "Clientes",
+  "Clientes Activados",
+  "Clientes Inactivos",
+  "% Activación",
+  "Clientes Nuevos",
+  "Clientes Nuevos Activados",
+  "% Act Nuevos"
+ ],
+ "filas": [
+  [
+   "ALEJANDRA RODRIGUEZ",
+   "105",
+   "0",
+   "105",
+   "0 %",
+   "1",
+   "0",
+   "0 %"
+  ],
+  [
+   "EVA MEDINA",
+   "150",
+   "77",
+   "73",
+   "51,33 %",
+   "1",
+   "0",
+   "0 %"
+  ],
+  [
+   "LEANDRO REBOLLEDO",
+   "172",
+   "84",
+   "88",
+   "48,83 %",
+   "4",
+   "0",
+   "0 %"
+  ],
+  [
+   "MARIA JOSE PEREZ",
+   "0",
+   "0",
+   "0",
+   "0 %",
+   "0",
+   "0",
+   "0 %"
+  ],
+  [
+   "MIGUEL PARRA",
+   "136",
+   "0",
+   "136",
+   "0 %",
+   "1",
+   "0",
+   "0 %"
+  ],
+  [
+   "VIVIANA ESCALANTE",
+   "172",
+   "1",
+   "171",
+   "0,58 %",
+   "3",
+   "0",
+   "0 %"
+  ],
+  [
+   "YENNI ALVAREZ",
+   "104",
+   "0",
+   "104",
+   "0 %",
+   "1",
+   "0",
+   "0 %"
+  ]
+ ]
+}

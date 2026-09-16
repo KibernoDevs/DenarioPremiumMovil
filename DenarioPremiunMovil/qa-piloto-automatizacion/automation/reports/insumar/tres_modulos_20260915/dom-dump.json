@@ -1,0 +1,1321 @@
+[
+ {
+  "tag": "REP-PlanCuota",
+  "ruta": "/pages/reportePlanCuota",
+  "url": "/DenarioPremium/pages/reportePlanCuota",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:clasificacion",
+     "n": 7,
+     "opts": [
+      " ||| Visualización",
+      "Empresa ||| Empresa",
+      "Canales de distribución ||| Canales de distribución",
+      "Zonas de venta-1-Pais ||| Pais",
+      "Zonas de venta-2-Estado ||| Estado",
+      "Líneas de producto-1-Linea ||| Linea",
+      "Líneas de producto-2-Proveedor ||| Proveedor"
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:unidad",
+     "n": 7,
+     "opts": [
+      " ||| Unidad de Venta",
+      "BTO - BULTO - UNIT ||| BULTO",
+      "DISP - DISPLAY - UNIT ||| DISPLAY",
+      "KG - KILOGRAMOS - UNIT ||| KILOGRAMOS",
+      "UND - UNIDADES - UNIT ||| UNIDADES",
+      "BS - BS - CURRENCY ||| BS",
+      "US$ - US$ - CURRENCY ||| US$"
+     ]
+    },
+    {
+     "id": "form:tablaComparativoPlanCuota_reflowDD",
+     "n": 8,
+     "opts": [
+      "0_0 ||| Ascendente",
+      "0_1 ||| Descendente",
+      "1_0 ||| Plan Ascendente",
+      "1_1 ||| Plan Descendente",
+      "2_0 ||| Ascendente",
+      "2_1 ||| Descendente",
+      "3_0 ||| Diferencia Plan Vs Ascendente",
+      "3_1 ||| Diferencia Plan Vs Descendente"
+     ]
+    },
+    {
+     "id": "form:tablaComparativoPlanCuota:j_id21",
+     "n": 3,
+     "opts": [
+      "50 ||| 50",
+      "100 ||| 100",
+      "200 ||| 200"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:fechaDesde_input",
+     "val": "01/09/2026"
+    },
+    {
+     "id": "form:j_idt115:fechaHasta_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:botonLimpiar ||| Limpiar",
+    "form:tablaComparativoPlanCuota:verGrafico ||| Ver Gráfico",
+    "form:download ||| Descargar Gráfico"
+   ],
+   "grids": [
+    "form:tablaComparativoPlanCuota"
+   ],
+   "widgets": [
+    "widget_form_j_idt115_clasificacion",
+    "widget_form_j_idt115_checkboxValor"
+   ],
+   "texto": "Reportes | PlanCuota | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on re"
+  }
+ },
+ {
+  "tag": "REP-CumplCuota",
+  "ruta": "/pages/reporteCumplimientoCuota",
+  "url": "/DenarioPremium/pages/reporteCumplimientoCuota",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt105",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt116:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt116:codRdv",
+     "n": 8,
+     "opts": [
+      "Todos ||| Todos",
+      "R015 ||| R015 ALEJANDRA RODRIGUEZ",
+      "R003 ||| R003 EVA MEDINA",
+      "R016 ||| R016 LEANDRO REBOLLEDO",
+      "P001 ||| P001 MARIA JOSE PEREZ",
+      "R007 ||| R007 MIGUEL PARRA",
+      "R013 ||| R013 VIVIANA ESCALANTE",
+      "R009 ||| R009 YENNI ALVAREZ"
+     ]
+    },
+    {
+     "id": "form:j_idt116:clasificacion",
+     "n": 6,
+     "opts": [
+      " ||| Visualización",
+      "Empresa ||| Empresa",
+      "Canales de distribución ||| Canales de distribución",
+      "Productos ||| Productos",
+      "Líneas de producto-1 ||| Linea",
+      "Líneas de producto-2 ||| Proveedor"
+     ]
+    },
+    {
+     "id": "form:j_idt116:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt116:unidad",
+     "n": 7,
+     "opts": [
+      " ||| Unidad de Venta",
+      "BTO - BULTO - UNIT ||| BULTO",
+      "DISP - DISPLAY - UNIT ||| DISPLAY",
+      "KG - KILOGRAMOS - UNIT ||| KILOGRAMOS",
+      "UND - UNIDADES - UNIT ||| UNIDADES",
+      "BS - BS - CURRENCY ||| BS",
+      "US$ - US$ - CURRENCY ||| US$"
+     ]
+    },
+    {
+     "id": "form:tablaCumplimientoCuota_reflowDD",
+     "n": 22,
+     "opts": [
+      "0_0 ||| Cartera de clientes Ascendente",
+      "0_1 ||| Cartera de clientes Descendente",
+      "1_0 ||| Brecha Cuota () Ascendente",
+      "1_1 ||| Brecha Cuota () Descendente",
+      "2_0 ||| Descripción Ascendente",
+      "2_1 ||| Descripción Descendente",
+      "3_0 ||| Unidades Devueltas Ascendente",
+      "3_1 ||| Unidades Devueltas Descendente",
+      "4_0 ||| () Ascendente",
+      "4_1 ||| () Descendente",
+      "5_0 ||| % Activación Clientes Ascendente",
+      "5_1 ||| % Activación Clientes Descendente",
+      "6_0 ||| () Ascendente",
+      "6_1 ||| () Descendente",
+      "7_0 ||| % Cumplimiento Ascendente",
+      "7_1 ||| % Cumplimiento Descendente",
+      "8_0 ||| % Act clientes nuevos Ascendente",
+      "8_1 ||| % Act clientes nuevos Descendente",
+      "9_0 ||| Cuota () Ascendente",
+      "9_1 ||| Cuota () Descendente",
+      "10_0 ||| Cantidad Neta Ascendente",
+      "10_1 ||| Cantidad Neta Descendente"
+     ]
+    },
+    {
+     "id": "form:tablaCumplimientoCuota:j_id21",
+     "n": 3,
+     "opts": [
+      "50 ||| 50",
+      "100 ||| 100",
+      "200 ||| 200"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt116:fechaDesde_input",
+     "val": "01/09/2026"
+    },
+    {
+     "id": "form:j_idt116:fechaHasta_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt51:confirm ||| Ok",
+    "j_idt51:timeoutLogout ||| Cerrar Sesión",
+    "j_idt66:j_idt79 ||| ui-button",
+    "j_idt66:j_idt80 ||| ui-button",
+    "j_idt66:j_idt81 ||| ui-button",
+    "j_idt66:j_idt97 ||| ui-button",
+    "j_idt66:j_idt98 ||| ui-button",
+    "j_idt66:j_idt99 ||| ui-button",
+    "form:j_idt116:ajax ||| Buscar",
+    "form:j_idt116:botonLimpiar ||| Limpiar",
+    "form:tablaCumplimientoCuota:verGrafico ||| Ver Gráfico",
+    "form:download ||| Descargar Gráfico"
+   ],
+   "grids": [
+    "form:tablaCumplimientoCuota"
+   ],
+   "widgets": [
+    "widget_form_j_idt116_codRdv",
+    "widget_form_j_idt116_clasificacion",
+    "widget_form_j_idt116_checkboxValor"
+   ],
+   "texto": "Reportes | CumplimientoCuota | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowe"
+  }
+ },
+ {
+  "tag": "REP-ActivClientes",
+  "ruta": "/pages/reporteActivacionClientes",
+  "url": "/DenarioPremium/pages/reporteActivacionClientes",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:clasificacion",
+     "n": 8,
+     "opts": [
+      " ||| Visualización",
+      "Empresa ||| Empresa",
+      "Canales de distribución ||| Canales de distribución",
+      "RDV ||| Vendedores",
+      "Zonas de venta-1-Pais ||| Pais",
+      "Zonas de venta-2-Estado ||| Estado",
+      "Líneas de producto-1-Linea ||| Linea",
+      "Líneas de producto-2-Proveedor ||| Proveedor"
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:tablaComparativoPlanCuota_reflowDD",
+     "n": 14,
+     "opts": [
+      "0_0 ||| Clientes Inactivos Ascendente",
+      "0_1 ||| Clientes Inactivos Descendente",
+      "1_0 ||| % Act Nuevos Ascendente",
+      "1_1 ||| % Act Nuevos Descendente",
+      "2_0 ||| Clientes Activados Ascendente",
+      "2_1 ||| Clientes Activados Descendente",
+      "3_0 ||| Clientes Nuevos Activados Ascendente",
+      "3_1 ||| Clientes Nuevos Activados Descendente",
+      "4_0 ||| Clientes Nuevos Ascendente",
+      "4_1 ||| Clientes Nuevos Descendente",
+      "5_0 ||| Clientes Ascendente",
+      "5_1 ||| Clientes Descendente",
+      "6_0 ||| % Activación Ascendente",
+      "6_1 ||| % Activación Descendente"
+     ]
+    },
+    {
+     "id": "form:tablaComparativoPlanCuota:j_id21",
+     "n": 3,
+     "opts": [
+      "50 ||| 50",
+      "100 ||| 100",
+      "200 ||| 200"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:fechaDesde_input",
+     "val": "01/09/2026"
+    },
+    {
+     "id": "form:j_idt115:fechaHasta_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:botonLimpiar ||| Limpiar",
+    "form:tablaComparativoPlanCuota:verGrafico ||| Ver Gráfico",
+    "form:download ||| Descargar Gráfico"
+   ],
+   "grids": [
+    "form:tablaComparativoPlanCuota",
+    "form:j_idt163"
+   ],
+   "widgets": [
+    "widget_form_j_idt115_clasificacion",
+    "widget_form_j_idt115_checkboxValor"
+   ],
+   "texto": "Reportes | ActivacionClientes | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-low"
+  }
+ },
+ {
+  "tag": "REP-RotacionInv",
+  "ruta": "/pages/reporteRotacionInventario",
+  "url": "/DenarioPremium/pages/reporteRotacionInventario",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:clasificacion",
+     "n": 4,
+     "opts": [
+      " ||| Visualización",
+      "Productos ||| Productos",
+      "Líneas de producto-1-Linea ||| Linea",
+      "Líneas de producto-2-Proveedor ||| Proveedor"
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:unidad",
+     "n": 5,
+     "opts": [
+      " ||| Unidad de Venta",
+      "1 ||| BULTO",
+      "2 ||| DISPLAY",
+      "3 ||| KILOGRAMOS",
+      "4 ||| UNIDADES"
+     ]
+    },
+    {
+     "id": "form:TablaRotacion_reflowDD",
+     "n": 16,
+     "opts": [
+      "0_0 ||| Inventario Inicial Ascendente",
+      "0_1 ||| Inventario Inicial Descendente",
+      "1_0 ||| Plan VS Cumplimiento Ascendente",
+      "1_1 ||| Plan VS Cumplimiento Descendente",
+      "2_0 ||| SELL POINTS Ascendente",
+      "2_1 ||| SELL POINTS Descendente",
+      "3_0 ||| SELL IN Ascendente",
+      "3_1 ||| SELL IN Descendente",
+      "4_0 ||| Rotaciòn Inventario Ascendente",
+      "4_1 ||| Rotaciòn Inventario Descendente",
+      "5_0 ||| Inventario Final Ascendente",
+      "5_1 ||| Inventario Final Descendente",
+      "6_0 ||| SELL OUT Ascendente",
+      "6_1 ||| SELL OUT Descendente",
+      "7_0 ||| Rotación VS SELL OUT Ascendente",
+      "7_1 ||| Rotación VS SELL OUT Descendente"
+     ]
+    },
+    {
+     "id": "form:TablaRotacion:j_id20",
+     "n": 3,
+     "opts": [
+      "50 ||| 50",
+      "100 ||| 100",
+      "200 ||| 200"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:fechaDesde_input",
+     "val": "01/09/2026"
+    },
+    {
+     "id": "form:j_idt115:fechaHasta_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:botonLimpiar ||| Limpiar",
+    "form:TablaRotacion:verGrafico ||| Ver Gráfico"
+   ],
+   "grids": [
+    "form:TablaRotacion"
+   ],
+   "widgets": [
+    "widget_form_j_idt115_clasificacion",
+    "widget_form_j_idt115_checkboxValor"
+   ],
+   "texto": "Reportes | RotaciónInventario | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-low"
+  }
+ },
+ {
+  "tag": "IND-Pedidos",
+  "ruta": "/pages/indicadoresPedidos",
+  "url": "/DenarioPremium/pages/indicadoresPedidos",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:visualizacion",
+     "n": 2,
+     "opts": [
+      "solo ||| Un solo año",
+      "versus ||| Comparativo"
+     ]
+    },
+    {
+     "id": "form:j_idt115:anio1",
+     "n": 13,
+     "opts": [
+      "2018 ||| 2018",
+      "2019 ||| 2019",
+      "2020 ||| 2020",
+      "2021 ||| 2021",
+      "2022 ||| 2022",
+      "2023 ||| 2023",
+      "2024 ||| 2024",
+      "2025 ||| 2025",
+      "2026 ||| 2026",
+      "2027 ||| 2027",
+      "2028 ||| 2028",
+      "2029 ||| 2029",
+      "2030 ||| 2030"
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idCurrency",
+     "n": 6,
+     "opts": [
+      "Currency-BS ||| BS",
+      "Currency-US$ ||| US$",
+      "Unit-BTO ||| BULTO",
+      "Unit-DISP ||| DISPLAY",
+      "Unit-KG ||| KILOGRAMOS",
+      "Unit-UND ||| UNIDADES"
+     ]
+    },
+    {
+     "id": "form:tablaPedidos_reflowDD",
+     "n": 4,
+     "opts": [
+      "0_0 ||| Cantidad pedidos Ascendente",
+      "0_1 ||| Cantidad pedidos Descendente",
+      "1_0 ||| monto total pedido Ascendente",
+      "1_1 ||| monto total pedido Descendente"
+     ]
+    }
+   ],
+   "fechas": [],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:detalleGraficas1 ||| Detalle de Transacciones"
+   ],
+   "grids": [
+    "form:tablaPedidos"
+   ],
+   "widgets": [],
+   "texto": "Indicadores | Pedidos | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on r"
+  }
+ },
+ {
+  "tag": "IND-Cobranzas",
+  "ruta": "/pages/protected/indicadores/indicadorCobros.xhtml",
+  "url": "/DenarioPremium/pages/protected/indicadores/indicadorCobros.xhtml",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:idSalesmaView",
+     "n": 8,
+     "opts": [
+      " ||| Vendedor",
+      "15 ||| ALEJANDRA RODRIGUEZ",
+      "22 ||| EVA MEDINA",
+      "12 ||| LEANDRO REBOLLEDO",
+      "24 ||| MARIA JOSE PEREZ",
+      "14 ||| MIGUEL PARRA",
+      "4 ||| VIVIANA ESCALANTE",
+      "11 ||| YENNI ALVAREZ"
+     ]
+    },
+    {
+     "id": "form:j_idt115:clientSOM",
+     "n": 1973,
+     "opts": [
+      " ||| Cliente",
+      "384 ||| AARON CAR WASH, C.A",
+      "773 ||| ABASTO A-B-C-TACARIGUA,C.A",
+      "1227 ||| ABASTO ANGELY LA VIRGEN DEL VALLE, C.A.",
+      "84 ||| ABASTO BUENAVENTURA TB C.A",
+      "274 ||| ABASTO EL GORDO 30.11, C.A.",
+      "37 ||| ABASTO EL PORTUGUES 2009, CA",
+      "1405 ||| ABASTO EL SITIO DSG, C.A.",
+      "1679 ||| ABASTO, FRUTERIA Y CHARCUTERIA YOSELIN, C.A",
+      "177 ||| ABASTO GER COR 4 C.A",
+      "460 ||| ABASTO LA GRANDEZA",
+      "115 ||| ABASTO LICORERIA ATLANTIDA C.A",
+      "1577 ||| ABASTOS BETEL CA",
+      "189 ||| ABASTOS BLASOL S R L",
+      "517 ||| ABASTOS BRISAS DEL VALLE 95",
+      "96 ||| ABASTOS CHEQUE 2000 SRL",
+      "364 ||| ABASTOS EL BODEGON DE ANA, C.A.",
+      "1557 ||| ABASTOS EL CAMPESINO DEL 35 C.A.",
+      "922 ||| ABASTOS EL OASIS 2024, C.A.",
+      "157 ||| ABASTOS EVEREST DE CAUCAGUA",
+      "1410 ||| ABASTOS FAMILIA MUNOZ 2030, C.A",
+      "1545 ||| ABASTOS FAMILIA MUNOZ 2030, C.A.",
+      "366 ||| ABASTOS & INVERSIONES NANYESMAR 2021, C.A.",
+      "5 ||| ABASTOS JINMARY AMD, C.A.",
+      "1528 ||| ABASTOS LA ESQUINA DEL 24, C.A",
+      "1518 ||| ABASTOS LOS ABREU 2017, C.A",
+      "191 ||| ABASTOS MARIA CATALINA 76, C.A",
+      "1606 ||| ABASTOS MAURYSTEFANY, C.A.",
+      "77 ||| ABASTOS QUINCALLA GABRIELA S.R.L",
+      "1563 ||| ABASTOS SUPERMERCADO HUGO QUINONEZ"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idTipo",
+     "n": 5,
+     "opts": [
+      " ||| Tipo Cobro",
+      "0 ||| Cobros",
+      "1 ||| Anticipo/Prepago",
+      "2 ||| Retención",
+      "4 ||| Cobro 25%"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idCurrency",
+     "n": 3,
+     "opts": [
+      " ||| Moneda",
+      "BS ||| BS",
+      "US$ ||| US$"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idDep",
+     "n": 3,
+     "opts": [
+      " ||| Depositado",
+      "1 ||| SI",
+      "2 ||| NO"
+     ]
+    },
+    {
+     "id": "form:j_idt115:orderStatus",
+     "n": 6,
+     "opts": [
+      "0 ||| Status",
+      "2 ||| Enviado",
+      "7 ||| Por aprobar",
+      "12 ||| Rechazar",
+      "13 ||| Aprobado",
+      "14 ||| Pendiente"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:dateF_input",
+     "val": "01/08/2026"
+    },
+    {
+     "id": "form:j_idt115:dateB_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:detalleGraficas1 ||| Detalle de Transacciones"
+   ],
+   "grids": [],
+   "widgets": [
+    "widget_form_j_idt115_idSalesmaView"
+   ],
+   "texto": "Indicadores | Cobranzas | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on"
+  }
+ },
+ {
+  "tag": "IND-Morosidad",
+  "ruta": "/pages/protected/indicadores/indicadorMorosos.xhtml",
+  "url": "/DenarioPremium/pages/protected/indicadores/indicadorMorosos.xhtml",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:idCurrency",
+     "n": 3,
+     "opts": [
+      " ||| Moneda",
+      "BS ||| BS",
+      "US$ ||| US$"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idTipoDocs",
+     "n": 2,
+     "opts": [
+      "1 ||| Vencimiento",
+      "2 ||| Cuentas por cobrar"
+     ]
+    }
+   ],
+   "fechas": [],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:reporteDocs ||| Reportes",
+    "form:j_idt115:detalleGraficas1 ||| Configuración"
+   ],
+   "grids": [],
+   "widgets": [],
+   "texto": "Indicadores | Morosidad | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on"
+  }
+ },
+ {
+  "tag": "IND-Participacion",
+  "ruta": "/pages/indicadoresProductos",
+  "url": "/DenarioPremium/pages/indicadoresProductos",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:vendedor",
+     "n": 8,
+     "opts": [
+      "Todos ||| Todos",
+      "R015 ||| ALEJANDRA RODRIGUEZ",
+      "R003 ||| EVA MEDINA",
+      "R016 ||| LEANDRO REBOLLEDO",
+      "P001 ||| MARIA JOSE PEREZ",
+      "R007 ||| MIGUEL PARRA",
+      "R013 ||| VIVIANA ESCALANTE",
+      "R009 ||| YENNI ALVAREZ"
+     ]
+    },
+    {
+     "id": "form:j_idt115:clasificacion",
+     "n": 2,
+     "opts": [
+      "1 ||| Linea",
+      "2 ||| Proveedor"
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idCurrency",
+     "n": 6,
+     "opts": [
+      "Currency-BS ||| BS",
+      "Currency-US$ ||| US$",
+      "Unit-BTO ||| BULTO",
+      "Unit-DISP ||| DISPLAY",
+      "Unit-KG ||| KILOGRAMOS",
+      "Unit-UND ||| UNIDADES"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:dateF_input",
+     "val": "01/01/2026"
+    },
+    {
+     "id": "form:j_idt115:dateB_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:detalleGraficas1 ||| Detalle de Transacciones"
+   ],
+   "grids": [],
+   "widgets": [
+    "widget_form_j_idt115_clasificacion"
+   ],
+   "texto": "Indicadores | Productos | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on"
+  }
+ },
+ {
+  "tag": "IND-VentasDiarias",
+  "ruta": "/pages/protected/indicadores/pedidosProductosVentas.xhtml",
+  "url": "/DenarioPremium/pages/protected/indicadores/pedidosProductosVentas.xhtml",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt105",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt116:idEnterprise",
+     "n": 2,
+     "opts": [
+      "0 ||| Todas las empresas",
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt116:idSalesmaView",
+     "n": 8,
+     "opts": [
+      "Todos ||| Vendedor",
+      "R015 ||| R015 - ALEJANDRA RODRIGUEZ",
+      "R003 ||| R003 - EVA MEDINA",
+      "R016 ||| R016 - LEANDRO REBOLLEDO",
+      "P001 ||| P001 - MARIA JOSE PEREZ",
+      "R007 ||| R007 - MIGUEL PARRA",
+      "R013 ||| R013 - VIVIANA ESCALANTE",
+      "R009 ||| R009 - YENNI ALVAREZ"
+     ]
+    },
+    {
+     "id": "form:j_idt116:tipoVista",
+     "n": 5,
+     "opts": [
+      "Día ||| Día",
+      "Semana ||| Semana",
+      "Mes ||| Mes",
+      "Año ||| Año",
+      "Rango de Fechas ||| Rango de Fechas"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt116:dateF_input",
+     "val": "01/01/2026"
+    },
+    {
+     "id": "form:j_idt116:dateB_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt51:confirm ||| Ok",
+    "j_idt51:timeoutLogout ||| Cerrar Sesión",
+    "j_idt66:j_idt79 ||| ui-button",
+    "j_idt66:j_idt80 ||| ui-button",
+    "j_idt66:j_idt81 ||| ui-button",
+    "j_idt66:j_idt97 ||| ui-button",
+    "j_idt66:j_idt98 ||| ui-button",
+    "j_idt66:j_idt99 ||| ui-button"
+   ],
+   "grids": [],
+   "widgets": [
+    "widget_form_j_idt116_idSalesmaView"
+   ],
+   "texto": "Indicadores | Productos | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on"
+  }
+ },
+ {
+  "tag": "IND-Clientes",
+  "ruta": "/pages/pedidosClientes",
+  "url": "/DenarioPremium/pages/pedidosClientes",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idCurrency",
+     "n": 6,
+     "opts": [
+      "Currency-BS ||| BS",
+      "Currency-US$ ||| US$",
+      "Unit-BTO ||| BULTO",
+      "Unit-DISP ||| DISPLAY",
+      "Unit-KG ||| KILOGRAMOS",
+      "Unit-UND ||| UNIDADES"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:dateF_input",
+     "val": "01/01/2026"
+    },
+    {
+     "id": "form:j_idt115:dateB_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:detalleGraficas1 ||| Detalle de Transacciones"
+   ],
+   "grids": [],
+   "widgets": [],
+   "texto": "Indicadores | Clientes | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest on "
+  }
+ },
+ {
+  "tag": "IND-Vendedores",
+  "ruta": "/pages/pedidosVendedores",
+  "url": "/DenarioPremium/pages/pedidosVendedores",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt104",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idEnterprise",
+     "n": 1,
+     "opts": [
+      "1 ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt115:vendedor",
+     "n": 8,
+     "opts": [
+      "Todos ||| Todos",
+      "R015 ||| ALEJANDRA RODRIGUEZ",
+      "R003 ||| EVA MEDINA",
+      "R016 ||| LEANDRO REBOLLEDO",
+      "P001 ||| MARIA JOSE PEREZ",
+      "R007 ||| MIGUEL PARRA",
+      "R013 ||| VIVIANA ESCALANTE",
+      "R009 ||| YENNI ALVAREZ"
+     ]
+    },
+    {
+     "id": "form:j_idt115:cumplimiento",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt115:idCurrency",
+     "n": 6,
+     "opts": [
+      "Currency-BS ||| BS",
+      "Currency-US$ ||| US$",
+      "Unit-BTO ||| BULTO",
+      "Unit-DISP ||| DISPLAY",
+      "Unit-KG ||| KILOGRAMOS",
+      "Unit-UND ||| UNIDADES"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt115:dateF_input",
+     "val": "01/01/2026"
+    },
+    {
+     "id": "form:j_idt115:dateB_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt50:confirm ||| Ok",
+    "j_idt50:timeoutLogout ||| Cerrar Sesión",
+    "j_idt65:j_idt78 ||| ui-button",
+    "j_idt65:j_idt79 ||| ui-button",
+    "j_idt65:j_idt80 ||| ui-button",
+    "j_idt65:j_idt96 ||| ui-button",
+    "j_idt65:j_idt97 ||| ui-button",
+    "j_idt65:j_idt98 ||| ui-button",
+    "form:j_idt115:ajax ||| Buscar",
+    "form:j_idt115:detalleGraficas1 ||| Detalle de Transacciones"
+   ],
+   "grids": [
+    "form:j_idt143"
+   ],
+   "widgets": [],
+   "texto": "Indicadores | Vendedores | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-lowest o"
+  }
+ },
+ {
+  "tag": "TRX-Facturaciones",
+  "ruta": "/pages/facturaciones",
+  "url": "/DenarioPremium/pages/facturaciones",
+  "h404": false,
+  "dom": {
+   "combos": [
+    {
+     "id": "config-form:j_idt105",
+     "n": 2,
+     "opts": [
+      "Pedido ||| Pedido",
+      "Facturado ||| Facturado"
+     ]
+    },
+    {
+     "id": "form:j_idt116:idEnterprise",
+     "n": 1,
+     "opts": [
+      "INSUM_A ||| INSUMAR DISTRIBUIDORA 715, C.A."
+     ]
+    },
+    {
+     "id": "form:j_idt116:idSalesmaView",
+     "n": 8,
+     "opts": [
+      " ||| Vendedor",
+      "15 ||| ALEJANDRA RODRIGUEZ",
+      "22 ||| EVA MEDINA",
+      "12 ||| LEANDRO REBOLLEDO",
+      "24 ||| MARIA JOSE PEREZ",
+      "14 ||| MIGUEL PARRA",
+      "4 ||| VIVIANA ESCALANTE",
+      "11 ||| YENNI ALVAREZ"
+     ]
+    },
+    {
+     "id": "form:j_idt116:clientSOM",
+     "n": 1973,
+     "opts": [
+      " ||| Cliente",
+      "384 ||| AARON CAR WASH, C.A",
+      "773 ||| ABASTO A-B-C-TACARIGUA,C.A",
+      "1227 ||| ABASTO ANGELY LA VIRGEN DEL VALLE, C.A.",
+      "84 ||| ABASTO BUENAVENTURA TB C.A",
+      "274 ||| ABASTO EL GORDO 30.11, C.A.",
+      "37 ||| ABASTO EL PORTUGUES 2009, CA",
+      "1405 ||| ABASTO EL SITIO DSG, C.A.",
+      "1679 ||| ABASTO, FRUTERIA Y CHARCUTERIA YOSELIN, C.A",
+      "177 ||| ABASTO GER COR 4 C.A",
+      "460 ||| ABASTO LA GRANDEZA",
+      "115 ||| ABASTO LICORERIA ATLANTIDA C.A",
+      "1577 ||| ABASTOS BETEL CA",
+      "189 ||| ABASTOS BLASOL S R L",
+      "517 ||| ABASTOS BRISAS DEL VALLE 95",
+      "96 ||| ABASTOS CHEQUE 2000 SRL",
+      "364 ||| ABASTOS EL BODEGON DE ANA, C.A.",
+      "1557 ||| ABASTOS EL CAMPESINO DEL 35 C.A.",
+      "922 ||| ABASTOS EL OASIS 2024, C.A.",
+      "157 ||| ABASTOS EVEREST DE CAUCAGUA",
+      "1410 ||| ABASTOS FAMILIA MUNOZ 2030, C.A",
+      "1545 ||| ABASTOS FAMILIA MUNOZ 2030, C.A.",
+      "366 ||| ABASTOS & INVERSIONES NANYESMAR 2021, C.A.",
+      "5 ||| ABASTOS JINMARY AMD, C.A.",
+      "1528 ||| ABASTOS LA ESQUINA DEL 24, C.A",
+      "1518 ||| ABASTOS LOS ABREU 2017, C.A",
+      "191 ||| ABASTOS MARIA CATALINA 76, C.A",
+      "1606 ||| ABASTOS MAURYSTEFANY, C.A.",
+      "77 ||| ABASTOS QUINCALLA GABRIELA S.R.L",
+      "1563 ||| ABASTOS SUPERMERCADO HUGO QUINONEZ"
+     ]
+    },
+    {
+     "id": "form:j_idt116:idCurrency",
+     "n": 3,
+     "opts": [
+      " ||| Moneda",
+      "1 ||| BS",
+      "2 ||| US$"
+     ]
+    },
+    {
+     "id": "form:j_idt116:tipoDocumento",
+     "n": 3,
+     "opts": [
+      "TODOS ||| Consolidado",
+      "INVOICE ||| Facturas cobradas",
+      "DOCUMENT_SALE ||| Pendientes por cobrar"
+     ]
+    },
+    {
+     "id": "form:pedidosDT_reflowDD",
+     "n": 22,
+     "opts": [
+      "0_0 ||| Vendedor Ascendente",
+      "0_1 ||| Vendedor Descendente",
+      "1_0 ||| Vencimiento Ascendente",
+      "1_1 ||| Vencimiento Descendente",
+      "2_0 ||| Cliente Ascendente",
+      "2_1 ||| Cliente Descendente",
+      "3_0 ||| Monto conv. Ascendente",
+      "3_1 ||| Monto conv. Descendente",
+      "4_0 ||| Monto facturado Ascendente",
+      "4_1 ||| Monto facturado Descendente",
+      "5_0 ||| Tipo Ascendente",
+      "5_1 ||| Tipo Descendente",
+      "6_0 ||| Tasa conv. Ascendente",
+      "6_1 ||| Tasa conv. Descendente",
+      "7_0 ||| Código facturación Ascendente",
+      "7_1 ||| Código facturación Descendente",
+      "8_0 ||| Saldo pendiente Ascendente",
+      "8_1 ||| Saldo pendiente Descendente",
+      "9_0 ||| Fecha facturación Ascendente",
+      "9_1 ||| Fecha facturación Descendente",
+      "10_0 ||| Adjuntos Ascendente",
+      "10_1 ||| Adjuntos Descendente"
+     ]
+    },
+    {
+     "id": "form:pedidosDT:j_id19",
+     "n": 3,
+     "opts": [
+      "50 ||| 50",
+      "100 ||| 100",
+      "200 ||| 200"
+     ]
+    }
+   ],
+   "fechas": [
+    {
+     "id": "form:j_idt116:dateB_input",
+     "val": "01/09/2026"
+    },
+    {
+     "id": "form:j_idt116:dateF_input",
+     "val": "15/09/2026"
+    }
+   ],
+   "botones": [
+    "j_idt51:confirm ||| Ok",
+    "j_idt51:timeoutLogout ||| Cerrar Sesión",
+    "j_idt66:j_idt79 ||| ui-button",
+    "j_idt66:j_idt80 ||| ui-button",
+    "j_idt66:j_idt81 ||| ui-button",
+    "j_idt66:j_idt97 ||| ui-button",
+    "j_idt66:j_idt98 ||| ui-button",
+    "j_idt66:j_idt99 ||| ui-button",
+    "form:j_idt116:ajax ||| Buscar",
+    "form:j_idt116:botonLimpiar ||| Limpiar",
+    "form:pedidosDT:togglerInvoices ||| Columnas",
+    "form:pedidosDT:0:consultar ||| Consultar",
+    "form:pedidosDT:1:consultar ||| Consultar",
+    "form:pedidosDT:2:consultar ||| Consultar",
+    "form:pedidosDT:3:consultar ||| Consultar",
+    "form:pedidosDT:4:consultar ||| Consultar",
+    "form:pedidosDT:5:consultar ||| Consultar",
+    "form:pedidosDT:6:consultar ||| Consultar",
+    "form:pedidosDT:7:consultar ||| Consultar",
+    "form:pedidosDT:8:consultar ||| Consultar",
+    "form:pedidosDT:9:consultar ||| Consultar",
+    "form:pedidosDT:10:consultar ||| Consultar",
+    "form:pedidosDT:11:consultar ||| Consultar",
+    "form:pedidosDT:12:consultar ||| Consultar",
+    "form:pedidosDT:13:consultar ||| Consultar",
+    "form:pedidosDT:14:consultar ||| Consultar",
+    "form:pedidosDT:15:consultar ||| Consultar",
+    "form:pedidosDT:16:consultar ||| Consultar",
+    "form:pedidosDT:17:consultar ||| Consultar",
+    "form:pedidosDT:18:consultar ||| Consultar",
+    "form:pedidosDT:19:consultar ||| Consultar",
+    "form:pedidosDT:20:consultar ||| Consultar",
+    "form:pedidosDT:21:consultar ||| Consultar",
+    "form:pedidosDT:22:consultar ||| Consultar",
+    "form:pedidosDT:23:consultar ||| Consultar",
+    "form:pedidosDT:24:consultar ||| Consultar",
+    "form:pedidosDT:25:consultar ||| Consultar",
+    "form:pedidosDT:26:consultar ||| Consultar",
+    "form:pedidosDT:27:consultar ||| Consultar",
+    "form:pedidosDT:28:consultar ||| Consultar",
+    "form:pedidosDT:29:consultar ||| Consultar",
+    "form:pedidosDT:30:consultar ||| Consultar",
+    "form:pedidosDT:31:consultar ||| Consultar",
+    "form:pedidosDT:32:consultar ||| Consultar",
+    "form:pedidosDT:33:consultar ||| Consultar",
+    "form:pedidosDT:34:consultar ||| Consultar",
+    "form:pedidosDT:35:consultar ||| Consultar",
+    "form:pedidosDT:36:consultar ||| Consultar",
+    "form:pedidosDT:37:consultar ||| Consultar",
+    "form:pedidosDT:38:consultar ||| Consultar",
+    "form:pedidosDT:39:consultar ||| Consultar",
+    "form:pedidosDT:40:consultar ||| Consultar",
+    "form:pedidosDT:41:consultar ||| Consultar",
+    "form:pedidosDT:42:consultar ||| Consultar",
+    "form:pedidosDT:43:consultar ||| Consultar",
+    "form:pedidosDT:44:consultar ||| Consultar",
+    "form:pedidosDT:45:consultar ||| Consultar",
+    "form:pedidosDT:46:consultar ||| Consultar",
+    "form:pedidosDT:47:consultar ||| Consultar",
+    "form:pedidosDT:48:consultar ||| Consultar",
+    "form:pedidosDT:49:consultar ||| Consultar"
+   ],
+   "grids": [
+    "form:pedidosDT"
+   ],
+   "widgets": [
+    "widget_form_j_idt116_idSalesmaView"
+   ],
+   "texto": "Transacciones | Facturaciones | admin  | Empresa | Estructura Comercial | Datos Maestros | Visitas | Transacciones | Reportes | Indicadores | Rain Clothing |  Chicago, USA | Products | 12K | Orders | 26K | Sales | $200K | Manage Store | Get Reports | Check Sales | Create Add | View Activity | Download Listings | Request Payment | View Case Log | CLose Store | Tamas Bunce | Olivia Arribas | The analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high... | 3 mins ago | Last year was the hottest on record for the Arctic, with the annual. | 23 mins ago | Minimum extent of sea ice in the region its second-low"
+  }
+ }
+]

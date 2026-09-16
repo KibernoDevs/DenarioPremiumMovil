@@ -1,0 +1,50 @@
+{
+ "tag": "CUM_L_futuro",
+ "page": "cumpl",
+ "pedido": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/01/2030",
+  "hasta": "31/01/2030"
+ },
+ "steps": [
+  "rdv:true",
+  "clas:true",
+  "valores:18",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/01/2030",
+  "h": "31/01/2030",
+  "chk": 18
+ },
+ "err": "Error en busqueda de reporte. / Intente nuevamente.",
+ "total": "0",
+ "filas": {
+  "head": [
+   "Descripción",
+   "Cuota (US$)",
+   "Unidad (US$)",
+   "Brecha Cuota (US$)",
+   "(US$)",
+   "Unidades Devueltas",
+   "Cantidad Neta",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ]
+ }
+}

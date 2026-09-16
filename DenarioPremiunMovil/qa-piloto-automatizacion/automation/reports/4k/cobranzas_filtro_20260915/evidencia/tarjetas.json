@@ -1,0 +1,101 @@
+{
+ "cobr_todos": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "202.231,96 USD",
+   "AÃ±o": "526.504,39 USD",
+   "por Fecha": "202.231,96 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "cobr_v0002": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "179.450,70 USD",
+   "AÃ±o": "288.716,08 USD",
+   "por Fecha": "179.450,70 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "cobr_v0019": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "250,00 USD",
+   "AÃ±o": "797,00 USD",
+   "por Fecha": "250,00 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "cobr_v0030": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "7.574,76 USD",
+   "AÃ±o": "46.838,43 USD",
+   "por Fecha": "7.574,76 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "cobr_v0030_bis": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "7.574,76 USD",
+   "AÃ±o": "46.838,43 USD",
+   "por Fecha": "7.574,76 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "ctrl_cliente": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "0,00 USD",
+   "AÃ±o": "11.990,00 USD",
+   "por Fecha": "0,00 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "ctrl_tipo": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "0,00 USD",
+   "AÃ±o": "11.990,00 USD",
+   "por Fecha": "0,00 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "ctrl_tipo_limpio": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "187.230,46 USD",
+   "AÃ±o": "296.874,01 USD",
+   "por Fecha": "187.230,46 USD"
+  },
+  "barras_tr_de_ef": "234160.48,6465.26,2492.0"
+ },
+ "ctrl_todos_bs": {
+  "tarjetas": {
+   "hoy": "0,00 Bs",
+   "Mes": "34.600.365,20 Bs",
+   "AÃ±o": "311.071.957,62 Bs",
+   "por Fecha": "34.600.365,20 Bs"
+  },
+  "barras_tr_de_ef": "2.014120392E8,5540793.2,2114200.0"
+ },
+ "ctrl_todos_jul": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "202.231,96 USD",
+   "AÃ±o": "526.504,39 USD",
+   "por Fecha": "275.162,35 USD"
+  },
+  "barras_tr_de_ef": "359872.84,22039.42,15944.71"
+ },
+ "ctrl_todos_jul2": {
+  "tarjetas": {
+   "hoy": "0,00 USD",
+   "Mes": "202.231,96 USD",
+   "AÃ±o": "526.504,39 USD",
+   "por Fecha": "275.162,35 USD"
+  },
+  "barras_tr_de_ef": "359872.84,22039.42,15944.71"
+ }
+}

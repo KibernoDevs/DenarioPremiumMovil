@@ -1,0 +1,27 @@
+'use strict';
+const fs=require('fs'); const path=require('path');
+const { attach, goto, shot, pick, EV } = require('./_drv');
+const B='form:j_idt115';
+(async () => {
+  const { pg } = await attach();
+  await goto(pg, '/pages/indicadoresPedidos'); await pg.waitForTimeout(4000);
+  const steps=[];
+  steps.push('cumpl:'+await pick(pg, B+':cumplimiento','Facturado'));
+  steps.push('cur:'+await pick(pg, B+':idCurrency','US$'));
+  steps.push('anio:'+await pick(pg, B+':anio1','2026'));
+  let resp=null;
+  const hr=async r=>{if(r.request().method()==='POST'){try{resp=await r.text();}catch(e){}}};
+  pg.on('response',hr);
+  await pg.$eval(`[id="${B}:ajax"]`,e=>e.click());
+  await pg.waitForTimeout(13000);
+  pg.off('response',hr);
+  const m=resp&&resp.match(/summary:"([^"]*)"[^}]*detail:"([^"]*)"/);
+  const body=await pg.evaluate(()=>document.body.innerText);
+  const tot=(body.match(/Monto Total Facturado 2026:\s*([\d.,]+)/)||[])[1]||null;
+  const t=await pg.evaluate(()=>{const x=document.getElementById('form:tablaPedidos');
+    return x?[...x.querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.innerText.trim())):null;});
+  console.log(JSON.stringify({steps,err:m?m[1]+' / '+m[2]:null,montoTotal2026:tot,filas:t},null,1).slice(0,2000));
+  fs.writeFileSync(path.join(EV,'resp-RC_INDPED.txt'), resp||'');
+  await shot(pg,'RC_INDPED');
+  process.exit(0);
+})();

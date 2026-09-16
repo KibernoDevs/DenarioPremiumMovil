@@ -1,0 +1,65 @@
+# COBROS — 4k
+
+- ℹ️ **DM-COB-000** Pre-vuelo: inventario de documentos libres en el equipo _(4 documentos libres (USD 4 · Bs 0) en 4 clientes · notas de crédito con saldo a favor: 9 · top: C.0781:1(máx 78.00) · C.0894:1(máx 3.25) · C.0189:1(máx 3.00) · C.0796:1(máx 1.50) · clientes con factura libre Y nota de crédito: ninguno)_
+- ⬜ **DM-COB-036** DM-COB-036 _(userCanSelectIGTF=false (IGTF inactivo))_
+- ⬜ **DM-COB-044** DM-COB-044 _(userCanSelectIGTF=false (IGTF inactivo))_
+- ⬜ **DM-COB-045** DM-COB-045 _(userCanSelectIGTF=false (IGTF inactivo))_
+- ⬜ **DM-COB-037** Cobro 25% IVA _(userCanCollectIva=false)_
+- ✅ **DM-COB-001** Módulo Cobros → home (COBRO + BUSCAR) _(botones: COBRO, ANTICIPO/PREPAGO, BUSCAR)_
+- ✅ **DM-COB-002** COBRO → form 5 tabs; resto disabled sin cliente _(tabs: 5 (General/Documentos/Pagos/Total/Adjuntos) · habilitadas: 1)_
+- ✅ **DM-COB-004** Seleccionar cliente → tabs habilitadas _(pedido: "C.0538" · clickeado: "auto camiones cagua, c.a código: c.0538 saldo usd: 4.754,00 saldo bs: 4.135.980," · tabs habilitadas: 5 · comentario escrito ✓)_
+- ✅ **DM-COB-REQ-001** REQ · Enviar habilitado al iniciar la transacción _(nace deshabilitado — esperado en este módulo: primero hay que agregar un método de pago)_
+- ❌ **DM-COB-REQ-002** REQ · Rechaza el envío con obligatorios vacíos y dice qué falta _(C1 ok (deshabilitado) pero C2 NO: no hay marca ni mensaje que indique qué falta)_
+- ✅ **DM-COB-007** Tab Documentos → lista + leyenda _(cliente: C.0781 · documentos: 1 · leyenda: true · recorrido: C.0538→0 | C.0781→1)_
+- ✅ **DM-COB-008** Marcar documento → total en Pagos _(marcados: 1 · total: "Monto total a pagar USD: 78,00 Diferencia USD: -78,00 Agrega")_
+- ✅ **DM-COB-048** Detalle del documento → botón «Asignar descuento» abre el modal _(userCanSelectCollectDiscount=true · maxCollectDiscount=0 en el equipo ⇒ el guion asume «sin tope» (100%))_
+- ✅ **DM-COB-049** Descuento 10% (≤ 100%) se acepta _(«DESC 10 TEST» marcado: true · disponible: — · alerta: ninguna)_
+- ⬜ **DM-COB-050** Excederse de 100% se rechaza _(NO EJERCITABLE: con este catálogo no hay forma de pasarse del 100%: DESC 10 TEST 10% · Probando 80%. Dos salidas, ambas por WEB + sincronizar: (1) bajar maxCollectDiscount (Variables Globales → Cobros) por debajo de 80%, o (2) crear otro descuento en Empresa → Configuración → Descuentos para Cobros)_
+- ⬜ **DM-COB-052** Tras el rechazo, la casilla NO queda tildada _(NO EJERCITABLE: sin rechazo que provocar (ver DM-COB-050/069) no hay nada que observar)_
+- ⬜ **DM-COB-051** Tasa escrita: 100% acepta · 101% rechaza _(NO EJERCITABLE: ninguno de los 2 descuento(s) del catálogo abre el input de tasa al marcarlo (require_input=true). Crear uno con «Porcentaje Manual = SÍ» en Empresa → Configuración → Descuentos para Cobros y sincronizar)_
+- ✅ **DM-COB-009** Tab Pagos → modal métodos de pago _(métodos: Efectivo, Cheque, Depósito, Transferencia, Otros, Pago Móvil)_
+- ✅ **DM-COB-040** Completar pago Efectivo = total → diferencia azul _(monto: 7800 · antes: -78,00(red) · después: 0,00(blue))_
+- ✅ **DM-COB-012** Diferencia rojo (insuf.) → azul (cubre) _(antes: red · después: blue)_
+- ✅ **DM-COB-043** Diferencia se actualiza con el monto _(antes: -78,00 · después: 0,00)_
+- ✅ **DM-COB-016** Tab Adjuntos → acordeones visibles _(imágenes: true · archivo: true · firma: false)_
+- ✅ **DM-COB-REQ-003** REQ · Sin pestaña en rojo falso con el formulario completo (F1) _(5 pestaña(s), ninguna en rojo con el formulario completo)_
+- ✅ **DM-COB-018** Guardar cobro → alert confirmación _(clic:mouse/loading · alert: "Denario Cobros · El Cobro se ha guardado")_
+- ✅ **DM-COB-022** BUSCAR → lista con searchbar _(lista: true · ítems: 20 · searchbar: true)_
+- ✅ **DM-COB-024** Reabrir Guardado → los datos persisten _(tabs accesibles: 5 · 2 campo(s) con valor conservados · total: — · ⚠ 1 campo(s) RECORTADOS al guardar (la identidad se conserva, así que no cuentan como dato perdido): Cliente:: "AUTO PARTES VENEZUELA 2017, C.A (C.0781)" → "AUTO PARTES VENEZUELA 2017, C. (C.0781)" (recorte a 30 caracteres, el código C.0781 se conserva))_
+- ✅ **DM-COB-019** Enviar cobro → llega a la nube (y UNA sola fila) _(clic:mouse · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 1 fila(s) con la marca Test-COB-622244: 2793/1789520672808.0 co_type=0 78.0000 USD st=3 · cotejo del payload enviado: BD-FIELD-MISMATCH (da_collection: payload='2026-09-15 21:06:53' vs nube='2026-09-16T01:06:53.000Z'))_
+- ✅ **DM-COB-053** Aplicar 10% baja el «Monto total a pagar» _(antes: 3,25 · después: 2,92 · bajó: 0.33 · base del 10%: 3.25 (monto del documento, leído del equipo) · esperado: 0.33)_
+- ✅ **DM-COB-054** El descuento persiste al reabrir el Guardado _(al guardar: 2,92 · al reabrir: 2,92)_
+- ✅ **DM-COB-055** El descuento llega a la nube (monto + detalle) _(☁ 1789520814378.0 · total 2.9200 · descuento 0.3300 · has_discount=true · 10.00% = 0.3300 · filas en collection_detail_discounts: 1)_
+- ✅ **DM-COB-026** Eliminar Guardado → desaparece de la lista _(Guardados antes: 1 · después: 0)_
+- ✅ **DM-COB-020** Atrás con cambios → modal Salir/Guardar _(modal: "Denario Cobros")_
+- ✅ **DM-COB-021** Salir sin guardar → no persiste _(salió por modal: true · home: true)_
+- ✅ **DM-COB-033** Selector de moneda del cobro: habilitado, 2 monedas y el cambio toma efecto _(opciones: Bs/USD · habilitado: true · USD → Bs (pedida: Bs) · aviso de reinicio: "ninguno")_
+- 🚫 **DM-COB-034** Selector de moneda de documentos filtra la lista _(sin documentos libres que filtrar (USD: 0 · Bs: 0) con C.0781 ⇒ el caso mediría la nada: con las dos listas vacías «la lista no cambia» es 0 = 0, no un defecto · estructura del selector SÍ verificada: opciones Moneda/Bs/USD · habilitado: true · 📋 documentos libres AHORA en el equipo: 2 documentos libres (USD 2 · Bs 0) en 2 clientes · notas de crédito con saldo a favor: 9 (al arrancar la vuelta: 4) · 🔑 se liberan documentos rechazando/aprobando en la web los cobros «Por aprobar»)_
+- ⬜ **DM-COB-034-BS** Filtrado de documentos por Bs _(NO EJERCITABLE EN 4K: el selector ofrece Bs pero no hay ningún documento en Bs que filtrar · en pantalla con Moneda=Bs: 0 documentos · en el equipo: 0 documentos libres en Bs de 4 · 🔑 aunque hubiera documentos USD (los hay), la mitad Bs del caso nunca se ejercita ⇒ se declara aparte para que no se cuele dentro de un PASS. Cubrirlo exige un tenant con cartera en Bs)_
+- 🚫 **DM-COB-014** DM-COB-014 _(F2-B no pudo montarse: no se pudo marcar el documento · 📋 documentos libres AHORA: 2 documentos libres (USD 2 · Bs 0) en 2 clientes · notas de crédito con saldo a favor: 9 (al arrancar la vuelta: 4) · 🔑 cada cobro ENVIADO compromete su factura; se liberan rechazando o aprobando en la web los cobros «Por aprobar»)_
+- 🚫 **DM-COB-015** DM-COB-015 _(F2-B no pudo montarse: no se pudo marcar el documento · 📋 documentos libres AHORA: 2 documentos libres (USD 2 · Bs 0) en 2 clientes · notas de crédito con saldo a favor: 9 (al arrancar la vuelta: 4) · 🔑 cada cobro ENVIADO compromete su factura; se liberan rechazando o aprobando en la web los cobros «Por aprobar»)_
+- 🚫 **DM-COB-047** DM-COB-047 _(F2-B no pudo montarse: no se pudo marcar el documento · 📋 documentos libres AHORA: 2 documentos libres (USD 2 · Bs 0) en 2 clientes · notas de crédito con saldo a favor: 9 (al arrancar la vuelta: 4) · 🔑 cada cobro ENVIADO compromete su factura; se liberan rechazando o aprobando en la web los cobros «Por aprobar»)_
+- 🚫 **DM-COB-038** DM-COB-038 _(F2-B no pudo montarse: no se pudo marcar el documento · 📋 documentos libres AHORA: 2 documentos libres (USD 2 · Bs 0) en 2 clientes · notas de crédito con saldo a favor: 9 (al arrancar la vuelta: 4) · 🔑 cada cobro ENVIADO compromete su factura; se liberan rechazando o aprobando en la web los cobros «Por aprobar»)_
+- 🚫 **DM-COB-039** DM-COB-039 _(F2-B no pudo montarse: no se pudo marcar el documento · 📋 documentos libres AHORA: 2 documentos libres (USD 2 · Bs 0) en 2 clientes · notas de crédito con saldo a favor: 9 (al arrancar la vuelta: 4) · 🔑 cada cobro ENVIADO compromete su factura; se liberan rechazando o aprobando en la web los cobros «Por aprobar»)_
+- ✅ **DM-COB-046** Pago parcial: toggle, monto editable y persistencia al reabrir _(saldo del documento: 3,00 (readOnly: true) · al encender: 0,00 (readOnly: false) · parcial tecleado: 1.00 · en Tab Pagos: 1,00 · al reabrir el Guardado: 1,00)_
+- ✅ **DM-COB-041** Retención en el detalle (5 dígitos) → monto neto en Pagos _(saldo: 3 · Nro Comp Ret (5 díg.): 20130 · IVA/ISLR aparecen tras el comprobante: true/true (antes existían: false) · retenido 0.30 + 0.15 · neto en el detalle: 2.55 (esperado 2.55) · Monto total a pagar: 2,55)_
+- ✅ **DM-COB-042** La retención persiste al reabrir el Guardado (monto y detalle) _(neto al guardar: 2.55 · al reabrir: 2,55 · IVA/ISLR en el detalle reabierto: 0,30/0,15)_
+- ✅ **DM-COB-028** Anticipo: sin pestaña Documentos y guarda solo con cliente + pago _(pestañas: General/Pagos/Total/Adjuntos · sin Documentos: true · habilitadas tras el cliente: 4 · monto tecleado: 5,00 · sticky: 5,00 · alert al guardar: "Denario Cobros · El Anticipo se ha guardado" (clic: mouse))_
+- ⬜ **DM-COB-029** Cobro tipo Retención _(cobroRetencion=false ⇒ el submódulo «Retención» no existe en el menú de este cliente (la retención POR DOCUMENTO sí se prueba: DM-COB-041/042))_
+- ✅ **DM-COB-056** Tolerancia positiva: exceso 49.99 (umbral 50.00) se envía SIN anticipo _(total 3 + exceso 49.99 = pagado 52.99 · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2795/1789521216662.0 co_type=0 52.9900 USD st=3)_
+- ✅ **DM-COB-057** Anticipo automático (envío DIRECTO): exceso 50.00 ⇒ anticipo por exceso − techo (0.01) _(total 1.5 + exceso 50.00 = pagado 51.50 · techo de tolerancia 49.99 · abono mínimo 0.01 · anticipo esperado 0.01 · obtenido 0.01 · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2796/1789521307888.0 co_type=0 51.5000 USD st=3 · 2797/1789521343741.0 co_type=1 0.0100 USD st=3)_
+- ❌ **DM-COB-058** Anticipo automático con el MISMO exceso (50.00) pero enviando un GUARDADO reabierto _(total 999 + exceso 50.00 = pagado 1049.00 · anticipo esperado 0.01 · obtenido ninguno · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2798/1789521405315.0 co_type=0 1049.0000 USD st=3 · 🔴 DEFECTO DE PRODUCTO (no del guion): el mismo excedente enviado DIRECTO sí crea el anticipo (DM-COB-057) y enviado desde el Guardado reabierto NO. El excedente cobrado se pierde en vez de quedar a favor del cliente)_
+- ✅ **DM-COB-060** Tolerancia negativa: pagar 10.01 de menos (rango 10.00) NO debe enviarse _(total 184.5 · pagado 174.49 (10.01 de menos) · diálogo: "Denario Cobros · El monto pagado está fuera del rango de tolerancia permitido." · cierre: "ninguno" · ☁ ninguna fila con comentario Test-TOLNEG-FUERA-463191 · la app no dejó enviar: no hay fila en la nube ✅)_
+- ✅ **DM-COB-059** Tolerancia negativa: pagar 10.00 de menos (en el borde) SÍ se envía, sin anticipo _(total 184.5 · pagado 174.50 · nu_difference esperado ≈ -10.00 · obtenido -10 · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2799/1789521617588.0 co_type=0 174.5000 USD st=3)_
+- ✅ **DM-COB-061** Descuento por MONTO 33.10 baja el total y llega a la nube _(saldo del documento: 331.00 · «Monto descuento» tecleado: 33.10 (quedó "33,10") · neto en el detalle: 297.9 · «Monto total a pagar» tras aplicar: 297,90 (esperado 297.90) · aceptar el modal: ok · diálogo al enviar: "Denario Cobros · El Cobro será enviado" · detalle guardado: ok · ☁ cabecera: 2800/1789521892471.0 co_type=0 297.9000 USD st=3 · ☁ descuento leído en la nube: 33.10 · ☁ collection_detail: nu_amount_collect_discount=33.1000 · nu_amount_discount=0.0000)_
+- 🚫 **DM-COB-062** DM-COB-062 _(no abrió el detalle (062))_
+- 🚫 **DM-COB-063** DM-COB-063 _(no abrió el detalle del documento)_
+- 🚫 **DM-COB-064** DM-COB-064 _(no abrió el detalle del documento)_
+- 🚫 **DM-COB-065** DM-COB-065 _(no abrió el detalle del documento (066))_
+- 🚫 **DM-COB-066** DM-COB-066 _(no abrió el detalle del documento (066))_
+- 🚫 **DM-COB-067** DM-COB-067 _(no abrió el detalle del documento (066))_
+- 🚫 **DM-COB-068** DM-COB-068 _(no abrió el detalle del documento (066))_
+- ⬜ **DM-COB-069** Descuento por PORCENTAJE: ¿es ejercitable el tope con esta configuración? _(maxCollectDiscount en el EQUIPO = 0 · el guion lo trata como 100% — y NO es una suposición del guion: lo hace la propia app (collection-logic.service.ts: «if (maxCollectDiscount <= 0) maxCollectDiscount = 100»), así que con la VG en 0 el tope EFECTIVO es 100% · catálogo real de 4K leído en la UI: 10% + 80% (suma máxima alcanzable 90%) · 90% ≤ 100% ⇒ NO HAY FORMA DE SUPERAR EL TOPE: DM-COB-050/051/052 no pueden fallar y por tanto no son un PASS · el descuento por MONTO sí es ejercitable y queda cubierto en DM-COB-061/062 · para cubrir el tope por porcentaje haría falta, POR WEB (prohibido en este encargo): bajar maxCollectDiscount por debajo de 80, o crear un descuento con «Porcentaje Manual = SÍ»)_
+
+**Resumen:** INFO:1 · N/A:10 · PASS:34 · FAIL:2 · BLOCKED:13
+_Tiempo: 1545.7s_

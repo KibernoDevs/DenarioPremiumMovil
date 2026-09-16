@@ -1,0 +1,44 @@
+{
+ "tag": "RC_ACTIV_ago",
+ "page": "activ",
+ "pedido": {
+  "rdv": "-",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:NO-SELECT"
+ ],
+ "pre": {
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": "0",
+ "filas": {
+  "head": [
+   "",
+   "Clientes",
+   "Clientes Activados",
+   "Clientes Inactivos",
+   "% Activación",
+   "Clientes Nuevos",
+   "Clientes Nuevos Activados",
+   "% Act Nuevos"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ]
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "tag": "cobr_todos",
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "idCurrency": "US$"
+ },
+ "grids": [],
+ "labs": [
+  "US$",
+  "Facturado",
+  "Cobrado"
+ ],
+ "noreg": false
+}

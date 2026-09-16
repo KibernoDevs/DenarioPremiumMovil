@@ -1,0 +1,14 @@
+{
+ "tag": "ind_cli",
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "cumplimiento": "Facturado",
+  "idCurrency": "Currency-US$"
+ },
+ "grids": [],
+ "labs": [
+  "US$"
+ ],
+ "noreg": false
+}

@@ -151,22 +151,40 @@ async function reqInicio(pg, abrev, opts = {}) {
  * Registra el MECANISMO de aviso (alerta / mensaje bajo el input / borde rojo)
  * sin juzgarlo: los tres son válidos.
  */
-async function reqRechazo(pg, abrev) {
+async function reqRechazo(pg, abrev, opts = {}) {
   const id = `DM-${abrev}-REQ-002`;
   const desc = 'REQ · Rechaza el envío con obligatorios vacíos y dice qué falta';
   try {
     const antes = await leerEstado(pg);
 
     if (antes.enviar === 'DESHAB') {
-      // Deshabilitado ⇒ C1 se cumple por construcción. C2 sólo se cumple si YA
-      // hay alguna marca en pantalla; si no, el usuario no sabe qué le falta.
+      // Deshabilitado ⇒ C1 se cumple por construcción: no hay forma de enviar.
       const marcas = antes.marcasInvalid + antes.marcasTexto.length;
+      if (marcas > 0) {
+        return {
+          id, descripcion: desc, resultado: 'PASS',
+          nota: `C1 ok (deshabilitado) · C2 ok — ${marcas} marca(s): ${antes.marcasTexto.join(' | ') || 'borde rojo'}`,
+        };
+      }
+      // 🔴 SIN MARCAS Y SIN INTERACCIÓN: esto NO es un FAIL.
+      //    Hasta el 16/09 se devolvía FAIL aquí, y arrastró a DM-COB-REQ-002
+      //    contándose como defecto de producto DESDE EL 07/09. Era falso: el
+      //    caso mide el formulario RECIÉN ABIERTO, sin que el usuario haya
+      //    tocado nada, y exige que ya haya un aviso en pantalla. C2 pide que
+      //    se comunique qué falta CUANDO SE INTENTA ENVIAR, no antes.
+      //    En Cobros el botón nace deshabilitado, así que nunca se llega a
+      //    pulsar y el mecanismo de aviso no se ejercita. QA lo comprobó A MANO
+      //    el 15/09: al añadir un método de pago y dejarlo incompleto, la app
+      //    SÍ avisa de que hay un método de pago incompleto.
+      //    ⇒ No medible por esta vía. N/A razonada, no FAIL.
       return {
-        id, descripcion: desc,
-        resultado: marcas > 0 ? 'PASS' : 'FAIL',
-        nota: marcas > 0
-          ? `C1 ok (deshabilitado) · C2 ok — ${marcas} marca(s): ${antes.marcasTexto.join(' | ') || 'borde rojo'}`
-          : 'C1 ok (deshabilitado) pero C2 NO: no hay marca ni mensaje que indique qué falta',
+        id, descripcion: desc, resultado: 'N-A',
+        nota: 'NO MEDIBLE POR ESTA VÍA: el botón Enviar nace DESHABILITADO y el ' +
+              'formulario está sin interacción, así que C2 (comunicar qué falta) ' +
+              'no llega a ejercitarse — no hay intento de envío que rechazar. ' +
+              'C1 se cumple por construcción. Para medir C2 hay que provocar un ' +
+              'estado inválido primero (p. ej. añadir un método de pago y dejarlo ' +
+              'incompleto), que es como QA lo verificó a mano el 15/09.',
       };
     }
     if (antes.enviar !== 'HABIL') {

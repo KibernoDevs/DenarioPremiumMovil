@@ -1,0 +1,53 @@
+{
+ "tag": "SEP_Empresa_Pedido_Vendedor",
+ "pedido": {
+  "rol": "Vendedor",
+  "clas": "Empresa",
+  "cumpl": "Pedido",
+  "uni": "US$",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026"
+ },
+ "steps": [
+  "rol:true",
+  "clas:true",
+  "valores_checked:1",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "7",
+  "clas": "Empresa",
+  "cumpl": "Pedido",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/09/2026",
+  "h": "14/09/2026",
+  "chk": 1
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Plan (US$)",
+   "Pedido (US$)",
+   "Diferencia Plan Vs Pedido (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Plan (US$)0",
+    "Pedido (US$)35.617,36",
+    "Diferencia Plan Vs Pedido (US$)35.617,36",
+    "Clientes en Cartera1.935",
+    "Clientes Activados162",
+    "% Activación Clientes8,37 %",
+    "Promedio activación (1 meses)10,7 %"
+   ]
+  ]
+ }
+}

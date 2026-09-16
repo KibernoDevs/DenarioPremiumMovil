@@ -6,31 +6,83 @@ uno olvidado.
 
 ---
 
-## 1. 🔧 Afinar el script de COBROS
+## 1. ✅ Script de COBROS — afinado el 14/09  (`automation/reports/4k/pulido_scripts_20260914/`)
 
 `automation/playwright/modules/cobros.js`
 
-- **Fase 2 sin escribir: 13 casos.** Retenciones (`sizeRetention`), anticipo automático en USD,
-  pago parcial y tolerancia, multimoneda. Hoy se emiten como `BLOCKED` desde `blockFase2()`.
-- 🔴 **Riesgo de doble envío antes de tocar nada:** `clickGuardarEnviar()` (líneas ~387-403)
-  apila `pointerdown` + `pointerup` + `inner.click()` **y además** un `mouse.click`. Cuatro
-  disparos para un solo botón. Revisar eso **antes** de construir la Fase 2, o se creará el
-  doble de registros.
-- **No está en `ORDEN_DEFAULT`** de `run.js`: hay que correrlo con `--modulo=cobros`.
+- ✅ **El riesgo de doble envío está CERRADO Y COMPROBADO.** `clickGuardarEnviar()` hace un solo
+  disparo con fallback condicionado, y ahora el propio guion lo verifica: `verificarNube()` cuenta
+  las filas **por `co_type`** y DM-COB-019 **no da PASS si hay duplicado**. Tres envíos en tres
+  vueltas → una fila cada uno (2715, 2721, 2723).
+- ✅ **Fase 2 construida.** Los 12 BLOCKED genéricos pasaron a casos reales: 033/034 (moneda),
+  014/015 (Tab Total), 046 (pago parcial), 041/042 (retención por documento), 028 (anticipo),
+  038 (guardar y salir). 029 es **N/A por VG** (`cobroRetencion=false`), no BLOCKED.
+- ✅ **`cobros` YA ESTÁ en `ORDEN_DEFAULT`** de `run.js`, antes de `pedidos`. Dura ~11 min.
+- ⚠ **Lo que queda abierto, y por qué no se puede cerrar sin tocar la web:**
+  - **DM-COB-050/051/052** (tope de descuento): el catálogo de 4K tiene 10 % y 80 %, y
+    `maxCollectDiscount` = **0** en el equipo. Con 10 + 80 no hay forma de pasarse, y ninguno abre
+    el input de tasa. Hace falta bajar el tope por WEB o crear un descuento con «Porcentaje
+    Manual = SÍ», y sincronizar.
+  - **DM-COB-047/039** (tasa por fecha): 4K tiene **una sola tasa distinta** en el histórico.
+    Un caso que no puede fallar no es un PASS ⇒ quedan en **N/A**.
+- 🔴 **Defecto de producto abierto — ver §4 del informe:** el **anticipo automático no se genera
+  si el cobro se envía desde un Guardado reabierto**. Mismo excedente de 50,00 USD: directo crea el
+  anticipo (2718/2719), reabierto no (2717 y 2720). El guion lo deja como **`DM-COB-058`, fallando
+  a propósito**; mientras falle, el defecto sigue vivo.
+- ⚠ **IDs nuevos sin guion:** `DM-COB-048` a `058` existen en el script y **no** en
+  `guiones-regresion/guion-cobros.md`. Hay que darlos de alta.
 
-## 2. 🔧 Afinar el script de PEDIDOS
+## 2. ✅ Script de PEDIDOS — afinado el 14/09  (`automation/reports/4k/pulido_scripts_20260914/`)
 
-`automation/playwright/modules/pedidos.js` — creado el 01/09, aún sin una corrida limpia.
+`automation/playwright/modules/pedidos.js`
 
-Última corrida (mio_parts): **11 PASS · 8 FAIL**. Lo que quedó por verificar tras los arreglos:
+De **2 PASS / 20 BLOCKED** a **16+ PASS** en 4K. Los cinco pendientes están cerrados:
 
-- El parser del Tab Total (se corrigió: capturaba el 0 de «Total Item»).
-- La paginación dentro de la categoría (`SKY 132` mostraba 50 de 132).
-- La reposición de línea tras `DM-PED-026`, que insistía con el producto del perfil.
-- Las etiquetas de los `ion-select` de VG, que salían en blanco.
-- 🔴 **`DM-PED-029` es un hallazgo pendiente de confirmar a mano:** con **0 líneas** en el
-  carrito, **Guardar sale habilitado** (Enviar no). El guion smoke espera los dos
-  deshabilitados. Se repitió en dos corridas.
+- ✅ **Parser del Tab Total**: `DM-PED-024` (Base 27 · Total 27) y `DM-PED-TOT-001`
+  (**27 − 0 + 0 = 27**, diferencia 0,0000). Ya no captura el 0 de «Total Item».
+- ✅ **Paginación dentro de la categoría**: `DM-PED-017` localiza el producto dentro de su
+  categoría. ⚠ Antes de pedir el relevo hay que **restaurar el árbol** (General → Pedido):
+  recorrer categorías lo deja vacío y el relevo se caía con «el árbol no muestra nada».
+- ✅ **Reposición de línea tras `DM-PED-026`**: repone con CUALQUIER producto, no con el del perfil.
+- ✅ **Etiquetas de los `ion-select` de VG**: salían los VALORES disfrazados de nombres. La
+  etiqueta está en el **`ion-col`** que envuelve al select, no en `label`/`aria-label` (todos
+  `null`) ni en el shadowRoot (ahí vive el valor). Ahora: Empresa · Moneda · Sucursal · Tipo
+  Pedido · Lista de Precio · Condición de pago.
+- ✅ **`DM-PED-029` NO era un defecto de producto: era la expectativa del guion.** Con el carrito
+  vacío, Guardar nace **habilitado**, pero al pulsarlo la app responde «**Debe agregar al menos un
+  producto al pedido.**» y **no guarda**. La protección existe; simplemente no se implementa
+  deshabilitando el botón, sino validando al pulsar — que es el criterio **C2 del REQ del botón
+  Enviar** (y por esa vía `DM-PED-REQ-002` da PASS). El caso ahora mide lo que importa: **que no se
+  pueda guardar un pedido vacío**, pulsando el botón si hace falta.
+
+**Dos arreglos más que salión de la misma corrida:**
+
+- 🔴 **`setClientfromSelector` no asigna el cliente por sí solo**: encola «Este cliente tiene
+  deuda vencida, ¿Desea continuar?» y el cliente solo entra al **Aceptar**. Con una espera fija de
+  1,5 s el diálogo a veces no había pintado y el módulo seguía con la alerta viva, cuyo backdrop se
+  come todos los clics ⇒ **23 casos a BLOCKED**. Ahora se espera a que salga.
+- ✅ **`DM-PED-031` tiene oráculo de nube**: fila en `"order"` por el comentario único, con conteo
+  de duplicados. Antes daba PASS con «volvió al home», que no prueba que el pedido saliera del equipo.
+
+🔴 **LO QUE QUEDA ABIERTO — intermitencia en la selección de cliente (causa en el producto).**
+En trece vueltas apareció un patrón limpio: **el módulo falla en toda corrida que va DETRÁS de una
+que terminó bien** (5 ✗ · 6 ✓ · 7 ✗ · 8 ✓ · 9 ✗ · 10 ✓ · 11 ✗). Síntoma constante:
+`setClientfromSelector` rellena el input pero **`hasClient` se queda en false** y las pestañas no se
+liberan ⇒ el formulario **hereda algo del pedido anterior ya enviado**.
+
+- Descarté y corrigí dos causas plausibles (el `ION-BACKDROP` comíendose el clic; las `ion-alert`
+  muertas que siguen en el DOM haciéndose pasar por vivas). Ninguna la cerró.
+- **Mitigación en el guion:** `DM-PED-006` reintenta con **formulario nuevo** y lo **anota en la
+  nota** («⚠ hizo falta un SEGUNDO intento»). Vueltas 12 y 13 — la 13 era justo la que debía
+  fallar — dieron **18 PASS · 0 FAIL** las dos.
+- **Para cerrarlo hace falta mirar el producto**: qué deja en pie `orderService` / `app-pedido` tras
+  enviar un pedido. Fuera del alcance de un guion de QA.
+- ⚠ Si en una corrida sale `DM-PED-006` FAIL con *«falló también con formulario nuevo»*, **no es el
+  dato del perfil**: es esto. Relanzar el módulo suelto basta.
+
+⚠ **Dato del perfil corregido:** el catálogo de `V.0002` tiene **solo 4 categorías** (FILTROS,
+INYECCION, MISCELANEOS, MOTOR) y `4400-01202` **no está en ninguna**. El producto que sí funciona es
+**`1R1807-4K`** (FILTRO DE ACEITE CATERPILLAR 3116 · 13,50 USD).
 
 ## 3. 🔧 Revisar el caso de CLIENTES con otro cliente
 
@@ -156,3 +208,111 @@ un cruce de campos pasa inadvertido — ya ocurrió con el cobro 2619.
   **3 métodos** (efectivo + depósito + transferencia): la web lista los tres.
   ⚠ El cobro **208** de `mio_parts`, que era el caso que la causa de desarrollo no explicaba,
   **no se re-verificó**: quedó en otra playa. Si vuelve a aparecer el síntoma, empezar por ahí.
+
+---
+
+## 7. 🔧 Llevar al script de cobros los 3 casos del aviso de saldo a favor
+
+Añadidos al guion el 15/09 como **DM-COB-070 / 071 / 072**. **Falta implementarlos en
+`automation/playwright/modules/cobros.js`.**
+
+| Caso | Qué mide | Estado |
+|---|---|---|
+| **070** | Factura sola → parcial → marcar la N/C ⇒ **el aviso sale** | PASS medido |
+| **071** | Los dos documentos marcados → parcial **después** ⇒ **el aviso NO sale** | 🔴 FAIL — **lo encontró QA a mano, el agente no lo cubrió** |
+| **072** | Cobro reabierto desde Guardado ⇒ **ni avisa ni genera el anticipo** | 🔴 FAIL — S2, pierde dinero |
+
+🔑 **Por qué el agente no vio el 071:** probó un solo orden de acciones. El aviso está
+enganchado al evento de **marcar/desmarcar** un documento, no a «cambió el saldo a favor»,
+así que **cualquier camino que produzca el excedente por otra vía se queda sin aviso**.
+⇒ Al implementar estos casos, **ejercitar los dos órdenes**, no uno.
+
+**Control obligatorio en el 072:** el mismo cobro **enviado directo** sí genera su anticipo.
+Sin ese control, un FAIL ahí no distingue el defecto de una configuración que no lo permita.
+
+---
+
+## 8. 🔧 `DM-DEV-006` / `DM-DEV-007` — son del GUION, no del producto
+
+**Resuelto el 16/09 por QA, a mano, en la devolución ref 232.** Los campos del Tab
+General **aceptan entrada** (Responsable, Precinto, Comentario, Tipo) y la **Fecha se
+muestra sin ser editable**, que es justo lo esperado. **Sin incongruencias.**
+
+⇒ Los FAIL del 14/09 eran **del guion**, no regresión. Llevaban dos días sin clasificar
+porque era la primera vez que esos casos corrían en 4K y **no había línea base**.
+
+**Qué arreglar en `automation/playwright/modules/devoluciones.js`:** el guion **devuelve
+`null` cuando no encuentra el elemento y lo trata como fallo**, así que un selector que no
+engancha sale igual que un campo que no existe. Hay que distinguir las dos cosas — si el
+elemento no está, es **BLOCKED con el motivo**, no FAIL.
+
+> Es el mismo patrón que ya corregimos en `DM-COB-034`: medir la nada no es medir.
+
+---
+
+## 9. 📌 Traspaso 16/09 — lo que queda abierto al cerrar la sesión
+
+Orden sugerido para retomar. Lo de arriba de la lista es lo que ya tumbó una corrida.
+
+### 9.1 🔴 Blindar `depositos.js` contra el selector de MONEDA (diagnóstico hecho, fix NO aplicado)
+
+En la certificación del 16/09 el módulo se fue en BLOCKED. **No fue un defecto del
+producto:** el formulario abrió con la moneda en **Bs**, `seleccionarBanco()` cogió el
+primer banco **a ciegas** (`opts[0]`), la tab Cobros salió vacía y el guion abandonó el
+módulo — cuando en **US$ sí había cobros depositables** y el resto del script podía correr.
+
+Lo que ya sabíamos y el guion no usaba (`automation/cdp/module-selectors/depositos.md`):
+
+- Las cuentas bancarias **se filtran por MONEDA y por EMPRESA**.
+- Cambiar la Moneda **resetea** `selectbanco.value` a `{}` y **vuelve a deshabilitar** las
+  tabs Cobros/Total/Adjuntos ⇒ **moneda ANTES que banco, siempre**.
+- Una moneda **sin cuentas** es un callejón sin salida: el pool no es «no hay dato», es
+  «no hay por dónde». Y **el nombre del banco miente sobre la moneda** — leer `coCurrency`,
+  nunca el rótulo (hay una cuenta «VENEZUELA USD$» con `coCurrency:"BS"`).
+- Los 3 `ion-select` del form (Empresa · Moneda · Banco) traen `value` **objeto** y
+  **ninguno** tiene `formcontrolname` ⇒ la vía programática por string no sirve; abren
+  `ion-popover` con 1 click.
+
+**Qué falta hacer, concreto:**
+
+1. Localizar el `ion-select` de Moneda (los tres viven en `app-deposito`; el de Banco es
+   `ion-select.selectbanco`, los otros dos no tienen clase propia — identificarlos por
+   posición/label, no por texto de la opción).
+2. Cuando `marcarPrimerCobro()` devuelva `noCobros: true`, **cambiar a la otra moneda,
+   re-elegir banco y reintentar** en vez de retornar.
+3. Solo si **las dos monedas** dan vacío, marcar **N/A por dato** (nunca BLOCKED, y nunca
+   bajar `depositos.aplica` a `false` por esto — ya nos pasó en latino_cosmetica).
+4. Dejar en el veredicto **qué moneda se probó y cuántas cuentas ofrecía cada una**: sin
+   eso, un N/A no se distingue de un guion que no supo mirar.
+
+> Regla que esto reinstala: **un cero no es un resultado.** Antes de dar vacío hay que
+> haber agotado las dos monedas.
+
+### 9.2 Casos nuevos que faltan por meter al guion **y** al script
+
+- **Guarda de salida de Devoluciones (bug menor, tjt ya redactada).** Sales de la
+  devolución con SALIR SIN GUARDAR, caes al menú del módulo, y al intentar salir del
+  módulo **vuelve a salir el aviso** GUARDAR Y SALIR / SALIR SIN GUARDAR / CANCELAR.
+  No debe aparecer estando ya en el menú. Con GUARDAR Y SALIR aparece «Seleccione un
+  cliente para continuar» y **la única salida es SALIR SIN GUARDAR**.
+- **`DM-COB-071`** (los dos documentos marcados → parcial después ⇒ el aviso NO sale) —
+  ver sección 7. Ya está en el script; falta **volver a medirlo** sobre el build que
+  traiga el fix.
+
+### 9.3 Afinar
+
+- **`DM-PRD-007`:** los 6 s de espera **siguen sin alcanzar**. Subirlo y, mejor, esperar
+  por condición en vez de por reloj.
+- **`happy-path.js`** (web, `--modulo=happy-path`, ~84 s): 8 PASS / 0 FAIL / 1 BLOCKED /
+  **5 N/A**. Los 5 N/A son los **cotejos contra base sin cablear**. Falta además la
+  descarga de adjuntos y la comprobación de cálculos, que era la mitad del encargo.
+
+### 9.4 Contexto que no está en el código y hace falta para retomar
+
+- **La versión sale con lo de arriba abierto:** nada de esto bloquea la v22. El 9.1 y el
+  9.3 son del **guion**, no del producto; el 9.2 es un bug menor ya reportado.
+- **La build solo se distingue por el TAMAÑO del bundle** (`http://localhost/main.js`):
+  `versionApp` dice `6.6.21.3` en todas. Última medida: **5.446.151**.
+- **Cambiar de APK pierde los registros locales** y deja filas huérfanas en sqlite ⇒
+  falsos «ocupados» en el pre-vuelo de inventarios.
+- **La playa se pasa por `--playa=`**, nunca va en el YAML del cliente.

@@ -65,13 +65,13 @@ vgs:
                                        #    adjunto: los cobros y anticipos SE PUEDEN ENVIAR.
                                        #    Confirmado a mano por QA y en el equipo.
   requiredComment: true                # longitudComentario está arriba, en Generales
-  colletionPayment: "true-true-true-true-false-true"   # ⇐ ERA "true-false-…": se habilitó
+  colletionPayment: "true-true-true-true-true-true"   # ⇐ ERA "true-false-…": se habilitó
                                        #    un método más. Leer en la UI cuáles ofrece.
                                        #    🔴 Igual LEER EN LA UI qué métodos ofrece: deducirlos
                                        #       del orden del catálogo ya falló antes.
   enablePartialPayment: true
   alwaysPartialPayment: false
-  historicPartialPayment: true
+  historicPartialPayment: false
 
   # Retención
   retencion: true                     # el campo de retención dentro del cobro
@@ -101,13 +101,25 @@ vgs:
   MonedaTolerancia: "USD"
   cobroPrepago: true                  # submódulo «Anticipo» disponible en el menú
   automatedPrepaid: true              # anticipo automático por excedente
-  prepaidRangeAmount: 50              # excedente mínimo del anticipo
+  prepaidRangeAmount: 0.01              # excedente mínimo del anticipo
   prepaidRangeCurrency: "USD"
   prepaidCurrency: "USD"
   prepaidPaymentMethod: "pa"
-  # 🔴 CORREGIDO 10/09 CON MEDICIÓN EN EL EQUIPO — la versión anterior de este
-  #    comentario decía «el umbral es la suma (tolerancia + prepaidRangeAmount)».
-  #    NO es así en la build instalada (6.6.21.3):
+  # 🔴 RE-CORREGIDO 14/09. Lo de abajo es la lectura del 10/09, cuando
+  #    `prepaidRangeAmount` valía 50 en el equipo. **Hoy vale 0,01** (la web lo
+  #    bajó el 11/09 14:07:57) y el fix del umbral SÍ entró en la build: el techo
+  #    de tolerancia se descuenta ANTES, en
+  #    `resolvePrepaidEligibleExcessInCollectionCurrency` (`normalizedRaw −
+  #    positiveLimit`), aunque `getAutomatedPrepaidActivationThreshold()` siga
+  #    devolviendo `prepaidRangeAmount` a secas.
+  #        UMBRAL EFECTIVO = RangoToleranciaPositiva + prepaidRangeAmount = 50,00
+  #        ANTICIPO CREADO = exceso − RangoToleranciaPositiva
+  #    Comprobado en la nube: cobro 2706 (1.862,00) + anticipo 2707 (0,01).
+  #    ⇒ El oráculo barato NO es el cuerpo de getAutomatedPrepaidActivationThreshold,
+  #      sino la EXISTENCIA de `resolvePrepaidEligibleExcessInCollectionCurrency`.
+  #    Cubierto por los casos nuevos DM-COB-056 / DM-COB-057 del script.
+  #
+  #    ── lectura del 10/09, conservada como contexto ──
   #        getAutomatedPrepaidActivationThreshold() = prepaidRangeAmount  ⇒ 50 USD
   #    y la función que sumaría el techo de tolerancia
   #    (`getPositiveToleranceCeilingInCollectionCurrency`) NO EXISTE en el bundle.
@@ -132,9 +144,12 @@ vgs:
 
   # Descuento de cobro
   userCanSelectCollectDiscount: true  # ⇒ botón «Asignar descuento» en el DETALLE del documento
-  maxCollectDiscount: 85              # tope % sobre la SUMA de los descuentos seleccionados
+  maxCollectDiscount: 0              # tope % sobre la SUMA de los descuentos seleccionados
+  # 🔴 14/09: el EQUIPO trae **0**, no 85. Ojo con `Number(x) || 100` en run.js:
+  #    convierte el 0 en «sin tope», que NO es lo mismo. Qué hace la app con 0 hay
+  #    que leerlo en la UI (el aviso del tope dice el número), no deducirlo.
   # ⚠ El catálogo (`collect_discounts`) de 4K trae UNA sola fila: "Probando" 80 %
-  #   con require_input=false. Con eso el tope de 85 es inalcanzable por UI
+  #   con require_input=false. Con eso el tope de 85 era inalcanzable por UI
   #   (80 fijo, y 80 ≤ 85). Se resuelve por WEB, sin tocar BD — dos opciones:
   #     · bajar maxCollectDiscount (Variables Globales → Cobros) a 80 y luego a 79
   #     · crear más descuentos en **Empresa → Configuración → Descuentos para Cobros**
@@ -145,11 +160,15 @@ vgs:
   #   en el detalle del documento (cobro-documents.component.html:735) y aparece
   #   SIEMPRE. Esta variable apaga otra cosa: el selector de «origen de
   #   diferencia» del método de pago OTROS (cobro-pagos.component.html:689).
-  enableDifferenceCodes: false        # ⇒ solo apaga el selector del método OTROS
-  clientBankAccount: false
+  # 🔴 Estaba en `false` y el equipo traía `true`. Corregido el 14/09/2026 tras
+  #   medirlo dos veces en `localStorage.globalConfiguration`. QA lo encendió para
+  #   poder probar las notas de crédito con saldo a favor (método OTROS + código
+  #   de diferencia). Si vuelve a aparecer en false, mirar el equipo, no el perfil.
+  enableDifferenceCodes: true         # ⇒ habilita el selector de origen del método OTROS
+  clientBankAccount: true
   currencyBank: false
   historicoTasa: true
-  validateCollectionDate: true
+  validateCollectionDate: false
   signatureCollection: false
 
   # ── Pedidos ─────────────────────────────────────────────────────────────
@@ -192,6 +211,21 @@ vgs:
 # ═══════════════════════════════════════════════════════════════════════════
 # DATOS DE PRUEBA POR MÓDULO
 # ═══════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 🔴 16/09/2026 · DATOS DE PRUEBA REHECHOS POR CAMBIO DE VENDEDOR EN EL EQUIPO
+#    El equipo está logueado con **V.0030 · JOAN BRICEÑO** (login
+#    V.0030zgrancaracas, id_user 338, 46 clientes), NO con V.0002
+#    (V.0002zonacentral, id_user 300, 78 clientes), que es para quien se
+#    midieron los datos del 14/09.
+#    Comprobado: NINGUNO de los 12 clientes que traía este perfil pertenece a
+#    V.0030 (select .. from active_clients where id_user=338 → 0 filas), así que
+#    todos los módulos con cliente fijo habrían arrancado contra un cliente que
+#    la pantalla no lista.
+#    Los de abajo salen del SQLITE DEL EQUIPO (clients / document_sales /
+#    invoices / stocks), que es la misma fuente que pinta la pantalla.
+#    Empresa comprobada: products.co_enterprise = DIESE ✅
+# ═══════════════════════════════════════════════════════════════════════════
 modules:
   # ═════════════════════════════════════════════════════════════════════════
   # 🔴 REVISADO 2026-09-04 tras la corrida fallida en CARIBE.
@@ -214,7 +248,7 @@ modules:
     caso_multiempresa: false          # 🔴 NO cubrible: el tenant tiene 1 sola empresa
 
   clientes:
-    cliente_test: "EURO REPUESTOS FIOVAL, C.A."   # C.0010 — primero del listado
+    cliente_test: "MSDIESEL 2022, C.A"            # C.0627 — V.0030
 
   cobros:
     aplica: true
@@ -224,12 +258,58 @@ modules:
     #    2) que tenga documentos LIBRES — los comprometidos por cobros que sigan
     #       «Por aprobar» no se listan en el Tab Documentos (bloqueo anti-doble-cobro)
     #    Indicados por QA el 07/09 y verificados en BD.
-    cliente_test: "C.0029"            # INVERSIONES SUPER RAPIDO · queda FAC 00016794 (533,00 USD)
+    # 🔴 MEDIDO EN LA UI el 14/09 (no en la BD: ver la nota de abajo). Se recorrió
+    #    el Tab Documentos de 19 clientes del listado del vendedor y esto es lo
+    #    que LISTA documentos USD libres. Ningún cliente tiene documentos en Bs.
+    #    El script ROTA por esta lista hasta encontrar uno con documentos, así que
+    #    el orden importa: primero los que más tienen.
+    # 🔑 El script ROTA por esta lista y salta a la siguiente en cuanto una no
+    #    lista documentos, así que conviene que sea LARGA. Los ✅ están medidos
+    #    en la UI el 14/09; el resto sale del cruce «clientes que carga el equipo»
+    #    × «facturas USD con saldo y sin cobro» en la BD, y sirve de reserva:
+    #    si alguno no tiene nada, el script lo descarta solo y sigue.
+    cliente_test: "C.0398"            # CASA DE REPUESTOS ISUZU MARICHES 2020 · 30 FAC USD libres
     clientes_con_documentos:
-      - "C.0029"                      # 1 doc USD libre al 10/09 (00016794 · 533,00 USD)
-      - "C.0010"                      # 11 docs USD · US$ 2.512 — relevo principal
-      - "C.0538"                      # 9 docs USD · US$ 4.754, saldos chicos (8 a 72 USD):
-                                      #   útil para bordes pequeños de tolerancia
+      # Medidos en el SQLITE DEL EQUIPO el 16/09 (saldo <> 0 y sin comprometer).
+      # Orden: primero quien más documentos libres tiene.
+      - "C.0398"                      # 30 FAC USD (61 … 2.940) + 9 N/D
+      - "C.0627"                      # 41 FAC USD + 23 N/D (MSDIESEL 2022)
+      - "C.0964"                      # 7 FAC USD + 2 N/D
+      - "C.0670"                      # 6 FAC USD
+      - "C.0395"                      # 4 FAC USD (90 … 505)
+      - "C.0561"                      # 4 FAC USD, saldos altos
+      - "C.0643"                      # 3 FAC USD
+      - "C.0683"                      # 3 FAC USD
+      - "C.0880"                      # 3 FAC USD
+      - "C.0044"                      # 2 FAC USD libres (66 / 80)
+      - "C.0351"                      # 2 FAC USD
+      - "C.0370"                      # 2 FAC USD
+      - "C.0709"                      # 2 FAC USD
+      - "C.0419"                      # 2 FAC USD + 1 N/D
+      - "C.0061"                      # 1 FAC USD (720)
+      - "C.0318"                      # 1 FAC USD
+      - "C.0552"                      # 1 FAC USD + 1 N/D
+      - "C.0667"                      # 1 FAC USD
+      - "C.0668"                      # 1 FAC USD
+      - "C.0793"                      # 1 FAC USD
+      - "C.0816"                      # 1 FAC USD
+      - "C.0965"                      # 1 FAC USD
+      # ── Los que tienen NOTA DE CRÉDITO en el equipo (para 064/070/071) ──
+      - "C.0864"                      # 🔑 FAC 00022180 (2.552, st_document=0 ⇒ LIBRE)
+                                      #    + N/C *0001523 (−244). El pre-vuelo los da
+                                      #    por ocupados por 4 filas viejas de
+                                      #    collection_details: es un FALSO «ocupado».
+      - "C.0321"                      # FAC 00021022 (85) + N/C 00002222 (−145)
+      - "C.0388"                      # N/C *0001515 (−2) libre, sin FAC libre
+      - "C.0337"                      # N/C *0000540 (−3,16) libre, sin FAC libre
+    # ⛔ SIN documentos libres el 14/09 (la BD decía que sí; la UI dijo que no):
+    #    C.0010 · C.0028 · C.0029 · C.0060 · C.0131 · C.0194 · C.0210 · C.0326
+    #    · C.0624 · C.0189 · C.1016. Vuelven a servir cuando se aprueben o
+    #    rechacen los cobros que retienen sus documentos.
+    # 🔴 LA BD MIENTE PARA ESTO. `document_sale` da 28 documentos libres para
+    #    C.1016 y la pantalla dice «No hay documentos USD»: `co_collection` sigue
+    #    en NULL aunque el documento ya esté comprometido por un cobro «Por
+    #    aprobar». El ÚNICO inventario fiable es el propio Tab Documentos.
     # 🔴 C.0060 QUEDÓ AGOTADO el 10/09: su último documento USD libre (00022034) se
     #    fue en el cobro 2629. Vuelve a servir cuando esos cobros se aprueben/rechacen.
     # ⚠ Un cobro ENVIADO deja su factura «Por aprobar» y ésta DESAPARECE del Tab
@@ -243,27 +323,43 @@ modules:
     #    5 pestañas del cobro siguen bloqueadas y el módulo no avanza.
 
   pedidos:
-    cliente_test: "C.0010"            # EURO REPUESTOS — confirmado que carga
-    producto_test: "4400-01202"       # GOMAS DE MANITO PARA POLEA MACK · stock 6.990
-    producto_test_alt: "4490-01001"   # DIAFRAGMA T30 · stock 4.780
-                                      # 🔴 con stock0=false hace falta stock holgado
-    estructura_producto: TBD          # `listProductsBy: lineas` — leer el rótulo en runtime
-    moneda_pedido: TBD
+    cliente_test: "C.0398"            # CASA DE REPUESTOS ISUZU MARICHES 2020 (V.0030)
+                                      # ⚠ dispara «Este cliente tiene deuda vencida,
+                                      #   ¿Desea continuar?» — el cliente NO se asigna
+                                      #   hasta ACEPTAR. El script ya lo espera.
+    # 🔴 MEDIDO EN LA UI el 14/09: el catálogo de este vendedor tiene SOLO 4
+    #    categorías — FILTROS(1) · INYECCION(3) · MISCELANEOS(4) · MOTOR(8) — y
+    #    `4400-01202` NO está en ninguna. El que sí está, y con el que pasa el
+    #    módulo entero, es:
+    producto_test: "1R1807-4K"        # ✅ FILTRO DE ACEITE CATERPILLAR 3116 · 13,50 USD
+                                      #    en la categoría «FILTROS 1»
+    producto_test_alt: "4400-01202"   # ⛔ NO está en el catálogo de V.0002 (se deja
+                                      #    como dato histórico; el relevo lo suple)
+    estructura_producto: "categorias"  # árbol DRILL-DOWN: la categoría NAVEGA DENTRO,
+                                      #    no expande in situ
+    moneda_pedido: "USD"              # `multiCurrencyOrder=false` ⇒ selector presente
+                                      #    pero DESHABILITADO; el catálogo se filtra por
+                                      #    (lista de precios × moneda) ⇒ USD o sale vacío
 
   devoluciones:
     # TIPO B (validateReturn=true): la FACTURA habilita las tabs, no el cliente.
-    cliente_test: "C.0028"            # INVERSIONES MOSTEIRO · 17 facturas
-    cliente_test_alt: "C.0010"        # EURO REPUESTOS · 12 facturas
+    cliente_test: "C.0395"            # INVERSIONES SOLO FUSO · 1.ª factura CJA-00020344 con 8 líneas
+    # 🔴 16/09: C.0627 (49 facturas) NO sirve: el módulo elige la PRIMERA factura del
+    #    modal y la suya (CJA-00020266) no tiene líneas devolvibles ⇒ DEV-012/013/014
+    #    FAIL y 10 BLOCKED en cascada. Es elección de dato, no defecto de la app.
+    cliente_test_alt: "C.0398"        # CASA DE REPUESTOS ISUZU MARICHES · 39 facturas
     producto_test: TBD                # elegir uno de la factura escogida
     factura_test: TBD                 # 🔴 sin este dato el envío queda N/A
 
   inventarios:
-    cliente_test: "C.0010"
+    cliente_test: "C.0398"
     producto_test: "4400-01202"
     # ⚠ expirationBatch=true ⇒ el modal de cantidad exige LOTE y FECHA.
 
   visitas:
-    cliente_test: "C.0010"            # 🔑 el único confirmado que HABILITA las tabs;
+    cliente_test: "C.0398"            # 🔑 V.0030 · con dirección cargada
+    cliente_test_alt: "C.0627"        # relevo
+    # (nota vieja, de cuando el equipo estaba con V.0002):
                                       #    otros dan "No hay clientes disponibles"
                                       #    porque su sucursal no carga.
 

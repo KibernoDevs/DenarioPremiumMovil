@@ -1,0 +1,52 @@
+# COBROS — 4k
+
+- ⬜ **DM-COB-036** DM-COB-036 _(userCanSelectIGTF=false (IGTF inactivo))_
+- ⬜ **DM-COB-044** DM-COB-044 _(userCanSelectIGTF=false (IGTF inactivo))_
+- ⬜ **DM-COB-045** DM-COB-045 _(userCanSelectIGTF=false (IGTF inactivo))_
+- ⬜ **DM-COB-037** Cobro 25% IVA _(userCanCollectIva=false)_
+- ✅ **DM-COB-001** Módulo Cobros → home (COBRO + BUSCAR) _(botones: COBRO, ANTICIPO/PREPAGO, BUSCAR)_
+- ✅ **DM-COB-002** COBRO → form 5 tabs; resto disabled sin cliente _(tabs: 5 (General/Documentos/Pagos/Total/Adjuntos) · habilitadas: 1)_
+- ✅ **DM-COB-004** Seleccionar cliente → tabs habilitadas _(pedido: "C.0538" · clickeado: "auto camiones cagua, c.a código: c.0538 saldo usd: 4.754,00 saldo bs: 4.135.980," · tabs habilitadas: 5 · comentario escrito ✓)_
+- ✅ **DM-COB-REQ-001** REQ · Enviar habilitado al iniciar la transacción _(nace deshabilitado — esperado en este módulo: primero hay que agregar un método de pago)_
+- ❌ **DM-COB-REQ-002** REQ · Rechaza el envío con obligatorios vacíos y dice qué falta _(C1 ok (deshabilitado) pero C2 NO: no hay marca ni mensaje que indique qué falta)_
+- ✅ **DM-COB-007** Tab Documentos → lista + leyenda _(cliente: C.0538 · documentos: 2 · leyenda: true)_
+- ✅ **DM-COB-008** Marcar documento → total en Pagos _(marcados: 2 · total: "Monto total a pagar USD: 2.880,00 Diferencia USD: -2.880,00 ")_
+- ✅ **DM-COB-048** Detalle del documento → botón «Asignar descuento» abre el modal _(userCanSelectCollectDiscount=true · maxCollectDiscount=0 en el equipo ⇒ el guion asume «sin tope» (100%))_
+- ✅ **DM-COB-049** Descuento 10% (≤ 100%) se acepta _(«DESC 10 TEST» marcado: true · disponible: — · alerta: ninguna)_
+- 🚫 **DM-COB-050** Excederse de 100% se rechaza _(con este catálogo no hay forma de pasarse del 100%: DESC 10 TEST 10% · Probando 80%. Dos salidas, ambas por WEB + sincronizar: (1) bajar maxCollectDiscount (Variables Globales → Cobros) por debajo de 80%, o (2) crear otro descuento en Empresa → Configuración → Descuentos para Cobros)_
+- 🚫 **DM-COB-052** Tras el rechazo, la casilla NO queda tildada _(sin rechazo que provocar, no hay nada que observar)_
+- 🚫 **DM-COB-051** Tasa escrita: 100% acepta · 101% rechaza _(ninguno de los 2 descuento(s) del catálogo abre el input de tasa al marcarlo (require_input=true). Crear uno con «Porcentaje Manual = SÍ» en Empresa → Configuración → Descuentos para Cobros y sincronizar)_
+- ✅ **DM-COB-009** Tab Pagos → modal métodos de pago _(métodos: Efectivo, Cheque, Depósito, Transferencia, Otros, Pago Móvil)_
+- ✅ **DM-COB-040** Completar pago Efectivo = total → diferencia azul _(monto: 288000 · antes: -2.880,00(red) · después: 0,00(blue))_
+- ✅ **DM-COB-012** Diferencia rojo (insuf.) → azul (cubre) _(antes: red · después: blue)_
+- ✅ **DM-COB-043** Diferencia se actualiza con el monto _(antes: -2.880,00 · después: 0,00)_
+- ✅ **DM-COB-016** Tab Adjuntos → acordeones visibles _(imágenes: true · archivo: true · firma: false)_
+- ✅ **DM-COB-REQ-003** REQ · Sin pestaña en rojo falso con el formulario completo (F1) _(5 pestaña(s), ninguna en rojo con el formulario completo)_
+- ✅ **DM-COB-018** Guardar cobro → alert confirmación _(clic:mouse/loading · alert: "Denario Cobros · El Cobro se ha guardado")_
+- ✅ **DM-COB-022** BUSCAR → lista con searchbar _(lista: true · ítems: 20 · searchbar: true)_
+- ✅ **DM-COB-024** Reabrir Guardado → los datos persisten _(tabs accesibles: 5 · 2 campo(s) con valor conservados · total: —)_
+- ✅ **DM-COB-019** Enviar cobro → llega a la nube (y UNA sola fila) _(clic:mouse · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 1 fila(s) con la marca Test-COB-644673: 2723/1789428648263.0 co_type=0 2880.0000 USD st=3 · ⚠ la UI no lo reflejaba (UI → guardados: 1 · enviados: 19 · total en lista: 20) — revisar solo si se repite · cotejo del payload enviado: BD-FIELD-OK)_
+- ✅ **DM-COB-053** Aplicar 10% baja el «Monto total a pagar» _(antes: 504,00 · después: 453,60 · bajó: 50.40 · esperado (10%): 50.40)_
+- ✅ **DM-COB-054** El descuento persiste al reabrir el Guardado _(al guardar: 453,60 · al reabrir: 453,60)_
+- ✅ **DM-COB-055** El descuento llega a la nube (monto + detalle) _(☁ 1789428807456.0 · total 453.6000 · descuento 50.4000 · has_discount=true · 10.00% = 50.4000 · filas en collection_detail_discounts: 1)_
+- 🚫 **DM-COB-026** Eliminar Guardado _(no se pudo montar el cobro a eliminar: no abrió el formulario de cobro)_
+- ✅ **DM-COB-020** Atrás con cambios → modal Salir/Guardar _(modal: "Denario Cobros")_
+- ✅ **DM-COB-021** Salir sin guardar → no persiste _(salió por modal: true · home: true)_
+- ✅ **DM-COB-033** Selector de moneda del cobro: habilitado, 2 monedas y el cambio toma efecto _(opciones: Bs/USD · habilitado: true · USD → Bs (pedida: Bs) · aviso de reinicio: "ninguno")_
+- ✅ **DM-COB-034** Selector de moneda de documentos filtra la lista _(opciones: Moneda/Bs/USD · habilitado: true · documentos con USD: 1 · con Bs: 0)_
+- ✅ **DM-COB-014** Tab Total → tabla resumen + acordeones por método _(Monto total a Pagar: 72,00 · Pago: 72,00 · Diferencia: 0,00 · columnas: Tipo/Nro. Doc/Monto Doc/Monto Pago · acordeones: Total Efectivo: USD 72,00)_
+- ✅ **DM-COB-015** Tab Total → «Total General» al final _(Total General: 72,00 · Pago: 72,00)_
+- ⬜ **DM-COB-047** Persistencia de la tasa por fecha _(el histórico solo ofrece UNA tasa distinta (["870,00 Bs","870,00 Bs"]): cambiarla no puede cambiar el monto, así que el caso NO ES EJERCITABLE hoy. Para cubrirlo hace falta un tenant con dos tasas dentro de mesesTasa)_
+- ⬜ **DM-COB-039** Cambiar la tasa de un Guardado _(el histórico solo ofrece UNA tasa distinta (["870,00 Bs","870,00 Bs"]): cambiarla no puede cambiar el monto, así que el caso NO ES EJERCITABLE hoy. Para cubrirlo hace falta un tenant con dos tasas dentro de mesesTasa)_
+- ✅ **DM-COB-038** «Guardar y salir» deja el cobro Guardado en la lista _(botón pulsado: "Guardar y salir" · aviso de salida: "Denario Cobros" · Guardados en la lista: 2 (total 20))_
+- ✅ **DM-COB-046** Pago parcial: toggle, monto editable y persistencia al reabrir _(saldo del documento: 300,00 (readOnly: true) · al encender: 0,00 (readOnly: false) · parcial tecleado: 150.00 · en Tab Pagos: 150,00 · al reabrir el Guardado: 150,00)_
+- ✅ **DM-COB-041** Retención en el detalle (5 dígitos) → monto neto en Pagos _(saldo: 300 · Nro Comp Ret (5 díg.): 93180 · IVA/ISLR aparecen tras el comprobante: true/true (antes existían: false) · retenido 30.00 + 15.00 · neto en el detalle: 255 (esperado 255.00) · Monto total a pagar: 255,00)_
+- ✅ **DM-COB-042** La retención persiste al reabrir el Guardado (monto y detalle) _(neto al guardar: 255.00 · al reabrir: 255,00 · IVA/ISLR en el detalle reabierto: 30,00/15,00)_
+- ✅ **DM-COB-028** Anticipo: sin pestaña Documentos y guarda solo con cliente + pago _(pestañas: General/Pagos/Total/Adjuntos · sin Documentos: true · habilitadas tras el cliente: 4 · monto tecleado: 5,00 · sticky: 5,00 · alert al guardar: "Denario Cobros · El Anticipo se ha guardado" (clic: mouse))_
+- ⬜ **DM-COB-029** Cobro tipo Retención _(cobroRetencion=false ⇒ el submódulo «Retención» no existe en el menú de este cliente (la retención POR DOCUMENTO sí se prueba: DM-COB-041/042))_
+- ✅ **DM-COB-056** Tolerancia positiva: exceso 49.99 (umbral 50.00) se envía SIN anticipo _(total 300 + exceso 49.99 = pagado 349.99 · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2725/1789429197142.0 co_type=0 349.9900 USD st=3)_
+- ✅ **DM-COB-057** Anticipo automático (envío DIRECTO): exceso 50.00 ⇒ anticipo por exceso − techo (0.01) _(total 256 + exceso 50.00 = pagado 306.00 · techo de tolerancia 49.99 · abono mínimo 0.01 · anticipo esperado 0.01 · obtenido 0.01 · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2726/1789429292851.0 co_type=0 306.0000 USD st=3 · 2727/1789429330832.0 co_type=1 0.0100 USD st=3)_
+- ❌ **DM-COB-058** Anticipo automático con el MISMO exceso (50.00) pero enviando un GUARDADO reabierto _(total 334 + exceso 50.00 = pagado 384.00 · anticipo esperado 0.01 · obtenido ninguno · diálogo: "Denario Cobros · El Cobro será enviado" · ☁ 2728/1789429395985.0 co_type=0 384.0000 USD st=3 · 🔴 DEFECTO DE PRODUCTO (no del guion): el mismo excedente enviado DIRECTO sí crea el anticipo (DM-COB-057) y enviado desde el Guardado reabierto NO. El excedente cobrado se pierde en vez de quedar a favor del cliente)_
+
+**Resumen:** N/A:7 · PASS:34 · FAIL:2 · BLOCKED:4
+_Tiempo: 815.7s_

@@ -1,0 +1,89 @@
+{
+ "selects": [
+  {
+   "id": "form:j_idt115:idEnterprise_input",
+   "val": "1",
+   "sel": "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "n": 1,
+   "opts": [
+    "1=INSUMAR DISTRIBUIDORA 715, C.A."
+   ]
+  },
+  {
+   "id": "form:j_idt115:visualizacion_input",
+   "val": "solo",
+   "sel": "Un solo año",
+   "n": 2,
+   "opts": [
+    "solo=Un solo año",
+    "versus=Comparativo"
+   ]
+  },
+  {
+   "id": "form:j_idt115:anio1_input",
+   "val": "2026",
+   "sel": "2026",
+   "n": 13,
+   "opts": [
+    "2018=2018",
+    "2019=2019",
+    "2020=2020",
+    "2021=2021",
+    "2022=2022",
+    "2023=2023",
+    "2024=2024",
+    "2025=2025",
+    "2026=2026",
+    "2027=2027",
+    "2028=2028",
+    "2029=2029",
+    "2030=2030"
+   ]
+  },
+  {
+   "id": "form:j_idt115:cumplimiento_input",
+   "val": "Pedido",
+   "sel": "Pedido",
+   "n": 2,
+   "opts": [
+    "Pedido=Pedido",
+    "Facturado=Facturado"
+   ]
+  },
+  {
+   "id": "form:j_idt115:idCurrency_input",
+   "val": "Currency-US$",
+   "sel": "US$",
+   "n": 6,
+   "opts": [
+    "Currency-BS=BS",
+    "Currency-US$=US$",
+    "Unit-BTO=BULTO",
+    "Unit-DISP=DISPLAY",
+    "Unit-KG=KILOGRAMOS",
+    "Unit-UND=UNIDADES"
+   ]
+  }
+ ],
+ "botones": [
+  "j_idt50:confirm :: Ok",
+  "j_idt50:timeoutLogout :: Cerrar Sesión",
+  "j_idt65:j_idt78 :: ui-button",
+  "j_idt65:j_idt79 :: ui-button",
+  "j_idt65:j_idt80 :: ui-button",
+  "j_idt65:j_idt96 :: ui-button",
+  "j_idt65:j_idt97 :: ui-button",
+  "j_idt65:j_idt98 :: ui-button",
+  "form:j_idt115:ajax :: Buscar",
+  "form:j_idt115:detalleGraficas1 :: Detalle de Transacciones"
+ ],
+ "forms": [
+  "menuform",
+  "j_idt50",
+  "config-form",
+  "form"
+ ],
+ "titulo": "Indicadores",
+ "head": "Indicadores Pedidos admin Empresa Estructura Comercial Datos Maestros Visitas Transacciones Reportes Indicadores Rain Clothing Chicago, USA Products 12K Orders 26K Sales $200K Manage Store Get Reports Check Sales Create Add View Activity Download Listings Request Payment View Case Log CLose Store ",
+ "chk": []
+}

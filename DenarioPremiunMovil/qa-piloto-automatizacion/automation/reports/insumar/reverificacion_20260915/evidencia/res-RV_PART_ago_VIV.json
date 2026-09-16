@@ -1,0 +1,157 @@
+{
+ "tag": "RV_PART_ago_VIV",
+ "pre": {
+  "vend": "R013",
+  "clas": "1",
+  "cumpl": "Facturado",
+  "cur": "Currency-US$",
+  "dF": "01/08/2026",
+  "dB": "31/08/2026"
+ },
+ "steps": [
+  "vend:true",
+  "clas:true",
+  "cumpl:true",
+  "cur:true"
+ ],
+ "charts": {
+  "o": [
+   {
+    "w": "widget_form_j_idt139",
+    "labels": [
+     "CLUB SOCIAL 30X",
+     "OREO TIPO AMERI",
+     "SODA PUIG 24X10",
+     "LECHE ENTERA NA",
+     "OREO TIPO AMERI",
+     "KRAKER BRAN 20X",
+     "MAYONESA KRAFT",
+     "TOSTONES TOM CO",
+     "GUT SALSA PARA",
+     "SAL BAHIA EVAPO"
+    ],
+    "datasets": [
+     {
+      "data": [
+       4523,
+       1624,
+       1310,
+       1040,
+       900,
+       701,
+       515,
+       183,
+       149,
+       111
+      ]
+     }
+    ]
+   },
+   {
+    "w": "widget_form_j_idt143",
+    "labels": [
+     "CLUB SOCIAL 30X",
+     "SAL BAHIA EVAPO",
+     "LECHE ENTERA NA",
+     "SODA PUIG 24X10",
+     "OREO TIPO AMERI",
+     "MAYONESA KRAFT",
+     "GUT SALSA PARA",
+     "OREO TIPO AMERI",
+     "TOSTONES TOM CO",
+     "KRAKER BRAN 20X"
+    ],
+    "datasets": [
+     {
+      "label": "US$",
+      "data": [
+       4395160.06,
+       1864846.93,
+       1829082.19,
+       1537234.8,
+       1403489.28,
+       1395777.28,
+       1385145.1,
+       1339203.49,
+       1304927.5,
+       1300684.54
+      ]
+     }
+    ]
+   },
+   {
+    "w": "widget_form_j_idt147",
+    "labels": [
+     "GALLETAS",
+     "ALIMENTOS",
+     "BEBIDAS",
+     "PASAPALOS",
+     "CEREALES",
+     "CONDIMENTOS",
+     "CARAMELOS",
+     "CHOCOLATES",
+     "CHICLES",
+     "TABACO"
+    ],
+    "datasets": [
+     {
+      "data": [
+       15966,
+       5882,
+       3817,
+       3749,
+       1587,
+       1136,
+       975,
+       797,
+       408,
+       200
+      ]
+     }
+    ]
+   },
+   {
+    "w": "widget_form_j_idt151",
+    "labels": [
+     "GALLETAS",
+     "ALIMENTOS",
+     "PASAPALOS",
+     "BEBIDAS",
+     "CONDIMENTOS",
+     "CARAMELOS",
+     "CEREALES",
+     "CHICLES",
+     "CHOCOLATES",
+     "TABACO"
+    ],
+    "datasets": [
+     {
+      "label": "US$",
+      "data": [
+       20585191.11,
+       13592570.37,
+       12451751.49,
+       6083642.38,
+       5913132.04,
+       3022782.75,
+       2789210.82,
+       1589030.39,
+       1357815.01,
+       1145993.64
+      ]
+     }
+    ]
+   }
+  ],
+  "cv": [
+   "form:j_idt139_canvas",
+   "form:j_idt143_canvas",
+   "form:j_idt147_canvas",
+   "form:j_idt151_canvas"
+  ],
+  "widgets": [
+   "widget_form_j_idt115_detalleGraficas1"
+  ]
+ },
+ "body": "Indicadores\nProductos\nadmin \nEmpresa\nEstructura Comercial\nDatos Maestros\nVisitas\nTransacciones\nReportes\nIndicadores\nRain Clothing\n Chicago, USA\nProducts\n12K\nOrders\n26K\nSales\n$200K\nManage Store\nGet Reports\nCheck Sales\nCreate Add\nView Activity\nDownload Listings\nRequest Payment\nView Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nTodos\nALEJANDRA RODRIGUEZ\nEVA MEDINA\nLEANDRO REBOLLEDO\nMARIA JOSE PEREZ\nMIGUEL PARRA\nVIVIANA ESCALANTE\nYENNI ALVAREZ\nVIVIANA ESCALANTE\nLinea\nProveedor\nLinea\nFecha Inicio\nFecha Final\nPedido\nFacturado\nFacturado\nBS\nUS$\nBULTO\nDISPLAY\nKILOGRAMOS\nUNIDADES\nUS$\nBuscar\nDetalle de Transacciones\n% de participación del TOP 10 de productos: VIVIANA ESCALANTE\nTop 10 Total Facturado por producto\n% de participación del TOP 10 de Linea: VIVIANA ESCALANTE\nTop 10 Total Facturado por Linea\nPowered by kiberno ©2026 www.denario.net"
+}

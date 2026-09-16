@@ -1,0 +1,18 @@
+{
+ "frag": "Cobertura vendedor: Todos\nTotal de Clientes: 819\nCantidad y monto Pedido por vendedor\nVendedor\tPedidos\tMonto Total\nNo existe registro\n% Participación Top 10 Cantidad Pedido\n% Participación Top 10 Total Pedido US$\nPowered by kiberno ©2026 www.denario.net",
+ "tabs": [
+  {
+   "id": "form:j_idt143",
+   "head": [
+    "Vendedor",
+    "Pedidos",
+    "Monto Total"
+   ],
+   "rows": [
+    [
+     "No existe registro"
+    ]
+   ]
+  }
+ ]
+}

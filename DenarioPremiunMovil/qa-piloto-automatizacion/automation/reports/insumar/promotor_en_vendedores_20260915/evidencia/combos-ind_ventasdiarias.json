@@ -1,0 +1,62 @@
+{
+ "selects": [
+  {
+   "id": "form:j_idt116:idEnterprise_input",
+   "val": "1",
+   "sel": "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "n": 2,
+   "opts": [
+    "0=Todas las empresas",
+    "1=INSUMAR DISTRIBUIDORA 715, C.A."
+   ]
+  },
+  {
+   "id": "form:j_idt116:idSalesmaView_input",
+   "val": "Todos",
+   "sel": "Vendedor",
+   "n": 8,
+   "opts": [
+    "Todos=Vendedor",
+    "R015=R015 - ALEJANDRA RODRIGUEZ",
+    "R003=R003 - EVA MEDINA",
+    "R016=R016 - LEANDRO REBOLLEDO",
+    "P001=P001 - MARIA JOSE PEREZ",
+    "R007=R007 - MIGUEL PARRA",
+    "R013=R013 - VIVIANA ESCALANTE",
+    "R009=R009 - YENNI ALVAREZ"
+   ]
+  },
+  {
+   "id": "form:j_idt116:tipoVista_input",
+   "val": "Día",
+   "sel": "Día",
+   "n": 5,
+   "opts": [
+    "Día=Día",
+    "Semana=Semana",
+    "Mes=Mes",
+    "Año=Año",
+    "Rango de Fechas=Rango de Fechas"
+   ]
+  }
+ ],
+ "botones": [
+  "j_idt51:confirm :: Ok",
+  "j_idt51:timeoutLogout :: Cerrar Sesión",
+  "j_idt66:j_idt79 :: ui-button",
+  "j_idt66:j_idt80 :: ui-button",
+  "j_idt66:j_idt81 :: ui-button",
+  "j_idt66:j_idt97 :: ui-button",
+  "j_idt66:j_idt98 :: ui-button",
+  "j_idt66:j_idt99 :: ui-button"
+ ],
+ "forms": [
+  "menuform",
+  "j_idt51",
+  "config-form",
+  "form"
+ ],
+ "titulo": "Indicadores",
+ "head": "Indicadores Productos admin Empresa Estructura Comercial Datos Maestros Visitas Transacciones Reportes Indicadores Rain Clothing Chicago, USA Products 12K Orders 26K Sales $200K Manage Store Get Reports Check Sales Create Add View Activity Download Listings Request Payment View Case Log CLose Stor",
+ "chk": []
+}

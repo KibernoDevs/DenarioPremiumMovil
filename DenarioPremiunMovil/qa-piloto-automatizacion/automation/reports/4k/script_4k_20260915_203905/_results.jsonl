@@ -1,0 +1,179 @@
+{"modulo":"login","id":"DM-LOG-008","descripcion":"Segundo usuario en pantalla login","resultado":"N/A","nota":"has_second_user no configurado en perfil","ms":0,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-009","descripcion":"Login como segundo usuario","resultado":"N/A","nota":"depende de DM-LOG-008 → N/A","ms":0,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-017","descripcion":"Login post-reinstalación","resultado":"N/A","nota":"fuera de alcance smoke — requiere reinstalación","ms":1,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-002","descripcion":"Enviar vacío → alert campos obligatorios","resultado":"PASS","nota":"alert: \"Usuario y/o password no pueden ser vacios\"","ms":4483,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-003","descripcion":"Contraseña incorrecta → alert de error","resultado":"FAIL","nota":"alert: \"Está intentando sincronizar con un usuario que es diferente al previamente ingresado, de aceptar la sincronización todos los datos anteriores serán borrados. ¿Está de acuerdo?\"","ms":6153,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-004","descripcion":"Checkbox \"Recordar Usuario\" togglea","resultado":"PASS","nota":"antes: false · después: true · cambió: true","ms":7144,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-001","descripcion":"Login correcto → entra a app","resultado":"FAIL","nota":"no salió de login tras submit","ms":16539,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-011","descripcion":"DM-LOG-011","resultado":"BLOCKED","nota":"DM-LOG-001 falló — no se pudo entrar","ms":16539,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-012","descripcion":"DM-LOG-012","resultado":"BLOCKED","nota":"DM-LOG-001 falló — no se pudo entrar","ms":16539,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-001","descripcion":"Navegar a Clientes desde Home","resultado":"FAIL","nota":"Tile Clientes no encontrado en HOME","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-002","descripcion":"DM-CLT-002","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-003","descripcion":"DM-CLT-003","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-009","descripcion":"DM-CLT-009","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-013","descripcion":"DM-CLT-013","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-016","descripcion":"DM-CLT-016","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-017","descripcion":"DM-CLT-017","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-019","descripcion":"DM-CLT-019","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-021","descripcion":"DM-CLT-021","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-024","descripcion":"DM-CLT-024","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-026","descripcion":"DM-CLT-026","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-031","descripcion":"DM-CLT-031","resultado":"BLOCKED","nota":"CLT-001 falló","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-REQ-001","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-REQ-002","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":30,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-REQ-003","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":30,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-001","descripcion":"Tile Inventarios → home","resultado":"FAIL","nota":"Tile Inventarios no encontrado en HOME","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-002","descripcion":"DM-INV-002","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-004","descripcion":"DM-INV-004","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-008","descripcion":"DM-INV-008","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-010","descripcion":"DM-INV-010","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-011","descripcion":"DM-INV-011","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-012","descripcion":"DM-INV-012","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-016","descripcion":"DM-INV-016","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-017","descripcion":"DM-INV-017","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-020","descripcion":"DM-INV-020","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-021","descripcion":"DM-INV-021","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-022","descripcion":"DM-INV-022","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-023","descripcion":"DM-INV-023","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-025","descripcion":"DM-INV-025","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-026","descripcion":"DM-INV-026","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-028","descripcion":"DM-INV-028","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-REQ-001","descripcion":"DM-INV-REQ-001","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-REQ-002","descripcion":"DM-INV-REQ-002","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-REQ-003","descripcion":"DM-INV-REQ-003","resultado":"BLOCKED","nota":"INV-001 falló","ms":21,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-001","descripcion":"Tile Depósitos → home","resultado":"FAIL","nota":"Tile Depósitos no encontrado en HOME","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-002","descripcion":"DM-DEP-002","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-004","descripcion":"DM-DEP-004","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-005","descripcion":"DM-DEP-005","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-006","descripcion":"DM-DEP-006","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-009","descripcion":"DM-DEP-009","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-010","descripcion":"DM-DEP-010","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-014","descripcion":"DM-DEP-014","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-017","descripcion":"DM-DEP-017","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-018","descripcion":"DM-DEP-018","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-019","descripcion":"DM-DEP-019","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-020","descripcion":"DM-DEP-020","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-REQ-001","descripcion":"DM-DEP-REQ-001","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-REQ-002","descripcion":"DM-DEP-REQ-002","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-REQ-003","descripcion":"DM-DEP-REQ-003","resultado":"BLOCKED","nota":"DEP-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-001","descripcion":"Click módulo Visitas → home","resultado":"FAIL","nota":"Tile Visitas no encontrado en HOME","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-003","descripcion":"DM-VIS-003","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-004","descripcion":"DM-VIS-004","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-006","descripcion":"DM-VIS-006","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-010","descripcion":"DM-VIS-010","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-014","descripcion":"DM-VIS-014","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-015","descripcion":"DM-VIS-015","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-019","descripcion":"DM-VIS-019","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-020","descripcion":"DM-VIS-020","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-021","descripcion":"DM-VIS-021","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-022","descripcion":"DM-VIS-022","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-023","descripcion":"DM-VIS-023","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-031","descripcion":"DM-VIS-031","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-032","descripcion":"DM-VIS-032","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-REQ-001","descripcion":"DM-VIS-REQ-001","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-REQ-002","descripcion":"DM-VIS-REQ-002","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-REQ-003","descripcion":"DM-VIS-REQ-003","resultado":"BLOCKED","nota":"VIS-001 falló","ms":23,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-001","descripcion":"Navegar a Productos desde Home","resultado":"FAIL","nota":"tile Productos no encontrado en HOME","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-002","descripcion":"DM-PRD-002","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-004","descripcion":"DM-PRD-004","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-006","descripcion":"DM-PRD-006","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-007","descripcion":"DM-PRD-007","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-009","descripcion":"DM-PRD-009","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-012","descripcion":"DM-PRD-012","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-013","descripcion":"DM-PRD-013","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-020","descripcion":"DM-PRD-020","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-021","descripcion":"DM-PRD-021","resultado":"BLOCKED","nota":"PRD-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"vendedores","id":"DM-VND-001","descripcion":"Navegar a Vendedores desde Home","resultado":"FAIL","nota":"Tile Vendedores no encontrado en HOME","ms":10,"runner":"playwright-standalone"}
+{"modulo":"vendedores","id":"DM-VND-002","descripcion":"Expandir/contraer acordeón empresa","resultado":"BLOCKED","nota":"VND-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"vendedores","id":"DM-VND-007","descripcion":"Volver a Home","resultado":"BLOCKED","nota":"VND-001 falló","ms":10,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-001","descripcion":"Tile Devoluciones → home con 2 botones","resultado":"FAIL","nota":"Tile Devoluciones no encontrado en Home","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-002","descripcion":"DM-DEV-002","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-003","descripcion":"DM-DEV-003","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-004","descripcion":"DM-DEV-004","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-005","descripcion":"DM-DEV-005","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-006","descripcion":"DM-DEV-006","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-007","descripcion":"DM-DEV-007","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-008","descripcion":"DM-DEV-008","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-009","descripcion":"DM-DEV-009","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-010","descripcion":"DM-DEV-010","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-011","descripcion":"DM-DEV-011","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-012","descripcion":"DM-DEV-012","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-013","descripcion":"DM-DEV-013","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-014","descripcion":"DM-DEV-014","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-015","descripcion":"DM-DEV-015","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-016","descripcion":"DM-DEV-016","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-017","descripcion":"DM-DEV-017","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-018","descripcion":"DM-DEV-018","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-019","descripcion":"DM-DEV-019","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-020","descripcion":"DM-DEV-020","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-021","descripcion":"DM-DEV-021","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-022","descripcion":"DM-DEV-022","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-023","descripcion":"DM-DEV-023","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-024","descripcion":"DM-DEV-024","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-025","descripcion":"DM-DEV-025","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-VAL-001","descripcion":"DM-DEV-VAL-001","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-REQ-001","descripcion":"DM-DEV-REQ-001","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-REQ-002","descripcion":"DM-DEV-REQ-002","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-REQ-003","descripcion":"DM-DEV-REQ-003","resultado":"BLOCKED","nota":"DEV-001 falló","ms":19,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-000","descripcion":"Pre-vuelo: inventario de documentos libres en el equipo","resultado":"INFO","nota":"167 documentos libres (USD 167 · Bs 0) en 25 clientes · notas de crédito con saldo a favor: 3 · top: C.0627:72(máx 1375.00) · C.0398:39(máx 2940.00) · C.0964:9(máx 1677.00) · C.0670:6(máx 480.00) · C.0561:4(máx 12679.00) · C.0395:4(máx 505.00) · C.0683:3(máx 781.00) · C.0880:3(máx 720.00) · clientes con factura libre Y nota de crédito: C.1073","ms":539,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-036","descripcion":"DM-COB-036","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":539,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-044","descripcion":"DM-COB-044","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":539,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-045","descripcion":"DM-COB-045","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":539,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-037","descripcion":"Cobro 25% IVA","resultado":"N/A","nota":"userCanCollectIva=false","ms":539,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-001","descripcion":"Módulo Cobros → home","resultado":"FAIL","nota":"Tile Cobros no encontrado en Home","ms":550,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-002","descripcion":"DM-COB-002","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-004","descripcion":"DM-COB-004","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-007","descripcion":"DM-COB-007","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-008","descripcion":"DM-COB-008","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-009","descripcion":"DM-COB-009","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-016","descripcion":"DM-COB-016","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-018","descripcion":"DM-COB-018","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-019","descripcion":"DM-COB-019","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-022","descripcion":"DM-COB-022","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-024","descripcion":"DM-COB-024","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-026","descripcion":"DM-COB-026","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-020","descripcion":"DM-COB-020","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-021","descripcion":"DM-COB-021","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-048","descripcion":"DM-COB-048","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-049","descripcion":"DM-COB-049","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-050","descripcion":"DM-COB-050","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-051","descripcion":"DM-COB-051","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-052","descripcion":"DM-COB-052","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-033","descripcion":"DM-COB-033","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-034","descripcion":"DM-COB-034","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-014","descripcion":"DM-COB-014","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-015","descripcion":"DM-COB-015","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-028","descripcion":"DM-COB-028","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-029","descripcion":"DM-COB-029","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-041","descripcion":"DM-COB-041","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-042","descripcion":"DM-COB-042","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-046","descripcion":"DM-COB-046","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-047","descripcion":"DM-COB-047","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-039","descripcion":"DM-COB-039","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-038","descripcion":"DM-COB-038","resultado":"BLOCKED","nota":"DM-COB-001 falló","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-REQ-001","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-REQ-002","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":551,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-REQ-003","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":551,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-001","descripcion":"Home de Pedidos con sus accesos","resultado":"FAIL","nota":"Tile \"Pedidos\" no encontrado en HOME — módulos visibles: ninguno","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-002","descripcion":"DM-PED-002","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-006","descripcion":"DM-PED-006","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-015","descripcion":"DM-PED-015","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-017","descripcion":"DM-PED-017","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-024","descripcion":"DM-PED-024","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-026","descripcion":"DM-PED-026","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-029","descripcion":"DM-PED-029","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-030","descripcion":"DM-PED-030","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-031","descripcion":"DM-PED-031","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-032","descripcion":"DM-PED-032","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-034","descripcion":"DM-PED-034","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-035","descripcion":"DM-PED-035","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-037","descripcion":"DM-PED-037","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-VG-001","descripcion":"DM-PED-VG-001","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-VG-002","descripcion":"DM-PED-VG-002","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-DSC-001","descripcion":"DM-PED-DSC-001","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-DSC-002","descripcion":"DM-PED-DSC-002","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-IVA-001","descripcion":"DM-PED-IVA-001","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-TOT-001","descripcion":"DM-PED-TOT-001","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-REQ-001","descripcion":"DM-PED-REQ-001","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-REQ-002","descripcion":"DM-PED-REQ-002","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-REQ-003","descripcion":"DM-PED-REQ-003","resultado":"BLOCKED","nota":"PED-001 falló","ms":46,"runner":"playwright-standalone"}

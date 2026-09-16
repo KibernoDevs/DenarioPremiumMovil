@@ -1,0 +1,83 @@
+{
+ "selects": [
+  {
+   "id": "form:j_idt115:idEnterprise_input",
+   "val": "1",
+   "sel": "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "n": 1,
+   "opts": [
+    "1=INSUMAR DISTRIBUIDORA 715, C.A."
+   ]
+  },
+  {
+   "id": "form:j_idt115:clasificacion_input",
+   "val": "",
+   "sel": "Visualización",
+   "n": 4,
+   "opts": [
+    "=Visualización",
+    "Productos=Productos",
+    "Líneas de producto-1-Linea=Linea",
+    "Líneas de producto-2-Proveedor=Proveedor"
+   ]
+  },
+  {
+   "id": "form:j_idt115:cumplimiento_input",
+   "val": "Pedido",
+   "sel": "Pedido",
+   "n": 2,
+   "opts": [
+    "Pedido=Pedido",
+    "Facturado=Facturado"
+   ]
+  },
+  {
+   "id": "form:j_idt115:unidad_input",
+   "val": "",
+   "sel": "Unidad de Venta",
+   "n": 5,
+   "opts": [
+    "=Unidad de Venta",
+    "1=BULTO",
+    "2=DISPLAY",
+    "3=KILOGRAMOS",
+    "4=UNIDADES"
+   ]
+  },
+  {
+   "id": "form:TablaRotacion:j_id20",
+   "val": "50",
+   "sel": "50",
+   "n": 3,
+   "opts": [
+    "50=50",
+    "100=100",
+    "200=200"
+   ]
+  }
+ ],
+ "botones": [
+  "j_idt50:confirm :: Ok",
+  "j_idt50:timeoutLogout :: Cerrar Sesión",
+  "j_idt65:j_idt78 :: ui-button",
+  "j_idt65:j_idt79 :: ui-button",
+  "j_idt65:j_idt80 :: ui-button",
+  "j_idt65:j_idt96 :: ui-button",
+  "j_idt65:j_idt97 :: ui-button",
+  "j_idt65:j_idt98 :: ui-button",
+  "form:j_idt115:ajax :: Buscar",
+  "form:j_idt115:botonLimpiar :: Limpiar",
+  "form:TablaRotacion:verGrafico :: Ver Gráfico"
+ ],
+ "forms": [
+  "menuform",
+  "j_idt50",
+  "config-form",
+  "form"
+ ],
+ "titulo": "RotaciónInventario",
+ "head": "Reportes RotaciónInventario admin Empresa Estructura Comercial Datos Maestros Visitas Transacciones Reportes Indicadores Rain Clothing Chicago, USA Products 12K Orders 26K Sales $200K Manage Store Get Reports Check Sales Create Add View Activity Download Listings Request Payment View Case Log CLos",
+ "chk": [
+  ""
+ ]
+}

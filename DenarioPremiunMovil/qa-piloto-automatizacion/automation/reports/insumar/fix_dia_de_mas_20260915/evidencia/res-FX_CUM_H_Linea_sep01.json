@@ -1,0 +1,220 @@
+{
+ "tag": "FX_CUM_H_Linea_sep01",
+ "B": "formFiltros:j_idt116",
+ "steps": [
+  "clas:ok:Linea",
+  "valores:items=18 chk=0",
+  "cumpl:ok:Facturado",
+  "uni:ok:US$"
+ ],
+ "pre": {
+  "clas": "Líneas de producto-1",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/09/2026",
+  "h": "01/09/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": null,
+ "rows": [
+  [
+   "DescripciónALIMENTOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)1.460.265,88",
+   "Brecha Cuota (US$)1.460.265,88",
+   "Cantidad Facturado (US$)8",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes4,65%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónBEBIDAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)639.749,84",
+   "Brecha Cuota (US$)639.749,84",
+   "Cantidad Facturado (US$)3",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,74%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónCARAMELOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)0",
+   "Brecha Cuota (US$)0",
+   "Cantidad Facturado (US$)0",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes0%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónCEREALES",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)696.854,47",
+   "Brecha Cuota (US$)696.854,47",
+   "Cantidad Facturado (US$)3",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,74%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónCHICLES",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)118.647,67",
+   "Brecha Cuota (US$)118.647,67",
+   "Cantidad Facturado (US$)1",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes0,58%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónCHOCOLATES",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)397.831,78",
+   "Brecha Cuota (US$)397.831,78",
+   "Cantidad Facturado (US$)4",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes2,33%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónCHUPETAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)226.454,4",
+   "Brecha Cuota (US$)226.454,4",
+   "Cantidad Facturado (US$)1",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes0,58%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónCONDIMENTOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)804.285,47",
+   "Brecha Cuota (US$)804.285,47",
+   "Cantidad Facturado (US$)4",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes2,33%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónGALLETAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)3.158.496,99",
+   "Brecha Cuota (US$)3.158.496,99",
+   "Cantidad Facturado (US$)7",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes4,07%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónGOMAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)231.874,87",
+   "Brecha Cuota (US$)231.874,87",
+   "Cantidad Facturado (US$)2",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,16%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónINFUSIONES",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)264.829,8",
+   "Brecha Cuota (US$)264.829,8",
+   "Cantidad Facturado (US$)2",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,16%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónLECHE CONDENSADA",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)264.829,8",
+   "Brecha Cuota (US$)264.829,8",
+   "Cantidad Facturado (US$)2",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,16%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónMISCELANEOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)713.387,78",
+   "Brecha Cuota (US$)713.387,78",
+   "Cantidad Facturado (US$)3",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,74%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónPASAPALOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)1.964.945,71",
+   "Brecha Cuota (US$)1.964.945,71",
+   "Cantidad Facturado (US$)5",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes2,91%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónPOSTRES Y GELATINAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)259.409,33",
+   "Brecha Cuota (US$)259.409,33",
+   "Cantidad Facturado (US$)2",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes1,16%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónTABACO",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)908.411,63",
+   "Brecha Cuota (US$)908.411,63",
+   "Cantidad Facturado (US$)6",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes2,91%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónTORTAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)0",
+   "Brecha Cuota (US$)0",
+   "Cantidad Facturado (US$)0",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes0%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónTURRONES Y BOCADILLOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)59.044,59",
+   "Brecha Cuota (US$)59.044,59",
+   "Cantidad Facturado (US$)1",
+   "% Cumplimiento100%",
+   "Cartera de clientes172",
+   "% Activación Clientes0,58%",
+   "% Act clientes nuevos0%"
+  ]
+ ]
+}

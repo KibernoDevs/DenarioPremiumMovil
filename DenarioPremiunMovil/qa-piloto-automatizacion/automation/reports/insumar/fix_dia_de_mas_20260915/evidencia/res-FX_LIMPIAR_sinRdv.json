@@ -1,0 +1,42 @@
+{
+ "tag": "FX_LIMPIAR_sinRdv",
+ "tocarRdv": "no",
+ "steps": [
+  "limpiar:ok",
+  "clas:ok:Empresa",
+  "cumpl:ok:Facturado",
+  "uni:ok:US$"
+ ],
+ "trasLimpiar": {
+  "rdv": "Todos",
+  "clas": "",
+  "cumpl": "Pedido",
+  "uni": "",
+  "d": "01/09/2026",
+  "h": "15/09/2026",
+  "chk": 0
+ },
+ "pre": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "13/07/2026",
+  "h": "13/07/2026",
+  "chk": 0
+ },
+ "err": null,
+ "rows": [
+  [
+   "DescripciónINSUMAR DISTRIBUIDORA 715, C.A.",
+   "Cuota (US$)281.559,29",
+   "Monto Facturado (US$)155.028,94",
+   "Brecha Cuota (US$)-126.530,35",
+   "Cantidad Facturado (US$)285",
+   "% Cumplimiento55,06%",
+   "Cartera de clientes803",
+   "% Activación Clientes2,37%",
+   "% Act clientes nuevos0%"
+  ]
+ ]
+}

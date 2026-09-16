@@ -1,0 +1,21 @@
+{
+ "tag": "fact_p001",
+ "pre": {
+  "dateF": "31/08/2026",
+  "dateB": "01/08/2026",
+  "idSalesmaView": "24",
+  "tipoDocumento": "INVOICE"
+ },
+ "grids": [
+  {
+   "id": "form:pedidosDT",
+   "rows": [
+    [
+     "No se encontraron registros."
+    ]
+   ]
+  }
+ ],
+ "labs": [],
+ "noreg": false
+}

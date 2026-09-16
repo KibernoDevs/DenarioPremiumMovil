@@ -1,0 +1,63 @@
+{
+ "tag": "FAC_sep01_10",
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "inicio": "01/09/2026",
+  "fin": "10/09/2026"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "err": null,
+ "total": "444",
+ "first": {
+  "head": [
+   "Detalle",
+   "Tipo",
+   "Código facturación",
+   "Fecha facturación",
+   "Vendedor",
+   "Cliente",
+   "Monto facturado",
+   "Saldo pendiente",
+   "Vencimiento",
+   "Monto conv.",
+   "Tasa conv.",
+   "Adjuntos"
+  ],
+  "rows": [
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20097388",
+    "10/09/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "GILBERTO JOSE HERNAN",
+    "11,05 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20097387",
+    "10/09/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "GILBERTO JOSE HERNAN",
+    "89,77 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20097383",
+    "10/09/2026 00:00:00",
+    "YENNI ALVAREZ",
+    "YUREYKA TERESA AGUIL",
+    "46,95 US$",
+    "-"
+   ]
+  ],
+  "pag": ""
+ }
+}

@@ -1,0 +1,33 @@
+{
+  "marca": "FIX23-B0321-EXPL-083614",
+  "cliente": "C.0321",
+  "modo": "explorar",
+  "veredicto": "DISPONIBLE",
+  "ts": "2026-09-16T12:36:33.348Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00021022 USD 90 1.484,00 USD 0,00 USD 1.484,00 USD 85,00 USD 28/05/2026 18/06/2026",
+        "marcado": false
+      },
+      {
+        "i": 1,
+        "txt": "N/C 00002222 USD 51 -145,00 USD 0,00 USD 145,00 USD -145,00 USD 27/07/2026 27/07/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00021022 USD 90 1.484,00 USD 0,00 USD 1.484,00 USD 85,00 USD 28/05/2026 18/06/2026 N/C 00002222 USD 51 -145,00 USD 0,00 USD 145,00 USD -145,00 USD 27/07/2026 27/07/2026"
+  },
+  "tieneFac": true,
+  "tieneNc": true,
+  "log": [
+    "=== CASO B - C.0321 FAC 00021022 + N/C 00002222 - modo explorar - marca FIX23-B0321-EXPL-083614 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 2 filas (cbs 2)",
+    "    [0]   FAC 00021022 USD 90 1.484,00 USD 0,00 USD 1.484,00 USD 85,00 USD 28/05/2026 18/06/2026",
+    "    [1]   N/C 00002222 USD 51 -145,00 USD 0,00 USD 145,00 USD -145,00 USD 27/07/2026 27/07/2026",
+    "  factura 00021022 presente: true - nota 00002222 presente: true"
+  ]
+}

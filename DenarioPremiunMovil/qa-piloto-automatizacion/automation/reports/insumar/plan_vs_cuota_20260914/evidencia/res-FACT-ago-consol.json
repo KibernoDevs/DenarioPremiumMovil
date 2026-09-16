@@ -1,0 +1,63 @@
+{
+ "total": "1171",
+ "head": [
+  "Detalle",
+  "TipoFiltrar por Tipo",
+  "Código facturaciónFiltrar por Código facturación",
+  "Fecha facturaciónFiltrar por Fecha facturación",
+  "VendedorFiltrar por Vendedor",
+  "ClienteFiltrar por Cliente",
+  "Monto facturadoFiltrar por Monto facturado",
+  "Saldo pendienteFiltrar por Saldo pendiente",
+  "VencimientoFiltrar por Vencimiento",
+  "Monto conv.Filtrar por Monto conv.",
+  "Tasa conv.Filtrar por Tasa conv.",
+  "AdjuntosFiltrar por Adjuntos"
+ ],
+ "n": 50,
+ "sample": [
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096425",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteINVERSIONES VV18,C.A",
+   "Monto facturado44,61  US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096424",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorYENNI ALVAREZ",
+   "ClienteRESTAURANT LUNCHERIA",
+   "Monto facturado65,55  US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096423",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteCOMERCIAL ALBALIZ 19",
+   "Monto facturado494,69  US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ]
+ ],
+ "conT": 0
+}

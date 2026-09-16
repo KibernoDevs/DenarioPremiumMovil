@@ -1,0 +1,14 @@
+{
+ "tag": "ind_mor",
+ "pre": {
+  "dateF": null,
+  "dateB": null,
+  "idTipoDocs": "2",
+  "idCurrency": "US$"
+ },
+ "grids": [],
+ "labs": [
+  "US$"
+ ],
+ "noreg": false
+}

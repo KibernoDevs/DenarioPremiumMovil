@@ -1,0 +1,10 @@
+{"modulo":"productos","id":"DM-PRD-001","descripcion":"Navegar a Productos desde Home","resultado":"PASS","nota":"4 estructuras visibles","ms":512,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-002","descripcion":"Cambiar tipo de estructura","resultado":"PASS","nota":"cambió a \"MWM\" → 1 estructuras","ms":1344,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-004","descripcion":"Click \"FILTROS\" → lista productos","resultado":"PASS","nota":"1 productos","ms":3790,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-009","descripcion":"Scroll infinito","resultado":"PASS","nota":"catálogo completo, spinner desapareció","ms":5666,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-006","descripcion":"Buscar \"A\"","resultado":"PASS","nota":"1 resultados filtrados","ms":7427,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-007","descripcion":"Buscar \"ZZZZZZZ\" → lista vacía","resultado":"FAIL","nota":"Lista no vacía o mensaje ausente","ms":9463,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-012","descripcion":"Click producto \"FILTRO DE ACEITE CATERPILLAR 3116\" → detalle","resultado":"PASS","nota":"campos presentes: nombre ✓ precio ✓","ms":11911,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-013","descripcion":"Cambiar lista de precio","resultado":"N/A","nota":"userCanChangePriceList=false","ms":11911,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-020","descripcion":"Back detalle → lista productos","resultado":"PASS","nota":"","ms":12483,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-021","descripcion":"Volver a Home","resultado":"PASS","nota":"","ms":12572,"runner":"playwright-standalone"}

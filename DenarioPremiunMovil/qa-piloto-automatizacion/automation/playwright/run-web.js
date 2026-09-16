@@ -46,14 +46,39 @@ const PLAYAS_MAP = {
   'denariocaribe':     'caribe',
 };
 let playa = null;
-for (const [k, v] of Object.entries(PLAYAS_MAP)) {
-  if (WS_URL.toLowerCase().includes(k)) { playa = v; break; }
+
+// LA PLAYA SE PASA POR PARAMETRO, NO SE GUARDA EN EL PERFIL.
+//   La ws_url es de la PLAYA, no del cliente: un mismo cliente se muda de
+//   servidor (4K paso de Isla Coche a Caribe el 04/09; hidroponias hizo el
+//   camino inverso). Por eso la norma es no guardarla en el YAML y descubrirla
+//   en runtime. Hasta el 16/09 este runner la EXIGIA y abortaba con
+//   «no se pudo detectar la playa desde ws_url:» (vacio), lo que hacia
+//   imposible lanzarlo cumpliendo la norma.
+//       --playa=caribe   ·   QA_PLAYA=caribe   ·   o ws_url si existiera
+const playaArg = (rawArgs.find((a) => a.startsWith('--playa=')) || '').split('=')[1];
+const playaPedida = (playaArg || process.env.QA_PLAYA || '').trim().toLowerCase();
+
+if (playaPedida) {
+  const validas = Object.values(PLAYAS_MAP);
+  if (!validas.includes(playaPedida)) {
+    console.error(`ERR: playa desconocida: "${playaPedida}"`);
+    console.error(`Playas conocidas: ${validas.join(', ')}`);
+    process.exit(1);
+  }
+  playa = playaPedida;
+} else {
+  for (const [k, v] of Object.entries(PLAYAS_MAP)) {
+    if (WS_URL.toLowerCase().includes(k)) { playa = v; break; }
+  }
 }
 if (!playa) {
-  console.error(`ERR: no se pudo detectar la playa desde ws_url: ${WS_URL}`);
-  console.error('Playas conocidas: la_tortuga, isla_coche, el_yaque, caribe');
+  console.error('ERR: no se sabe contra que playa correr.');
+  console.error('  Pasala:  --playa=caribe   (o QA_PLAYA=caribe)');
+  console.error(`  Playas conocidas: ${Object.values(PLAYAS_MAP).join(', ')}`);
+  console.error('  La playa NO se guarda en el perfil del cliente: es rotativa.');
   process.exit(1);
 }
+console.log(`  Playa: ${playa}${playaPedida ? ' (por parametro)' : ' (deducida de ws_url)'}`);
 
 // ── Leer URL base desde playas.yaml ──────────────────────────────────────────
 const playasYamlPath = path.join(ROOT, 'automation', 'web', 'playas.yaml');
@@ -76,20 +101,32 @@ function fetchWebCreds(playaSlug) {
   if (!fs.existsSync(credsPath)) return null;
   const content = fs.readFileSync(credsPath, 'utf8');
 
-  // Mapeo de slug a posibles headers (en orden de preferencia)
-  const HEADERS = {
-    la_tortuga:  ['# USUARIO WEB LA TORTUGA', '# USUARIO WEB ISLA COCHE Y LA TORTUGA'],
-    isla_coche:  ['# USUARIO WEB ISLA COCHE', '# USUARIO WEB ISLA COCHE Y LA TORTUGA'],
-    el_yaque:    ['# USUARIO WEB EL YAQUE'],
-    caribe:      ['# USUARIO WEB ISLA COCHE Y LA TORTUGA', '# USUARIO WEB CARIBE'],
+  // SE BUSCA LA PLAYA MENCIONADA EN LA CABECERA, no una cabecera exacta.
+  //   Hasta el 16/09 se comparaba contra una lista fija de cabeceras literales.
+  //   El 14/09 QA reorganizo los bloques —CARIBE paso del bloque de Isla Coche
+  //   al de La Tortuga— y el runner dejo de encontrar las credenciales aunque
+  //   estuvieran ahi. Una cabecera puede listar VARIAS playas
+  //   («# USUARIO WEB LA TORTUGA / CARIBE») y eso cambia cada vez que alguien
+  //   mueve un cliente de servidor.
+  //   Es la misma familia de fallo que `qa-web-open.js`, que coge siempre el
+  //   PRIMER bloque `# USUARIO WEB` sea cual sea la playa.
+  const NOMBRE_EN_CABECERA = {
+    la_tortuga: 'la tortuga',
+    isla_coche: 'isla coche',
+    el_yaque:   'el yaque',
+    caribe:     'caribe',
   };
+  const aguja = NOMBRE_EN_CABECERA[playaSlug];
+  if (!aguja) return null;
 
-  const headers = HEADERS[playaSlug] || [];
   const lines = content.split('\n');
+  const candidatos = [];
+  lines.forEach((l, i) => {
+    const t = l.trim().toLowerCase();
+    if (t.startsWith('#') && t.includes('usuario web') && t.includes(aguja)) candidatos.push(i);
+  });
 
-  for (const header of headers) {
-    const idx = lines.findIndex((l) => l.trim().toLowerCase() === header.toLowerCase());
-    if (idx === -1) continue;
+  for (const idx of candidatos) {
     let user = null, pass = null;
     for (let i = idx + 1; i < Math.min(idx + 10, lines.length); i++) {
       const l = lines[i].trim();
@@ -134,6 +171,10 @@ const MODULOS_WEB = {
   devoluciones:         require('../web/modules/devoluciones').runDevolucionesWeb,
   inventarios:          require('../web/modules/inventarios').runInventariosWeb,
   'clientes-potenciales': require('../web/modules/clientes-potenciales').runClientesPotencialesWeb,
+  // 16/09 · pulso rapido: listado + lupa + detalle, con oraculo de base.
+  //   NO entra en ORDEN_DEFAULT a proposito: se lanza con --modulo=happy-path
+  //   cuando hace falta saber en minutos si la web sigue en pie.
+  'happy-path':         require('../web/modules/happy-path').runHappyPathWeb,
 };
 
 const ORDEN_DEFAULT = ['visitas', 'cobros', 'pedidos', 'depositos', 'devoluciones', 'inventarios', 'clientes-potenciales'];
@@ -200,7 +241,19 @@ async function loginWeb(pg) {
   console.log(`  URL: ${baseUrl}`);
   console.log(`  RUN DIR: ${RUN_DIR}\n`);
 
-  const browser = await chromium.launch({ headless: false, slowMo: 50 });
+  // USA EL CHROME DEL SISTEMA (channel: 'chrome'), no el de Playwright.
+  //   Los modulos del MOVIL se enganchan al telefono por connectOverCDP y no
+  //   necesitan navegador, asi que nadie habia descargado los binarios de
+  //   Playwright: al lanzar la web fallaba con «Executable doesn't exist at
+  //   ...ms-playwright/chromium-1234». En vez de descargar ~150 MB se usa el
+  //   Chrome ya instalado: arranca antes y no anade dependencias.
+  let browser;
+  try {
+    browser = await chromium.launch({ channel: 'chrome', headless: false, slowMo: 50 });
+  } catch (errChrome) {
+    console.warn('  Chrome del sistema no disponible; probando el de Playwright');
+    browser = await chromium.launch({ headless: false, slowMo: 50 });
+  }
   const context = await browser.newContext();
   const pg = await context.newPage();
 

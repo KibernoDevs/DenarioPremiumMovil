@@ -1,0 +1,15 @@
+{"modulo":"depositos","id":"DM-DEP-001","descripcion":"Tile Depósitos → home","resultado":"PASS","nota":"botones: DEPÓSITO, BUSCAR","ms":1408,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-002","descripcion":"Click DEPÓSITO → form","resultado":"PASS","nota":"banco: true; tab Cobros disabled: true","ms":3673,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-REQ-001","descripcion":"REQ · Enviar habilitado al iniciar la transacción","resultado":"PASS","nota":"nace habilitado","ms":3686,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-REQ-002","descripcion":"REQ · Rechaza el envío con obligatorios vacíos y dice qué falta","resultado":"PASS","nota":"C1 ok · C2 ok vía alerta — \"Denario Depósito Seleccione un banco para continuar.\" · Enviar quedó DESHAB","ms":7456,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-004","descripcion":"Seleccionar banco","resultado":"PASS","nota":"\"PROVINCIAL - *** 0179088\" (3 opciones)","ms":8509,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-005","descripcion":"Fecha Doc seleccionada","resultado":"PASS","nota":"fecha: 16/9/2026","ms":11350,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-006","descripcion":"Nro. Plantilla + cobro → Guardar","resultado":"N/A","nota":"Tab Cobros vacío (sin cobros depositables)","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-009","descripcion":"DM-DEP-009","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-010","descripcion":"DM-DEP-010","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-014","descripcion":"DM-DEP-014","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-017","descripcion":"DM-DEP-017","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-018","descripcion":"DM-DEP-018","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-019","descripcion":"DM-DEP-019","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-020","descripcion":"DM-DEP-020","resultado":"N/A","nota":"sin cobros depositables","ms":14651,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-REQ-003","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":15675,"runner":"playwright-standalone"}

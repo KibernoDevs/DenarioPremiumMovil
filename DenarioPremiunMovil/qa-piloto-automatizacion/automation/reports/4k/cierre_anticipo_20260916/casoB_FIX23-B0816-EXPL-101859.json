@@ -1,0 +1,27 @@
+{
+  "marca": "FIX23-B0816-EXPL-101859",
+  "cliente": "C.0816",
+  "modo": "explorar",
+  "veredicto": "NO-DISPONIBLE",
+  "ts": "2026-09-16T14:19:23.118Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00021416 USD 68 956,00 USD 0,00 USD 956,00 USD 705,00 USD 19/06/2026 10/07/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00021416 USD 68 956,00 USD 0,00 USD 956,00 USD 705,00 USD 19/06/2026 10/07/2026"
+  },
+  "tieneFac": false,
+  "tieneNc": false,
+  "log": [
+    "=== CASO B - C.0816 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B0816-EXPL-101859 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 1 filas (cbs 1)",
+    "    [0]   FAC 00021416 USD 68 956,00 USD 0,00 USD 956,00 USD 705,00 USD 19/06/2026 10/07/2026",
+    "  factura ZZZ presente: false - nota ZZZ presente: false"
+  ]
+}

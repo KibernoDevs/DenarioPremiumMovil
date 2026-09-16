@@ -1,0 +1,45 @@
+{
+  "marca": "FIX23-B0395-EXPL-101100",
+  "cliente": "C.0395",
+  "modo": "explorar",
+  "veredicto": "NO-DISPONIBLE",
+  "ts": "2026-09-16T14:11:23.985Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00021829 USD 35 519,00 USD 0,00 USD 519,00 USD 505,00 USD 22/07/2026 12/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 1,
+        "txt": "FAC 00021932 USD 27 278,00 USD 0,00 USD 278,00 USD 278,00 USD 30/07/2026 20/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 2,
+        "txt": "FAC 00021933 USD 27 90,00 USD 0,00 USD 90,00 USD 90,00 USD 30/07/2026 20/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 3,
+        "txt": "FAC 00022121 USD 13 402,00 USD 0,00 USD 402,00 USD 402,00 USD 13/08/2026 03/09/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00021829 USD 35 519,00 USD 0,00 USD 519,00 USD 505,00 USD 22/07/2026 12/08/2026 FAC 00021932 USD 27 278,00 USD 0,00 USD 278,00 USD 278,00 USD 30/07/2026 20/08/2026 FAC 00021933 USD 27 90,00 U"
+  },
+  "tieneFac": false,
+  "tieneNc": false,
+  "log": [
+    "=== CASO B - C.0395 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B0395-EXPL-101100 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 4 filas (cbs 4)",
+    "    [0]   FAC 00021829 USD 35 519,00 USD 0,00 USD 519,00 USD 505,00 USD 22/07/2026 12/08/2026",
+    "    [1]   FAC 00021932 USD 27 278,00 USD 0,00 USD 278,00 USD 278,00 USD 30/07/2026 20/08/2026",
+    "    [2]   FAC 00021933 USD 27 90,00 USD 0,00 USD 90,00 USD 90,00 USD 30/07/2026 20/08/2026",
+    "    [3]   FAC 00022121 USD 13 402,00 USD 0,00 USD 402,00 USD 402,00 USD 13/08/2026 03/09/2026",
+    "  factura ZZZ presente: false - nota ZZZ presente: false"
+  ]
+}

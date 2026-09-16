@@ -1,0 +1,223 @@
+{
+ "tag": "SEP_Linea_Facturado_Transportista",
+ "pedido": {
+  "rol": "Transportista",
+  "clas": "Linea",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026"
+ },
+ "steps": [
+  "rol:true",
+  "clas:true",
+  "valores_checked:18",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "15",
+  "clas": "Líneas de producto-1-Linea",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/09/2026",
+  "h": "14/09/2026",
+  "chk": 18
+ },
+ "err": null,
+ "total": "18",
+ "filas": {
+  "head": [
+   "Linea",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "LineaALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaBEBIDAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaCARAMELOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaCEREALES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaCHICLES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaCHOCOLATES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaCHUPETAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaCONDIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaGALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaGOMAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaINFUSIONES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaLECHE CONDENSADA",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaMISCELANEOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaPASAPALOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaPOSTRES Y GELATINAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaTABACO",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaTORTAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "LineaTURRONES Y BOCADILLOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ]
+  ]
+ }
+}

@@ -1,0 +1,21 @@
+{
+  "marca": "FIX23-B0626-EXPL-101206",
+  "cliente": "C.0626",
+  "modo": "explorar",
+  "veredicto": "NO-DISPONIBLE",
+  "ts": "2026-09-16T14:12:54.149Z",
+  "docs": {
+    "visible": true,
+    "filas": [],
+    "texto": "No hay documentos Bs Moneda Documento:"
+  },
+  "tieneFac": false,
+  "tieneNc": false,
+  "log": [
+    "=== CASO B - C.0626 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B0626-EXPL-101206 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 0 filas (cbs 0)",
+    "  TEXTO: No hay documentos Bs Moneda Documento:",
+    "  factura ZZZ presente: false - nota ZZZ presente: false"
+  ]
+}

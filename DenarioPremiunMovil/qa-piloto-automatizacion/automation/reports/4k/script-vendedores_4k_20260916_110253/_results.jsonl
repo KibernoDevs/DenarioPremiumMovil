@@ -1,0 +1,3 @@
+{"modulo":"vendedores","id":"DM-VND-001","descripcion":"Navegar a Vendedores desde Home","resultado":"PASS","nota":"1 acordeón(es) de empresa","ms":296,"runner":"playwright-standalone"}
+{"modulo":"vendedores","id":"DM-VND-002","descripcion":"Expandir/contraer acordeón empresa","resultado":"PASS","nota":"expandió: DIESEL (135px); colapsó: true","ms":1752,"runner":"playwright-standalone"}
+{"modulo":"vendedores","id":"DM-VND-007","descripcion":"Volver a Home","resultado":"PASS","nota":"","ms":1868,"runner":"playwright-standalone"}

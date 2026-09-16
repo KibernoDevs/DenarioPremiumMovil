@@ -1,0 +1,23 @@
+{"modulo":"pedidos","id":"DM-PED-001","descripcion":"Tile Pedidos → home del módulo","resultado":"PASS","nota":"botones: PEDIDO, BUSCAR, COPIAR","ms":1621,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-002","descripcion":"Form de pedido con tabs bloqueadas sin cliente","resultado":"PASS","nota":"tabs: General · Pedido(bloq) · Total(bloq) · Adjunto(bloq)","ms":6225,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-006","descripcion":"Seleccionar cliente → tabs habilitadas","resultado":"FAIL","nota":"El cliente \"C.0010\" no quedó seleccionado · modelo: 50 cargado(s) en 0 ronda(s) (quedaban más por cargar), y SÍ estaba en el modelo · vía componente: ok pero sin efecto · primeros códigos: C.0010, C.0027, C.0028","ms":16673,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-015","descripcion":"DM-PED-015","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-017","descripcion":"DM-PED-017","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-024","descripcion":"DM-PED-024","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-026","descripcion":"DM-PED-026","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-029","descripcion":"DM-PED-029","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-030","descripcion":"DM-PED-030","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-031","descripcion":"DM-PED-031","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-032","descripcion":"DM-PED-032","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-034","descripcion":"DM-PED-034","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-035","descripcion":"DM-PED-035","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-037","descripcion":"DM-PED-037","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-VG-001","descripcion":"DM-PED-VG-001","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-VG-002","descripcion":"DM-PED-VG-002","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-DSC-001","descripcion":"DM-PED-DSC-001","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-DSC-002","descripcion":"DM-PED-DSC-002","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-IVA-001","descripcion":"DM-PED-IVA-001","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-TOT-001","descripcion":"DM-PED-TOT-001","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-REQ-001","descripcion":"DM-PED-REQ-001","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-REQ-002","descripcion":"DM-PED-REQ-002","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}
+{"modulo":"pedidos","id":"DM-PED-REQ-003","descripcion":"DM-PED-REQ-003","resultado":"BLOCKED","nota":"PED-006 falló: sin cliente no hay transacción","ms":16674,"runner":"playwright-standalone"}

@@ -1,0 +1,55 @@
+{
+ "tag": "SEP_Empresa_Facturado_BULTO",
+ "pedido": {
+  "rol": "Vendedor",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "BULTO",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026"
+ },
+ "steps": [
+  "rol:true",
+  "clas:true",
+  "valores_checked:1",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "7",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "BTO - BULTO - UNIT",
+  "d": "01/09/2026",
+  "h": "14/09/2026",
+  "chk": 1
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Plan (BULTO)",
+   "Facturado (BULTO)",
+   "Diferencia Plan Vs Facturado (BULTO)",
+   "Monto Facturado (BULTO)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Plan (BULTO)0",
+    "Facturado (BULTO)0",
+    "Diferencia Plan Vs Facturado (BULTO)0",
+    "Monto Facturado (BULTO)80.160,23",
+    "Clientes en Cartera1.935",
+    "Clientes Activados339",
+    "% Activación Clientes17,52 %",
+    "Promedio activación (1 meses)26,15 %"
+   ]
+  ]
+ }
+}

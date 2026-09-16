@@ -1,0 +1,81 @@
+{
+ "tag": "FACT_SEP_Cobradas",
+ "pedido": {
+  "tipo": "Facturas cobradas",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026",
+  "vend": "-"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "d": "01/09/2026",
+  "h": "14/09/2026"
+ },
+ "err": null,
+ "total": "468",
+ "head": [
+  "Detalle",
+  "TipoFiltrar por Tipo",
+  "Código facturaciónFiltrar por Código facturación",
+  "Fecha facturaciónFiltrar por Fecha facturación",
+  "VendedorFiltrar por Vendedor",
+  "ClienteFiltrar por Cliente",
+  "Monto facturadoFiltrar por Monto facturado",
+  "Saldo pendienteFiltrar por Saldo pendiente",
+  "VencimientoFiltrar por Vencimiento",
+  "Monto conv.Filtrar por Monto conv.",
+  "Tasa conv.Filtrar por Tasa conv.",
+  "AdjuntosFiltrar por Adjuntos"
+ ],
+ "nPag": 50,
+ "sample": [
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20097431",
+   "Fecha facturación11/09/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteERIK RAFAEL PEREIRA",
+   "Monto facturado179,97 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20097430",
+   "Fecha facturación11/09/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteINVERSIONES JIRET 20",
+   "Monto facturado71,64 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20097429",
+   "Fecha facturación11/09/2026 00:00:00",
+   "VendedorMIGUEL PARRA",
+   "ClienteSUPERMERCADOS HONG K",
+   "Monto facturado537,93 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ]
+ ],
+ "conT": 0,
+ "codigosT": []
+}

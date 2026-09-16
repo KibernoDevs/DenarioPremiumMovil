@@ -1,0 +1,63 @@
+{
+ "tag": "FAC_ago01_10",
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "inicio": "01/08/2026",
+  "fin": "10/08/2026"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "err": null,
+ "total": "285",
+ "first": {
+  "head": [
+   "Detalle",
+   "Tipo",
+   "Código facturación",
+   "Fecha facturación",
+   "Vendedor",
+   "Cliente",
+   "Monto facturado",
+   "Saldo pendiente",
+   "Vencimiento",
+   "Monto conv.",
+   "Tasa conv.",
+   "Adjuntos"
+  ],
+  "rows": [
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20094646",
+    "10/08/2026 00:00:00",
+    "LEANDRO REBOLLEDO",
+    "NORKIS ANDRIMAR CAMA",
+    "89,01 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20094645",
+    "10/08/2026 00:00:00",
+    "LEANDRO REBOLLEDO",
+    "LEIDY JAQUELIN VARGA",
+    "35,96 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "15335",
+    "10/08/2026 00:00:00",
+    "LEANDRO REBOLLEDO",
+    "LISBETH RODRIGUEZ DE",
+    "43,16 US$",
+    "-"
+   ]
+  ],
+  "pag": ""
+ }
+}

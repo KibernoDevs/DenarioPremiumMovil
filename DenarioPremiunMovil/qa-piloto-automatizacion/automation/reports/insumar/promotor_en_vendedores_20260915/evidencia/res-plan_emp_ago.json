@@ -1,0 +1,34 @@
+{
+ "tag": "plan_emp_ago",
+ "pre": {
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026"
+ },
+ "marcados": "NO-WIDGET",
+ "total": "1",
+ "cabec": [
+  "Empresa",
+  "Plan (US$)",
+  "Facturado (US$)",
+  "Diferencia Plan Vs Facturado (US$)",
+  "Clientes en Cartera",
+  "Clientes Activados",
+  "% Activación Clientes",
+  "Promedio activación (1 meses)"
+ ],
+ "filas": [
+  [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "580.600",
+   "224.411,08",
+   "-356.188,92",
+   "1.891",
+   "490",
+   "25,91 %",
+   "26,18 %"
+  ]
+ ]
+}

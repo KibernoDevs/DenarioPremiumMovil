@@ -1,0 +1,3045 @@
+{
+  "marca": "CIE24-AREAB3-100344",
+  "tipo": "reab",
+  "veredicto": "PASS",
+  "ts": "2026-09-16T14:05:06.949Z",
+  "cliente": "C.0627",
+  "doc": "FAC 00020331 USD 148 327,00 USD 0,00 USD 327,00 USD 327,00 USD 31/03/2026 21/04/2026",
+  "total": "327,00",
+  "pagado": 377,
+  "excedente": 50,
+  "difPantalla": "50,00",
+  "modeloAntes": {
+    "anticipoAutomatico_len": 1,
+    "anticipoAutomatico_dump": "[{\"monto\":377,\"montoConversion\":327990,\"nuRecibo\":\"\",\"fecha\":\"2026-09-16 04:00:00\",\"posCollectionPayment\":0,\"type\":\"ef\",\"anticipoPrepaid\":false,\"disabled\":false,\"showDateModal\":false}]",
+    "createAutomatedPrepaid": true,
+    "creditBalancePrepaidAmount": 0,
+    "getPrepaidExcessAmount": "0.01",
+    "tieneEnsure": true
+  },
+  "nube": {
+    "resumen": "2826/1789567427538.0 co_type=0 377.0000 USD st=3 · 2827/1789567488642.0 co_type=1 0.0100 USD st=3",
+    "filas": [
+      {
+        "id_collection": 2826,
+        "co_collection": "1789567427538.0",
+        "co_type": 0,
+        "st_collection": 3,
+        "nu_amount_total": "377.0000",
+        "nu_difference": "50.0000",
+        "co_currency": "USD",
+        "tx_comment": "CIE24-AREAB3-100344"
+      },
+      {
+        "id_collection": 2827,
+        "co_collection": "1789567488642.0",
+        "co_type": 1,
+        "st_collection": 3,
+        "nu_amount_total": "0.0100",
+        "nu_difference": "0.0000",
+        "co_currency": "USD",
+        "tx_comment": "CIE24-AREAB3-100344"
+      }
+    ]
+  },
+  "cola": {
+    "total": 20,
+    "guardados": 0,
+    "enviados": 17
+  },
+  "consolaEnvio": [
+    "[log] Apretó:confirm",
+    "[log] COLLECTION INSERT {rows: Object, rowsAffected: 1, insertId: 58}",
+    "[log] SE ACTUALIZARON LOS DOCUMENT ST",
+    "[log] TERMINE DOCUMENT ST",
+    "[log] COLLECTION DETAILS INSERT undefined",
+    "[log] collection_detail_discounts INSERT undefined",
+    "[log] collection_detail_retentions INSERT undefined",
+    "[log] COLLECTION PAYMENTS INSERT undefined",
+    "[log] undefined",
+    "[log] TERMINE",
+    "[log] returnLogicService: onReturnValid",
+    "[log] returnLogicService: onReturnValid",
+    "[log] returnLogicService: onReturnValid",
+    "[log] [CobrosHeader] anticipo automático al Enviar {shouldCreatePrepaid: true, remnant: 0, creditBalance: 0}",
+    "[log] [AutoSendService] collection_detail_retentions en payload {coCollection: 1789567427538.0, coType: 0, retentionLines: 0}",
+    "[startGroupCollapsed] %cnative %cDevice.getInfo (#95119363) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119363, pluginId: Device, methodName: getInfo, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cDevice.getInfo (#95119363) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {memUsed: 5515968, diskFree: 0, diskTotal: 738967552, realDiskFree: 220558094336, realDiskTotal: 237629308928}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cDevice.getId (#95119364) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119364, pluginId: Device, methodName: getId, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cDevice.getId (#95119364) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {identifier: da9f78b6e785fffc}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119365) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119365, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119365) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/collectionservice/collection, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[log] {errorCode: 000, errorMessage: Cobro nro. 2826 enviado exitosamente, serviceVersion: 2.0, collectionId: 2826, documentId: 0}",
+    "[log] MessageAlert",
+    "[log] BORRADO EXITOSO  {rows: Object, rowsAffected: 1, insertId: 1}",
+    "[log] UPDATE EXITOSO collect 1789567427538.0",
+    "[log] CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT",
+    "[log] SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO",
+    "[log] [CobrosHeader] anticipo encolado en pending_transactions 1789567488642.0",
+    "[log] [AdjuntoService] Enviando adjuntos: 0",
+    "[log] [AutoSendService] collection_detail_retentions en payload {coCollection: 1789567488642.0, coType: 1, retentionLines: 0}",
+    "[startGroupCollapsed] %cnative %cDevice.getInfo (#95119366) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119366, pluginId: Device, methodName: getInfo, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cDevice.getInfo (#95119366) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {memUsed: 6081296, diskFree: 0, diskTotal: 738967552, realDiskFree: 220558094336, realDiskTotal: 237629308928}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cDevice.getId (#95119367) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119367, pluginId: Device, methodName: getId, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cDevice.getId (#95119367) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {identifier: da9f78b6e785fffc}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119368) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119368, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119368) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/collectionservice/collection, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[log] {errorCode: 000, errorMessage: Anticipo nro. 2827 enviado exitosamente, serviceVersion: 2.0, collectionId: 2827, documentId: 0}",
+    "[log] BORRADO EXITOSO  {rows: Object, rowsAffected: 1, insertId: 1}",
+    "[log] UPDATE EXITOSO collect 1789567488642.0",
+    "[log] returnLogicService: onReturnValid",
+    "[log] [AdjuntoService] Enviando adjuntos: 0",
+    "[log] AutoCerrando alerta modal",
+    "[log] MessageAlert",
+    "[log] AutoCerrando alerta modal",
+    "[log] buscar cobro",
+    "[log] [findCollect] queries prepared: 56 rows: 56 ms_prepare: 46",
+    "[log] [findCollect] finished. total_ms: 539",
+    "[timeEnd] [findCollect] total: 539.7978515625 ms"
+  ],
+  "consolaClave": [
+    "[log] COLLECTION INSERT {rows: Object, rowsAffected: 1, insertId: 58}",
+    "[log] COLLECTION DETAILS INSERT undefined",
+    "[log] COLLECTION PAYMENTS INSERT undefined",
+    "[log] [CobrosHeader] anticipo automático al Enviar {shouldCreatePrepaid: true, remnant: 0, creditBalance: 0}",
+    "[log] [AutoSendService] collection_detail_retentions en payload {coCollection: 1789567427538.0, coType: 0, retentionLines: 0}",
+    "[log] {errorCode: 000, errorMessage: Cobro nro. 2826 enviado exitosamente, serviceVersion: 2.0, collectionId: 2826, documentId: 0}",
+    "[log] CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT",
+    "[log] SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO",
+    "[log] [CobrosHeader] anticipo encolado en pending_transactions 1789567488642.0",
+    "[log] [AutoSendService] collection_detail_retentions en payload {coCollection: 1789567488642.0, coType: 1, retentionLines: 0}",
+    "[log] {errorCode: 000, errorMessage: Anticipo nro. 2827 enviado exitosamente, serviceVersion: 2.0, collectionId: 2827, documentId: 0}"
+  ],
+  "capturas": [
+    {
+      "momento": "01-documento-marcado",
+      "alertas": {
+        "momento": "01-documento-marcado",
+        "ts": "2026-09-16T14:04:09.111Z",
+        "total": 18,
+        "visibles": [],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 16,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 17,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          }
+        ]
+      },
+      "banner": {
+        "momento": "01-documento-marcado",
+        "presente": false,
+        "titulo": "",
+        "mensaje": "",
+        "html": ""
+      },
+      "sonda": {
+        "shouldInform": false,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": false,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,00. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,00. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": false,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "02-tras-teclear-excedente",
+      "alertas": {
+        "momento": "02-tras-teclear-excedente",
+        "ts": "2026-09-16T14:04:19.403Z",
+        "total": 18,
+        "visibles": [
+          {
+            "i": 17,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Aceptar"
+            ]
+          }
+        ],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 16,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 17,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Aceptar"
+            ]
+          }
+        ]
+      },
+      "banner": {
+        "momento": "02-tras-teclear-excedente",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Nro. Recibo: Nro. Recibo: Mín. 0 - Máx. 50 caracteres 0/50 Monto Monto Fecha 16/9/2026 Este pago creó el anticipo automático",
+        "html": "",
+        "tag": "div",
+        "clases": "ion-padding"
+      },
+      "sonda": {
+        "shouldInform": false,
+        "informShown": true,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "03-tras-cerrar-aviso",
+      "alertas": {
+        "momento": "03-tras-cerrar-aviso",
+        "ts": "2026-09-16T14:04:22.295Z",
+        "total": 18,
+        "visibles": [],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 16,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 17,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          }
+        ]
+      },
+      "banner": {
+        "momento": "03-tras-cerrar-aviso",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Nro. Recibo: Nro. Recibo: Mín. 0 - Máx. 50 caracteres 0/50 Monto Monto Fecha 16/9/2026 Este pago creó el anticipo automático",
+        "html": "",
+        "tag": "div",
+        "clases": "ion-padding"
+      },
+      "sonda": {
+        "shouldInform": false,
+        "informShown": true,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "04-tras-Guardar",
+      "alertas": {
+        "momento": "04-tras-Guardar",
+        "ts": "2026-09-16T14:04:25.225Z",
+        "total": 18,
+        "visibles": [
+          {
+            "i": 17,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Aceptar"
+            ]
+          }
+        ],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 16,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 17,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Aceptar"
+            ]
+          }
+        ]
+      },
+      "banner": {
+        "momento": "04-tras-Guardar",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Nro. Recibo: Nro. Recibo: Mín. 0 - Máx. 50 caracteres 0/50 Monto Monto Fecha 16/9/2026 Este pago creó el anticipo automático",
+        "html": "",
+        "tag": "div",
+        "clases": "ion-padding"
+      },
+      "sonda": {
+        "shouldInform": false,
+        "informShown": true,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "05-recien-reabierto",
+      "alertas": {
+        "momento": "05-recien-reabierto",
+        "ts": "2026-09-16T14:04:38.814Z",
+        "total": 16,
+        "visibles": [],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          }
+        ]
+      },
+      "banner": {
+        "momento": "05-recien-reabierto",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "html": "",
+        "tag": "div",
+        "clases": "cobro-automated-prepaid-banner__message"
+      },
+      "sonda": {
+        "shouldInform": true,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "06-reabierto-asentado",
+      "alertas": {
+        "momento": "06-reabierto-asentado",
+        "ts": "2026-09-16T14:04:42.368Z",
+        "total": 16,
+        "visibles": [],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          }
+        ]
+      },
+      "banner": {
+        "momento": "06-reabierto-asentado",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "html": "",
+        "tag": "div",
+        "clases": "cobro-automated-prepaid-banner__message"
+      },
+      "sonda": {
+        "shouldInform": true,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "07-justo-antes-de-Enviar",
+      "alertas": {
+        "momento": "07-justo-antes-de-Enviar",
+        "ts": "2026-09-16T14:04:42.431Z",
+        "total": 16,
+        "visibles": [],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro se ha guardado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          }
+        ]
+      },
+      "banner": {
+        "momento": "07-justo-antes-de-Enviar",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "html": "",
+        "tag": "div",
+        "clases": "cobro-automated-prepaid-banner__message"
+      },
+      "sonda": {
+        "shouldInform": true,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "08-tras-pulsar-Enviar",
+      "alertas": {
+        "momento": "08-tras-pulsar-Enviar",
+        "ts": "2026-09-16T14:04:45.237Z",
+        "total": 16,
+        "visibles": [
+          {
+            "i": 15,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Cancelar",
+              "Aceptar"
+            ]
+          }
+        ],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Cancelar",
+              "Aceptar"
+            ]
+          }
+        ]
+      },
+      "banner": {
+        "momento": "08-tras-pulsar-Enviar",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "html": "",
+        "tag": "div",
+        "clases": "cobro-automated-prepaid-banner__message"
+      },
+      "sonda": {
+        "shouldInform": true,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "09-dialogo-envio-1",
+      "alertas": {
+        "momento": "09-dialogo-envio-1",
+        "ts": "2026-09-16T14:04:45.301Z",
+        "total": 16,
+        "visibles": [
+          {
+            "i": 15,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Cancelar",
+              "Aceptar"
+            ]
+          }
+        ],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2825 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": [
+              "Cancelar",
+              "Aceptar"
+            ]
+          }
+        ]
+      },
+      "banner": {
+        "momento": "09-dialogo-envio-1",
+        "presente": true,
+        "titulo": "",
+        "mensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "html": "",
+        "tag": "div",
+        "clases": "cobro-automated-prepaid-banner__message"
+      },
+      "sonda": {
+        "shouldInform": true,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": true,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "09-dialogo-envio-2",
+      "alertas": {
+        "momento": "09-dialogo-envio-2",
+        "ts": "2026-09-16T14:04:49.849Z",
+        "total": 16,
+        "visibles": [
+          {
+            "i": 15,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": [
+              "OK"
+            ]
+          }
+        ],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 12,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 13,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 14,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 15,
+            "visible": true,
+            "display": "flex",
+            "clases": "sc-ion-alert-md-h md hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Cobro nro. 2826 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": [
+              "OK"
+            ]
+          }
+        ]
+      },
+      "banner": {
+        "momento": "09-dialogo-envio-2",
+        "presente": false,
+        "titulo": "",
+        "mensaje": "",
+        "html": ""
+      },
+      "sonda": {
+        "shouldInform": true,
+        "informShown": false,
+        "recentOpenCollect": false,
+        "shouldBanner": false,
+        "bannerTitulo": "Anticipo automático",
+        "bannerMensaje": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "mensajeInform": "Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.",
+        "createAutomatedPrepaid": true,
+        "creditBalancePrepaidAmount": 0
+      }
+    },
+    {
+      "momento": "10-tras-envio",
+      "alertas": {
+        "momento": "10-tras-envio",
+        "ts": "2026-09-16T14:04:56.552Z",
+        "total": 12,
+        "visibles": [],
+        "todas": [
+          {
+            "i": 0,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "¿Desea Sincronizar?",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 1,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "",
+              "",
+              ""
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 2,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 3,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "El Cobro será enviado",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 4,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Cobros",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 5,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2827 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 6,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2827 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 7,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md hydrated overlay-hidden",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2827 enviado exitosamente",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 8,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2827 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 9,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2827 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 10,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "Anticipo nro. 2827 enviado exitosamente",
+            "botones": [
+              "Cancelar",
+              "Aceptar"
+            ],
+            "botonesVisibles": []
+          },
+          {
+            "i": 11,
+            "visible": false,
+            "display": "none",
+            "clases": "sc-ion-alert-md-h md overlay-hidden hydrated",
+            "titulo": "Denario Premium",
+            "subtitulo": "",
+            "mensaje": "",
+            "botones": [
+              "OK"
+            ],
+            "botonesVisibles": []
+          }
+        ]
+      },
+      "banner": {
+        "momento": "10-tras-envio",
+        "presente": false,
+        "titulo": "",
+        "mensaje": "",
+        "html": ""
+      },
+      "sonda": {
+        "err": "sin app-cobro/ng"
+      }
+    }
+  ],
+  "log": [
+    "\n=== CASO2 REAB - marca CIE24-AREAB3-100344 - excedente 50 ===",
+    "  cliente C.0627 - docs 30 - total a pagar 327,00 (=327)",
+    "  documento: FAC 00020331 USD 148 327,00 USD 0,00 USD 327,00 USD 327,00 USD 31/03/2026 21/04/2026",
+    "  [D] 01-documento-marcado: alertas DOM=18 visibles=0 | banner=no | sonda shouldInform=false shouldBanner=false",
+    "  [D] 02-tras-teclear-excedente: alertas DOM=18 visibles=1 -> <<Denario Cobros - Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.>> btns=[\"Aceptar\"] | banner=<<Nro. Recibo: Nro. Recibo: Mín. 0 - Máx. 50 caracteres 0/50 Monto Monto Fecha 16/9/2026 Este pago creó el anticipo automático>> | sonda shouldInform=false shouldBanner=true",
+    "  [D] 03-tras-cerrar-aviso: alertas DOM=18 visibles=0 | banner=<<Nro. Recibo: Nro. Recibo: Mín. 0 - Máx. 50 caracteres 0/50 Monto Monto Fecha 16/9/2026 Este pago creó el anticipo automático>> | sonda shouldInform=false shouldBanner=true",
+    "  pagado 377 - Diferencia en pantalla: 50,00 (blue)",
+    "  clic GUARDAR -> ok (mouse)",
+    "  [D] 04-tras-Guardar: alertas DOM=18 visibles=1 -> <<Denario Cobros - El Cobro se ha guardado>> btns=[\"Aceptar\"] | banner=<<Nro. Recibo: Nro. Recibo: Mín. 0 - Máx. 50 caracteres 0/50 Monto Monto Fecha 16/9/2026 Este pago creó el anticipo automático>> | sonda shouldInform=false shouldBanner=true",
+    "  alerta tras Guardar: Denario Cobros · El Cobro se ha guardado",
+    "  lista: 20 items - 1 Guardados",
+    "  REABRIR Guardado por marca -> true",
+    "  [D] 05-recien-reabierto: alertas DOM=16 visibles=0 | banner=<<Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.>> | sonda shouldInform=true shouldBanner=true",
+    "  [D] 06-reabierto-asentado: alertas DOM=16 visibles=0 | banner=<<Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.>> | sonda shouldInform=true shouldBanner=true",
+    "  modelo antes de Enviar: {\"anticipoAutomatico_len\":1,\"anticipoAutomatico_dump\":\"[{\\\"monto\\\":377,\\\"montoConversion\\\":327990,\\\"nuRecibo\\\":\\\"\\\",\\\"fecha\\\":\\\"2026-09-16 04:00:00\\\",\\\"posCollectionPayment\\\":0,\\\"type\\\":\\\"ef\\\",\\\"anticipoPrepaid\\\":false,\\\"disabled\\\":false,\\\"showDateModal\\\":false}]\",\"createAutomatedPrepaid\":true,\"creditBalancePrepaidAmount\":0,\"getPrepaidExcessAmount\":\"0.01\",\"tieneEnsure\":true}",
+    "  [D] 07-justo-antes-de-Enviar: alertas DOM=16 visibles=0 | banner=<<Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.>> | sonda shouldInform=true shouldBanner=true",
+    "  clic Enviar -> ok (mouse)",
+    "  [D] 08-tras-pulsar-Enviar: alertas DOM=16 visibles=1 -> <<Denario Cobros - El Cobro será enviado>> btns=[\"Cancelar\",\"Aceptar\"] | banner=<<Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.>> | sonda shouldInform=true shouldBanner=true",
+    "  dialogo 1: Denario Cobros · El Cobro será enviado",
+    "  [D] 09-dialogo-envio-1: alertas DOM=16 visibles=1 -> <<Denario Cobros - El Cobro será enviado>> btns=[\"Cancelar\",\"Aceptar\"] | banner=<<Se creará un anticipo automático por el monto excedente de USD 0,01. Se enviará un anticipo junto al cobro.>> | sonda shouldInform=true shouldBanner=true",
+    "  dialogo 2: Denario Premium · Cobro nro. 2826 enviado exitosamente",
+    "  [D] 09-dialogo-envio-2: alertas DOM=16 visibles=1 -> <<Denario Premium - Cobro nro. 2826 enviado exitosamente>> btns=[\"OK\"] | banner=no | sonda shouldInform=true shouldBanner=false",
+    "  [D] 10-tras-envio: alertas DOM=12 visibles=0 | banner=no | sonda shouldInform=undefined shouldBanner=undefined",
+    "  nube: 2826/1789567427538.0 co_type=0 377.0000 USD st=3 · 2827/1789567488642.0 co_type=1 0.0100 USD st=3",
+    "  cola del equipo: {\"total\":20,\"guardados\":0,\"enviados\":17}",
+    "  => PASS - anticipo GENERADO",
+    "\n  -- consola del envio (lineas clave) --",
+    "  [log] COLLECTION INSERT {rows: Object, rowsAffected: 1, insertId: 58}",
+    "  [log] COLLECTION DETAILS INSERT undefined",
+    "  [log] COLLECTION PAYMENTS INSERT undefined",
+    "  [log] [CobrosHeader] anticipo automático al Enviar {shouldCreatePrepaid: true, remnant: 0, creditBalance: 0}",
+    "  [log] [AutoSendService] collection_detail_retentions en payload {coCollection: 1789567427538.0, coType: 0, retentionLines: 0}",
+    "  [log] {errorCode: 000, errorMessage: Cobro nro. 2826 enviado exitosamente, serviceVersion: 2.0, collectionId: 2826, documentId: 0}",
+    "  [log] CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT",
+    "  [log] SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO",
+    "  [log] [CobrosHeader] anticipo encolado en pending_transactions 1789567488642.0",
+    "  [log] [AutoSendService] collection_detail_retentions en payload {coCollection: 1789567488642.0, coType: 1, retentionLines: 0}",
+    "  [log] {errorCode: 000, errorMessage: Anticipo nro. 2827 enviado exitosamente, serviceVersion: 2.0, collectionId: 2827, documentId: 0}"
+  ]
+}

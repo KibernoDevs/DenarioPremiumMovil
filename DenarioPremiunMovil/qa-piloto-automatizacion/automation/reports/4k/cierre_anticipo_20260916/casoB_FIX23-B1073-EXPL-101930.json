@@ -1,0 +1,27 @@
+{
+  "marca": "FIX23-B1073-EXPL-101930",
+  "cliente": "C.1073",
+  "modo": "explorar",
+  "veredicto": "NO-DISPONIBLE",
+  "ts": "2026-09-16T14:19:49.825Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00022209 USD 8 173,00 USD 0,00 USD 173,00 USD 173,00 USD 18/08/2026 08/09/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00022209 USD 8 173,00 USD 0,00 USD 173,00 USD 173,00 USD 18/08/2026 08/09/2026"
+  },
+  "tieneFac": false,
+  "tieneNc": false,
+  "log": [
+    "=== CASO B - C.1073 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B1073-EXPL-101930 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 1 filas (cbs 1)",
+    "    [0]   FAC 00022209 USD 8 173,00 USD 0,00 USD 173,00 USD 173,00 USD 18/08/2026 08/09/2026",
+    "  factura ZZZ presente: false - nota ZZZ presente: false"
+  ]
+}

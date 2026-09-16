@@ -1,0 +1,31 @@
+{
+ "tag": "RV_IND_EVA_ago",
+ "pre": {
+  "vend": "R003",
+  "cumpl": "Facturado",
+  "cur": "Currency-US$",
+  "dF": "01/08/2026",
+  "dB": "31/08/2026"
+ },
+ "steps": [
+  "vend:true",
+  "cumpl:true",
+  "cur:NO-OPTION:BS/US$/BULTO/DISPLAY/KILOGRAMOS/UNIDADES"
+ ],
+ "err": null,
+ "grids": [
+  {
+   "id": "form:j_idt151",
+   "head": [
+    "Vendedor",
+    "Pedidos",
+    "Monto Total"
+   ],
+   "rows": [
+    [
+     "No existe registro"
+    ]
+   ]
+  }
+ ]
+}

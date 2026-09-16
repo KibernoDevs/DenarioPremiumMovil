@@ -1,0 +1,183 @@
+########## PLAN_SEP_Linea_Fact
+   "Clientes Activados13",
+   "% Activación Clientes0,67 %",
+   "Promedio activación (1 meses)0,98 %"
+  ],
+  [
+   "LineaLECHE CONDENSADA",
+   "Plan (US$)0",
+   "Facturado (US$)6.941.115,37",
+   "Diferencia Plan Vs Facturado (US$)6.941.115,37",
+   "Clientes en Cartera1.935",
+   "Clientes Activados34",
+   "% Activación Clientes1,76 %",
+   "Promedio activación (1 meses)3,67 %"
+  ],
+  [
+   "LineaMISCELANEOS",
+   "Plan (US$)0",
+   "Facturado (US$)10.345.024,24",
+   "Diferencia Plan Vs Facturado (US$)10.345.024,24",
+   "Clientes en Cartera1.935",
+   "Clientes Activados36",
+   "% Activación Clientes1,86 %",
+   "Promedio activación (1 meses)2,89 %"
+  ],
+  [
+   "LineaPASAPALOS",
+   "Plan (US$)0",
+   "Facturado (US$)125.071.197,08",
+   "Diferencia Plan Vs Facturado (US$)125.071.197,08",
+   "Clientes en Cartera1.935",
+   "Clientes Activados185",
+   "% Activación Clientes9,56 %",
+   "Promedio activación (1 meses)15,3 %"
+  ],
+  [
+   "LineaPOSTRES Y GELATINAS",
+   "Plan (US$)0",
+   "Facturado (US$)8.127.930,28",
+   "Diferencia Plan Vs Facturado (US$)8.127.930,28",
+   "Clientes en Cartera1.935",
+   "Clientes Activados31",
+   "% Activación Clientes1,6 %",
+   "Promedio activación (1 meses)3,51 %"
+  ],
+  [
+   "LineaTABACO",
+   "Plan (US$)0",
+   "Facturado (US$)17.453.700,71",
+   "Diferencia Plan Vs Facturado (US$)17.453.700,71",
+   "Clientes en Cartera1.935",
+   "Clientes Activados58",
+   "% Activación Clientes3 %",
+   "Promedio activación (1 meses)5,01 %"
+  ],
+  [
+   "LineaTORTAS",
+   "Plan (US$)0",
+   "Facturado (US$)853.353,68",
+   "Diferencia Plan Vs Facturado (US$)853.353,68",
+   "Clientes en Ca
+########## PLAN_AGO_Linea_Fact
+   "Clientes en Cartera1.891",
+   "Clientes Activados11",
+   "% Activación Clientes0,58 %",
+   "Promedio activación (1 meses)0,58 %"
+  ],
+  [
+   "LineaLECHE CONDENSADA",
+   "Plan (US$)0",
+   "Facturado (US$)13.547.944,93",
+   "Diferencia Plan Vs Facturado (US$)13.547.944,93",
+   "Clientes en Cartera1.891",
+   "Clientes Activados57",
+   "% Activación Clientes3,01 %",
+   "Promedio activación (1 meses)3,23 %"
+  ],
+  [
+   "LineaMISCELANEOS",
+   "Plan (US$)0",
+   "Facturado (US$)7.589.961,84",
+   "Diferencia Plan Vs Facturado (US$)7.589.961,84",
+   "Clientes en Cartera1.891",
+   "Clientes Activados31",
+   "% Activación Clientes1,64 %",
+   "Promedio activación (1 meses)1,75 %"
+  ],
+  [
+   "LineaPASAPALOS",
+   "Plan (US$)0",
+   "Facturado (US$)321.858.559,11",
+   "Diferencia Plan Vs Facturado (US$)321.858.559,11",
+   "Clientes en Cartera1.891",
+   "Clientes Activados287",
+   "% Activación Clientes15,18 %",
+   "Promedio activación (1 meses)15,49 %"
+  ],
+  [
+   "LineaPOSTRES Y GELATINAS",
+   "Plan (US$)0",
+   "Facturado (US$)30.714.546,02",
+   "Diferencia Plan Vs Facturado (US$)30.714.546,02",
+   "Clientes en Cartera1.891",
+   "Clientes Activados82",
+   "% Activación Clientes4,34 %",
+   "Promedio activación (1 meses)4,6 %"
+  ],
+  [
+   "LineaTABACO",
+   "Plan (US$)0",
+   "Facturado (US$)35.933.484,05",
+   "Diferencia Plan Vs Facturado (US$)35.933.484,05",
+   "Clientes en Cartera1.891",
+   "Clientes Activados94",
+   "% Activación Clientes4,97 %",
+   "Promedio activación (1 meses)5,13 %"
+  ],
+  [
+   "LineaTORTAS",
+   "Plan (US$)0",
+   "Facturado (US$)113.050,46",
+   "Diferencia Plan Vs Facturado (US$)113.050
+########## CUMPL_SEP_Linea_Fact
+  [
+   "DescripciónINFUSIONES",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)2.423.320,29",
+   "Brecha Cuota (US$)2.423.320,29",
+   "Cantidad Facturado (US$)13",
+   "% Cumplimiento100%",
+   "Cartera de clientes839",
+   "% Activación Clientes1,43%",
+   "% Act clientes nuevos9,09%"
+  ],
+  [
+   "DescripciónLECHE CONDENSADA",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)6.941.115,37",
+   "Brecha Cuota (US$)6.941.115,37",
+   "Cantidad Facturado (US$)34",
+   "% Cumplimiento100%",
+   "Cartera de clientes839",
+   "% Activación Clientes3,93%",
+   "% Act clientes nuevos9,09%"
+  ],
+  [
+   "DescripciónMISCELANEOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)10.345.024,24",
+   "Brecha Cuota (US$)10.345.024,24",
+   "Cantidad Facturado (US$)41",
+   "% Cumplimiento100%",
+   "Cartera de clientes839",
+   "% Activación Clientes4,05%",
+   "% Act clientes nuevos18,18%"
+  ],
+  [
+   "DescripciónPASAPALOS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)125.071.197,08",
+   "Brecha Cuota (US$)125.071.197,08",
+   "Cantidad Facturado (US$)216",
+   "% Cumplimiento100%",
+   "Cartera de clientes839",
+   "% Activación Clientes21,57%",
+   "% Act clientes nuevos36,36%"
+  ],
+  [
+   "DescripciónPOSTRES Y GELATINAS",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)8.127.930,28",
+   "Brecha Cuota (US$)8.127.930,28",
+   "Cantidad Facturado (US$)33",
+   "% Cumplimiento100%",
+   "Cartera de clientes839",
+   "% Activación Clientes3,69%",
+   "% Act clientes nuevos0%"
+  ],
+  [
+   "DescripciónTABACO",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)17.453.700,71",
+   "Brecha Cuota (US$)17.45

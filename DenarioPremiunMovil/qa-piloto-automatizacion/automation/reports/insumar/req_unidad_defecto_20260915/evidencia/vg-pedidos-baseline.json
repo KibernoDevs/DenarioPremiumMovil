@@ -1,0 +1,215 @@
+{
+ "grupo": "Pedidos",
+ "filas": [
+  {
+   "row": 0,
+   "selId": "formGlobal:tablaConf:0:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea que los vendedores puedan elegir la moneda de la transacción en Pedidos? SI: Se mostrará un selector con las monedas NO: Solo se mostrará la moneda por defecto de la empresa SI NO NO"
+  },
+  {
+   "row": 1,
+   "selId": "formGlobal:tablaConf:1:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Pueden los vendedores cambiar las listas de precio? SI: Permite al usuario cambiar la lista de precio NO: No permite al usuario cambiar la lista de precio SI NO SI"
+  },
+  {
+   "row": 2,
+   "selId": "formGlobal:tablaConf:2:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Pueden los vendedores cambiar las listas de precio por cada producto? SI: Permite al usuario cambiar la lista de precio por producto NO: No permite al usuario cambiar la lista de precio por producto "
+  },
+  {
+   "row": 3,
+   "selId": "formGlobal:tablaConf:3:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea cargar listas de precio según la moneda seleccionada? SI: Se cargan la listas de precio según la moneda seleccionada NO: No se cargan las listas de precio según la moneda SI NO NO"
+  },
+  {
+   "row": 4,
+   "selId": "formGlobal:tablaConf:4:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea mostrar los productos que no tengan lista de precio asignada? SI: Muestra los productos que no tengan lista de precio asignada NO: No muestra los productos que no tengan lista de precio asignad"
+  },
+  {
+   "row": 5,
+   "selId": "formGlobal:tablaConf:5:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desean que se muestre el inventario de los productos en el pedido? SI: Mostrará el inventario de los productos NO: No muestra el inventario de los productos SI NO SI"
+  },
+  {
+   "row": 6,
+   "selId": "formGlobal:tablaConf:6:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Permite tomar pedidos a productos con inventario cero (0)? SI: Los productos con inventario en cero (0) pueden agregarse en el pedido NO: No permite cargar productos con inventario en cero (0) SI NO "
+  },
+  {
+   "row": 7,
+   "selId": "formGlobal:tablaConf:7:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Validar el inventario mostrando un mensaje de alerta cuando se va cargar un producto sin inventario? SI: Muestra un mensaje de alerta NO: NO muestra mensaje de alerta SI NO NO"
+  },
+  {
+   "row": 8,
+   "selId": "formGlobal:tablaConf:8:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea visualizar los almacenes y el inventario en la toma de pedido? SI: Se mostrará el inventario de cada almacen NO: No se mostrará ni el inventario ni los almacenes SI NO SI"
+  },
+  {
+   "row": 9,
+   "selId": "formGlobal:tablaConf:9:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Puede el vendedor cambiar el almacén? SI: El usuario podrá cambiar el almacen al seleccionar los productos NO: El usuario no puede cambiar el almacen SI NO NO"
+  },
+  {
+   "row": 10,
+   "selId": "formGlobal:tablaConf:10:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Puede el vendedor asignar descuento global en el pedido? SI: Se habilita un campo para asignar descuento global creado desde la web para la app móvil NO: No se habilita el campo descuento global SI N"
+  },
+  {
+   "row": 11,
+   "selId": "formGlobal:tablaConf:11:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Puede el vendedor asignar descuento por producto en el pedido? SI: Permite que el vendedor pueda cambiar el descuento por producto NO: El vendedor no puede editar el descuento por producto SI NO NO"
+  },
+  {
+   "row": 12,
+   "selId": "formGlobal:tablaConf:12:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desean mostrar el IVA en el pedido? SI: Se mostrará el campo de \"IVA\" NO: No se muestra el campo de \"IVA\" SI NO NO"
+  },
+  {
+   "row": 13,
+   "selId": "formGlobal:tablaConf:13:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea visualizar los totales por separado en el reporte de pedidos? SI: Se mostrará los totales separados NO: Solo se mostrará el monto total SI NO SI"
+  },
+  {
+   "row": 14,
+   "selId": "formGlobal:tablaConf:14:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea ver la cantidad de unidades seleccionadas en la totalización de los pedidos? SI: Se habilita un campo para mostrar el total de unidades NO: no se habilita el campo SI NO SI"
+  },
+  {
+   "row": 15,
+   "selId": "formGlobal:tablaConf:15:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea visualizar solamente la moneda de la transacción? SI: Se mostrará solamente la moneda de la transacción NO: Se mostrará ambas monedas SI NO NO"
+  },
+  {
+   "row": 16,
+   "selId": "formGlobal:tablaConf:16:j_idt131_input",
+   "valor": "UND",
+   "pregunta": "Seleccione la unidad a totalizar BTO DISP KG UND UND"
+  },
+  {
+   "row": 17,
+   "selId": "formGlobal:tablaConf:17:j_idt131_input",
+   "valor": "na_client",
+   "pregunta": "¿Qué campo desea usar para ordenar la lista de clientes? \"co_client\" para ordenar los clientes por código \"na_client\" para ordenar los clientes por nombre \"due_date\" para ordernar los clientes que may"
+  },
+  {
+   "row": 18,
+   "selId": "formGlobal:tablaConf:18:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea cargar imágenes en su catálogo de productos? SI: Contactar al soporte para indicar la ruta y el formato de las imágenes NO: No se muestran imágenes de los productos SI NO SI"
+  },
+  {
+   "row": 19,
+   "selId": "formGlobal:tablaConf:19:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea que el usuario seleccione el Canal de distribución para filtrar los clientes? SI: Se mostrará un selector de Canal de Distribución NO: No se mostrará selector de Canal de Distribución SI NO NO"
+  },
+  {
+   "row": 20,
+   "selId": "formGlobal:tablaConf:20:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Pueden los vendedores cambiar la condición de pago del cliente en el pedido? SI: El usuario puede cambiar las condiciones de pago NO: No se puede cambiar las condiciones de pago SI NO NO"
+  },
+  {
+   "row": 21,
+   "selId": "formGlobal:tablaConf:21:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Se desea mostrar el límite de crédito del cliente al momento de realizar un pedido? SI: Se mostrará el límite de crédito del cliente NO: Se oculta el límite de crédito del cliente SI NO SI"
+  },
+  {
+   "row": 22,
+   "selId": "formGlobal:tablaConf:22:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea cambiar el tipo de los pedidos? SI: Se habilita el campo \"tipo de pedidos\" mostrando el listado crearo deade la web NO: No se habilita el campo \"tipo de pedidos\" SI NO SI"
+  },
+  {
+   "row": 23,
+   "selId": "formGlobal:tablaConf:23:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea seleccionar el tipo de pedido por defecto de acuerdo a la empresa? SI: Se carga el pedido por defecto según la empresa seleccionada NO: El pedido por defecto no depende de la empresa SI NO NO"
+  },
+  {
+   "row": 24,
+   "selId": "formGlobal:tablaConf:24:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea que los vendedores usen formato decimal para las cantidades de productos en la toma pedidos? SI: El usuario podrá ingresar cantidad con decimales al cargar productos NO: no se podrá ingresar ca"
+  },
+  {
+   "row": 25,
+   "selId": "formGlobal:tablaConf:25:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea limitar los productos por la cantidad mínima de venta y su múltiplo? SI: Limitar las unidades por un múltiplo, se debe generar el archivo \"PRODUCT_MIN_MUL_FAV\" NO: No limitar las unidades por m"
+  },
+  {
+   "row": 26,
+   "selId": "formGlobal:tablaConf:26:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea utilizar una línea de producto destacado para mostrar productos de interés? SI: Colocar el nombre de la estructura de destacados\" NO: Dejar el campo vacío SI NO SI"
+  },
+  {
+   "row": 29,
+   "selId": "formGlobal:tablaConf:29:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea que el Número de orden de compra sea obligatorio al tomar pedido? SI: El Número de orden será un campo obligatorio NO: No es obligatorio el campo de Número de orden SI NO NO"
+  },
+  {
+   "row": 30,
+   "selId": "formGlobal:tablaConf:30:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea que la fecha de despacho sea opcional y este deshabilitada por defecto? SI: La fecha de despacho será opcional NO: La fecha de despacho será obligatorio en los pedidos SI NO NO"
+  },
+  {
+   "row": 31,
+   "selId": "formGlobal:tablaConf:31:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea ver cantidad de puntos por producto? SI: Se mostrarán puntos NO: No se mostrarán puntos SI NO NO"
+  },
+  {
+   "row": 32,
+   "selId": "formGlobal:tablaConf:32:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Desea ocultar productos que no tienen stock? SI: Se ocultarán productos que no tienen stock NO: Se mostrarán productos que no tienen stock SI NO SI"
+  },
+  {
+   "row": 33,
+   "selId": "formGlobal:tablaConf:33:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea mostrar un modal con la información de listas de precios? SI: Se mostrará un boton de información de listas de precios en la seleccion de productos. NO: No se mostrará boton de información SI N"
+  },
+  {
+   "row": 34,
+   "selId": "formGlobal:tablaConf:34:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea ingresar un descuento de producto? SI: Se habilita campo para colocar el descuento del producto NO: No se habilita campo SI NO NO"
+  },
+  {
+   "row": 36,
+   "selId": "formGlobal:tablaConf:36:j_idt128_input",
+   "valor": "NO",
+   "pregunta": "¿Desea que el campo comentario sea obligatorio al hacer un pedido? SI: El campo Comentario será obligatorio NO: No es obligatorio escribir un comentario SI NO NO"
+  },
+  {
+   "row": 37,
+   "selId": "formGlobal:tablaConf:37:j_idt128_input",
+   "valor": "SI",
+   "pregunta": "¿Pueden los vendedores cambiar las unidades de cada producto? SI: Permite al usuario cambiar la unidad por producto . NO: No permite al usuario cambiar la unidad por producto SI NO SI"
+  }
+ ]
+}

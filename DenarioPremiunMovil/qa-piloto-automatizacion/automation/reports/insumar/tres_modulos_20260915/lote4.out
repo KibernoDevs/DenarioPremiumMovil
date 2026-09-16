@@ -1,0 +1,206 @@
+########## ACTIV_AGO_RDV_Fact
+   "Clientes Nuevos Activados6",
+   "% Act Nuevos100 %"
+  ],
+  [
+   "VendedorMARIA JOSE PEREZ",
+   "Clientes0",
+   "Clientes Activados0",
+   "Clientes Inactivos0",
+   "% Activación0 %",
+   "Clientes Nuevos0",
+   "Clientes Nuevos Activados0",
+   "% Act Nuevos0 %"
+  ],
+  [
+   "VendedorMIGUEL PARRA",
+   "Clientes136",
+   "Clientes Activados94",
+   "Clientes Inactivos42",
+   "% Activación69,11 %",
+   "Clientes Nuevos0",
+   "Clientes Nuevos Activados0",
+   "% Act Nuevos0 %"
+  ],
+  [
+   "VendedorVIVIANA ESCALANTE",
+   "Clientes169",
+   "Clientes Activados135",
+   "Clientes Inactivos34",
+   "% Activación79,88 %",
+   "Clientes Nuevos3",
+   "Clientes Nuevos Activados3",
+   "% Act Nuevos100 %"
+  ],
+  [
+   "VendedorYENNI ALVAREZ",
+   "Clientes100",
+   "Clientes Activados79",
+   "Clientes Inactivos21",
+   "% Activación79 %",
+   "Clientes Nuevos4",
+   "Clientes Nuevos Activados4",
+   "% Act Nuevos100 %"
+  ]
+ ]
+}
+########## ACTIV_AGO_Emp_Fact
+{
+ "tag": "ACTIV_AGO_Emp_Fact",
+ "steps": [
+  "clas:true",
+  "valores:0",
+  "cumpl:true"
+ ],
+ "pre": {
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": "1",
+ "head": [
+  "Empresa",
+  "Clientes",
+  "Clientes Activados",
+  "Clientes Inactivos",
+  "% Activación",
+  "Clientes Nuevos",
+  "Clientes Nuevos Activados",
+  "% Act Nuevos"
+ ],
+ "rows": [
+  [
+   "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+   "Clientes1891",
+   "Clientes Activados490",
+   "Clientes Inactivos1401",
+   "% Activación25,91 %",
+   "Clientes Nuevos43",
+   "Clientes Nuevos Activados17",
+   "% Act Nuevos39,53 %"
+  ]
+ ]
+}
+########## ROTA_AGO_Linea_Fact
+{
+ "tag": "ROTA_AGO_Linea_Fact",
+ "steps": [
+  "clas:true",
+  "valores:18",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "clas": "Líneas de producto-1-Linea",
+  "cumpl": "Facturado",
+  "uni": "4",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 18
+ },
+ "err": null,
+ "total": "0",
+ "head": [
+  "Nombre",
+  "SELL IN",
+  "SELL OUT",
+  "Plan VS Cumplimiento",
+  "Inventario Inicial",
+  "Inventario Final",
+  "Rotaciòn Inventario",
+  "Rotación VS SELL OUT",
+  "SELL POINTS"
+ ],
+ "rows": [
+  [
+   "No se encontraron registros."
+  ]
+ ]
+}
+########## IND_Vendedores_AGO_Fact
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[id="form:j_idt115:vendedor_label"]')[22m
+
+    at pick (C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\_drv.js:19:12)
+    at C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\medir-ind.js:15:72 {
+  log: [ `  - waiting for locator('[id="form:j_idt115:vendedor_label"]')` ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.2
+########## IND_Vendedores_SEP_Fact
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[id="form:j_idt115:vendedor_label"]')[22m
+
+    at pick (C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\_drv.js:19:12)
+    at C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\medir-ind.js:15:72 {
+  log: [ `  - waiting for locator('[id="form:j_idt115:vendedor_label"]')` ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.2
+########## IND_Pedidos_2026_Fact
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[id="form:j_idt115:visualizacion_label"]')[22m
+
+    at pick (C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\_drv.js:19:12)
+    at C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\medir-ind.js:15:72 {
+  log: [
+    `  - waiting for locator('[id="form:j_idt115:visualizacion_label"]')`
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.2
+########## IND_Participacion_AGO
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[id="form:j_idt115:vendedor_label"]')[22m
+
+    at pick (C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\_drv.js:19:12)
+    at C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\medir-ind.js:15:72 {
+  log: [ `  - waiting for locator('[id="form:j_idt115:vendedor_label"]')` ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.2
+########## IND_Clientes_AGO_Fact
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[id="form:j_idt115:cumplimiento_label"]')[22m
+
+    at pick (C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\_drv.js:19:12)
+    at C:\Users\Personal\OneDrive\Documentos\kiberno\DenarioPremium\DenarioPremiunMovil\qa-piloto-automatizacion\automation\reports\insumar\tres_modulos_20260915\medir-ind.js:15:72 {
+  log: [
+    `  - waiting for locator('[id="form:j_idt115:cumplimiento_label"]')`
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.2

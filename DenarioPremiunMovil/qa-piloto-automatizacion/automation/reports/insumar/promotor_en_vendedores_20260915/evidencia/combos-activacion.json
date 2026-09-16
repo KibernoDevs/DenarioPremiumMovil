@@ -1,0 +1,75 @@
+{
+ "selects": [
+  {
+   "id": "form:j_idt115:idEnterprise_input",
+   "val": "1",
+   "sel": "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "n": 1,
+   "opts": [
+    "1=INSUMAR DISTRIBUIDORA 715, C.A."
+   ]
+  },
+  {
+   "id": "form:j_idt115:clasificacion_input",
+   "val": "",
+   "sel": "Visualización",
+   "n": 8,
+   "opts": [
+    "=Visualización",
+    "Empresa=Empresa",
+    "Canales de distribución=Canales de distribución",
+    "RDV=Vendedores",
+    "Zonas de venta-1-Pais=Pais",
+    "Zonas de venta-2-Estado=Estado",
+    "Líneas de producto-1-Linea=Linea",
+    "Líneas de producto-2-Proveedor=Proveedor"
+   ]
+  },
+  {
+   "id": "form:j_idt115:cumplimiento_input",
+   "val": "Pedido",
+   "sel": "Pedido",
+   "n": 2,
+   "opts": [
+    "Pedido=Pedido",
+    "Facturado=Facturado"
+   ]
+  },
+  {
+   "id": "form:tablaComparativoPlanCuota:j_id21",
+   "val": "50",
+   "sel": "50",
+   "n": 3,
+   "opts": [
+    "50=50",
+    "100=100",
+    "200=200"
+   ]
+  }
+ ],
+ "botones": [
+  "j_idt50:confirm :: Ok",
+  "j_idt50:timeoutLogout :: Cerrar Sesión",
+  "j_idt65:j_idt78 :: ui-button",
+  "j_idt65:j_idt79 :: ui-button",
+  "j_idt65:j_idt80 :: ui-button",
+  "j_idt65:j_idt96 :: ui-button",
+  "j_idt65:j_idt97 :: ui-button",
+  "j_idt65:j_idt98 :: ui-button",
+  "form:j_idt115:ajax :: Buscar",
+  "form:j_idt115:botonLimpiar :: Limpiar",
+  "form:tablaComparativoPlanCuota:verGrafico :: Ver Gráfico",
+  "form:download :: Descargar Gráfico"
+ ],
+ "forms": [
+  "menuform",
+  "j_idt50",
+  "config-form",
+  "form"
+ ],
+ "titulo": "ActivacionClientes",
+ "head": "Reportes ActivacionClientes admin Empresa Estructura Comercial Datos Maestros Visitas Transacciones Reportes Indicadores Rain Clothing Chicago, USA Products 12K Orders 26K Sales $200K Manage Store Get Reports Check Sales Create Add View Activity Download Listings Request Payment View Case Log CLos",
+ "chk": [
+  ""
+ ]
+}

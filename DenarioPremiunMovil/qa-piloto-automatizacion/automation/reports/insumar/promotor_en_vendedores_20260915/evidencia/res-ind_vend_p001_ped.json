@@ -1,0 +1,22 @@
+{
+ "tag": "ind_vend_p001_ped",
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "vendedor": "P001",
+  "cumplimiento": "Pedido",
+  "idCurrency": "Currency-US$"
+ },
+ "grids": [
+  {
+   "id": "form:j_idt143",
+   "rows": [
+    [
+     "No existe registro"
+    ]
+   ]
+  }
+ ],
+ "labs": [],
+ "noreg": true
+}

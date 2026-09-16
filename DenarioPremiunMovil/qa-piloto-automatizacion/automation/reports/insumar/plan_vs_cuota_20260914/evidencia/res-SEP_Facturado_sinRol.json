@@ -1,0 +1,52 @@
+{
+ "tag": "SEP_Facturado_sinRol",
+ "pedido": {
+  "rol": "",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores_checked:1",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "15",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/09/2026",
+  "h": "14/09/2026",
+  "chk": 1
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ]
+  ]
+ }
+}

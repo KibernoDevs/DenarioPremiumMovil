@@ -1,0 +1,157 @@
+{
+ "tag": "RV_PART_ago_Linea_v2",
+ "pre": {
+  "vend": "Todos",
+  "clas": "1",
+  "cumpl": "Facturado",
+  "cur": "Currency-US$",
+  "dF": "01/08/2026",
+  "dB": "31/08/2026"
+ },
+ "steps": [
+  "vend:true",
+  "clas:true",
+  "cumpl:true",
+  "cur:true"
+ ],
+ "charts": {
+  "o": [
+   {
+    "w": "widget_form_j_idt139",
+    "labels": [
+     "CLUB SOCIAL 30X",
+     "OREO TIPO AMERI",
+     "OREO CHOCOLATE",
+     "MAYONESA KRAFT",
+     "OREO TIPO AMERI",
+     "MAYONESA KRAFT",
+     "SODA PUIG 24X10",
+     "LECHE ENTERA NA",
+     "OREO CHOCOLATE",
+     "KRAKER BRAN 20X"
+    ],
+    "datasets": [
+     {
+      "data": [
+       15072,
+       4883,
+       4697,
+       4409,
+       3455,
+       3354,
+       3262,
+       2314,
+       2240,
+       2018
+      ]
+     }
+    ]
+   },
+   {
+    "w": "widget_form_j_idt143",
+    "labels": [
+     "CLUB SOCIAL 30X",
+     "MAYONESA KRAFT",
+     "MAYONESA KRAFT",
+     "OREO TIPO AMERI",
+     "LECHE ENTERA NA",
+     "OREO TIPO AMERI",
+     "OREO CHOCOLATE",
+     "SODA PUIG 24X10",
+     "KRAKER BRAN 20X",
+     "OREO CHOCOLATE"
+    ],
+    "datasets": [
+     {
+      "label": "US$",
+      "data": [
+       14736890.08,
+       9047327.46,
+       6008930.75,
+       5410507.18,
+       4063661.55,
+       3991468.13,
+       3861593.15,
+       3843566.32,
+       3728520.9,
+       3513596.16
+      ]
+     }
+    ]
+   },
+   {
+    "w": "widget_form_j_idt147",
+    "labels": [
+     "GALLETAS",
+     "ALIMENTOS",
+     "BEBIDAS",
+     "PASAPALOS",
+     "CEREALES",
+     "CONDIMENTOS",
+     "CARAMELOS",
+     "CHOCOLATES",
+     "CHICLES",
+     "TABACO"
+    ],
+    "datasets": [
+     {
+      "data": [
+       52314,
+       19447,
+       7453,
+       5775,
+       3075,
+       2274,
+       1924,
+       1673,
+       863,
+       409
+      ]
+     }
+    ]
+   },
+   {
+    "w": "widget_form_j_idt151",
+    "labels": [
+     "GALLETAS",
+     "ALIMENTOS",
+     "PASAPALOS",
+     "BEBIDAS",
+     "CONDIMENTOS",
+     "CARAMELOS",
+     "CEREALES",
+     "CHOCOLATES",
+     "CHICLES",
+     "TABACO"
+    ],
+    "datasets": [
+     {
+      "label": "US$",
+      "data": [
+       65572743.59,
+       38848021.98,
+       19494395.33,
+       13202526.25,
+       10711839.95,
+       5900111.65,
+       5508498.31,
+       3733087.87,
+       3436593.58,
+       2588857.25
+      ]
+     }
+    ]
+   }
+  ],
+  "cv": [
+   "form:j_idt139_canvas",
+   "form:j_idt143_canvas",
+   "form:j_idt147_canvas",
+   "form:j_idt151_canvas"
+  ],
+  "widgets": [
+   "widget_form_j_idt115_detalleGraficas1"
+  ]
+ },
+ "body": "Indicadores\nProductos\nadmin \nEmpresa\nEstructura Comercial\nDatos Maestros\nVisitas\nTransacciones\nReportes\nIndicadores\nRain Clothing\n Chicago, USA\nProducts\n12K\nOrders\n26K\nSales\n$200K\nManage Store\nGet Reports\nCheck Sales\nCreate Add\nView Activity\nDownload Listings\nRequest Payment\nView Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nTodos\nALEJANDRA RODRIGUEZ\nEVA MEDINA\nLEANDRO REBOLLEDO\nMARIA JOSE PEREZ\nMIGUEL PARRA\nVIVIANA ESCALANTE\nYENNI ALVAREZ\nTodos\nLinea\nProveedor\nLinea\nFecha Inicio\nFecha Final\nPedido\nFacturado\nFacturado\nBS\nUS$\nBULTO\nDISPLAY\nKILOGRAMOS\nUNIDADES\nUS$\nBuscar\nDetalle de Transacciones\n% de participación del TOP 10 de productos: Todos\nTop 10 Total Facturado por producto\n% de participación del TOP 10 de Linea: Todos\nTop 10 Total Facturado por Linea\nPowered by kiberno ©2026 www.denario.net"
+}

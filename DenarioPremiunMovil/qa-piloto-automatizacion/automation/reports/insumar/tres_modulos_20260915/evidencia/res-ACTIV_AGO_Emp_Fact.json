@@ -1,0 +1,50 @@
+{
+ "tag": "ACTIV_AGO_Emp_Fact",
+ "page": "activ",
+ "pedido": {
+  "rdv": "-",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "-",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores:0",
+  "cumpl:true"
+ ],
+ "pre": {
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Clientes",
+   "Clientes Activados",
+   "Clientes Inactivos",
+   "% Activación",
+   "Clientes Nuevos",
+   "Clientes Nuevos Activados",
+   "% Act Nuevos"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Clientes1891",
+    "Clientes Activados490",
+    "Clientes Inactivos1401",
+    "% Activación25,91 %",
+    "Clientes Nuevos43",
+    "Clientes Nuevos Activados17",
+    "% Act Nuevos39,53 %"
+   ]
+  ]
+ }
+}

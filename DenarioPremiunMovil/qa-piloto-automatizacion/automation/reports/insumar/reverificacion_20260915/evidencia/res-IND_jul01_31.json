@@ -1,0 +1,53 @@
+{
+ "tag": "IND_jul01_31",
+ "pre": {
+  "vend": "Todos",
+  "cumpl": "Facturado",
+  "cur": "Currency-US$",
+  "dF": "01/07/2026",
+  "dB": "31/07/2026"
+ },
+ "steps": [
+  "vend:true",
+  "cumpl:true",
+  "cur:true"
+ ],
+ "err": null,
+ "grids": [
+  {
+   "id": "form:j_idt151",
+   "head": [
+    "Vendedor",
+    "Pedidos",
+    "Monto Total"
+   ],
+   "rows": [
+    [
+     "VIVIANA ESCALANTE",
+     "1903",
+     "483.274,68 US$"
+    ],
+    [
+     "MIGUEL PARRA",
+     "1005",
+     "222.340,52 US$"
+    ],
+    [
+     "ALEJANDRA RODRIGUEZ",
+     "655",
+     "216.866,82 US$"
+    ],
+    [
+     "LEANDRO REBOLLEDO",
+     "1467",
+     "198.116,49 US$"
+    ],
+    [
+     "YENNI ALVAREZ",
+     "878",
+     "150.380,3 US$"
+    ]
+   ]
+  }
+ ]
+}

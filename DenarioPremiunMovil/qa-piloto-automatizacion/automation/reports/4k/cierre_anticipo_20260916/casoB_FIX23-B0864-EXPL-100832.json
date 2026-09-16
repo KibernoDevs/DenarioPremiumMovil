@@ -1,0 +1,27 @@
+{
+  "marca": "FIX23-B0864-EXPL-100832",
+  "cliente": "C.0864",
+  "modo": "explorar",
+  "veredicto": "NO-DISPONIBLE",
+  "ts": "2026-09-16T14:08:55.038Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00022180 USD 9 2.552,00 USD 0,00 USD 2.552,00 USD 2.552,00 USD 17/08/2026 07/09/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00022180 USD 9 2.552,00 USD 0,00 USD 2.552,00 USD 2.552,00 USD 17/08/2026 07/09/2026"
+  },
+  "tieneFac": false,
+  "tieneNc": false,
+  "log": [
+    "=== CASO B - C.0864 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B0864-EXPL-100832 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 1 filas (cbs 1)",
+    "    [0]   FAC 00022180 USD 9 2.552,00 USD 0,00 USD 2.552,00 USD 2.552,00 USD 17/08/2026 07/09/2026",
+    "  factura ZZZ presente: false - nota ZZZ presente: false"
+  ]
+}

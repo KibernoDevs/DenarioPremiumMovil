@@ -1,0 +1,33 @@
+{
+ "tag": "FX_CUM_EMP_ago01_31",
+ "B": "formFiltros:j_idt116",
+ "steps": [
+  "clas:ok:Empresa",
+  "valores:ERR:page.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiti",
+  "cumpl:ok:Facturado",
+  "uni:ok:US$"
+ ],
+ "pre": {
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": null,
+ "rows": [
+  [
+   "DescripciónINSUMAR DISTRIBUIDORA 715, C.A.",
+   "Cuota (US$)85.000",
+   "Monto Facturado (US$)90.638,43",
+   "Brecha Cuota (US$)5.638,43",
+   "Cantidad Facturado (US$)379",
+   "% Cumplimiento106,63%",
+   "Cartera de clientes169",
+   "% Activación Clientes81,66%",
+   "% Act clientes nuevos100%"
+  ]
+ ]
+}

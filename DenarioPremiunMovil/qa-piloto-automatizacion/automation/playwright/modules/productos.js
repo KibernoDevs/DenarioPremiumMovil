@@ -113,15 +113,31 @@ async function runProductos(pg, DATA) {
   }
 
   /** Verificar estado vacío de búsqueda (2 formas según build) */
-  async function hayEmptyState() {
-    return pg.evaluate(() => {
-      // Forma 1: ion-item con "No hay"
-      const items = [...document.querySelectorAll('product-list ion-item')];
-      if (items.some(i => /No hay productos/i.test(i.textContent))) return true;
-      // Forma 2: <p class="search-empty-state"> fuera del ion-list (La Tortuga / el_palmar)
-      const p = document.querySelector('product-list p.search-empty-state');
-      return !!p && /No hay/i.test(p.textContent);
-    });
+  /** ¿Hay estado vacío en la lista de productos?
+   *
+   *  🔴 ESPERA, no mira una sola vez. Hasta el 16/09 consultaba el DOM justo
+   *     tras teclear y DM-PRD-007 salía FAIL con «Lista no vacía o mensaje
+   *     ausente». Comprobado A MANO: la app se comporta bien — el estado vacío
+   *     aparece en menos de 1 s y se mantiene, con el texto «No hay productos
+   *     disponibles» en `p.search-empty-state`. El fallo era del guion: medía
+   *     antes de que la app hubiera respondido.
+   *  Y no exige que el <p> cuelgue de `product-list`: según el build puede
+   *     estar fuera de ese contenedor. */
+  async function hayEmptyState(msTope = 6000) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < msTope) {
+      const hay = await pg.evaluate(() => {
+        // Forma 1: ion-item con "No hay"
+        const items = [...document.querySelectorAll('product-list ion-item')];
+        if (items.some(i => /No hay productos/i.test(i.textContent))) return true;
+        // Forma 2: <p class="search-empty-state"> — puede estar FUERA de product-list
+        const ps = [...document.querySelectorAll('p.search-empty-state')];
+        return ps.some(x => /No hay/i.test(x.textContent) && x.getBoundingClientRect().width > 0);
+      });
+      if (hay) return true;
+      await pg.waitForTimeout(250);
+    }
+    return false;
   }
 
   // ─── DM-PRD-001: Navegar a Productos ────────────────────────────────────────
@@ -255,7 +271,8 @@ async function runProductos(pg, DATA) {
     await buscar('ZZZZZZZ');
     const vacio = await hayEmptyState();
     v('DM-PRD-007', 'Buscar "ZZZZZZZ" → lista vacía', vacio ? 'PASS' : 'FAIL',
-      vacio ? 'Mensaje "No hay productos" visible' : 'Lista no vacía o mensaje ausente');
+      vacio ? 'Mensaje "No hay productos" visible'
+            : 'ni ion-item con «No hay productos» ni p.search-empty-state visible tras 6 s de espera');
   } catch (e) {
     v('DM-PRD-007', 'Buscar sin coincidencias', 'FAIL', e.message);
   }

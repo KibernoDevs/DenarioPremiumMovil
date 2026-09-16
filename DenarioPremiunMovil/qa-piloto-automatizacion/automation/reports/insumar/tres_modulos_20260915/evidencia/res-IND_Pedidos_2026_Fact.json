@@ -1,0 +1,27 @@
+{
+ "tag": "IND_Pedidos_2026_Fact",
+ "ruta": "/pages/indicadoresPedidos",
+ "llegada": "1:OK",
+ "clicked": true,
+ "steps": [
+  "cumplimiento:true",
+  "idCurrency:true"
+ ],
+ "pre": {
+  "cumplimiento": "Facturado",
+  "idCurrency": "Currency-US$",
+  "anio1": "2026",
+  "visualizacion": "solo"
+ },
+ "err": null,
+ "util": "View Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nUn solo año\nComparativo\nUn solo año\n2018\n2019\n2020\n2021\n2022\n2023\n2024\n2025\n2026\n2027\n2028\n2029\n2030\n2026\nPedido\nFacturado\nFacturado\nBS\nUS$\nBULTO\nDISPLAY\nKILOGRAMOS\nUNIDADES\nUS$\nBuscar\nDetalle de Transacciones\nMonto Total Facturado 2026: 1.733.804,89 US$\nMonto Facturado por mes\nCantidad y monto Facturado por vendedor\nVendedor\tCantidad facturados\tmonto total facturado\nVIVIANA ESCALANTE\t2581\t620.124,82 US$\nLEANDRO REBOLLEDO\t2093\t306.845,1 US$\nMIGUEL PARRA\t1345\t294.045,08 US$\nALEJANDRA RODRIGUEZ\t935\t290.655,32 US$\nYENNI ALVAREZ\t1307\t222.134,57 US$\n% Participación Top 10 Cantidad Facturado\n% Participación Top 10 Total Facturado US$\nPowered by kiberno ©2026 www.denario.net",
+ "grid": null,
+ "tablas": [
+  {
+   "id": "form:tablaFacturados",
+   "n": 5
+  }
+ ],
+ "total": null,
+ "menciona_transportista": false
+}

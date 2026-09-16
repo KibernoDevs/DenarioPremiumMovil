@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<partial-response id="j_id1"><changes><update id="form:productView"><![CDATA[<span id="form:productView">
+										
+										<div class="dashboard-grid">
+										</div></span>]]></update><update id="j_id1:javax.faces.ViewState:0"><![CDATA[2748288391372684502:277248158161761959]]></update></changes></partial-response>
+---
+<?xml version='1.0' encoding='UTF-8'?>
+<partial-response id="j_id1"><changes><update id="form:productView"><![CDATA[<span id="form:productView">
+										
+										<div class="dashboard-grid">
+										</div></span>]]></update><update id="j_id1:javax.faces.ViewState:0"><![CDATA[2748288391372684502:277248158161761959]]></update></changes></partial-response>

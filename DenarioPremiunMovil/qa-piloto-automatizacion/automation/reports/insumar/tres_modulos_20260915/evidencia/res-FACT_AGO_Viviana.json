@@ -1,0 +1,82 @@
+{
+ "tag": "FACT_AGO_Viviana",
+ "pedido": {
+  "tipo": "Facturas cobradas",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026",
+  "vend": "VIVIANA ESCALANTE"
+ },
+ "steps": [
+  "tipo:true",
+  "vend:true"
+ ],
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "4",
+  "d": "01/08/2026",
+  "h": "31/08/2026"
+ },
+ "err": null,
+ "total": "379",
+ "head": [
+  "Detalle",
+  "TipoFiltrar por Tipo",
+  "Código facturaciónFiltrar por Código facturación",
+  "Fecha facturaciónFiltrar por Fecha facturación",
+  "VendedorFiltrar por Vendedor",
+  "ClienteFiltrar por Cliente",
+  "Monto facturadoFiltrar por Monto facturado",
+  "Saldo pendienteFiltrar por Saldo pendiente",
+  "VencimientoFiltrar por Vencimiento",
+  "Monto conv.Filtrar por Monto conv.",
+  "Tasa conv.Filtrar por Tasa conv.",
+  "AdjuntosFiltrar por Adjuntos"
+ ],
+ "nPag": 50,
+ "sample": [
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096426",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteLA ESPADA DE ORO, C.",
+   "Monto facturado97,29 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096425",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteINVERSIONES VV18,C.A",
+   "Monto facturado44,61 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096423",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteCOMERCIAL ALBALIZ 19",
+   "Monto facturado494,69 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ]
+ ],
+ "conT": 0,
+ "codigosT": []
+}

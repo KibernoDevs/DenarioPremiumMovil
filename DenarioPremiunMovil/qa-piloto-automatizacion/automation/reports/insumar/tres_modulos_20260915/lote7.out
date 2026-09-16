@@ -1,0 +1,80 @@
+########## IND_Vendedores_AGO_Fact
+{
+ "tag": "IND_Vendedores_AGO_Fact",
+ "ruta": "/pages/pedidosVendedores",
+ "llegada": "1:OK",
+ "clicked": true,
+ "steps": [
+  "vendedor:true",
+  "cumplimiento:true",
+  "idCurrency:true"
+ ],
+ "pre": {
+  "cumplimiento": "Facturado",
+  "idCurrency": "Currency-US$",
+  "vendedor": "Todos",
+  "dateB": "01/08/2026",
+  "dateF": "31/08/2026"
+ },
+ "err": null,
+ "util": "View Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nTodos\nALEJANDRA RODRIGUEZ\nEVA MEDINA\nLEANDRO REBOLLEDO\nMARIA JOSE PEREZ\nMIGUEL PARRA\nVIVIANA ESCALANTE\nYENNI ALVAREZ\nTodos\nFecha Inicio\nFecha Final\nPedido\nFacturado\nFacturado\nBS\nUS$\nBULTO\nDISPLAY\nKILOGRAMOS\nUNIDADES\nUS$\nBuscar\nDetalle de Transacciones\nCobertura vendedor: Todos\nTotal de Clientes: 819\nCantidad y monto Facturado por vendedor\nVendedor\tPedidos\tMonto Total\nNo existe registro\n% Participación Top 10 Cantidad Facturado\n% Participación Top 10 Total Facturado US$\nPowered by kiberno ©2026 www.denario.net",
+ "grid": null,
+ "tablas": [
+  {
+   "id": "form:j_idt151",
+   "n": 1,
+   "head": [
+    "Vendedor",
+    "Pedidos",
+    "Monto Total"
+   ],
+   "rows": [
+    [
+     "No existe registro"
+    ]
+   ]
+  }
+ ],
+ "total": null,
+ "menciona_transportista": false
+}
+########## IND_Vendedores_SEP_Fact
+{
+ "tag": "IND_Vendedores_SEP_Fact",
+ "ruta": "/pages/pedidosVendedores",
+ "llegada": "1:OK",
+ "clicked": true,
+ "steps": [
+  "vendedor:true",
+  "cumplimiento:true",
+  "idCurrency:true"
+ ],
+ "pre": {
+  "cumplimiento": "Facturado",
+  "idCurrency": "Currency-US$",
+  "vendedor": "Todos",
+  "dateB": "01/09/2026",
+  "dateF": "14/09/2026"
+ },
+ "err": null,
+ "util": "View Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nTodos\nALEJANDRA RODRIGUEZ\nEVA MEDINA\nLEANDRO REBOLLEDO\nMARIA JOSE PEREZ\nMIGUEL PARRA\nVIVIANA ESCALANTE\nYENNI ALVAREZ\nTodos\nFecha Inicio\nFecha Final\nPedido\nFacturado\nFacturado\nBS\nUS$\nBULTO\nDISPLAY\nKILOGRAMOS\nUNIDADES\nUS$\nBuscar\nDetalle de Transacciones\nCobertura vendedor: Todos\nTotal de Clientes: 842\nCantidad y monto Facturado por vendedor\nVendedor\tPedidos\tMonto Total\nNo existe registro\n% Participación Top 10 Cantidad Facturado\n% Participación Top 10 Total Facturado US$\nPowered by kiberno ©2026 www.denario.net",
+ "grid": null,
+ "tablas": [
+  {
+   "id": "form:j_idt151",
+   "n": 1,
+   "head": [
+    "Vendedor",
+    "Pedidos",
+    "Monto Total"
+   ],
+   "rows": [
+    [
+     "No existe registro"
+    ]
+   ]
+  }
+ ],
+ "total": null,
+ "menciona_transportista": false
+}

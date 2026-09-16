@@ -1,0 +1,37 @@
+{
+ "tag": "cumpl_p001",
+ "pre": {
+  "rdv": "P001",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026"
+ },
+ "marcados": "NO-WIDGET",
+ "total": "1",
+ "cabec": [
+  "Descripción",
+  "Cuota (US$)",
+  "Monto Facturado (US$)",
+  "Brecha Cuota (US$)",
+  "Cantidad Facturado (US$)",
+  "% Cumplimiento",
+  "Cartera de clientes",
+  "% Activación Clientes",
+  "% Act clientes nuevos"
+ ],
+ "filas": [
+  [
+   "INSUMAR DISTRIBUIDORA 715, C.A.",
+   "0",
+   "0",
+   "0",
+   "0",
+   "100%",
+   "0",
+   "0%",
+   "0%"
+  ]
+ ]
+}

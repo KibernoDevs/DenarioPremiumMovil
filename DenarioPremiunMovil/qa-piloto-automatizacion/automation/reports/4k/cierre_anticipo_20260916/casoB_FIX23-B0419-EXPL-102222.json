@@ -1,0 +1,39 @@
+{
+  "marca": "FIX23-B0419-EXPL-102222",
+  "cliente": "C.0419",
+  "modo": "explorar",
+  "veredicto": "NO-DISPONIBLE",
+  "ts": "2026-09-16T14:22:42.366Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00021689 USD 44 864,00 USD 0,00 USD 864,00 USD 322,00 USD 13/07/2026 03/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 1,
+        "txt": "N/D 40000088 USD 16 11,00 USD 0,00 USD 11,00 USD 11,00 USD 10/08/2026 31/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 2,
+        "txt": "FAC C0000086 USD 16 440,00 USD 0,00 USD 440,00 USD 440,00 USD 10/08/2026 31/08/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00021689 USD 44 864,00 USD 0,00 USD 864,00 USD 322,00 USD 13/07/2026 03/08/2026 N/D 40000088 USD 16 11,00 USD 0,00 USD 11,00 USD 11,00 USD 10/08/2026 31/08/2026 FAC C0000086 USD 16 440,00 USD"
+  },
+  "tieneFac": false,
+  "tieneNc": false,
+  "log": [
+    "=== CASO B - C.0419 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B0419-EXPL-102222 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 3 filas (cbs 3)",
+    "    [0]   FAC 00021689 USD 44 864,00 USD 0,00 USD 864,00 USD 322,00 USD 13/07/2026 03/08/2026",
+    "    [1]   N/D 40000088 USD 16 11,00 USD 0,00 USD 11,00 USD 11,00 USD 10/08/2026 31/08/2026",
+    "    [2]   FAC C0000086 USD 16 440,00 USD 0,00 USD 440,00 USD 440,00 USD 10/08/2026 31/08/2026",
+    "  factura ZZZ presente: false - nota ZZZ presente: false"
+  ]
+}

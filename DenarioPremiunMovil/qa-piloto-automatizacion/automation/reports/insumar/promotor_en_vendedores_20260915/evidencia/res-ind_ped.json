@@ -1,0 +1,45 @@
+{
+ "tag": "ind_ped",
+ "pre": {
+  "dateF": null,
+  "dateB": null,
+  "cumplimiento": "Facturado",
+  "idCurrency": "Currency-US$"
+ },
+ "grids": [
+  {
+   "id": "form:tablaFacturados",
+   "rows": [
+    [
+     "VIVIANA ESCALANTE",
+     "2581",
+     "620.124,82 US$"
+    ],
+    [
+     "LEANDRO REBOLLEDO",
+     "2093",
+     "306.845,1 US$"
+    ],
+    [
+     "MIGUEL PARRA",
+     "1345",
+     "294.045,08 US$"
+    ],
+    [
+     "ALEJANDRA RODRIGUEZ",
+     "935",
+     "290.655,32 US$"
+    ],
+    [
+     "YENNI ALVAREZ",
+     "1307",
+     "222.134,57 US$"
+    ]
+   ]
+  }
+ ],
+ "labs": [
+  "US$"
+ ],
+ "noreg": false
+}

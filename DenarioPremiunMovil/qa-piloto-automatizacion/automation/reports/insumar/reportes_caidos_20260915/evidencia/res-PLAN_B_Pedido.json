@@ -1,0 +1,45 @@
+{
+ "tag": "PLAN_B_Pedido",
+ "page": "plan",
+ "pedido": {
+  "rdv": "-",
+  "clas": "Empresa",
+  "cumpl": "Pedido",
+  "uni": "US$",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "clas": "Empresa",
+  "cumpl": "Pedido",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/09/2026",
+  "h": "14/09/2026",
+  "chk": 0
+ },
+ "err": "Error en busqueda de reporte. / Intente nuevamente.",
+ "total": "0",
+ "filas": {
+  "head": [
+   "",
+   "Plan",
+   "Pedido",
+   "Diferencia Plan Vs Pedido",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (0 meses)"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ]
+ }
+}

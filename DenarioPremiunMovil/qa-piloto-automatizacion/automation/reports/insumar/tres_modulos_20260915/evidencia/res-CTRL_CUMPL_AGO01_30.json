@@ -1,0 +1,56 @@
+{
+ "tag": "CTRL_CUMPL_AGO01_30",
+ "page": "cumpl",
+ "pedido": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/08/2026",
+  "hasta": "30/08/2026"
+ },
+ "steps": [
+  "rdv:true",
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "30/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Descripción",
+   "Cuota (US$)",
+   "Monto Facturado (US$)",
+   "Brecha Cuota (US$)",
+   "Cantidad Facturado (US$)",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "DescripciónINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Cuota (US$)302.000",
+    "Monto Facturado (US$)224.411,08",
+    "Brecha Cuota (US$)-77.588,92",
+    "Cantidad Facturado (US$)1.171",
+    "% Cumplimiento74,31%",
+    "Cartera de clientes819",
+    "% Activación Clientes59,83%",
+    "% Act clientes nuevos85%"
+   ]
+  ]
+ }
+}

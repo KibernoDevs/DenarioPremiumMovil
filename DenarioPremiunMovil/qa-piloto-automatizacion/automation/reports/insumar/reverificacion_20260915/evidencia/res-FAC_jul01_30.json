@@ -1,0 +1,63 @@
+{
+ "tag": "FAC_jul01_30",
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "inicio": "01/07/2026",
+  "fin": "30/07/2026"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "err": null,
+ "total": "5865",
+ "first": {
+  "head": [
+   "Detalle",
+   "Tipo",
+   "Código facturación",
+   "Fecha facturación",
+   "Vendedor",
+   "Cliente",
+   "Monto facturado",
+   "Saldo pendiente",
+   "Vencimiento",
+   "Monto conv.",
+   "Tasa conv.",
+   "Adjuntos"
+  ],
+  "rows": [
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20093908",
+    "30/07/2026 00:00:00",
+    "LEANDRO REBOLLEDO",
+    "DISTRIBUIDORA LA PRO",
+    "89,29 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20093905",
+    "30/07/2026 00:00:00",
+    "YENNI ALVAREZ",
+    "INVERSIONES LA MODEL",
+    "77,33 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20093904",
+    "30/07/2026 00:00:00",
+    "LEANDRO REBOLLEDO",
+    "COMERCIAL LA ROCA VI",
+    "128,26 US$",
+    "-"
+   ]
+  ],
+  "pag": ""
+ }
+}

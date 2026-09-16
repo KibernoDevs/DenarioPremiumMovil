@@ -1,0 +1,63 @@
+{
+ "tag": "FAC_jul01_31",
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "inicio": "01/07/2026",
+  "fin": "31/07/2026"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "err": null,
+ "total": "5908",
+ "first": {
+  "head": [
+   "Detalle",
+   "Tipo",
+   "Código facturación",
+   "Fecha facturación",
+   "Vendedor",
+   "Cliente",
+   "Monto facturado",
+   "Saldo pendiente",
+   "Vencimiento",
+   "Monto conv.",
+   "Tasa conv.",
+   "Adjuntos"
+  ],
+  "rows": [
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20093984",
+    "31/07/2026 00:00:00",
+    "MIGUEL PARRA",
+    "RAQUEL DEL VALLE PER",
+    "58,34 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20093983",
+    "31/07/2026 00:00:00",
+    "MIGUEL PARRA",
+    "ILSE ZENAIDA LAGOS D",
+    "108,99 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20093982",
+    "31/07/2026 00:00:00",
+    "LEANDRO REBOLLEDO",
+    "HILDA WILVERIS LARA",
+    "21,37 US$",
+    "-"
+   ]
+  ],
+  "pag": ""
+ }
+}

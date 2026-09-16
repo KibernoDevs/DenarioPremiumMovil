@@ -1,0 +1,1 @@
+{"modulo":"cobros","id":"cobros","descripcion":"Error general","resultado":"BLOCKED","nota":"Cannot access 'faltaMateria' before initialization","ms":402921,"runner":"playwright-standalone"}

@@ -1,0 +1,81 @@
+{
+ "tag": "FACT_AGO_Cobr_30",
+ "pedido": {
+  "tipo": "Facturas cobradas",
+  "desde": "01/08/2026",
+  "hasta": "30/08/2026",
+  "vend": "-"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "d": "01/08/2026",
+  "h": "30/08/2026"
+ },
+ "err": null,
+ "total": "1118",
+ "head": [
+  "Detalle",
+  "TipoFiltrar por Tipo",
+  "Código facturaciónFiltrar por Código facturación",
+  "Fecha facturaciónFiltrar por Fecha facturación",
+  "VendedorFiltrar por Vendedor",
+  "ClienteFiltrar por Cliente",
+  "Monto facturadoFiltrar por Monto facturado",
+  "Saldo pendienteFiltrar por Saldo pendiente",
+  "VencimientoFiltrar por Vencimiento",
+  "Monto conv.Filtrar por Monto conv.",
+  "Tasa conv.Filtrar por Tasa conv.",
+  "AdjuntosFiltrar por Adjuntos"
+ ],
+ "nPag": 50,
+ "sample": [
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096316",
+   "Fecha facturación29/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteSAHAR RABH DE RABAH",
+   "Monto facturado78,30 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación15639",
+   "Fecha facturación28/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClientePANADERiA, PASTELERi",
+   "Monto facturado728,06 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoFacturas cobradas",
+   "Código facturación20096314",
+   "Fecha facturación28/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteSUPERMERCADO WU 2020",
+   "Monto facturado621,76 US$",
+   "Saldo pendiente-",
+   "Vencimiento",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ]
+ ],
+ "conT": 0,
+ "codigosT": []
+}

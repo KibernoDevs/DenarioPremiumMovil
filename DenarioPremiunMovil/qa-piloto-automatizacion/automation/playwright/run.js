@@ -59,9 +59,19 @@ const MODULOS = {
 };
 
 
-// `pedidos` va al final: es el módulo que más escribe y el que más tarda.
-// `cobros` sigue fuera del orden por defecto — se corre con --modulo=cobros.
-const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores','devoluciones','pedidos'];
+// Los dos que MÁS ESCRIBEN van al final: `cobros` y `pedidos`.
+//
+// ✅ `cobros` ENTRA en el orden por defecto desde el 14/09 (`pulido_scripts_20260914`).
+//    Antes estaba fuera porque no era fiable: 12 casos salían BLOCKED sin llegar a
+//    probarse y un dato de cliente caducado tumbaba 20 en cascada. Hoy descubre el
+//    cliente en pantalla, rota cuando se agotan los documentos, lee las VG del
+//    equipo y comprueba en la nube que un envío deja UNA sola fila.
+//
+// ⚠ Va ANTES que `pedidos` por una razón práctica: cobros necesita documentos
+//   libres y cada envío se come uno, así que conviene que corra con la cartera
+//   lo más entera posible.
+// ⚠ Dura ~11 min en 4K. Es el módulo más largo de la corrida.
+const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores','devoluciones','cobros','pedidos'];
 
 // ── Construir DATA para cada módulo desde el perfil YAML ──────────────────────
 function dataParaModulo(modulo) {
@@ -196,7 +206,19 @@ const now = new Date();
 const pad = (n) => String(n).padStart(2, '0');
 const fecha = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
 const hora  = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-const TIPO_RUN = QA_MODULO ? `script-${QA_MODULO}` : 'script';
+// `--modulo=` acepta UNA LISTA separada por comas: `--modulo=login,clientes,visitas`.
+// 🔴 16/09: hasta hoy no se partía por comas y `--modulo=a,b` moría con
+//    «módulo(s) no implementado(s): a,b». Por eso las barridas parciales se venían
+//    lanzando módulo a módulo. La lista se conserva en orden y sin repetidos.
+const MODULOS_PEDIDOS = QA_MODULO
+  ? [...new Set(QA_MODULO.split(',').map(m => m.trim()).filter(Boolean))]
+  : null;
+
+// Nombre de carpeta: con 1 o 2 módulos se nombran; con más, `multi` (evita rutas
+// kilométricas y comas en el nombre de directorio).
+const TIPO_RUN = MODULOS_PEDIDOS
+  ? (MODULOS_PEDIDOS.length <= 2 ? `script-${MODULOS_PEDIDOS.join('-')}` : 'script-multi')
+  : 'script';
 const RUN_DIR = path.join(ROOT, 'automation', 'reports', QA_CLIENTE,
                           `${TIPO_RUN}_${QA_CLIENTE}_${fecha}_${hora}`);
 fs.mkdirSync(RUN_DIR, { recursive: true });
@@ -208,7 +230,7 @@ function appendResult(modulo, v) {
 }
 
 function buildMd(modulo, verdicts, msTotal) {
-  const iconMap = { PASS: '✅', FAIL: '❌', SKIP: '⏭️', 'N/A': '⬜', BLOCKED: '🚫' };
+  const iconMap = { PASS: '✅', FAIL: '❌', SKIP: '⏭️', 'N/A': '⬜', BLOCKED: '🚫', INFO: 'ℹ️' };
   const lines = [`# ${modulo.toUpperCase()} — ${QA_CLIENTE}`, ''];
   for (const v of verdicts) {
     const icon = iconMap[v.resultado] || '❓';
@@ -222,8 +244,8 @@ function buildMd(modulo, verdicts, msTotal) {
 }
 
 // ── Determinar módulos a correr ───────────────────────────────────────────────
-const modulosFiltro = QA_MODULO
-  ? [QA_MODULO]
+const modulosFiltro = MODULOS_PEDIDOS
+  ? MODULOS_PEDIDOS
   : ORDEN_DEFAULT.filter(m => MODULOS[m] !== null);
 
 const invalidos = modulosFiltro.filter(m => !MODULOS[m]);
@@ -289,6 +311,7 @@ if (invalidos.length) {
       }
     }
 
+    global.__qaVerdictsParciales = null;
     const data = { ...dataParaModulo(modulo), clienteSlug: QA_CLIENTE };
     const t0 = Date.now();
     let verdicts, msTotal;
@@ -299,7 +322,12 @@ if (invalidos.length) {
       if (result.newPg) pg = result.newPg;
     } catch (e) {
       console.error(`    ERR no capturado en ${modulo}: ${e.message}`);
-      verdicts = [{ id: modulo, descripcion: 'Error general', resultado: 'BLOCKED', nota: e.message, ms: Date.now() - t0 }];
+      // 🔑 No tirar lo ya medido. El módulo publica sus veredictos parciales en
+      //    `global.__qaVerdictsParciales`; si están, se conservan y el error se
+      //    añade como un caso más. Sustituirlos por un único BLOCKED convierte
+      //    una corrida de 40 casos medidos en un informe que no dice nada.
+      const parciales = Array.isArray(global.__qaVerdictsParciales) ? global.__qaVerdictsParciales : [];
+      verdicts = [...parciales, { id: modulo, descripcion: 'Error general (la corrida se cortó aquí)', resultado: 'BLOCKED', nota: e.message, ms: Date.now() - t0 }];
       msTotal  = Date.now() - t0;
     }
 

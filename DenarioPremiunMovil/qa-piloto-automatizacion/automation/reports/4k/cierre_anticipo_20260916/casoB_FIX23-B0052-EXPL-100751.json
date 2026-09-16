@@ -1,0 +1,11 @@
+{
+  "marca": "FIX23-B0052-EXPL-100751",
+  "cliente": "C.0052",
+  "modo": "explorar",
+  "veredicto": "BLOCKED",
+  "ts": "2026-09-16T14:07:59.676Z",
+  "motivo": "cliente: Cliente \"C.0052\" el modal no listó clientes · 0 ítems",
+  "log": [
+    "=== CASO B - C.0052 FAC ZZZ + N/C ZZZ - modo explorar - marca FIX23-B0052-EXPL-100751 ==="
+  ]
+}

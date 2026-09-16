@@ -1,0 +1,16 @@
+{
+ "tag": "cobr_viviana",
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "idSalesmaView": "4",
+  "idCurrency": "US$"
+ },
+ "grids": [],
+ "labs": [
+  "US$",
+  "Facturado",
+  "Cobrado"
+ ],
+ "noreg": false
+}

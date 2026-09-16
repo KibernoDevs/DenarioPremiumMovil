@@ -1,0 +1,22 @@
+{
+ "tag": "IND_Cobranzas_AGO",
+ "ruta": "/pages/protected/indicadores/indicadorCobros.xhtml",
+ "llegada": "1:OK",
+ "clicked": true,
+ "steps": [
+  "idCurrency:true"
+ ],
+ "pre": {
+  "idCurrency": "US$",
+  "idSalesmaView": "",
+  "idTipo": "",
+  "dateB": "01/08/2026",
+  "dateF": "31/08/2026"
+ },
+ "err": null,
+ "util": "View Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nVendedor\nALEJANDRA RODRIGUEZ\nEVA MEDINA\nLEANDRO REBOLLEDO\nMARIA JOSE PEREZ\nMIGUEL PARRA\nVIVIANA ESCALANTE\nYENNI ALVAREZ\nVendedor\nCliente\nAARON CAR WASH, C.A\nABASTO A-B-C-TACARIGUA,C.A\nABASTO ANGELY LA VIRGEN DEL VALLE, C.A.\nABASTO BUENAVENTURA TB C.A\nABASTO EL GORDO 30.11, C.A.\nABASTO EL PORTUGUES 2009, CA\nABASTO EL SITIO DSG, C.A.\nABASTO, FRUTERIA Y CHARCUTERIA YOSELIN, C.A\nABASTO GER COR 4 C.A\nABASTO LA GRANDEZA\nABASTO LICORERIA ATLANTIDA C.A\nABASTOS BETEL CA\nABASTOS BLASOL S R L\nABASTOS BRISAS DEL VALLE 95\nABASTOS CHEQUE 2000 SRL\nABASTOS EL BODEGON DE ANA, C.A.\nABASTOS EL CAMPESINO DEL 35 C.A.\nABASTOS EL OASIS 2024, C.A.\nABASTOS EVEREST DE CAUCAGUA\nABASTOS FAMILIA MUNOZ 2030, C.A\nABASTOS FAMILIA MUNOZ 2030, C.A.\nABASTOS & INVERSIONES NANYESMAR 2021, C.A.\nABASTOS JINMARY AMD, C.A.\nABASTOS LA ESQUINA DEL 24, C.A\nABASTOS LOS ABREU 2017, C.A\nABASTOS MARIA CATALINA 76, C.A\nABASTOS MAURYSTEFANY, C.A.\nABASTOS QUINCALLA GABRIELA S.R.L\nABASTOS SUPERMERCADO HUGO QUINONEZ\nABASTOS Y LICORERIA CHIMOSERA 2018, C.A\nABASTOS Y LICORERIA MELANIE & IVANNA 2021, C.A\nABASTOS Y LICORERIA RICO SABOR, C.A\nABASTOS Y LICORERIA VEGA REDONDA C.A\nABASTO Y CARNICERIA J.J C.A\nABASTO Y FRUTERIA DAMICHELLK2, C.A\nABASTO Y FRUTERIA PEDCEGAR, C.A\nABASTO Y LICORERiA CON LA BENDICIoN DE DIOS, C. A\nABASTO Y LICORERIA EL GRAN KIKO, C.A\nABASTO Y LICORERIA HERE MONCA, C.A.\nABASTO Y LICORERIA MANAVIT,SRL\nABASTO Y LICORERIA NANFER, C.A.\nABEL ANTONIO SANCHEZ ARCINIEGAS\nADALGIZA ESTEHER MENDEZ SALAS\nADAMO ALFONSO PACE GRATEROL\nADELAIDA DUARTE DUARTE\nADELICIA JOSEFINA ROMERO\nADHEMAR DE JESUS VAZQUEZ BARRIOS\nADOLFO QUEVEDO\nADRIANA DEL VALLE GONZaLEZ RENGIFO\nADRIANA MUNOZ\nADRIANA PEREZ GARCIA\nADRIAN ARLET BASTARDO ALONZO\nADRIANA THAIS DIAZ POMPA\nAGROPECUARIA RL 2012, C.",
+ "grid": null,
+ "tablas": [],
+ "total": null,
+ "menciona_transportista": true
+}

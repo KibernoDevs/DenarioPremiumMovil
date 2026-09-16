@@ -1,0 +1,81 @@
+{
+ "tag": "FACT_AGO_Pend",
+ "pedido": {
+  "tipo": "Pendientes por cobrar",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026",
+  "vend": "-"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "pre": {
+  "tipo": "DOCUMENT_SALE",
+  "vend": "",
+  "d": "01/08/2026",
+  "h": "31/08/2026"
+ },
+ "err": null,
+ "total": "168",
+ "head": [
+  "Detalle",
+  "TipoFiltrar por Tipo",
+  "Código facturaciónFiltrar por Código facturación",
+  "Fecha facturaciónFiltrar por Fecha facturación",
+  "VendedorFiltrar por Vendedor",
+  "ClienteFiltrar por Cliente",
+  "Monto facturadoFiltrar por Monto facturado",
+  "Saldo pendienteFiltrar por Saldo pendiente",
+  "VencimientoFiltrar por Vencimiento",
+  "Monto conv.Filtrar por Monto conv.",
+  "Tasa conv.Filtrar por Tasa conv.",
+  "AdjuntosFiltrar por Adjuntos"
+ ],
+ "nPag": 50,
+ "sample": [
+  [
+   "DetalleConsultar",
+   "TipoPendientes por cobrar",
+   "Código facturaciónFACT20096426",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteLA ESPADA DE ORO, C.",
+   "Monto facturado97,29 US$",
+   "Saldo pendiente97,29",
+   "Vencimiento03/09/2026",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoPendientes por cobrar",
+   "Código facturaciónFACT20096421",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteALFREDO LUIS ALVES F",
+   "Monto facturado26,88 US$",
+   "Saldo pendiente26,88",
+   "Vencimiento03/09/2026",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ],
+  [
+   "DetalleConsultar",
+   "TipoPendientes por cobrar",
+   "Código facturaciónFACT20096420",
+   "Fecha facturación31/08/2026 00:00:00",
+   "VendedorVIVIANA ESCALANTE",
+   "ClienteSUPERMERCADO SUERTE",
+   "Monto facturado944,70 US$",
+   "Saldo pendiente944,70",
+   "Vencimiento03/09/2026",
+   "Monto conv.N/A BS",
+   "Tasa conv.N/A",
+   "Adjuntos"
+  ]
+ ],
+ "conT": 0,
+ "codigosT": []
+}

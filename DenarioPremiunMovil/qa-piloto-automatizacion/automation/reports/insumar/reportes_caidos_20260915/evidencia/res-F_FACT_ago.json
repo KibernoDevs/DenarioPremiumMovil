@@ -1,0 +1,63 @@
+{
+ "tag": "F_FACT_ago",
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "inicio": "01/08/2026",
+  "fin": "31/08/2026"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "err": null,
+ "total": "1171",
+ "first": {
+  "head": [
+   "Detalle",
+   "Tipo",
+   "Código facturación",
+   "Fecha facturación",
+   "Vendedor",
+   "Cliente",
+   "Monto facturado",
+   "Saldo pendiente",
+   "Vencimiento",
+   "Monto conv.",
+   "Tasa conv.",
+   "Adjuntos"
+  ],
+  "rows": [
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20096426",
+    "31/08/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "LA ESPADA DE ORO, C.",
+    "97,29 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20096425",
+    "31/08/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "INVERSIONES VV18,C.A",
+    "44,61 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20096424",
+    "31/08/2026 00:00:00",
+    "YENNI ALVAREZ",
+    "RESTAURANT LUNCHERIA",
+    "65,55 US$",
+    "-"
+   ]
+  ],
+  "pag": ""
+ }
+}

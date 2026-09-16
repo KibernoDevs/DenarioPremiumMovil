@@ -8,7 +8,26 @@ const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denari
 const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
+const NUBE_QUERY_PATH     = path.resolve(__dirname, '../../db/query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
+
+/**
+ * Consulta la BD en la NUBE del cliente. Devuelve las filas o null.
+ *
+ * 🔑 GUARDAR ES LOCAL, ENVIAR ES LO ÚNICO QUE POSTEA. Hasta ahora DM-PED-031
+ *    daba PASS con «volvió al home», que es mirar la pantalla, no el resultado:
+ *    la app puede volver al home y el pedido no haber salido del equipo. El
+ *    oráculo bueno es la FILA EN LA NUBE, encontrada por el comentario único de
+ *    la corrida.
+ */
+function consultaNube(slug, sql) {
+  if (!slug) return null;
+  try {
+    return JSON.parse(
+      execFileSync('node', [NUBE_QUERY_PATH, slug, sql], { encoding: 'utf8', timeout: 30000 })
+    );
+  } catch (_) { return null; }
+}
 
 function localQuery(sql) {
   try {
@@ -149,11 +168,17 @@ async function runPedidos(pg, DATA) {
   async function alertInfo() {
     return await pg.evaluate(() => {
       const vis = el => el && el.getBoundingClientRect().width > 0;
-      const al = [...document.querySelectorAll('ion-alert')].filter(a => {
-        const tradicional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
-        const conBoton    = [...a.querySelectorAll('.alert-button')].some(vis);
-        return tradicional || conBoton;
-      }).pop();
+      // 🔴 UNA ion-alert DESCARTADA SIGUE EN EL DOM (overlay-hidden / display:none).
+      //    En una corrida se acumulan 15 o más. El filtro anterior aceptaba
+      //    cualquiera «con un botón medible», así que un cadáver podía hacerse
+      //    pasar por la alerta viva y se pulsaba un botón fantasma mientras la
+      //    de verdad seguía abierta. `offsetParent !== null` es el discriminador:
+      //    un elemento con display:none lo tiene a null.
+      const al = [...document.querySelectorAll('ion-alert')].filter(a =>
+        a.offsetParent !== null &&
+        !a.classList.contains('overlay-hidden') &&
+        [...a.querySelectorAll('.alert-button')].some(vis)
+      ).pop();
       if (!al) return null;
       return {
         titulo:  ((al.querySelector('.alert-title')   || {}).textContent || '').trim(),
@@ -175,11 +200,12 @@ async function runPedidos(pg, DATA) {
     await dismissIonLoadings();
     const coords = await pg.evaluate((lbls) => {
       const vis = el => el && el.getBoundingClientRect().width > 0;
-      const al = [...document.querySelectorAll('ion-alert')].filter(a => {
-        const tradicional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
-        const conBoton    = [...a.querySelectorAll('.alert-button')].some(vis);
-        return tradicional || conBoton;
-      }).pop();
+      // Misma regla que en alertInfo(): las alertas muertas siguen en el DOM.
+      const al = [...document.querySelectorAll('ion-alert')].filter(a =>
+        a.offsetParent !== null &&
+        !a.classList.contains('overlay-hidden') &&
+        [...a.querySelectorAll('.alert-button')].some(vis)
+      ).pop();
       if (!al) return null;
       const bts = [...al.querySelectorAll('.alert-button')].filter(vis);
       for (const l of lbls) {
@@ -192,6 +218,38 @@ async function runPedidos(pg, DATA) {
     if (!coords) throw new Error(`Alert btn no encontrado: ${labels.join('/')}`);
     await pg.mouse.click(coords.x, coords.y, { delay: 60 });
     await pg.waitForTimeout(900);
+
+    // 🔴 EL PRIMER CLIC SOBRE EL BOTÓN DE UNA ion-alert PUEDE CAER EN EL
+    //    ION-BACKDROP. No da error: simplemente la alerta no se cierra — y como
+    //    su backdrop tapa la pantalla, TODO lo que venga después parece «pulsé y
+    //    no pasó nada». Fue lo que tumbó las vueltas 5 y 7 de PEDIDOS: la
+    //    confirmación de deuda vencida se quedaba abierta, el cliente no se
+    //    asignaba y caían 20 casos con «sin cliente no hay transacción».
+    //    Si la alerta sigue viva, se reintenta — y por DOM, que es lo único que
+    //    atraviesa el backdrop.
+    for (let intento = 0; intento < 3; intento++) {
+      const sigue = await pg.evaluate((lbl) => {
+        const vis = el => el && el.getBoundingClientRect().width > 0;
+        const al = [...document.querySelectorAll('ion-alert')].filter(a =>
+          a.offsetParent !== null &&
+          !a.classList.contains('overlay-hidden') &&
+          [...a.querySelectorAll('.alert-button')].some(vis)
+        ).pop();
+        if (!al) return { viva: false };
+        const b = [...al.querySelectorAll('.alert-button')].filter(vis)
+          .find(x => x.textContent.trim().toLowerCase() === String(lbl).toLowerCase());
+        if (!b) return { viva: true, sinBoton: true };
+        const r = b.getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + r.height / 2;
+        const en = document.elementFromPoint(x, y);
+        const tapado = !!(en && /ION-BACKDROP/i.test(en.tagName));
+        // Por DOM siempre: si estaba tapado, es la única vía; y si no, no estorba.
+        b.click();
+        return { viva: true, tapado };
+      }, coords.label);
+      if (!sigue.viva) break;
+      await pg.waitForTimeout(900);
+    }
     return coords.label;
   }
 
@@ -368,11 +426,76 @@ async function runPedidos(pg, DATA) {
     }, busqueda);
 
     if (via1.ok) {
-      await pg.waitForTimeout(1500);
-      // 🔴 setClientfromSelector SÍ dispara el alert de deuda vencida (difranca)
-      const a = await alertInfo();
-      if (a && /deuda|vencid/i.test(`${a.titulo} ${a.mensaje}`)) {
-        await clickAlertBtn(['aceptar', 'ok']);
+      // 🔴 `setClientfromSelector` NO asigna el cliente por sí solo: encola una
+      //    CONFIRMACIÓN — «Este cliente tiene deuda vencida, ¿Desea continuar con el
+      //    pedido?» con Cancelar/Aceptar — y el cliente solo se asigna al Aceptar.
+      //
+      //    Con una espera FIJA de 1,5 s el diálogo a veces no había pintado aún:
+      //    `alertInfo()` devolvía null, no se pulsaba nada, y el módulo se iba a la
+      //    «Vía 2» con la alerta viva — cuyo backdrop se come todos los clics. El
+      //    síntoma era «vía componente: ok pero sin efecto» y **23 casos a BLOCKED**
+      //    (4K, 14/09). Medido: el diálogo tarda más de 1,5 s en aparecer.
+      //
+      //    Ahora se ESPERA a que salga, en vez de suponer cuánto tarda.
+      //    🔴 Y EL ORÁCULO DE «YA ESTÁ PUESTO» NO PUEDE SER EL INPUT.
+      //    `#clienteSelect` se rellena de forma OPTIMISTA — muestra el nombre
+      //    mientras la confirmación sigue pendiente — así que salir del bucle al
+      //    verlo lleno dejaba la alerta sin aceptar y el cliente sin asignar:
+      //    input = «EURO REPUESTOS FIOVAL, C.A. (C.0010)» pero `hasClient: false`,
+      //    `lockSegments: true`, 1 pestaña libre. **20 casos a BLOCKED otra vez.**
+      //    El único oráculo bueno es el MODELO: `hasClient`.
+      const clienteEnModelo = () => pg.evaluate(() => {
+        try {
+          const c = window.ng.getComponent(document.querySelector('app-pedido'));
+          return !!(c && c.hasClient === true);
+        } catch (_) { return false; }
+      });
+      //    🔴 Y SE ACEPTA **CUALQUIER** DIÁLOGO VIVO, no solo el de deuda vencida.
+      //    Filtrar por texto ya falló: mientras `hasClient` sea false, cualquier
+      //    diálogo que esté en pantalla está impidiendo la asignación, y su
+      //    backdrop bloquea todo lo demás. Se acepta y se APUNTA su texto, para
+      //    que el veredicto diga cuál salió en vez de dejarlo a la imaginación.
+      //    ⚠ Se pulsa siempre el botón afirmativo, NUNCA Cancelar (descarta el cliente).
+      const confirmadas = [];
+      for (let i = 0; i < 20; i++) {
+        if (await clienteEnModelo()) break;
+        const a = await alertInfo();
+        if (a) {
+          confirmadas.push(`${(a.mensaje || a.titulo).slice(0, 45)} [${a.botones.join('/')}]`);
+          const afirmativo = a.botones.find(b => /aceptar|^ok$|^sí$|^si$|continuar/i.test(b));
+          if (afirmativo) {
+            await clickAlertBtn([afirmativo]).catch(() => {});
+          } else {
+            // Sin botón afirmativo reconocible: se pulsa el ÚLTIMO por DOM, que en
+            // Ionic es el de confirmar. Por DOM, que atraviesa el backdrop.
+            await pg.evaluate(() => {
+              const vis = el => el && el.getBoundingClientRect().width > 0;
+              const al = [...document.querySelectorAll('ion-alert')]
+                .filter(x => x.offsetParent !== null && [...x.querySelectorAll('.alert-button')].some(vis)).pop();
+              if (!al) return;
+              const bts = [...al.querySelectorAll('.alert-button')].filter(vis);
+              if (bts.length) bts[bts.length - 1].click();
+            });
+          }
+          await pg.waitForTimeout(1300);
+          continue;   // puede encadenar otro aviso
+        }
+        await pg.waitForTimeout(500);
+      }
+      // Último recurso: si tras el bucle el modelo sigue sin cliente y queda una
+      // alerta abierta, se acepta POR DOM. Es la única vía que atraviesa el
+      // backdrop, y sin ella la pantalla queda bloqueada para todo lo demás.
+      if (!(await clienteEnModelo())) {
+        await pg.evaluate(() => {
+          const vis = el => el && el.getBoundingClientRect().width > 0;
+          const al = [...document.querySelectorAll('ion-alert')].filter(a =>
+            [...a.querySelectorAll('.alert-button')].some(vis)).pop();
+          if (!al) return;
+          const bts = [...al.querySelectorAll('.alert-button')].filter(vis);
+          const b = bts.find(x => /aceptar|^ok$|^sí$|^si$|continuar/i.test(x.textContent.trim()));
+          if (b) b.click();
+        });
+        await pg.waitForTimeout(2000);
       }
       await pg.waitForTimeout(1200);
       const puesto = await pg.evaluate(() => {
@@ -380,14 +503,20 @@ async function runPedidos(pg, DATA) {
         const n = i && (i.querySelector('input') || (i.shadowRoot && i.shadowRoot.querySelector('input')));
         return n ? n.value : '';
       });
-      if (puesto && !/seleccione/i.test(puesto)) {
+      // 🔴 Y el «vale, ya está» tampoco puede ser el input: si la confirmación
+      //    no llegó a aceptarse, el input muestra el nombre y el modelo NO tiene
+      //    cliente. Se exige `hasClient` antes de dar la vía por buena; si no,
+      //    se cae a la Vía 2 (modal real) en vez de seguir como si nada.
+      const asignado = await clienteEnModelo();
+      if (asignado && puesto && !/seleccione/i.test(puesto)) {
         // El modal puede quedar residual aunque la vía programática funcione
         await pg.evaluate(async () => {
           for (const m of document.querySelectorAll('ion-modal.show-modal')) {
             try { await m.dismiss(null, 'cancel'); } catch (_) {}
           }
         });
-        return { via: 'componente', nombre: puesto.trim(), cargados: carga.cargados, rondas: carga.rondas };
+        return { via: 'componente', nombre: puesto.trim(), cargados: carga.cargados, rondas: carga.rondas,
+                 confirmaciones: confirmadas };
       }
     }
 
@@ -799,28 +928,34 @@ async function runPedidos(pg, DATA) {
       const vis = eval(fn);
       const sels = [...document.querySelectorAll('app-pedido ion-select')].filter(vis);
       return sels.map(s => {
-        // La etiqueta puede venir por atributo, por propiedad, por un <ion-label>
-        // hermano o solo como texto del ion-item contenedor: probar en ese orden
-        // o el mapa de VGs sale con los nombres en blanco y no dice nada.
-        // 🔴 En Ionic 7 la etiqueta se renderiza DENTRO del shadowRoot del
-        //    ion-select: `textContent` del ion-item devuelve "" y el mapa de VGs
-        //    sale con los nombres en blanco — que es no decir nada. Hay que
-        //    mirar también el shadowRoot, el aria-label y el hermano anterior.
+        // 🔴 LA ETIQUETA ESTÁ EN EL `ion-col` QUE ENVUELVE AL SELECT.
+        //    Medido en 4K el 14/09: `label`, `aria-label` y `placeholder` vienen
+        //    todos a null, y el shadowRoot del ion-select contiene el VALOR
+        //    seleccionado, no el rótulo. Con la cadena anterior el mapa salía
+        //    «DIESEL | USD | AV. USLAR… | PEDIDO ESTANDAR» — valores disfrazados de
+        //    nombres — y además disparó un aviso FALSO («no hay selector de
+        //    Moneda») cuando el selector de Moneda estaba justo ahí.
+        //    El `innerText` del ion-col es solo el rótulo, porque el valor del
+        //    select vive dentro de su shadow y no cuenta.
+        const col  = s.closest('ion-col');
         const item = s.closest('ion-item');
-        const sombra = s.shadowRoot ? (s.shadowRoot.textContent || '') : '';
-        const previo = item && item.previousElementSibling
-          ? (item.previousElementSibling.textContent || '') : '';
-        const lbl =
-          s.getAttribute('label') || s.label ||
-          s.getAttribute('aria-label') || s.getAttribute('placeholder') ||
-          (item && item.querySelector('ion-label') ? item.querySelector('ion-label').textContent : '') ||
-          (item ? item.textContent : '') || sombra || previo || '';
+        const limpia = (t) => String(t || '').replace(/\s+/g, ' ').replace(/:\s*$/, '').trim();
+        const sombra = s.shadowRoot
+          ? ((s.shadowRoot.querySelector('.select-text') || {}).textContent || '')
+          : '';
+        const etiqueta =
+          limpia(s.getAttribute('label') || s.label || s.getAttribute('aria-label')) ||
+          limpia(col && col.innerText) ||
+          limpia(item && item.querySelector('ion-label') && item.querySelector('ion-label').textContent) ||
+          limpia(s.getAttribute('placeholder'));
         return {
-          etiqueta: String(lbl).replace(/\s+/g, ' ').trim().slice(0, 40) || '(sin etiqueta)',
-          // El valor seleccionado ayuda a identificar el select cuando no hay
-          // etiqueta legible (Moneda muestra "US$", IVA un %, etc.).
-          valor: String(s.value && s.value.coCurrency ? s.value.coCurrency : (s.value ?? '')).slice(0, 25),
-          disabled: s.disabled === true,
+          etiqueta: etiqueta.slice(0, 40) || '(sin etiqueta)',
+          // El valor VISIBLE, no el objeto del modelo: `s.value` es un objeto en
+          // Moneda y en varios más, y «[object Object]» no informa de nada.
+          valor: (limpia(sombra) ||
+                  limpia(s.value && s.value.coCurrency ? s.value.coCurrency : '')).slice(0, 30),
+          disabled: s.disabled === true || s.hasAttribute('disabled') ||
+                    String(s.className || '').includes('select-disabled'),
           opciones: s.querySelectorAll('ion-select-option').length,
         };
       });
@@ -1125,17 +1260,53 @@ async function runPedidos(pg, DATA) {
   // ══════════════════════════════════════════════════════════════════════════
   // DM-PED-006: Seleccionar cliente → tabs habilitadas
   // ══════════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 REINTENTO CON FORMULARIO NUEVO — la intermitencia medida el 14/09.
+  //
+  //    En once vueltas seguidas apareció un patrón limpio: **el módulo falla en
+  //    toda corrida que va DETRÁS de una corrida que terminó bien**. Una vuelta
+  //    sí y una no, desde la 5.ª en adelante (5 ✗, 6 ✓, 7 ✗, 8 ✓, 9 ✗, 10 ✓, 11 ✗).
+  //    El síntoma siempre es el mismo: `setClientfromSelector` rellena el input
+  //    pero **`hasClient` se queda en false** y las pestañas no se liberan.
+  //
+  //    Es decir: **el formulario hereda algo del pedido anterior ya enviado**.
+  //    Sea del producto o del arrastre de estado del servicio, desde el guion
+  //    solo se puede hacer una cosa sensata: **tirar el formulario y abrir uno
+  //    limpio**. Un solo reintento con form nuevo convierte 20 BLOCKED en una
+  //    corrida completa, y si tampoco así, el veredicto lo dice sin adornos.
   let clienteOk = false;
   try {
     if (!DATA.clienteTest) throw new Error('perfil sin modules.pedidos.cliente_test');
-    const sel = await seleccionarCliente(DATA.clienteTest);
-    const res = await esperarTabsHabilitadas();
+    let sel = await seleccionarCliente(DATA.clienteTest);
+    let res = await esperarTabsHabilitadas();
     clienteOk = !!(res && res.libres >= 3);
+    let reintento = '';
+    if (!clienteOk) {
+      // Formulario nuevo: salir del actual, volver al home del módulo y reabrir.
+      await irAHomePedidos().catch(() => {});
+      await limpiarAlertas(3).catch(() => {});
+      await pg.waitForTimeout(1500);
+      await abrirFormPedido().catch(() => {});
+      await pg.waitForTimeout(2000);
+      sel = await seleccionarCliente(DATA.clienteTest);
+      res = await esperarTabsHabilitadas();
+      clienteOk = !!(res && res.libres >= 3);
+      reintento = clienteOk
+        ? ' · ⚠ hizo falta un SEGUNDO intento con formulario nuevo (el primero dejó ' +
+          'el input con el nombre y el modelo sin cliente)'
+        : ' · 🔴 falló también con formulario nuevo';
+    }
     const est = await estadoComponente();
     v('DM-PED-006', 'Seleccionar cliente → tabs habilitadas', clienteOk ? 'PASS' : 'FAIL',
       `"${sel.nombre}" (vía ${sel.via}, ${sel.cargados} clientes cargados en ${sel.rondas} ronda/s) · ` +
       `tabs libres: ${res ? res.libres : '?'} · ` +
-      `lockSegments: ${est.lockSegments} · hasClient: ${est.hasClient}`);
+      `lockSegments: ${est.lockSegments} · hasClient: ${est.hasClient}` +
+      ((sel.confirmaciones && sel.confirmaciones.length)
+        ? ` · confirmación(es) aceptada(s): ${sel.confirmaciones.join(' | ')}` : '') +
+      (est.hasClient ? '' :
+        ' · 🔴 el input muestra el nombre pero el MODELO no tiene cliente: casi siempre es ' +
+        'que quedó una confirmación sin aceptar (su backdrop bloquea el resto de la pantalla)') +
+      reintento);
   } catch (e) {
     v('DM-PED-006', 'Seleccionar cliente → tabs habilitadas', 'FAIL', e.message);
   }
@@ -1198,24 +1369,81 @@ async function runPedidos(pg, DATA) {
   // ══════════════════════════════════════════════════════════════════════════
   // DM-PED-029: sin ítems → Guardar/Enviar deshabilitados
   // ══════════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 LA EXPECTATIVA DEL GUION ESTABA MAL, Y ERA ELLA LA QUE FALLABA.
+  //
+  //    El guion smoke exigía «Guardar y Enviar DESHABILITADOS», y en mio_parts
+  //    daba FAIL dos corridas seguidas porque **Guardar sale habilitado**. Iba
+  //    camino de reportarse como defecto de producto. Medido a mano en 4K el
+  //    14/09, con cliente puesto y el carrito vacío:
+  //
+  //        Guardar: HABIL · Enviar: HABIL
+  //        pulsar Guardar → «Denario · Debe agregar al menos un producto al
+  //                          pedido.»  [OK]   — y NO guarda nada
+  //
+  //    O sea: **la protección existe**, solo que la app no la implementa
+  //    deshabilitando el botón sino **validando al pulsarlo y diciendo qué
+  //    falta** — que es, además, justo lo que pide el criterio C2 del REQ del
+  //    botón Enviar (y por eso DM-PED-REQ-002 pasa por esta misma vía).
+  //
+  //    Lo que de verdad no puede pasar es que se GUARDE un pedido vacío. Eso es
+  //    lo que mide ahora el caso: si los botones nacen deshabilitados, perfecto;
+  //    y si nacen habilitados, se PULSA y se exige que **no guarde y que avise**.
+  //    Sólo si llega a guardar un pedido sin líneas hay FAIL.
   try {
     const n = await lineasCarrito();
-    const btns = await pg.evaluate(() => {
-      const g = document.querySelector('ion-button.imagenGuardar');
-      const e = document.querySelector('ion-button.imagenEnviar');
+    const leerBotones = () => pg.evaluate(() => {
       const st = b => !b ? 'ausente' : ((b.disabled === true || b.getAttribute('disabled') !== null) ? 'deshab' : 'habil');
-      return { guardar: st(g), enviar: st(e) };
+      return { guardar: st(document.querySelector('ion-button.imagenGuardar')),
+               enviar:  st(document.querySelector('ion-button.imagenEnviar')) };
     });
+    const btns = await leerBotones();
+
     if (n === null || n > 0) {
-      v('DM-PED-029', 'Sin ítems → Guardar/Enviar deshabilitados', 'N/A',
+      v('DM-PED-029', 'Con el carrito vacío, el pedido no se puede guardar', 'N/A',
         `el carrito ya tiene ${n === null ? '?' : n} línea(s): el caso exige medirlo vacío`);
+    } else if (btns.guardar !== 'habil' && btns.enviar !== 'habil') {
+      v('DM-PED-029', 'Con el carrito vacío, el pedido no se puede guardar', 'PASS',
+        `carrito: 0 líneas · Guardar: ${btns.guardar} · Enviar: ${btns.enviar} ` +
+        `(la app lo impide deshabilitando los botones)`);
     } else {
-      const ok = btns.guardar !== 'habil' && btns.enviar !== 'habil';
-      v('DM-PED-029', 'Sin ítems → Guardar/Enviar deshabilitados', ok ? 'PASS' : 'FAIL',
-        `carrito: 0 líneas · Guardar: ${btns.guardar} · Enviar: ${btns.enviar}`);
+      // Nacen habilitados: hay que comprobar que la app IGUAL lo impide.
+      const gc = await pg.evaluate(() => {
+        const b = document.querySelector('ion-button.imagenGuardar');
+        if (!b || b.disabled) return null;
+        b.scrollIntoView({ block: 'center' });
+        const r = b.getBoundingClientRect();
+        return r.width > 0 ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null;
+      });
+      let aviso = null, siguioEnForm = null;
+      if (gc) {
+        await pg.mouse.click(gc.x, gc.y, { delay: 100 });
+        await pg.waitForTimeout(2500);
+        const al = await alertInfo();
+        aviso = al ? `${al.titulo} · ${al.mensaje}`.trim() : null;
+        // Si preguntara «¿Desea guardar?» habría que cancelar: no queremos guardarlo.
+        if (al && /¿desea guardar|desea guardar/i.test(aviso)) {
+          await clickAlertBtn(['cancelar', 'no']).catch(() => {});
+          aviso += ' · 🔴 preguntó si guardar un pedido VACÍO (se canceló)';
+        } else if (al) {
+          await clickAlertBtn(['ok', 'aceptar']).catch(() => {});
+        }
+        await pg.waitForTimeout(1200);
+        siguioEnForm = await visible('app-pedido');
+      }
+      const explica = !!aviso && /al menos un producto|agregar.*producto|sin productos|vacío/i.test(aviso);
+      const guardoVacio = !!aviso && /guardad|exitosamente/i.test(aviso);
+      v('DM-PED-029', 'Con el carrito vacío, el pedido no se puede guardar',
+        (explica && !guardoVacio) ? 'PASS' : 'FAIL',
+        `carrito: 0 líneas · Guardar: ${btns.guardar} · Enviar: ${btns.enviar} · ` +
+        `al pulsar Guardar: "${aviso || 'ningún aviso'}" · sigue en el formulario: ${siguioEnForm}` +
+        (guardoVacio ? ' · 🔴 GUARDÓ UN PEDIDO SIN LÍNEAS' :
+          explica ? ' · ℹ️ los botones nacen habilitados, pero la app valida al pulsar y dice qué falta ' +
+                    '— que es el criterio C2 del REQ del botón Enviar, no un defecto'
+                  : ' · 🔴 ni deshabilita ni explica qué falta'));
     }
   } catch (e) {
-    v('DM-PED-029', 'Sin ítems → botones deshabilitados', 'FAIL', e.message);
+    v('DM-PED-029', 'Con el carrito vacío, el pedido no se puede guardar', 'FAIL', e.message);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1232,7 +1460,17 @@ async function runPedidos(pg, DATA) {
       // vendedor, cualquier otro sirve para ejercitar el flujo. Se anota en el
       // veredicto: medir con un relevo no es lo mismo que medir con el previsto.
       const primerFallo = hallazgo.motivo;
-      hallazgo = await localizarProducto(null, 3);
+
+      // 🔴 RESTAURAR EL ÁRBOL ANTES DE PEDIR EL RELEVO. La búsqueda anterior
+      //    entró y salió de varias categorías y puede dejar el nivel VACÍO; el
+      //    relevo se encontraba entonces con «el árbol no muestra ni productos
+      //    ni categorías» y el módulo se caía con un mensaje que hablaba del
+      //    árbol cuando el problema era el producto del perfil (4K, 14/09).
+      //    Re-clicar General → Pedido devuelve el árbol colapsado y entero.
+      try { await clickTab('General'); await clickTab('Pedido'); } catch (_) {}
+      await pg.waitForTimeout(1800);
+
+      hallazgo = await localizarProducto(null, 6);
       if (!hallazgo.ok) throw new Error(`${primerFallo} · relevo: ${hallazgo.motivo}`);
       hallazgo.fallback = primerFallo;
     }
@@ -1577,12 +1815,39 @@ async function runPedidos(pg, DATA) {
     await pg.mouse.click(gc.x, gc.y, { delay: 100 });
     await pg.waitForTimeout(2500);
 
-    const a = await alertInfo();
-    guardadoOk = !!(a && /guardad/i.test(`${a.titulo} ${a.mensaje}`));
-    v('DM-PED-030', 'Guardar pedido → alert de confirmación', guardadoOk ? 'PASS' : 'FAIL',
-      `alert: "${a ? (a.mensaje || a.titulo) : 'ninguno'}" · botones: ${a ? a.botones.join('/') : '—'} · ` +
-      `comentario: "${comentPuesto}"`);
-    if (a) await clickAlertBtn(['ok', 'aceptar']);
+    // 🔴 EL PRIMER DIÁLOGO ES UNA PREGUNTA, NO EL RESULTADO.
+    //    Sale «¿Desea guardar el pedido?» con Cancelar/Aceptar: hasta que no se
+    //    acepta, NO se ha guardado nada. El guion lo tomaba por la confirmación
+    //    (y además buscaba /guardad/i, que NO casa con «guardar»), así que daba
+    //    FAIL con el pedido intacto y arrastraba a PED-031 y REQ-003.
+    const secuencia = [];
+    let a = await alertInfo();
+    if (a && /¿desea guardar|desea guardar/i.test(`${a.titulo} ${a.mensaje}`)) {
+      secuencia.push(`pregunta: "${a.mensaje || a.titulo}" [${a.botones.join('/')}]`);
+      await clickAlertBtn(['aceptar', 'ok', 'sí', 'si']).catch(() => {});
+      await pg.waitForTimeout(2500);
+      a = await alertInfo();
+    }
+    if (a) secuencia.push(`respuesta: "${a.mensaje || a.titulo}" [${a.botones.join('/')}]`);
+
+    // El oráculo del guardado NO es la alerta: es que el pedido exista de verdad.
+    // La alerta puede faltar o cambiar de texto entre builds.
+    const alertaOk = !!(a && /guardad|guardado con éxito|exitosamente/i.test(`${a.titulo} ${a.mensaje}`));
+    if (a) await clickAlertBtn(['ok', 'aceptar']).catch(() => {});
+    await pg.waitForTimeout(1500);
+
+    const enLocal = (() => {
+      try {
+        const f = localQuery("SELECT co_order, id_order, st_delivery FROM orders ORDER BY rowid DESC LIMIT 1");
+        return f.length ? f[0] : null;
+      } catch (_) { return null; }
+    })();
+
+    guardadoOk = alertaOk || !!enLocal;
+    v('DM-PED-030', 'Guardar pedido → confirma y el pedido queda guardado',
+      guardadoOk ? 'PASS' : 'FAIL',
+      `${secuencia.join(' → ') || 'sin diálogos'} · comentario: "${comentPuesto}" · ` +
+      `en la BD local: ${enLocal ? `co_order=${enLocal.co_order}, st_delivery=${enLocal.st_delivery}` : 'nada'}`);
   } catch (e) {
     v('DM-PED-030', 'Guardar pedido → alert de confirmación', 'FAIL', e.message);
   }
@@ -1634,9 +1899,36 @@ async function runPedidos(pg, DATA) {
     await pg.waitForTimeout(2500);
 
     const enHome = (await visible('app-pedidos')) && !(await visible('app-pedido'));
-    v('DM-PED-031', 'Enviar pedido → confirmación y vuelta al home', enHome ? 'PASS' : 'FAIL',
+
+    // ☁ EL ORÁCULO ES LA NUBE, no la pantalla. Y se cuentan las filas: si un
+    //   solo Enviar deja DOS pedidos con la misma marca, es duplicado y NO es PASS.
+    let nube = null;
+    if (DATA.clienteSlug) {
+      for (let i = 0; i < 5; i++) {
+        nube = consultaNube(DATA.clienteSlug,
+          `select id_order, co_order, st_order, nu_amount_total, co_currency, co_client ` +
+          `from \"order\" where tx_comment = '${comentTest}' order by id_order`);
+        if (nube && nube.length) break;
+        await pg.waitForTimeout(3000);
+      }
+    }
+    const enNube    = !!(nube && nube.length);
+    const duplicado = !!(nube && nube.length > 1);
+    const resumenNube = enNube
+      ? nube.map(f => `${f.id_order}/${f.co_order} ${f.nu_amount_total} ${f.co_currency || ''} st=${f.st_order}`).join(' · ')
+      : null;
+
+    v('DM-PED-031', 'Enviar pedido → llega a la nube (y UNA sola fila)',
+      (enNube && !duplicado) ? 'PASS' : (DATA.clienteSlug ? 'FAIL' : (enHome ? 'PASS' : 'FAIL')),
       `${etiquetas.length} alert(s): ${etiquetas.join(' → ')} · Nro.Ref: ${nroRef || 'no anunciado'} · ` +
-      `home tras enviar: ${enHome}`);
+      `home tras enviar: ${enHome} · ` +
+      (DATA.clienteSlug
+        ? (enNube
+            ? `☁ ${nube.length} fila(s) con la marca ${comentTest}: ${resumenNube}` +
+              (duplicado ? ' · 🔴 DUPLICADO: un solo Enviar dejó más de un pedido' : '')
+            : `✗ no aparece en la nube ningún pedido con comentario ${comentTest} — ` +
+              `volver al home NO prueba que se haya enviado`)
+        : 'sin clienteSlug: no se pudo consultar la nube (oráculo degradado a la pantalla)'));
   } catch (e) {
     v('DM-PED-031', 'Enviar pedido → confirmación y vuelta al home', 'FAIL', e.message);
   }
@@ -1668,18 +1960,60 @@ async function runPedidos(pg, DATA) {
     }
   } catch (_) {}
 
+  /**
+   * Deja la LISTA de pedidos a la vista y devuelve cuantos items tiene.
+   *
+   * 🔴 UN CERO NO ES UN RESULTADO. Antes se pulsaba BUSCAR, se dormian 2,5 s
+   *    fijos y se contaba. En la vuelta 3 eso devolvio **0 items** y tumbo
+   *    DM-PED-034, 035 y 032 - pero la lista estaba LLENA: el propio pedido
+   *    recien enviado (Nro. Ref. 2596) se leia en pantalla. Simplemente aun no
+   *    habia pintado. Ahora se ESPERA a que cargue, y si de verdad no carga, el
+   *    veredicto lo dice en vez de disfrazarlo de "no hay pedidos".
+   */
+  async function abrirListaPedidos(intentos = 3) {
+    for (let n = 0; n < intentos; n++) {
+      await irAHomePedidos().catch(() => {});
+      // ⚠ Justo después de ENVIAR, la app está volviendo al home y el primer
+      //   BUSCAR se pierde: la vuelta 4 dio «la lista no cargó — en la página:
+      //   false» con la pantalla todavía en «PEDIDO BUSCAR COPIAR», y dos casos
+      //   después la misma lista tenía 8 ítems. Se deja asentar antes de pulsar.
+      await pg.waitForTimeout(1500);
+      await clickBotonHome('BUSCAR').catch(() => {});
+      for (let i = 0; i < 12; i++) {
+        await pg.waitForTimeout(1000);
+        const r = await pg.evaluate(() => {
+          const pag = document.querySelector('app-pedidos-lista');
+          const its = [...document.querySelectorAll('app-pedidos-lista ion-item')]
+            .filter(x => x.getBoundingClientRect().height > 0);
+          return { enLista: !!pag && !pag.classList.contains('ion-page-hidden'), n: its.length };
+        });
+        if (r.enLista && r.n > 0) return r;
+        // Si a mitad de espera seguimos en el home del módulo, el clic no llegó:
+        // no tiene sentido agotar los 12 s mirando la pantalla equivocada.
+        if (i === 4 && !r.enLista) break;
+      }
+    }
+    return pg.evaluate(() => {
+      const pag = document.querySelector('app-pedidos-lista');
+      return { enLista: !!pag && !pag.classList.contains('ion-page-hidden'), n: 0,
+               texto: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 120) };
+    });
+  }
+
+
   // ══════════════════════════════════════════════════════════════════════════
   // DM-PED-034 / 035: BUSCAR → searchbar filtra → abrir un Guardado
   // ══════════════════════════════════════════════════════════════════════════
   let abrioGuardado = false;
   try {
-    await irAHomePedidos();
-    await clickBotonHome('BUSCAR');
-    await pg.waitForTimeout(2500);
-
-    const antes = await pg.evaluate(() =>
-      [...document.querySelectorAll('app-pedidos-lista ion-item')]
-        .filter(i => i.getBoundingClientRect().height > 0).length);
+    const est = await abrirListaPedidos();
+    const antes = est.n;
+    if (!antes) {
+      v('DM-PED-034', 'BUSCAR -> el searchbar filtra en tiempo real', 'BLOCKED',
+        `la lista no cargo ningun pedido en 12 s (en la pagina: ${est.enLista}) - ` +
+        `sin items no hay nada que filtrar${est.texto ? ` · pantalla: ${est.texto}` : ''}`);
+      throw new Error('__lista_vacia__');
+    }
 
     await pg.evaluate(() => {
       const sb = document.querySelector('app-pedidos-lista ion-searchbar');
@@ -1716,10 +2050,15 @@ async function runPedidos(pg, DATA) {
       filtrado < antes ? 'PASS' : 'FAIL',
       `${antes} ítems → "ZZZZZZ" → ${filtrado} → al vaciar → ${repoblado}`);
   } catch (e) {
-    v('DM-PED-034', 'BUSCAR → el searchbar filtra en tiempo real', 'FAIL', e.message);
+    if (e.message !== '__lista_vacia__') {
+      v('DM-PED-034', 'BUSCAR → el searchbar filtra en tiempo real', 'FAIL', e.message);
+    }
   }
 
   try {
+    // Asegurar que la lista esté cargada también aquí: 034 pudo salir por el
+    // camino corto y dejar la pantalla a medias.
+    await abrirListaPedidos(1);
     // 🔴 Click en la zona izquierda-centro: el botón danger de la derecha es
     //    estrecho (w≈29) y un click bajo cae fuera y navega al form igual.
     const c = await pg.evaluate(() => {
@@ -1782,13 +2121,7 @@ async function runPedidos(pg, DATA) {
   // DM-PED-037: borrar un Guardado desde la lista
   // ══════════════════════════════════════════════════════════════════════════
   try {
-    await irAHomePedidos();
-    await clickBotonHome('BUSCAR');
-    await pg.waitForTimeout(2500);
-
-    const antes = await pg.evaluate(() =>
-      [...document.querySelectorAll('app-pedidos-lista ion-item')]
-        .filter(i => i.getBoundingClientRect().height > 0).length);
+    const antes = (await abrirListaPedidos()).n;
 
     // 🔴 El botón danger es ESTRECHO (w≈29) y va pegado al borde derecho:
     //    hay que usar sus coords exactas, no las del ítem.

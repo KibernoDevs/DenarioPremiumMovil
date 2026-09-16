@@ -121,6 +121,112 @@ async function runLogin(pg, DATA) {
     await pg.waitForTimeout(500);
   }
 
+  // ─── Alerta de CAMBIO DE USUARIO ────────────────────────────────────────────
+  // Al teclear un usuario distinto al último que entró, la app avisa ANTES de
+  // validar nada contra el servidor:
+  //   «Está intentando sincronizar con un usuario que es diferente al previamente
+  //    ingresado, de aceptar la sincronización todos los datos anteriores serán
+  //    borrados. ¿Está de acuerdo?»            [Cancelar] [Aceptar]
+  //
+  // 🔴 16/09 — esta alerta tumbó la barrida completa (158 BLOCKED). Dos causas,
+  //    las DOS de guion, ninguna del producto:
+  //      1. DM-LOG-001 buscaba la alerta SIN ESPERAR: `clickSubmit()` y acto
+  //         seguido el `evaluate`. La alerta tarda ~1 s en pintarse ⇒ devolvía
+  //         null, no se pulsaba nada y la app se quedaba en /login para siempre.
+  //      2. El primer clic sobre el botón puede caer en el ION-BACKDROP.
+  //    Se despacha con espera + verificación por `elementFromPoint`.
+  const RE_CAMBIO_USUARIO = /diferente al previamente|ser[áa]n borrados|est[áa] de acuerdo/i;
+
+  /** Lee la alerta visible → { texto, botones[] } · null si no hay. */
+  function leerAlerta() {
+    return pg.evaluate(() => {
+      const a = [...document.querySelectorAll('ion-alert')].find(x => {
+        const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
+        const hasVisibleBtn = [...x.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
+      if (!a) return null;
+      const msg = a.querySelector('.alert-message') || a.querySelector('.alert-title');
+      return {
+        texto: msg ? msg.textContent.trim() : a.textContent.trim().slice(0, 200),
+        botones: [...a.querySelectorAll('.alert-button')]
+          .filter(b => b.getBoundingClientRect().width > 0)
+          .map(b => b.textContent.trim()),
+      };
+    }).catch(() => null);
+  }
+
+  /** Espera hasta `ms` a que aparezca una alerta. Devuelve la alerta o null. */
+  async function esperarAlerta(ms = 8000) {
+    const fin = Date.now() + ms;
+    for (;;) {
+      const a = await leerAlerta();
+      if (a) return a;
+      if (Date.now() >= fin) return null;
+      await pg.waitForTimeout(300).catch(() => {});
+    }
+  }
+
+  /**
+   * Pulsa el botón de la alerta cuya etiqueta case con `preferidas` (en orden).
+   * Comprueba con `elementFromPoint` que el punto no lo tape el ION-BACKDROP y,
+   * si lo tapa, reintenta desplazado dentro del propio botón.
+   * El éxito se mide por que la alerta DESAPAREZCA, no por haber hecho clic.
+   * @returns {Promise<string|null>} etiqueta pulsada, o null si no se pudo.
+   */
+  async function pulsarBotonAlerta(preferidas) {
+    for (let intento = 0; intento < 3; intento++) {
+      const obj = await pg.evaluate((prefs) => {
+        const a = [...document.querySelectorAll('ion-alert')].find(x => {
+          const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
+          const hasVisibleBtn = [...x.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        });
+        if (!a) return null;
+        const btns = [...a.querySelectorAll('.alert-button')].filter(b => b.getBoundingClientRect().width > 0);
+        if (!btns.length) return null;
+        let btn = null;
+        for (const p of prefs) {
+          btn = btns.find(b => b.textContent.trim().toLowerCase() === p) ||
+                btns.find(b => b.textContent.trim().toLowerCase().includes(p));
+          if (btn) break;
+        }
+        if (!btn) return null;
+        const r   = btn.getBoundingClientRect();
+        const x   = r.left + r.width / 2;
+        const y   = r.top  + r.height / 2;
+        const top = document.elementFromPoint(x, y);
+        return {
+          x, y, alto: r.height,
+          label: btn.textContent.trim(),
+          // Tapado = lo que hay en el punto no es el botón ni está dentro de él
+          tapado: !!(top && top !== btn && !btn.contains(top)),
+          tapadoPor: top ? top.tagName : null,
+        };
+      }, preferidas).catch(() => null);
+
+      if (!obj) return null;
+      const dy = obj.tapado ? -Math.max(4, Math.round(obj.alto / 4)) : 0;
+      await pg.mouse.click(obj.x, obj.y + dy).catch(() => {});
+      await pg.waitForTimeout(700).catch(() => {});
+      if (!(await leerAlerta())) return obj.label;   // se cerró ⇒ el clic entró de verdad
+    }
+    return null;
+  }
+
+  /**
+   * Si la alerta que hay en pantalla es la de CAMBIO DE USUARIO, la despacha
+   * ACEPTANDO: la app borra la base local y resincroniza con el vendedor tecleado.
+   * @returns {Promise<{hubo:boolean, aceptada?:boolean, label?:string, texto?:string, botones?:string[], otra?:object}>}
+   */
+  async function despacharCambioUsuario(ms = 8000) {
+    const a = await esperarAlerta(ms);
+    if (!a) return { hubo: false };
+    if (!RE_CAMBIO_USUARIO.test(a.texto)) return { hubo: false, otra: a };
+    const label = await pulsarBotonAlerta(['aceptar', 'sí', 'si', 'continuar', 'ok']);
+    return { hubo: true, aceptada: !!label, label, texto: a.texto, botones: a.botones };
+  }
+
   /** Llena el nth ion-input visible con native value setter (patrón fillIonInput) */
   async function fillField(nth, value) {
     await pg.evaluate(([n, val]) => {
@@ -438,17 +544,31 @@ async function runLogin(pg, DATA) {
         return msg ? msg.textContent.trim() : (a.textContent.trim().slice(0, 120));
       });
     }
-    const ok = !!(alert003 && (
-      alert003.toLowerCase().includes('incorrecta') ||
-      alert003.toLowerCase().includes('incorrectos') ||
-      alert003.toLowerCase().includes('invalid') ||
-      alert003.toLowerCase().includes('error') ||
-      alert003.toLowerCase().includes('contraseña') ||
-      alert003.toLowerCase().includes('credencial')
-    ));
-    v('DM-LOG-003', 'Contraseña incorrecta → alert de error', ok ? 'PASS' : 'FAIL',
-      `alert: "${alert003 || 'ninguno'}"`);
-    await dismissAlert();
+    // 🔑 La app antepone la alerta de CAMBIO DE USUARIO a la validación de
+    //    credenciales: si el usuario tecleado no es el último que entró, lo que
+    //    sale NO es el aviso de contraseña incorrecta. El caso entonces no mide
+    //    lo que dice medir ⇒ BLOCKED CON MOTIVO, nunca FAIL (16/09: esto se
+    //    reportó como FAIL falso). Se descarta con CANCELAR para no borrar la
+    //    base local en mitad de un caso negativo.
+    if (alert003 && RE_CAMBIO_USUARIO.test(alert003)) {
+      v('DM-LOG-003', 'Contraseña incorrecta → alert de error', 'BLOCKED',
+        'la app antepone la alerta de CAMBIO DE USUARIO (el usuario del archivo de ' +
+        'credenciales no es el último que entró en el equipo) — el caso no llega a ' +
+        `validar la contraseña. alert: "${alert003.slice(0, 120)}"`);
+      await pulsarBotonAlerta(['cancelar', 'no']);
+    } else {
+      const ok = !!(alert003 && (
+        alert003.toLowerCase().includes('incorrecta') ||
+        alert003.toLowerCase().includes('incorrectos') ||
+        alert003.toLowerCase().includes('invalid') ||
+        alert003.toLowerCase().includes('error') ||
+        alert003.toLowerCase().includes('contraseña') ||
+        alert003.toLowerCase().includes('credencial')
+      ));
+      v('DM-LOG-003', 'Contraseña incorrecta → alert de error', ok ? 'PASS' : 'FAIL',
+        `alert: "${alert003 || 'ninguno'}"`);
+      await dismissAlert();
+    }
   } catch (e) {
     v('DM-LOG-003', 'Contraseña incorrecta → alert de error', 'FAIL', e.message);
   }
@@ -507,13 +627,26 @@ async function runLogin(pg, DATA) {
   // DM-LOG-001: Login correcto → entra a la app
   // ══════════════════════════════════════════════════════════════════════════════
   let loginOk = false;
+  let notaCambioUsuario = '';
   try {
     await clearAllFields();
     await fillField(0, creds.user);
     await fillField(1, creds.pass);
     await clickSubmit();
 
-    // Confirmar alert si aparece (ej. "Sesión activa en otro dispositivo")
+    // 1) Alerta de CAMBIO DE USUARIO → se ACEPTA (borra lo local y resincroniza
+    //    con el vendedor tecleado). Esperada y autorizada cuando el usuario del
+    //    archivo de credenciales no es el que tiene el equipo.
+    //    ⚠ Antes esto se buscaba SIN esperar y por eso la corrida moría en /login.
+    const cambio = await despacharCambioUsuario(8000);
+    if (cambio.hubo) {
+      notaCambioUsuario = cambio.aceptada
+        ? `alerta de cambio de usuario ACEPTADA (botón "${cambio.label}"; opciones: ${(cambio.botones||[]).join(' / ')}) — la app borra lo local y resincroniza`
+        : `alerta de cambio de usuario PRESENTE pero no se pudo pulsar (opciones: ${(cambio.botones||[]).join(' / ')})`;
+      console.log('    ' + notaCambioUsuario);
+    }
+
+    // 2) Cualquier otra alerta de confirmación (ej. "Sesión activa en otro dispositivo")
     const sessionAlertCoords = await pg.evaluate(() => {
       const a = [...document.querySelectorAll('ion-alert')].find(x => {
         const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
@@ -531,8 +664,9 @@ async function runLogin(pg, DATA) {
     if (sessionAlertCoords) await pg.mouse.click(sessionAlertCoords.x, sessionAlertCoords.y);
     await pg.waitForTimeout(500);
 
-    // Esperar sync screen o home (max 60s — FERRETERIA EPA tarda en sincronizar)
-    for (let i = 0; i < 60; i++) {
+    // Esperar sync screen o home (max 180s — tras ACEPTAR un cambio de usuario la
+    // app borra la base y resincroniza de cero, que tarda mucho más que un login normal)
+    for (let i = 0; i < 180; i++) {
       const state = await pg.evaluate(() => ({
         sync:  !!(document.querySelector('app-synchronization') && !document.querySelector('app-synchronization').classList.contains('ion-page-hidden')),
         home:  !!(document.querySelector('app-home') && !document.querySelector('app-home').classList.contains('ion-page-hidden')),
@@ -545,7 +679,8 @@ async function runLogin(pg, DATA) {
     }
 
     v('DM-LOG-001', 'Login correcto → entra a app', loginOk ? 'PASS' : 'FAIL',
-      loginOk ? 'credenciales aceptadas' : 'no salió de login tras submit');
+      (loginOk ? 'credenciales aceptadas' : 'no salió de login tras submit') +
+      (notaCambioUsuario ? ' · ' + notaCambioUsuario : ''));
   } catch (e) {
     v('DM-LOG-001', 'Login correcto → entra a app', 'FAIL', e.message);
   }

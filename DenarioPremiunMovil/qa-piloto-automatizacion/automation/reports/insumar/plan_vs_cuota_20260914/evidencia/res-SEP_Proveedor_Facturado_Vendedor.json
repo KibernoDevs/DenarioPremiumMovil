@@ -1,0 +1,543 @@
+{
+ "tag": "SEP_Proveedor_Facturado_Vendedor",
+ "pedido": {
+  "rol": "Vendedor",
+  "clas": "Proveedor",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/09/2026",
+  "hasta": "14/09/2026"
+ },
+ "steps": [
+  "rol:true",
+  "clas:true",
+  "valores_checked:119",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "7",
+  "clas": "Líneas de producto-2-Proveedor",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/09/2026",
+  "h": "14/09/2026",
+  "chk": 119
+ },
+ "err": null,
+ "total": "119",
+ "filas": {
+  "head": [
+   "Proveedor",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "ProveedorALEJANDRO GIL Y CIA, CAFE SANTA ANA, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorALIMENTOS FLEXIPACK DE VENEZUELA, C.A. - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)1.163.539,3",
+    "Diferencia Plan Vs Facturado (US$)1.163.539,3",
+    "Clientes en Cartera1.935",
+    "Clientes Activados9",
+    "% Activación Clientes0,47 %",
+    "Promedio activación (1 meses)1,45 %"
+   ],
+   [
+    "ProveedorALIMENTOS FLEXIPACK DE VENEZUELA, C.A. - CONDIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0,52 %"
+   ],
+   [
+    "ProveedorALIMENTOS FRAVI, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorALIMENTOS POLAR COMERCIAL, C.A. - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorALIMENTOS POLAR COMERCIAL, C.A. - MISCELANEOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorALMACENADORA MI VIEJO Y YO,C.A. - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorC.A. SUCESORA DE JOSE PUIG & CIA - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)42.035.465,83",
+    "Diferencia Plan Vs Facturado (US$)42.035.465,83",
+    "Clientes en Cartera1.935",
+    "Clientes Activados118",
+    "% Activación Clientes6,1 %",
+    "Promedio activación (1 meses)13,18 %"
+   ],
+   [
+    "ProveedorCAFE SAN ANTONIO, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)5.515.477,83",
+    "Diferencia Plan Vs Facturado (US$)5.515.477,83",
+    "Clientes en Cartera1.935",
+    "Clientes Activados23",
+    "% Activación Clientes1,19 %",
+    "Promedio activación (1 meses)3,2 %"
+   ],
+   [
+    "ProveedorCHOCOBRU INT.CHOCOLATE IMP.REG.CAP. C.A - BEBIDAS",
+    "Plan (US$)0",
+    "Facturado (US$)2.181.227,42",
+    "Diferencia Plan Vs Facturado (US$)2.181.227,42",
+    "Clientes en Cartera1.935",
+    "Clientes Activados7",
+    "% Activación Clientes0,36 %",
+    "Promedio activación (1 meses)0,88 %"
+   ],
+   [
+    "ProveedorCHOCOBRU INT.CHOCOLATE IMP.REG.CAP. C.A - CARAMELOS",
+    "Plan (US$)0",
+    "Facturado (US$)21.804.133,17",
+    "Diferencia Plan Vs Facturado (US$)21.804.133,17",
+    "Clientes en Cartera1.935",
+    "Clientes Activados35",
+    "% Activación Clientes1,81 %",
+    "Promedio activación (1 meses)3,88 %"
+   ],
+   [
+    "ProveedorCHOCOBRU INT.CHOCOLATE IMP.REG.CAP. C.A - CHUPETAS",
+    "Plan (US$)0",
+    "Facturado (US$)2.378.809,97",
+    "Diferencia Plan Vs Facturado (US$)2.378.809,97",
+    "Clientes en Cartera1.935",
+    "Clientes Activados5",
+    "% Activación Clientes0,26 %",
+    "Promedio activación (1 meses)0,67 %"
+   ],
+   [
+    "ProveedorCHOCOLATES KRON C.A - CHOCOLATES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCHOCOLATES KRON C.A - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCHOCOLATES ST. MORITZ, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)803.733,76",
+    "Diferencia Plan Vs Facturado (US$)803.733,76",
+    "Clientes en Cartera1.935",
+    "Clientes Activados7",
+    "% Activación Clientes0,36 %",
+    "Promedio activación (1 meses)0,52 %"
+   ],
+   [
+    "ProveedorCHOCOLATES ST. MORITZ, C.A - CHOCOLATES",
+    "Plan (US$)0",
+    "Facturado (US$)6.253.117,32",
+    "Diferencia Plan Vs Facturado (US$)6.253.117,32",
+    "Clientes en Cartera1.935",
+    "Clientes Activados35",
+    "% Activación Clientes1,81 %",
+    "Promedio activación (1 meses)4,19 %"
+   ],
+   [
+    "ProveedorCHOCOLATES ST. MORITZ, C.A - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)11.049.775,09",
+    "Diferencia Plan Vs Facturado (US$)11.049.775,09",
+    "Clientes en Cartera1.935",
+    "Clientes Activados50",
+    "% Activación Clientes2,58 %",
+    "Promedio activación (1 meses)5,43 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - CARAMELOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - CHICLES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - CHOCOLATES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - CHUPETAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - GOMAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOLOMBINA DE VENEZUELA C.A. - MISCELANEOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOMERCIAL JULIAN DA SILVA, C.A. - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOMERCIALIZADORA ALPRI, C.A. - CHICLES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCOMERCIALIZADORA BETMIG, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)1.762.890,79",
+    "Diferencia Plan Vs Facturado (US$)1.762.890,79",
+    "Clientes en Cartera1.935",
+    "Clientes Activados10",
+    "% Activación Clientes0,52 %",
+    "Promedio activación (1 meses)0,72 %"
+   ],
+   [
+    "ProveedorCOMERCIALIZADORA ROMHER CARACAS C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCORPORACION ARAYAMAR C A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)2.874.353,64",
+    "Diferencia Plan Vs Facturado (US$)2.874.353,64",
+    "Clientes en Cartera1.935",
+    "Clientes Activados11",
+    "% Activación Clientes0,57 %",
+    "Promedio activación (1 meses)2,22 %"
+   ],
+   [
+    "ProveedorCORPORACION ARTIUM, C.A - PASAPALOS",
+    "Plan (US$)0",
+    "Facturado (US$)8.796.488,16",
+    "Diferencia Plan Vs Facturado (US$)8.796.488,16",
+    "Clientes en Cartera1.935",
+    "Clientes Activados25",
+    "% Activación Clientes1,29 %",
+    "Promedio activación (1 meses)2,53 %"
+   ],
+   [
+    "ProveedorCORPORACION MUNDO TRIGO, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)4.463.534,56",
+    "Diferencia Plan Vs Facturado (US$)4.463.534,56",
+    "Clientes en Cartera1.935",
+    "Clientes Activados26",
+    "% Activación Clientes1,34 %",
+    "Promedio activación (1 meses)2,64 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - BEBIDAS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0,05 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - CEREALES",
+    "Plan (US$)0",
+    "Facturado (US$)220.643,06",
+    "Diferencia Plan Vs Facturado (US$)220.643,06",
+    "Clientes en Cartera1.935",
+    "Clientes Activados2",
+    "% Activación Clientes0,1 %",
+    "Promedio activación (1 meses)0,57 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - CHICLES",
+    "Plan (US$)0",
+    "Facturado (US$)226.298,47",
+    "Diferencia Plan Vs Facturado (US$)226.298,47",
+    "Clientes en Cartera1.935",
+    "Clientes Activados1",
+    "% Activación Clientes0,05 %",
+    "Promedio activación (1 meses)0,21 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - CHUPETAS",
+    "Plan (US$)0",
+    "Facturado (US$)2.294.898,25",
+    "Diferencia Plan Vs Facturado (US$)2.294.898,25",
+    "Clientes en Cartera1.935",
+    "Clientes Activados7",
+    "% Activación Clientes0,36 %",
+    "Promedio activación (1 meses)1,09 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - CONDIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0,16 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)715.244,07",
+    "Diferencia Plan Vs Facturado (US$)715.244,07",
+    "Clientes en Cartera1.935",
+    "Clientes Activados6",
+    "% Activación Clientes0,31 %",
+    "Promedio activación (1 meses)0,52 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - GOMAS",
+    "Plan (US$)0",
+    "Facturado (US$)328.489,2",
+    "Diferencia Plan Vs Facturado (US$)328.489,2",
+    "Clientes en Cartera1.935",
+    "Clientes Activados3",
+    "% Activación Clientes0,16 %",
+    "Promedio activación (1 meses)0,26 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - INFUSIONES",
+    "Plan (US$)0",
+    "Facturado (US$)2.423.320,29",
+    "Diferencia Plan Vs Facturado (US$)2.423.320,29",
+    "Clientes en Cartera1.935",
+    "Clientes Activados13",
+    "% Activación Clientes0,67 %",
+    "Promedio activación (1 meses)0,98 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - LECHE CONDENSADA",
+    "Plan (US$)0",
+    "Facturado (US$)660.150,37",
+    "Diferencia Plan Vs Facturado (US$)660.150,37",
+    "Clientes en Cartera1.935",
+    "Clientes Activados6",
+    "% Activación Clientes0,31 %",
+    "Promedio activación (1 meses)0,93 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - POSTRES Y GELATINAS",
+    "Plan (US$)0",
+    "Facturado (US$)347.502,13",
+    "Diferencia Plan Vs Facturado (US$)347.502,13",
+    "Clientes en Cartera1.935",
+    "Clientes Activados3",
+    "% Activación Clientes0,16 %",
+    "Promedio activación (1 meses)0,57 %"
+   ],
+   [
+    "ProveedorCORPORACION R3, C.A - TORTAS",
+    "Plan (US$)0",
+    "Facturado (US$)853.353,68",
+    "Diferencia Plan Vs Facturado (US$)853.353,68",
+    "Clientes en Cartera1.935",
+    "Clientes Activados5",
+    "% Activación Clientes0,26 %",
+    "Promedio activación (1 meses)0,26 %"
+   ],
+   [
+    "ProveedorCORPORACION TU CEREAL, C.A - CEREALES",
+    "Plan (US$)0",
+    "Facturado (US$)35.260.355,36",
+    "Diferencia Plan Vs Facturado (US$)35.260.355,36",
+    "Clientes en Cartera1.935",
+    "Clientes Activados75",
+    "% Activación Clientes3,88 %",
+    "Promedio activación (1 meses)6,72 %"
+   ],
+   [
+    "ProveedorCORPORATION ALICENTRO, C.A - ALIMENTOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorDANIBISK, C.A. - CHOCOLATES",
+    "Plan (US$)0",
+    "Facturado (US$)9.452.243,56",
+    "Diferencia Plan Vs Facturado (US$)9.452.243,56",
+    "Clientes en Cartera1.935",
+    "Clientes Activados43",
+    "% Activación Clientes2,22 %",
+    "Promedio activación (1 meses)4,91 %"
+   ],
+   [
+    "ProveedorDANIBISK, C.A. - GALLETAS",
+    "Plan (US$)0",
+    "Facturado (US$)16.960.390,3",
+    "Diferencia Plan Vs Facturado (US$)16.960.390,3",
+    "Clientes en Cartera1.935",
+    "Clientes Activados77",
+    "% Activación Clientes3,98 %",
+    "Promedio activación (1 meses)8,11 %"
+   ],
+   [
+    "ProveedorDISTRIBUIDORA AVELANDES, C.A - TABACO",
+    "Plan (US$)0",
+    "Facturado (US$)15.033.879,25",
+    "Diferencia Plan Vs Facturado (US$)15.033.879,25",
+    "Clientes en Cartera1.935",
+    "Clientes Activados53",
+    "% Activación Clientes2,74 %",
+    "Promedio activación (1 meses)4,34 %"
+   ],
+   [
+    "ProveedorDISTRIBUIDORA CORVARA FOODS, C.A - CARAMELOS",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ],
+   [
+    "ProveedorDISTRIBUIDORA CORVARA FOODS, C.A - CHICLES",
+    "Plan (US$)0",
+    "Facturado (US$)0",
+    "Diferencia Plan Vs Facturado (US$)0",
+    "Clientes en Cartera1.935",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ]
+  ]
+ }
+}

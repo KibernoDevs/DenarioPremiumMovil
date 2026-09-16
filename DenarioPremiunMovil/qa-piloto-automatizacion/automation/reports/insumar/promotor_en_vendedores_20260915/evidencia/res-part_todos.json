@@ -1,0 +1,16 @@
+{
+ "tag": "part_todos",
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "vendedor": "Todos",
+  "clasificacion": "1",
+  "cumplimiento": "Facturado",
+  "idCurrency": "Currency-US$"
+ },
+ "grids": [],
+ "labs": [
+  "US$"
+ ],
+ "noreg": false
+}

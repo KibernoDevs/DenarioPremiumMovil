@@ -1,0 +1,52 @@
+{
+ "tag": "Empresa_Facturado_US_sinRol",
+ "pedido": {
+  "rol": "",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores_checked:1",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 1
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Plan (US$)",
+   "Facturado (US$)",
+   "Diferencia Plan Vs Facturado (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Plan (US$)580.600",
+    "Facturado (US$)224.411,08",
+    "Diferencia Plan Vs Facturado (US$)-356.188,92",
+    "Clientes en Cartera1.891",
+    "Clientes Activados490",
+    "% Activación Clientes25,91 %",
+    "Promedio activación (1 meses)26,18 %"
+   ]
+  ]
+ }
+}

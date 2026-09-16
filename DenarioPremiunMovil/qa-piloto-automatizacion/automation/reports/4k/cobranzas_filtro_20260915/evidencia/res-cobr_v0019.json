@@ -1,0 +1,61 @@
+{
+ "tag": "cobr_v0019",
+ "vendedorPedido": "KEY ROBINSON CUBILLAN",
+ "clicBuscar": "OK",
+ "oclusion": [
+  "intento0:LIBRE"
+ ],
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "idSalesmaView": "339",
+  "vendLabel": "KEY ROBINSON CUBILLAN",
+  "idCurrency": "USD",
+  "curLabel": "USD",
+  "idEnterprise": "1",
+  "idTipo": "",
+  "cliente": "",
+  "idDep": "",
+  "orderStatus": "0"
+ },
+ "post": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "idSalesmaView": "339",
+  "vendLabel": "KEY ROBINSON CUBILLAN",
+  "idCurrency": "USD"
+ },
+ "enviados": {
+  "idSalesmaView": [
+   "339"
+  ],
+  "idCurrency": [
+   "USD"
+  ],
+  "dateF_input": [
+   "01/08/2026"
+  ],
+  "dateB_input": [
+   "31/08/2026"
+  ],
+  "idTipo": [
+   ""
+  ],
+  "orderStatus": [
+   "0"
+  ]
+ },
+ "series": [
+  "[234160.48,6465.26,2492.0]",
+  "[70.76,57.43,57.78,59.68,72.17,72.19,41.94,0.0,0.0,0.0,0.0,0.0]",
+  "[29.24,42.57,42.22,40.32,27.83,27.81,58.06,100.0,0.0,0.0,0.0,0.0]"
+ ],
+ "labels": [
+  "USD",
+  "Facturado",
+  "Cobrado"
+ ],
+ "ticks": [],
+ "grids": [],
+ "noreg": false
+}

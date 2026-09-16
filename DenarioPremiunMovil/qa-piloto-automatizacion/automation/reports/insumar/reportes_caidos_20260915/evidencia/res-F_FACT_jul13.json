@@ -1,0 +1,63 @@
+{
+ "tag": "F_FACT_jul13",
+ "pre": {
+  "tipo": "INVOICE",
+  "vend": "",
+  "inicio": "13/07/2026",
+  "fin": "13/07/2026"
+ },
+ "steps": [
+  "tipo:true"
+ ],
+ "err": null,
+ "total": "285",
+ "first": {
+  "head": [
+   "Detalle",
+   "Tipo",
+   "Código facturación",
+   "Fecha facturación",
+   "Vendedor",
+   "Cliente",
+   "Monto facturado",
+   "Saldo pendiente",
+   "Vencimiento",
+   "Monto conv.",
+   "Tasa conv.",
+   "Adjuntos"
+  ],
+  "rows": [
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20092280V01",
+    "13/07/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "SUPERMERCADO EL CHAV",
+    "557,39 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20092280T006",
+    "13/07/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "SUPERMERCADO EL CHAV",
+    "557,39 US$",
+    "-"
+   ],
+   [
+    "Consultar",
+    "Facturas cobradas",
+    "20092280T005",
+    "13/07/2026 00:00:00",
+    "VIVIANA ESCALANTE",
+    "SUPERMERCADO EL CHAV",
+    "557,39 US$",
+    "-"
+   ]
+  ],
+  "pag": ""
+ }
+}

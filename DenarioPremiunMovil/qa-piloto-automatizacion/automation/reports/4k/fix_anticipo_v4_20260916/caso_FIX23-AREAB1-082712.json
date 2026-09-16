@@ -1,0 +1,14 @@
+{
+  "marca": "FIX23-AREAB1-082712",
+  "tipo": "reab",
+  "veredicto": "BLOCKED",
+  "ts": "2026-09-16T12:27:45.445Z",
+  "motivo": "no salió el modal de salida",
+  "log": [
+    "\n=== CASO REAB - marca FIX23-AREAB1-082712 - excedente 50 ===",
+    "  cliente C.0627 - docs 30 - total a pagar 303,56 (=303.56)",
+    "  documento: FAC 00020146 USD 167 656,00 USD 0,00 USD 656,00 USD 303,56 USD 12/03/2026 02/04/2026",
+    "  pagado 353.56 - Diferencia en pantalla: 50,00 (blue)",
+    "  GUARDAR y salir -> FALLO no salió el modal de salida - alerta: - - cierre: -"
+  ]
+}

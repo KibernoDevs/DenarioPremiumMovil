@@ -1,0 +1,61 @@
+{
+ "tag": "ctrl_todos_bs",
+ "vendedorPedido": "__TODOS__",
+ "clicBuscar": "OK",
+ "oclusion": [
+  "intento0:LIBRE"
+ ],
+ "pre": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "idSalesmaView": "",
+  "vendLabel": "Vendedor",
+  "idCurrency": "Bs",
+  "curLabel": "Bs",
+  "idEnterprise": "1",
+  "idTipo": "",
+  "cliente": "",
+  "idDep": "",
+  "orderStatus": "0"
+ },
+ "post": {
+  "dateF": "01/08/2026",
+  "dateB": "31/08/2026",
+  "idSalesmaView": "",
+  "vendLabel": "Vendedor",
+  "idCurrency": "Bs"
+ },
+ "enviados": {
+  "idSalesmaView": [
+   ""
+  ],
+  "idCurrency": [
+   "Bs"
+  ],
+  "dateF_input": [
+   "01/08/2026"
+  ],
+  "dateB_input": [
+   "31/08/2026"
+  ],
+  "idTipo": [
+   ""
+  ],
+  "orderStatus": [
+   "0"
+  ]
+ },
+ "series": [
+  "[2.014120392E8,5540793.2,2114200.0]",
+  "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]",
+  "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]"
+ ],
+ "labels": [
+  "Bs",
+  "Facturado",
+  "Cobrado"
+ ],
+ "ticks": [],
+ "grids": [],
+ "noreg": false
+}

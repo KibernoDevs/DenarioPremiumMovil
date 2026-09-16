@@ -1,0 +1,19 @@
+{"modulo":"inventarios","id":"DM-INV-001","descripcion":"Tile Inventarios → home","resultado":"PASS","nota":"botones: INVENTARIO, BUSCAR","ms":1454,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-002","descripcion":"Click INVENTARIO → form","resultado":"PASS","nota":"tabs: [General, Inventario, Resumen, Adjuntos]; Inventario disabled: true","ms":5249,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-004","descripcion":"Seleccionar cliente","resultado":"PASS","nota":"\"CASA DE REPUESTOS ISUZU MARICHCódigo: C.0398 Saldo Bs: 12.76\" · tabs habilitadas","ms":20946,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-REQ-001","descripcion":"REQ · Enviar habilitado al iniciar la transacción","resultado":"PASS","nota":"nace habilitado","ms":20967,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-REQ-002","descripcion":"REQ · Rechaza el envío con obligatorios vacíos y dice qué falta","resultado":"PASS","nota":"C1 ok · C2 ok vía alerta — \"Denario Inventario Debe seleccionar al menos un producto para el inven\" · Enviar quedó DESHAB","ms":24831,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-008","descripcion":"Tab Inventario → lista productos","resultado":"PASS","nota":"4 ítems visibles","ms":26495,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-010","descripcion":"Click producto → modal captura","resultado":"PASS","nota":"modal abierto (intento 2)","ms":32375,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-011","descripcion":"Llenar campos modal","resultado":"PASS","nota":"cantidad: 5; expirationBatch: true; lote: LOTE-QA-0488","ms":38194,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-012","descripcion":"Aceptar modal → producto marcado","resultado":"PASS","nota":"","ms":39888,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-016","descripcion":"Tab Resumen → productos capturados","resultado":"PASS","nota":"1 ítems (app-inventario ion-row)","ms":41636,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-017","descripcion":"Pedido Sugerido visible","resultado":"N/A","nota":"suggestedOrderByDispatchAndReturn=false","ms":41636,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-020","descripcion":"Días para siguiente inventario","resultado":"N/A","nota":"suggestedOrderByDispatchAndReturn=false","ms":41636,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-021","descripcion":"Click Guardar → Guardado","resultado":"PASS","nota":"alerts: \"Aceptar\"/\"OK\" · BD-SAVED(st=3)","ms":46299,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-REQ-003","descripcion":"REQ · Sin pestaña en rojo falso con el formulario completo (F1)","resultado":"PASS","nota":"4 pestaña(s), ninguna en rojo con el formulario completo","ms":49182,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-022","descripcion":"Click Enviar → Enviado","resultado":"PASS","nota":"ref: N/A · BD-LOCAL-OK(id=104,st=1) · BD-FIELD-OK","ms":63982,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-023","descripcion":"BUSCAR → lista","resultado":"PASS","nota":"1 ítems","ms":66626,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-025","descripcion":"Searchbar filtra","resultado":"PASS","nota":"\"C.0398\" → 1 resultado(s)","ms":68487,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-026","descripcion":"Click Guardado → form abre","resultado":"PASS","nota":"(defecto conocido: puede abrir en tab General)","ms":111418,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-028","descripcion":"Trash Guardado → desaparece","resultado":"PASS","nota":"alert: \"OK\" · form visible: false","ms":122123,"runner":"playwright-standalone"}

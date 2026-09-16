@@ -1,0 +1,20 @@
+{
+ "tag": "IND_Morosidad_CxC",
+ "ruta": "/pages/protected/indicadores/indicadorMorosos.xhtml",
+ "llegada": "1:OK",
+ "clicked": true,
+ "steps": [
+  "idCurrency:true",
+  "idTipoDocs:true"
+ ],
+ "pre": {
+  "idCurrency": "US$",
+  "idTipoDocs": "2"
+ },
+ "err": null,
+ "util": "View Case Log\nCLose Store\nTamas Bunce\nOlivia Arribas\nThe analysis of satellite data has revealed the astounding loss of ice in just a few months of abnormally high...\n3 mins ago\nLast year was the hottest on record for the Arctic, with the annual.\n23 mins ago\nMinimum extent of sea ice in the region its second-lowest on record.\n24 mins ago\nRight… Right my friend. This is better. Right? Right my friend… 🏄‍♂️\n25 mins ago\nui-button\nui-button\nui-button\nDenario Premium Configuración\nVisualizar el Dashboard principal por Pedidos o Facturaciones.\nDenario ofrece 2 temas diferentes para la visualización de la app web.\nCumplimiento\nPedido\nFacturado\nPedido\nTemas\nClásico\nOscuro\nFiltros\nINSUMAR DISTRIBUIDORA 715, C.A.\nINSUMAR DISTRIBUIDORA 715, C.A.\nMoneda\nBS\nUS$\nUS$\nVencimiento\nCuentas por cobrar\nCuentas por cobrar\nBuscar\nReportes\nConfiguración\nTop 10 Cuentas por cobrar Clientes (US$)\nTop 10 Cuentas por cobrar Canales de Distribución (US$)\nCuentas por cobrar de la Cartera (US$)\nPowered by kiberno ©2026 www.denario.net",
+ "grid": null,
+ "tablas": [],
+ "total": null,
+ "menciona_transportista": false
+}

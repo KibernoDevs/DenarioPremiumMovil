@@ -1197,28 +1197,54 @@ async function runDevoluciones(pg, DATA) {
     const ts = Date.now();
     await fillIonInput('ion-input#responsable', `Test-DEV-006`);
     await fillIonInput('ion-input#comentario',  `Test-DEV-016 comentario ${ts}`);
-    const responsable = await pg.evaluate(() => {
+    // 🔴 AUSENTE != PRESENTE-PERO-VACIO. Hasta el 16/09 esto devolvia FAIL en
+    //    los dos casos, y DM-DEV-006 estuvo desde el 14/09 sin poder
+    //    clasificarse: un selector que no engancha salia igual que un campo que
+    //    no acepta entrada. QA lo verifico A MANO en la devolucion ref 232 —
+    //    los campos aceptan entrada — asi que el FAIL era del guion.
+    //    Ahora se distingue: sin elemento ⇒ BLOCKED con el motivo.
+    const rsp = await pg.evaluate(() => {
       const inp = document.querySelector('ion-input#responsable');
-      if (!inp) return null;
+      if (!inp) return { existe: false, motivo: 'ion-input#responsable no esta en el DOM' };
+      if (inp.getBoundingClientRect().width === 0) {
+        return { existe: false, motivo: 'ion-input#responsable existe pero no es visible' };
+      }
       const i = inp.querySelector('input') || (inp.shadowRoot && inp.shadowRoot.querySelector('input'));
-      return i ? i.value : null;
+      if (!i) return { existe: false, motivo: 'el ion-input no expone su <input> interno' };
+      return { existe: true, valor: i.value };
     });
-    const ok = !!(responsable && responsable.includes('Test-DEV-006'));
-    v('DM-DEV-006', 'Campos editables Tab General (Responsable/Comentario)', ok ? 'PASS' : 'FAIL',
-      `responsable: "${responsable}"`);
+    if (!rsp.existe) {
+      v('DM-DEV-006', 'Campos editables Tab General (Responsable/Comentario)', 'BLOCKED',
+        `no se pudo medir: ${rsp.motivo}`);
+    } else {
+      const ok = !!(rsp.valor && rsp.valor.includes('Test-DEV-006'));
+      v('DM-DEV-006', 'Campos editables Tab General (Responsable/Comentario)', ok ? 'PASS' : 'FAIL',
+        `responsable: "${rsp.valor}"` + (ok ? '' : ' · el campo esta presente y visible pero no conservo lo tecleado'));
+    }
   } catch (e) {
     v('DM-DEV-006', 'Campos editables Tab General', 'FAIL', e.message);
   }
 
   // ─── DEV-007: Fecha solo lectura (button disabled) ──────────────────────────
   try {
-    const fechaDisabled = await pg.evaluate(() => {
+    // Mismo arreglo que DM-DEV-006: el boton ausente no es un fallo del
+    //    producto, es que no se pudo medir.
+    const fch = await pg.evaluate(() => {
       const btn = document.querySelector('ion-button#fechaDevButton');
-      if (!btn || btn.getBoundingClientRect().width === 0) return null;
-      return btn.disabled || btn.getAttribute('disabled') !== null;
+      if (!btn) return { existe: false, motivo: 'ion-button#fechaDevButton no esta en el DOM' };
+      if (btn.getBoundingClientRect().width === 0) {
+        return { existe: false, motivo: 'el boton de fecha existe pero no es visible' };
+      }
+      return { existe: true, disabled: btn.disabled || btn.getAttribute('disabled') !== null };
     });
-    v('DM-DEV-007', 'Fecha devolución solo lectura (button disabled)', fechaDisabled ? 'PASS' : 'FAIL',
-      `fechaDevButton disabled: ${fechaDisabled}`);
+    if (!fch.existe) {
+      v('DM-DEV-007', 'Fecha devolución solo lectura (button disabled)', 'BLOCKED',
+        `no se pudo medir: ${fch.motivo}`);
+    } else {
+      v('DM-DEV-007', 'Fecha devolución solo lectura (button disabled)', fch.disabled ? 'PASS' : 'FAIL',
+        `fechaDevButton disabled: ${fch.disabled}` +
+        (fch.disabled ? '' : ' · el boton esta visible y HABILITADO: la fecha se puede editar'));
+    }
   } catch (e) {
     v('DM-DEV-007', 'Fecha devolución solo lectura', 'FAIL', e.message);
   }
@@ -1548,13 +1574,40 @@ async function runDevoluciones(pg, DATA) {
     const prodMal = await agregarProducto(DATA.productoTest, { excederMaximo: true });
     if (!prodMal.ok) throw new Error('No se pudo montar el escenario: ' + prodMal.error);
 
+    // 🔴 ANTES DE ENVIAR: ¿la cantidad excesiva SIGUE en el campo?
+    //    Hasta el 16/09 este caso no lo comprobaba y daba FAIL en falso. QA
+    //    verifico A MANO que la app SI bloquea devolver mas de lo facturado:
+    //    lo que hace es RECORTAR la cantidad al maximo (3 -> 1), y eso ES
+    //    bloquear. Al no releer el campo, el guion creia haber colado el 3 y
+    //    luego leia el "¿Desea enviar?" —legitimo, porque la cantidad ya era
+    //    valida— como que la validacion no existia.
+    const cantReal = await pg.evaluate(() => {
+      const vis = (el) => el.getBoundingClientRect().width > 0;
+      for (const el of [...document.querySelectorAll('ion-input, input')].filter(vis)) {
+        const i = el.tagName === 'INPUT' ? el
+          : (el.querySelector('input') || (el.shadowRoot && el.shadowRoot.querySelector('input')));
+        if (!i || i.value === '') continue;
+        const fila = el.closest('ion-row') || el.parentElement;
+        const ctx = ((el.id || '') + ' ' + (el.getAttribute('name') || '') + ' ' +
+                     ((fila && fila.innerText) || '')).toLowerCase();
+        if (/cantidad|devolver/.test(ctx)) return i.value;
+      }
+      return null;
+    });
+    const qPedida = Number(prodMal.cantidadPedida);
+    const qMax    = Number(prodMal.maximoReal);
+    const qQuedo  = cantReal == null ? NaN : Number(String(cantReal).replace(',', '.'));
+    const recorto = Number.isFinite(qQuedo) && Number.isFinite(qMax) && qQuedo <= qMax;
+
     await clickTab('General');
     await pg.waitForTimeout(1200);
 
     // Intentar enviar y LEER lo que responde la app
     let respuesta = { bloqueo: null, confirmacion: null };
+    // Si la app ya recorto la cantidad, el tope se respeto: eso es el bloqueo.
+    if (recorto) respuesta.bloqueo = `la app RECORTO la cantidad de ${qPedida} a ${qQuedo} (maximo ${qMax})`;
     try {
-      await clickSend(6);
+      if (!recorto) await clickSend(6);
       await pg.waitForTimeout(1800);
       respuesta = await pg.evaluate(() => {
         const vis = el => el.getBoundingClientRect().width > 0;

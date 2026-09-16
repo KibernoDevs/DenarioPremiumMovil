@@ -1,0 +1,35 @@
+{
+ "pre": {
+  "emp": "1",
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cump": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "res": {
+  "grid": "form:tablaCumplimientoCuota",
+  "headers": [
+   "Descripción",
+   "Cuota ()",
+   "()",
+   "Brecha Cuota ()",
+   "()",
+   "Unidades Devueltas",
+   "Cantidad Neta",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ],
+  "paginator": null,
+  "msg": "Error en busqueda de reporte. Intente nuevamente."
+ }
+}

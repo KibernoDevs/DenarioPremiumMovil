@@ -1,0 +1,53 @@
+{
+ "tag": "Empresa_Pedido_US_Transportista",
+ "pedido": {
+  "rol": "Transportista",
+  "clas": "Empresa",
+  "cumpl": "Pedido",
+  "uni": "US$",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026"
+ },
+ "steps": [
+  "rol:true",
+  "clas:true",
+  "valores_checked:1",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rol": "15",
+  "clas": "Empresa",
+  "cumpl": "Pedido",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 1
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Plan (US$)",
+   "Pedido (US$)",
+   "Diferencia Plan Vs Pedido (US$)",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Plan (US$)580.600",
+    "Pedido (US$)0",
+    "Diferencia Plan Vs Pedido (US$)-580.600",
+    "Clientes en Cartera1.891",
+    "Clientes Activados0",
+    "% Activación Clientes0 %",
+    "Promedio activación (1 meses)0 %"
+   ]
+  ]
+ }
+}

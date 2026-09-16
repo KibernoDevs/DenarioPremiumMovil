@@ -1,0 +1,28 @@
+{
+ "tag": "rot_linea",
+ "pre": {
+  "clas": "Líneas de producto-1-Linea",
+  "cumpl": "Facturado",
+  "uni": "4",
+  "d": "01/08/2026",
+  "h": "31/08/2026"
+ },
+ "marcados": 18,
+ "total": "0",
+ "cabec": [
+  "Nombre",
+  "SELL IN",
+  "SELL OUT",
+  "Plan VS Cumplimiento",
+  "Inventario Inicial",
+  "Inventario Final",
+  "Rotaciòn Inventario",
+  "Rotación VS SELL OUT",
+  "SELL POINTS"
+ ],
+ "filas": [
+  [
+   "No se encontraron registros."
+  ]
+ ]
+}

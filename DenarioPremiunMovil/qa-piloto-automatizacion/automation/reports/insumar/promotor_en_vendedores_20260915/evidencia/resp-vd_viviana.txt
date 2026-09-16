@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<partial-response id="j_id1"><changes><update id="form:productView"><![CDATA[<span id="form:productView">
+										
+										<div class="dashboard-grid">
+												<div class="product-card" role="article" title="PASSION NOIR 56">
+													<div class="product-name">PASSION NOIR 56</div>
+													
+													<div class="qty" data-value="3" data-prev="0">3</div>
+													<div class="meta">Unidades</div>
+												</div>
+												<div class="product-card" role="article" title="CHOCO LATTE CRU">
+													<div class="product-name">CHOCO LATTE CRU</div>
+													
+													<div class="qty" data-value="2" data-prev="0">2</div>
+													<div class="meta">Unidades</div>
+												</div>
+										</div></span>]]></update><update id="j_id1:javax.faces.ViewState:0"><![CDATA[-2610804755041635479:7969352244908306086]]></update></changes></partial-response>
+---
+<?xml version='1.0' encoding='UTF-8'?>
+<partial-response id="j_id1"><changes><update id="form:productView"><![CDATA[<span id="form:productView">
+										
+										<div class="dashboard-grid">
+												<div class="product-card" role="article" title="PASSION NOIR 56">
+													<div class="product-name">PASSION NOIR 56</div>
+													
+													<div class="qty" data-value="3" data-prev="0">3</div>
+													<div class="meta">Unidades</div>
+												</div>
+												<div class="product-card" role="article" title="CHOCO LATTE CRU">
+													<div class="product-name">CHOCO LATTE CRU</div>
+													
+													<div class="qty" data-value="2" data-prev="0">2</div>
+													<div class="meta">Unidades</div>
+												</div>
+										</div></span>]]></update><update id="j_id1:javax.faces.ViewState:0"><![CDATA[-2610804755041635479:7969352244908306086]]></update></changes></partial-response>

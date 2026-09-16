@@ -1,0 +1,319 @@
+{
+  "marca": "FIX23-B0398-REAB-101443",
+  "cliente": "C.0398",
+  "modo": "reab",
+  "veredicto": "FAIL",
+  "ts": "2026-09-16T14:18:34.793Z",
+  "docs": {
+    "visible": true,
+    "filas": [
+      {
+        "i": 0,
+        "txt": "FAC 00006815 USD 1379 275,00 USD 0,00 USD 275,00 USD 0,00 USD 16/11/2022 07/12/2022",
+        "marcado": false
+      },
+      {
+        "i": 1,
+        "txt": "FAC 00020520 USD 128 2.736,00 USD 0,00 USD 2.736,00 USD 859,60 USD 20/04/2026 11/05/2026",
+        "marcado": false
+      },
+      {
+        "i": 2,
+        "txt": "FAC 00020672 USD 119 200,00 USD 0,00 USD 200,00 USD 200,00 USD 29/04/2026 20/05/2026",
+        "marcado": false
+      },
+      {
+        "i": 3,
+        "txt": "FAC 00020819 USD 105 566,00 USD 0,00 USD 566,00 USD 566,00 USD 13/05/2026 03/06/2026",
+        "marcado": false
+      },
+      {
+        "i": 4,
+        "txt": "FAC 00020831 USD 104 230,00 USD 0,00 USD 230,00 USD 230,00 USD 14/05/2026 04/06/2026",
+        "marcado": false
+      },
+      {
+        "i": 5,
+        "txt": "FAC 00021144 USD 84 428,00 USD 0,00 USD 428,00 USD 428,00 USD 03/06/2026 24/06/2026",
+        "marcado": false
+      },
+      {
+        "i": 6,
+        "txt": "FAC 00021256 USD 76 320,00 USD 0,00 USD 320,00 USD 320,00 USD 11/06/2026 02/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 7,
+        "txt": "FAC 00021257 USD 76 320,00 USD 0,00 USD 320,00 USD 320,00 USD 11/06/2026 02/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 8,
+        "txt": "FAC 00021292 USD 75 230,00 USD 0,00 USD 230,00 USD 230,00 USD 12/06/2026 03/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 9,
+        "txt": "FAC 00021329 USD 71 480,00 USD 0,00 USD 480,00 USD 480,00 USD 16/06/2026 07/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 10,
+        "txt": "N/D 40000007 USD 68 8,35 USD 0,00 USD 8,35 USD 8,35 USD 19/06/2026 10/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 11,
+        "txt": "FAC C0000006 USD 68 334,00 USD 0,00 USD 334,00 USD 310,00 USD 19/06/2026 10/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 12,
+        "txt": "N/D 40000009 USD 68 2,50 USD 0,00 USD 2,50 USD 2,50 USD 19/06/2026 10/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 13,
+        "txt": "FAC C0000008 USD 68 100,00 USD 0,00 USD 100,00 USD 100,00 USD 19/06/2026 10/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 14,
+        "txt": "FAC 00021421 USD 65 2.940,00 USD 0,00 USD 2.940,00 USD 2.940,00 USD 22/06/2026 13/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 15,
+        "txt": "N/D 40000017 USD 51 3,50 USD 0,00 USD 3,50 USD 3,50 USD 06/07/2026 27/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 16,
+        "txt": "FAC C0000015 USD 51 140,00 USD 0,00 USD 140,00 USD 140,00 USD 06/07/2026 27/07/2026",
+        "marcado": false
+      },
+      {
+        "i": 17,
+        "txt": "FAC 00021700 USD 44 392,00 USD 0,00 USD 392,00 USD 392,00 USD 13/07/2026 03/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 18,
+        "txt": "N/D 40000036 USD 42 2,70 USD 0,00 USD 2,70 USD 2,70 USD 15/07/2026 05/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 19,
+        "txt": "FAC C0000034 USD 42 108,00 USD 0,00 USD 108,00 USD 108,00 USD 15/07/2026 05/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 20,
+        "txt": "N/D 40000040 USD 41 7,50 USD 0,00 USD 7,50 USD 7,50 USD 16/07/2026 06/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 21,
+        "txt": "FAC C0000038 USD 41 300,00 USD 0,00 USD 300,00 USD 300,00 USD 16/07/2026 06/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 22,
+        "txt": "FAC 00021743 USD 41 132,00 USD 0,00 USD 132,00 USD 132,00 USD 16/07/2026 06/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 23,
+        "txt": "N/D 40000045 USD 40 5,25 USD 0,00 USD 5,25 USD 5,25 USD 17/07/2026 07/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 24,
+        "txt": "FAC C0000043 USD 40 210,00 USD 0,00 USD 210,00 USD 210,00 USD 17/07/2026 07/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 25,
+        "txt": "FAC 00021777 USD 37 625,00 USD 0,00 USD 625,00 USD 625,00 USD 20/07/2026 10/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 26,
+        "txt": "N/D 40000046 USD 37 1,60 USD 0,00 USD 1,60 USD 1,60 USD 20/07/2026 10/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 27,
+        "txt": "FAC C0000044 USD 37 64,00 USD 0,00 USD 64,00 USD 64,00 USD 20/07/2026 10/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 28,
+        "txt": "FAC 00021882 USD 29 1.300,00 USD 0,00 USD 1.300,00 USD 1.300,00 USD 28/07/2026 18/08/2026",
+        "marcado": false
+      },
+      {
+        "i": 29,
+        "txt": "N/D 40000061 USD 28 1,70 USD 0,00 USD 1,70 USD 1,70 USD 29/07/2026 19/08/2026",
+        "marcado": false
+      }
+    ],
+    "texto": "Moneda Documento: Vigente Vencido A favor Seleccione Tipo Nro. documento Moneda del documento Días de vencimiento Monto base Monto IVA Monto Total Saldo Fecha del documento Fecha de vencimiento Comentario FAC 00006815 USD 1379 275,00 USD 0,00 USD 275,00 USD 0,00 USD 16/11/2022 07/12/2022 FAC 00020520 USD 128 2.736,00 USD 0,00 USD 2.736,00 USD 859,60 USD 20/04/2026 11/05/2026 FAC 00020672 USD 119 2"
+  },
+  "stickyAntes": {
+    "total": "200,00",
+    "difVal": "-200,00",
+    "difColor": "red"
+  },
+  "stickyDespues": {
+    "total": "200,00",
+    "difVal": "-200,00",
+    "difColor": "red"
+  },
+  "nube": {
+    "resumen": "ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "filas": []
+  },
+  "consolaEnvio": [
+    "[log] [CobroPagos] constructor start",
+    "[timeEnd] [CobroPagos] constructor: 0.02294921875 ms",
+    "[timeEnd] [CobroPagos] afterViewInit: 0.005859375 ms",
+    "[log] [CobroPagos] montoTotalPagar= 200 items ef= 0",
+    "[log] [BackgroundSync] trySync interval",
+    "[startGroupCollapsed] %cnative %cNetwork.getStatus (#95119407) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119407, pluginId: Network, methodName: getStatus, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cNetwork.getStatus (#95119407) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {connected: true, connectionType: wifi}",
+    "[endGroup] console.groupEnd",
+    "[log] [BackgroundSync] network status {connected: true, connectionType: wifi}",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119408) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119408, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119408) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/syncservice/getsync, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119409) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119409, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119409) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/syncservice/getsync, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119410) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119410, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119410) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/syncservice/getsync, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119411) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119411, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119411) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/syncservice/getsync, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cnative %cCapacitorHttp.post (#95119412) font-weight: lighter; color: gray font-weight: bold; color: #000",
+    "[dir] {callbackId: 95119412, pluginId: CapacitorHttp, methodName: post, options: Object}",
+    "[endGroup] console.groupEnd",
+    "[startGroupCollapsed] %cresult %cCapacitorHttp.post (#95119412) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444",
+    "[dir] {status: 200, headers: Object, url: http://denariocaribe.ddns.net:8081/PremiumWS/services/syncservice/getsync, data: Object}",
+    "[endGroup] console.groupEnd",
+    "[log] exit w/o save",
+    "[log] returnLogicService: onReturnValid",
+    "[log] Back-Service: cobros",
+    "[log] Back-Container: cobros"
+  ],
+  "consolaClave": [],
+  "log": [
+    "=== CASO B - C.0398 FAC 00020672 + N/C 00002105 - modo reab - marca FIX23-B0398-REAB-101443 ===",
+    "  pestanas habilitadas: 5",
+    "  Tab Documentos: 30 filas (cbs 30)",
+    "    [0]   FAC 00006815 USD 1379 275,00 USD 0,00 USD 275,00 USD 0,00 USD 16/11/2022 07/12/2022",
+    "    [1]   FAC 00020520 USD 128 2.736,00 USD 0,00 USD 2.736,00 USD 859,60 USD 20/04/2026 11/05/2026",
+    "    [2]   FAC 00020672 USD 119 200,00 USD 0,00 USD 200,00 USD 200,00 USD 29/04/2026 20/05/2026",
+    "    [3]   FAC 00020819 USD 105 566,00 USD 0,00 USD 566,00 USD 566,00 USD 13/05/2026 03/06/2026",
+    "    [4]   FAC 00020831 USD 104 230,00 USD 0,00 USD 230,00 USD 230,00 USD 14/05/2026 04/06/2026",
+    "    [5]   FAC 00021144 USD 84 428,00 USD 0,00 USD 428,00 USD 428,00 USD 03/06/2026 24/06/2026",
+    "    [6]   FAC 00021256 USD 76 320,00 USD 0,00 USD 320,00 USD 320,00 USD 11/06/2026 02/07/2026",
+    "    [7]   FAC 00021257 USD 76 320,00 USD 0,00 USD 320,00 USD 320,00 USD 11/06/2026 02/07/2026",
+    "    [8]   FAC 00021292 USD 75 230,00 USD 0,00 USD 230,00 USD 230,00 USD 12/06/2026 03/07/2026",
+    "    [9]   FAC 00021329 USD 71 480,00 USD 0,00 USD 480,00 USD 480,00 USD 16/06/2026 07/07/2026",
+    "    [10]   N/D 40000007 USD 68 8,35 USD 0,00 USD 8,35 USD 8,35 USD 19/06/2026 10/07/2026",
+    "    [11]   FAC C0000006 USD 68 334,00 USD 0,00 USD 334,00 USD 310,00 USD 19/06/2026 10/07/2026",
+    "    [12]   N/D 40000009 USD 68 2,50 USD 0,00 USD 2,50 USD 2,50 USD 19/06/2026 10/07/2026",
+    "    [13]   FAC C0000008 USD 68 100,00 USD 0,00 USD 100,00 USD 100,00 USD 19/06/2026 10/07/2026",
+    "    [14]   FAC 00021421 USD 65 2.940,00 USD 0,00 USD 2.940,00 USD 2.940,00 USD 22/06/2026 13/07/2026",
+    "    [15]   N/D 40000017 USD 51 3,50 USD 0,00 USD 3,50 USD 3,50 USD 06/07/2026 27/07/2026",
+    "    [16]   FAC C0000015 USD 51 140,00 USD 0,00 USD 140,00 USD 140,00 USD 06/07/2026 27/07/2026",
+    "    [17]   FAC 00021700 USD 44 392,00 USD 0,00 USD 392,00 USD 392,00 USD 13/07/2026 03/08/2026",
+    "    [18]   N/D 40000036 USD 42 2,70 USD 0,00 USD 2,70 USD 2,70 USD 15/07/2026 05/08/2026",
+    "    [19]   FAC C0000034 USD 42 108,00 USD 0,00 USD 108,00 USD 108,00 USD 15/07/2026 05/08/2026",
+    "    [20]   N/D 40000040 USD 41 7,50 USD 0,00 USD 7,50 USD 7,50 USD 16/07/2026 06/08/2026",
+    "    [21]   FAC C0000038 USD 41 300,00 USD 0,00 USD 300,00 USD 300,00 USD 16/07/2026 06/08/2026",
+    "    [22]   FAC 00021743 USD 41 132,00 USD 0,00 USD 132,00 USD 132,00 USD 16/07/2026 06/08/2026",
+    "    [23]   N/D 40000045 USD 40 5,25 USD 0,00 USD 5,25 USD 5,25 USD 17/07/2026 07/08/2026",
+    "    [24]   FAC C0000043 USD 40 210,00 USD 0,00 USD 210,00 USD 210,00 USD 17/07/2026 07/08/2026",
+    "    [25]   FAC 00021777 USD 37 625,00 USD 0,00 USD 625,00 USD 625,00 USD 20/07/2026 10/08/2026",
+    "    [26]   N/D 40000046 USD 37 1,60 USD 0,00 USD 1,60 USD 1,60 USD 20/07/2026 10/08/2026",
+    "    [27]   FAC C0000044 USD 37 64,00 USD 0,00 USD 64,00 USD 64,00 USD 20/07/2026 10/08/2026",
+    "    [28]   FAC 00021882 USD 29 1.300,00 USD 0,00 USD 1.300,00 USD 1.300,00 USD 28/07/2026 18/08/2026",
+    "    [29]   N/D 40000061 USD 28 1,70 USD 0,00 USD 1,70 USD 1,70 USD 29/07/2026 19/08/2026",
+    "  factura 00020672 presente: true - nota 00002105 presente: false",
+    "  marcar FACTURA 00020672 -> {\"ok\":true,\"tapa\":\"ION-CHECKBOX\",\"aviso\":null,\"botones\":null}",
+    "  marcar NOTA 00002105 -> tapa undefined",
+    "  >> AVISO C1: (ninguno)",
+    "  >> BOTONES C1: undefined",
+    "    [0]   FAC 00006815 USD 1379 275,00 USD 0,00 USD 275,00 USD 0,00 USD 16/11/2022 07/12/2022",
+    "    [1]   FAC 00020520 USD 128 2.736,00 USD 0,00 USD 2.736,00 USD 859,60 USD 20/04/2026 11/05/2026",
+    "    [2] X FAC 00020672 USD 119 200,00 USD 0,00 USD 200,00 USD 200,00 USD 29/04/2026 20/05/2026",
+    "    [3]   FAC 00020819 USD 105 566,00 USD 0,00 USD 566,00 USD 566,00 USD 13/05/2026 03/06/2026",
+    "    [4]   FAC 00020831 USD 104 230,00 USD 0,00 USD 230,00 USD 230,00 USD 14/05/2026 04/06/2026",
+    "    [5]   FAC 00021144 USD 84 428,00 USD 0,00 USD 428,00 USD 428,00 USD 03/06/2026 24/06/2026",
+    "    [6]   FAC 00021256 USD 76 320,00 USD 0,00 USD 320,00 USD 320,00 USD 11/06/2026 02/07/2026",
+    "    [7]   FAC 00021257 USD 76 320,00 USD 0,00 USD 320,00 USD 320,00 USD 11/06/2026 02/07/2026",
+    "    [8]   FAC 00021292 USD 75 230,00 USD 0,00 USD 230,00 USD 230,00 USD 12/06/2026 03/07/2026",
+    "    [9]   FAC 00021329 USD 71 480,00 USD 0,00 USD 480,00 USD 480,00 USD 16/06/2026 07/07/2026",
+    "    [10]   N/D 40000007 USD 68 8,35 USD 0,00 USD 8,35 USD 8,35 USD 19/06/2026 10/07/2026",
+    "    [11]   FAC C0000006 USD 68 334,00 USD 0,00 USD 334,00 USD 310,00 USD 19/06/2026 10/07/2026",
+    "    [12]   N/D 40000009 USD 68 2,50 USD 0,00 USD 2,50 USD 2,50 USD 19/06/2026 10/07/2026",
+    "    [13]   FAC C0000008 USD 68 100,00 USD 0,00 USD 100,00 USD 100,00 USD 19/06/2026 10/07/2026",
+    "    [14]   FAC 00021421 USD 65 2.940,00 USD 0,00 USD 2.940,00 USD 2.940,00 USD 22/06/2026 13/07/2026",
+    "    [15]   N/D 40000017 USD 51 3,50 USD 0,00 USD 3,50 USD 3,50 USD 06/07/2026 27/07/2026",
+    "    [16]   FAC C0000015 USD 51 140,00 USD 0,00 USD 140,00 USD 140,00 USD 06/07/2026 27/07/2026",
+    "    [17]   FAC 00021700 USD 44 392,00 USD 0,00 USD 392,00 USD 392,00 USD 13/07/2026 03/08/2026",
+    "    [18]   N/D 40000036 USD 42 2,70 USD 0,00 USD 2,70 USD 2,70 USD 15/07/2026 05/08/2026",
+    "    [19]   FAC C0000034 USD 42 108,00 USD 0,00 USD 108,00 USD 108,00 USD 15/07/2026 05/08/2026",
+    "    [20]   N/D 40000040 USD 41 7,50 USD 0,00 USD 7,50 USD 7,50 USD 16/07/2026 06/08/2026",
+    "    [21]   FAC C0000038 USD 41 300,00 USD 0,00 USD 300,00 USD 300,00 USD 16/07/2026 06/08/2026",
+    "    [22]   FAC 00021743 USD 41 132,00 USD 0,00 USD 132,00 USD 132,00 USD 16/07/2026 06/08/2026",
+    "    [23]   N/D 40000045 USD 40 5,25 USD 0,00 USD 5,25 USD 5,25 USD 17/07/2026 07/08/2026",
+    "    [24]   FAC C0000043 USD 40 210,00 USD 0,00 USD 210,00 USD 210,00 USD 17/07/2026 07/08/2026",
+    "    [25]   FAC 00021777 USD 37 625,00 USD 0,00 USD 625,00 USD 625,00 USD 20/07/2026 10/08/2026",
+    "    [26]   N/D 40000046 USD 37 1,60 USD 0,00 USD 1,60 USD 1,60 USD 20/07/2026 10/08/2026",
+    "    [27]   FAC C0000044 USD 37 64,00 USD 0,00 USD 64,00 USD 64,00 USD 20/07/2026 10/08/2026",
+    "    [28]   FAC 00021882 USD 29 1.300,00 USD 0,00 USD 1.300,00 USD 1.300,00 USD 28/07/2026 18/08/2026",
+    "    [29]   N/D 40000061 USD 28 1,70 USD 0,00 USD 1,70 USD 1,70 USD 29/07/2026 19/08/2026",
+    "  sticky: total 200,00 - Diferencia -200,00 (red)",
+    "  metodo Otros -> {\"selects\":1,\"opciones\":[[\"test_excedente - Cancelado por Abonos\"]],\"elegido\":\"test_excedente - Cancelado por Abonos\"}",
+    "  campos: {\"ok\":true,\"especifique\":true}",
+    "  sticky tras pago: total 200,00 - Diferencia -200,00",
+    "  clic GUARDAR -> ok (mouse)",
+    "  alerta tras Guardar: Denario Cobros · El Cobro se ha guardado",
+    "  lista: 20 items - 1 Guardados",
+    "  REABRIR por marca -> true",
+    "  clic ENVIAR -> ok (mouse)",
+    "  dialogo 1: Denario Cobros · Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.",
+    "  nube: ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "  ... sin anticipo: repoll ~100 s",
+    "    +10s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +20s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +30s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +40s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +50s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +60s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +70s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +80s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +90s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "    +100s -> ninguna fila con comentario FIX23-B0398-REAB-101443",
+    "  => FAIL - anticipo AUSENTE"
+  ]
+}

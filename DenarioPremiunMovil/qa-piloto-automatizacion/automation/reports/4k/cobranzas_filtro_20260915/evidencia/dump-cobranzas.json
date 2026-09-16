@@ -1,0 +1,191 @@
+{
+ "path": "/DenarioPremium/pages/protected/indicadores/indicadorCobros.xhtml",
+ "forms": [
+  "menuform",
+  "j_idt50",
+  "config-form",
+  "form"
+ ],
+ "selects": [
+  {
+   "id": "config-form:j_idt104_input",
+   "val": "Pedido",
+   "n": 2,
+   "opts": [
+    "Pedido=Pedido",
+    "Facturado=Facturado"
+   ]
+  },
+  {
+   "id": "form:j_idt115:idEnterprise_input",
+   "val": "1",
+   "n": 1,
+   "opts": [
+    "1=GRUPO 4K"
+   ]
+  },
+  {
+   "id": "form:j_idt115:idSalesmaView_input",
+   "val": "",
+   "n": 12,
+   "opts": [
+    "=Vendedor",
+    "341=AICHELL FANGELEN RIVERO QUIROZ",
+    "300=ANGEL BETANCOURT",
+    "323=ANGY RAMOS",
+    "301=ARMANDO SUAREZ",
+    "304=EDWIN HERRERA",
+    "338=JOAN BRICEÑO",
+    "339=KEY ROBINSON CUBILLAN",
+    "303=LARRY RAMIREZ",
+    "331=PEDRO GONZALEZ",
+    "302=SILVIA MARQUEZ",
+    "305=WUILMAN GRATEROL"
+   ]
+  },
+  {
+   "id": "form:j_idt115:clientSOM_input",
+   "val": "",
+   "n": 713,
+   "opts": [
+    "=Cliente",
+    "593=AC DIESEL PARTS, C.A",
+    "213=ACEITES Y FILTROS YARACUY, C.A.",
+    "16=AGROCAMIONES, C.A.",
+    "487=AGROFILTROS MACHIQUES, C.A (INVERSIONES FILTROS MACHIQUES, C.A)",
+    "363=AGROPARTES, C.A.",
+    "774=AGROREPUESTOS DEL CAMPO CA",
+    "1038=AGROREPUESTOS DEL CAMPO CA",
+    "561=AGRO REPUESTOS EL PROGRESO C.A.",
+    "513=AGROREPUESTOS HP, C.A",
+    "681=AGRO REPUESTOS JH, C.A.",
+    "688=AGRO-RODAMIENTOS SANTA BARBARA,C.A.",
+    "549=AGROSUM, C.A.",
+    "378=AGROTRACM, C.A.",
+    "38=AGUSTIN PRIETO CARRILLO -AUTO REPUESTOS F-7000-",
+    "803=AJL INVERSIONES 2021, C.A",
+    "601=AK ELECTRONIC, S.A.",
+    "373=ALEXIS EDUARDO AGELVIS ARIAS (MULTISERVICIO H+1)",
+    "334=ALEXIS LIBORIO GUERRERO MEDINA (FREGRUSIL)",
+    "975=ALEXIS RAFAEL GAMARRA (REPUESTOS TOYOCAL)",
+    "981=ALFA DIESEL, C.A",
+    "1065=ALGEOS, C.A.",
+    "904=ALL DIESEL PARTS,C.A.",
+    "413=ALVA FLOTA, C.A.",
+    "939=ANACO DIESEL 2050 C.A",
+    "855=ANIBALCA C A",
+    "921=AN INVERSIONES C.A.",
+    "971=ANTONIO ALEXANDER ZAMBRANO COLMENARES (ACEITES Y LUBRICANTES ZAMBRANO F.P.)",
+    "818=ANTONIO JOSE SUAREZ MARTINEZ (SUAREZ ANTONIO MULTISERVICIOS EL CHE, F.P)",
+    "880=AP TRUCK C.A.",
+    "788=ASOCIACION COOPERATIVA DE PARTES Y REPUESTOS LUIFER, R.L.",
+    "559=ATILIO DIESEL TODO CAMIONES Y TRANSPORTE, C.A",
+    "209=AUTANA DIESEL GUAYANA, C.A.",
+    "773=AUTOAGRO GARDAG C.A.",
+    "539=AUTO CAMIONES CAGUA, C.A",
+    "1106=AUTO CAMIONES DAILYFORD, C.A",
+    "151=AUTOCAMIONES DAILYFORD, C.A.",
+    "624=AUTO CAMIONES ORIENTAL, C.A.",
+    "442=AUTODIESEL IMPORT, C.A.",
+    "591=AUTO DINAMICA DIESEL, C.A",
+    "67=AUTOLINER BARINAS, C.A.",
+    "1108=AUTOLINER, C.A.",
+    "759=AUTOMOTRIZ DIESELVEN, C.A",
+    "840=AUTOPARTES AGUILAR C.A",
+    "369=AUTOPARTES GEDS 3000, C.A.",
+    "350=AUTOPARTES J&S, C.A.",
+    "126=AUTO PARTES MUNDIAL, C.A.",
+    "258=AUTOPARTES MUNDO MOTORS G.A, C.A.",
+    "1103=AUTOPARTES OCEANO C.A.",
+    "782=AUTO PARTES VENEZUELA 2017, C.A",
+    "870=AUTO PARTES Y REPUESTOS DIESEL J & S, C.A.",
+    "555=AUTOPARTES Y REPUESTOS GERMAN, C.A.",
+    "304=AUTO PARTES Y REPUESTOS OCCIDENTE, C.A.",
+    "923=AUTOPARTES Y SERVICIOS LA BENDICION DE ABBA, C.A",
+    "456=AUTO PARTS Y MULTISERVICIOS LOS ARIAS, C.A.",
+    "313=AUTOPERIQUITOS AKI,C.A.",
+    "195=AUTO REPUESTOS CODAZZI, C.A.",
+    "419=AUTO REPUESTOS DR. DIESEL, C.A.",
+    "665=AUTO REPUESTOS ELO-CAR 95 C.A.",
+    "493=AUTO REPUESTOS EL PARIAGUANERO, C.A."
+   ]
+  },
+  {
+   "id": "form:j_idt115:idTipo_input",
+   "val": "",
+   "n": 5,
+   "opts": [
+    "=Tipo Cobro",
+    "0=Cobros",
+    "1=Anticipo/Prepago",
+    "2=Retención",
+    "4=Cobro 25%"
+   ]
+  },
+  {
+   "id": "form:j_idt115:idCurrency_input",
+   "val": "USD",
+   "n": 3,
+   "opts": [
+    "=Moneda",
+    "Bs=Bs",
+    "USD=USD"
+   ]
+  },
+  {
+   "id": "form:j_idt115:idDep_input",
+   "val": "",
+   "n": 3,
+   "opts": [
+    "=Depositado",
+    "1=SI",
+    "2=NO"
+   ]
+  },
+  {
+   "id": "form:j_idt115:orderStatus_input",
+   "val": "0",
+   "n": 6,
+   "opts": [
+    "0=Status",
+    "8=Aprobado",
+    "2=Enviado",
+    "12=Por aprobar",
+    "9=Rechazado",
+    "10=Pendiente"
+   ]
+  }
+ ],
+ "inputs": [
+  "j_idt65:j_idt76 [text] val=",
+  "j_idt65:j_idt94 [text] val=",
+  "config-form:j_idt104_focus [text] val=",
+  "config-form:j_idt108:0 [radio] val=light",
+  "config-form:j_idt108:1 [radio] val=dark",
+  "form:j_idt115:idEnterprise_focus [text] val=",
+  "form:j_idt115:idSalesmaView_focus [text] val=",
+  "form:j_idt115:clientSOM_focus [text] val=",
+  "form:j_idt115:idTipo_focus [text] val=",
+  "form:j_idt115:idCurrency_focus [text] val=",
+  "form:j_idt115:dateF_input [text] val=01/08/2026",
+  "form:j_idt115:dateB_input [text] val=15/09/2026",
+  "form:j_idt115:idDep_focus [text] val=",
+  "form:j_idt115:orderStatus_focus [text] val=",
+  "form:j_idt115:idSalesmaView_filter [text] val=",
+  "form:j_idt115:clientSOM_filter [text] val="
+ ],
+ "botones": [
+  "j_idt50:confirm :: \"Ok\" @0,0 vis=false",
+  "j_idt50:timeoutLogout :: \"Cerrar Sesión\" @0,0 vis=false",
+  "j_idt65:j_idt78 :: \"ui-button\" @1750,1149 vis=true",
+  "j_idt65:j_idt79 :: \"ui-button\" @1773,1149 vis=true",
+  "j_idt65:j_idt80 :: \"ui-button\" @1797,1149 vis=true",
+  "j_idt65:j_idt96 :: \"ui-button\" @0,0 vis=false",
+  "j_idt65:j_idt97 :: \"ui-button\" @0,0 vis=false",
+  "j_idt65:j_idt98 :: \"ui-button\" @0,0 vis=false",
+  "form:j_idt115:ajax :: \"Buscar\" @613,273 vis=true",
+  "form:j_idt115:detalleGraficas1 :: \"Detalle de Transacciones\" @919,273 vis=true",
+  "savia-expand-btn :: \"\" @0,0 vis=false",
+  "savia-send :: \"\" @0,0 vis=false"
+ ]
+}

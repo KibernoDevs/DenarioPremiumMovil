@@ -1,0 +1,37 @@
+{
+ "tag": "CUMPL-sep-Todos",
+ "vend": "Todos",
+ "st": [
+  "vend:true",
+  "clas:true",
+  "chk:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "err": null,
+ "total": "1",
+ "head": [
+  "Descripción",
+  "Cuota (US$)",
+  "Monto Facturado (US$)",
+  "Brecha Cuota (US$)",
+  "Cantidad Facturado (US$)",
+  "% Cumplimiento",
+  "Cartera de clientes",
+  "% Activación Clientes",
+  "% Act clientes nuevos"
+ ],
+ "rows": [
+  [
+   "DescripciónINSUMAR DISTRIBUIDORA 715, C.A.",
+   "Cuota (US$)0",
+   "Monto Facturado (US$)1.234.013,93",
+   "Brecha Cuota (US$)1.234.013,93",
+   "Cantidad Facturado (US$)7.368",
+   "% Cumplimiento100%",
+   "Cartera de clientes1.826",
+   "% Activación Clientes45,62%",
+   "% Act clientes nuevos100%"
+  ]
+ ]
+}

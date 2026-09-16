@@ -1,0 +1,46 @@
+{
+ "tag": "RC_ROTA_ago",
+ "page": "rota",
+ "pedido": {
+  "rdv": "-",
+  "clas": "Linea",
+  "cumpl": "Facturado",
+  "uni": "UNIDADES",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "clas": "",
+  "cumpl": "Facturado",
+  "uni": "4",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": "0",
+ "filas": {
+  "head": [
+   "Nombre",
+   "SELL IN",
+   "SELL OUT",
+   "Plan VS Cumplimiento",
+   "Inventario Inicial",
+   "Inventario Final",
+   "Rotaciòn Inventario",
+   "Rotación VS SELL OUT",
+   "SELL POINTS"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ]
+ }
+}

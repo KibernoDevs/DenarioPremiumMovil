@@ -1,0 +1,56 @@
+{
+ "tag": "FX_PLAN_ago01_31",
+ "ruta": "/pages/reportePlanCuota",
+ "B": "formFiltros:j_idt115",
+ "tabla": "formTabla:tablaComparativoPlanCuota",
+ "rolSel": [],
+ "pedido": {
+  "rdv": "-",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/08/2026",
+  "hasta": "31/08/2026"
+ },
+ "steps": [
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "emp": "1",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "31/08/2026",
+  "chk": 0
+ },
+ "err": null,
+ "total": "1",
+ "filas": {
+  "head": [
+   "Empresa",
+   "Plan",
+   "Facturado",
+   "Diferencia Plan Vs Facturado",
+   "Clientes en Cartera",
+   "Clientes Activados",
+   "% Activación Clientes",
+   "Promedio activación (1 meses)"
+  ],
+  "rows": [
+   [
+    "EmpresaINSUMAR DISTRIBUIDORA 715, C.A.",
+    "Plan 580.600",
+    "Facturado 224.411,08",
+    "Diferencia Plan Vs Facturado -356.188,92",
+    "Clientes en Cartera1.891",
+    "Clientes Activados490",
+    "% Activación Clientes25,91 %",
+    "Promedio activación (1 meses)26,18 %"
+   ]
+  ]
+ }
+}

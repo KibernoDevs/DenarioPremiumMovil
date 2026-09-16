@@ -1,0 +1,50 @@
+{
+ "tag": "CUM_E_Linea",
+ "page": "cumpl",
+ "pedido": {
+  "rdv": "Todos",
+  "clas": "Linea",
+  "cumpl": "Facturado",
+  "uni": "US$",
+  "desde": "01/08/2026",
+  "hasta": "30/08/2026"
+ },
+ "steps": [
+  "rdv:true",
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rdv": "Todos",
+  "clas": "",
+  "cumpl": "Facturado",
+  "uni": "US$ - US$ - CURRENCY",
+  "d": "01/08/2026",
+  "h": "30/08/2026",
+  "chk": 0
+ },
+ "err": "Operación Fallida / No pueden existir filtros vacios",
+ "total": "0",
+ "filas": {
+  "head": [
+   "Descripción",
+   "Cuota ()",
+   "()",
+   "Brecha Cuota ()",
+   "()",
+   "Unidades Devueltas",
+   "Cantidad Neta",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ]
+ }
+}

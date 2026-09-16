@@ -1,0 +1,87 @@
+{
+  "marca": "CIE24-C2-102302",
+  "caso": "C2",
+  "cliente": "C.0643",
+  "veredicto": "PASS",
+  "ts": "2026-09-16T14:23:51.273Z",
+  "documento": "FAC 00020855 USD 103 955,50 USD 0,00 USD 955,50 USD 69,00 USD 15/05/2026 05/06/2026",
+  "filasAntes": [
+    {
+      "texto": "10% - DESC 10 TEST",
+      "pct": 10,
+      "nombre": "DESC 10 TEST",
+      "marcado": false,
+      "deshabilitado": false
+    },
+    {
+      "texto": "80% - Probando",
+      "pct": 80,
+      "nombre": "Probando",
+      "marcado": false,
+      "deshabilitado": false
+    }
+  ],
+  "filasTrasTildar": [
+    {
+      "texto": "10% - DESC 10 TEST",
+      "pct": 10,
+      "nombre": "DESC 10 TEST",
+      "marcado": false,
+      "deshabilitado": false
+    },
+    {
+      "texto": "80% - Probando",
+      "pct": 80,
+      "nombre": "Probando",
+      "marcado": true,
+      "deshabilitado": false
+    }
+  ],
+  "confirmacion": {
+    "txt": "Denario Cobros El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por USD 695,40? CANCELAR ACEPTAR",
+    "botones": [
+      "Cancelar",
+      "Aceptar"
+    ]
+  },
+  "trasCancelar": null,
+  "modalSigueAbierto": true,
+  "filasTrasCancelar": [
+    {
+      "texto": "10% - DESC 10 TEST",
+      "pct": 10,
+      "nombre": "DESC 10 TEST",
+      "marcado": false,
+      "deshabilitado": false
+    },
+    {
+      "texto": "80% - Probando",
+      "pct": 80,
+      "nombre": "Probando",
+      "marcado": true,
+      "deshabilitado": false
+    }
+  ],
+  "nube": {
+    "resumen": "ninguna fila con comentario CIE24-C2-102302",
+    "filas": []
+  },
+  "log": [
+    "=== CASO C2 - C.0643 FAC 00020855 - descuento \"Probando\" - marca CIE24-C2-102302 ===",
+    "  documento: FAC 00020855 USD 103 955,50 USD 0,00 USD 955,50 USD 69,00 USD 15/05/2026 05/06/2026",
+    "  abrir detalle -> true",
+    "  abrir modal descuentos -> true",
+    "  filas: [{\"texto\":\"10% - DESC 10 TEST\",\"pct\":10,\"nombre\":\"DESC 10 TEST\",\"marcado\":false,\"deshabilitado\":false},{\"texto\":\"80% - Probando\",\"pct\":80,\"nombre\":\"Probando\",\"marcado\":false,\"deshabilitado\":false}] - disponible null%",
+    "  tildar \"Probando\" -> true",
+    "  tras tildar: [{\"texto\":\"10% - DESC 10 TEST\",\"pct\":10,\"nombre\":\"DESC 10 TEST\",\"marcado\":false,\"deshabilitado\":false},{\"texto\":\"80% - Probando\",\"pct\":80,\"nombre\":\"Probando\",\"marcado\":true,\"deshabilitado\":false}] - Aceptar deshabilitado: false",
+    "  Aceptar del modal: tapado=false (ION-BUTTON)",
+    "  >> CONFIRMACION C2: Denario Cobros El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por USD 695,40? CANCELAR ACEPTAR",
+    "  >> BOTONES C2: [\"Cancelar\",\"Aceptar\"]",
+    "  pulsar CANCELAR -> {\"x\":169.24609375,\"y\":449.5,\"label\":\"Cancelar\",\"backdrop\":false,\"en\":\"SPAN\"}",
+    "  alerta tras Cancelar: null (se cerro)",
+    "  el modal de descuentos sigue abierto: true",
+    "  estado del modal tras Cancelar: [{\"texto\":\"10% - DESC 10 TEST\",\"pct\":10,\"nombre\":\"DESC 10 TEST\",\"marcado\":false,\"deshabilitado\":false},{\"texto\":\"80% - Probando\",\"pct\":80,\"nombre\":\"Probando\",\"marcado\":true,\"deshabilitado\":false}]",
+    "  nube con la marca CIE24-C2-102302: ninguna fila con comentario CIE24-C2-102302",
+    "  => PASS - dos botones: true - Cancelar cerro: true - sin anticipo: true"
+  ]
+}

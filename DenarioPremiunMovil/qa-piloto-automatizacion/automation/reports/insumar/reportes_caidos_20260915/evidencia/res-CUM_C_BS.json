@@ -1,0 +1,50 @@
+{
+ "tag": "CUM_C_BS",
+ "page": "cumpl",
+ "pedido": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "BS",
+  "desde": "01/08/2026",
+  "hasta": "30/08/2026"
+ },
+ "steps": [
+  "rdv:true",
+  "clas:true",
+  "valores:0",
+  "cumpl:true",
+  "uni:true"
+ ],
+ "pre": {
+  "rdv": "Todos",
+  "clas": "Empresa",
+  "cumpl": "Facturado",
+  "uni": "BS - BS - CURRENCY",
+  "d": "01/08/2026",
+  "h": "30/08/2026",
+  "chk": 0
+ },
+ "err": "Error en busqueda de reporte. / Intente nuevamente.",
+ "total": "0",
+ "filas": {
+  "head": [
+   "Descripción",
+   "Cuota ()",
+   "()",
+   "Brecha Cuota ()",
+   "()",
+   "Unidades Devueltas",
+   "Cantidad Neta",
+   "% Cumplimiento",
+   "Cartera de clientes",
+   "% Activación Clientes",
+   "% Act clientes nuevos"
+  ],
+  "rows": [
+   [
+    "No se encontraron registros."
+   ]
+  ]
+ }
+}

@@ -1,0 +1,48 @@
+{
+ "tag": "IND_jul13_13",
+ "pre": {
+  "vend": "Todos",
+  "cumpl": "Facturado",
+  "cur": "Currency-US$",
+  "dF": "13/07/2026",
+  "dB": "13/07/2026"
+ },
+ "steps": [
+  "vend:true",
+  "cumpl:true",
+  "cur:true"
+ ],
+ "err": null,
+ "grids": [
+  {
+   "id": "form:j_idt151",
+   "head": [
+    "Vendedor",
+    "Pedidos",
+    "Monto Total"
+   ],
+   "rows": [
+    [
+     "VIVIANA ESCALANTE",
+     "190",
+     "131.910,5 US$"
+    ],
+    [
+     "ALEJANDRA RODRIGUEZ",
+     "31",
+     "14.627,14 US$"
+    ],
+    [
+     "MIGUEL PARRA",
+     "52",
+     "5.382,49 US$"
+    ],
+    [
+     "LEANDRO REBOLLEDO",
+     "12",
+     "3.108,81 US$"
+    ]
+   ]
+  }
+ ]
+}
