@@ -1,7 +1,7 @@
 import { COLLECT_STATUS_SAVED } from './../../utils/appConstants';
 import { Position } from '@capacitor/geolocation';
 import { Injectable, Injector, inject } from '@angular/core';
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { ChangeDetectorRef } from '@angular/core';
 
@@ -173,6 +173,9 @@ export class CollectionService {
   public retentionSendFocusDocIndex: number | null = null;
   /** Pestaña a enfocar tras fallo de Enviar (General / Documentos / Pagos / Adjuntos). */
   public focusSendValidationTab = new Subject<'default' | 'documentos' | 'pagos' | 'adjuntos'>();
+  /** Incrementa al cambiar estado de anticipo automático (banner persistente COB-PREPAID-012). */
+  public automatedPrepaidBannerRevision = new BehaviorSubject(0);
+  private automatedPrepaidPersistentBannerSignature = '';
   /** Espejo del último resultado de onCollectionValidToSend (incl. anticipo automático). */
   public lastValidToSend = false;
   /** Último resultado de `collectCollectionSendIssues` (mensaje/foco al Enviar). */
@@ -2721,6 +2724,72 @@ export class CollectionService {
     return this.formatAutomatedPrepaidMessageTemplate(template, amounts.nuAmount);
   }
 
+  /** Monto del anticipo para banner persistente (moneda prepaidCurrency). */
+  public resolveAutomatedPrepaidPersistentBannerAmount(): number {
+    if (!this.collection) {
+      return 0;
+    }
+    return Math.max(0, Number(this.resolveAutomatedPrepaidDocumentAmounts().nuAmount) || 0);
+  }
+
+  public getAutomatedPrepaidPersistentBannerTitle(): string {
+    return this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID_BANNER_TITLE')
+      ?? 'Anticipo automático';
+  }
+
+  /** Banner bajo pestañas: recordatorio visible al reabrir cobro guardado (COB-PREPAID-012). */
+  public buildAutomatedPrepaidPersistentBannerMessage(): string {
+    const template = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID_STATUS')
+      ?? this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')
+      ?? 'Se creará un anticipo automático por {currency} {amount}. Se enviará un anticipo junto al cobro.';
+    return this.formatAutomatedPrepaidMessageTemplate(
+      template,
+      this.resolveAutomatedPrepaidPersistentBannerAmount(),
+    );
+  }
+
+  public shouldShowAutomatedPrepaidPersistentBanner(): boolean {
+    if (!this.collection || !this.automatedPrepaid || this.isCollectionReadOnlyForEdit()) {
+      return false;
+    }
+    const moduleType = this.normalizeCollectionCoTypeValue(
+      this.coTypeModule ?? this.collection?.coType ?? '0',
+    );
+    if (moduleType !== '0' && moduleType !== '4') {
+      return false;
+    }
+    if (this.resolveAutomatedPrepaidPersistentBannerAmount() <= 0) {
+      return false;
+    }
+    if (this.hasRemnantOrCreditAutomatedPrepaid()) {
+      return true;
+    }
+    if (this.createAutomatedPrepaid) {
+      return true;
+    }
+    return this.getPrepaidExcessAmount() >= this.getAutomatedPrepaidActivationThreshold();
+  }
+
+  /** Notifica a la UI que debe refrescar el banner de anticipo (rehidratar / recalc). */
+  public notifyAutomatedPrepaidPersistentBannerChanged(): void {
+    this.automatedPrepaidBannerRevision.next(this.automatedPrepaidBannerRevision.value + 1);
+  }
+
+  /** Refresca banner solo si cambió visibilidad o monto (p. ej. editar pagos/docs). */
+  private refreshAutomatedPrepaidPersistentBannerUi(): void {
+    const signature = this.collection
+      ? [
+        this.shouldShowAutomatedPrepaidPersistentBanner() ? '1' : '0',
+        this.resolveAutomatedPrepaidPersistentBannerAmount().toFixed(this.getMoneyDecimalPlaces()),
+      ].join('|')
+      : '0|0';
+    if (signature === this.automatedPrepaidPersistentBannerSignature) {
+      return;
+    }
+    this.automatedPrepaidPersistentBannerSignature = signature;
+    this.notifyAutomatedPrepaidPersistentBannerChanged();
+  }
+
   /**
    * Excedente elegible para anticipo tras absorber tolerancia positiva (COB-PREPAID-005).
    * Con `tolerancia0` + tolerancia absoluta, solo cuenta lo que supera `RangoToleranciaPositiva`.
@@ -2985,6 +3054,7 @@ export class CollectionService {
     await this.validateToSend();
     this.updateSendButtonAvailability();
     this.syncAddPaymentMethodDisabledState();
+    this.refreshAutomatedPrepaidPersistentBannerUi();
   }
 
   /**
@@ -3063,6 +3133,7 @@ export class CollectionService {
         && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)) {
         this.ensureAutomatedPrepaidPaymentTemplate();
       }
+      this.refreshAutomatedPrepaidPersistentBannerUi();
       return this.shouldCreateAutomatedPrepaidOnSend();
     });
   }
@@ -3243,6 +3314,7 @@ export class CollectionService {
     if (!skipValidateToSend) {
       this.validateToSend();
     }
+    this.refreshAutomatedPrepaidPersistentBannerUi();
   }
 
   checkTiposPago() {
@@ -3428,6 +3500,7 @@ export class CollectionService {
     this.syncExchangeRateToCollectionHeader();
     const excess = this.getPrepaidExcessAmount();
     if (excess < this.getAutomatedPrepaidActivationThreshold()) {
+      this.refreshAutomatedPrepaidPersistentBannerUi();
       return;
     }
 
@@ -3435,9 +3508,11 @@ export class CollectionService {
       const { arr, tipo } = tipos[i];
       if (arr && arr.length > 0) {
         this.setAutomatedPrepaid(tipo, arr.length - 1);
+        this.refreshAutomatedPrepaidPersistentBannerUi();
         return;
       }
     }
+    this.refreshAutomatedPrepaidPersistentBannerUi();
   }
 
   getNuValueLocal() {
@@ -4904,6 +4979,8 @@ export class CollectionService {
     this.creditBalancePrepaidAmount = 0;
     this.createAutomatedPrepaid = false;
     this.anticipoAutomatico = [];
+    this.automatedPrepaidPersistentBannerSignature = '';
+    this.refreshAutomatedPrepaidPersistentBannerUi();
   }
 
   /**

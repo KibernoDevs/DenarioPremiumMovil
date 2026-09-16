@@ -691,6 +691,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-012] Tras reabrir cobro guardado no quedaba aviso visible de anticipo automático
+
+- **Síntoma:** Cobro SAVED con remanente/NCR/excedente y anticipo activo; al reabrir solo se veía el estado en Pagos o un modal puntual, fácil pasarlo por alto.
+- **Causa:** No había recordatorio persistente en el contenedor del cobro tras rehidratar `createAutomatedPrepaid` y montos.
+- **Fix:** Banner bajo el segmento (`cobro.component`) con `shouldShowAutomatedPrepaidPersistentBanner` / `buildAutomatedPrepaidPersistentBannerMessage`; refresco vía `automatedPrepaidBannerRevision` al rehidratar, en cada `resolveAutomatedPrepaid` (editar pagos/docs) y al limpiar sesión.
+- **Evitar:** No depender solo del modal de Pagos para cobros guardados reabiertos; no dejar el banner fijo si el monto/escenario de anticipo deja de aplicar.
+- **Archivos:** `collection-logic.service.ts`, `cobro.component.html|ts|scss`, spec COB-PREPAID-012.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.
