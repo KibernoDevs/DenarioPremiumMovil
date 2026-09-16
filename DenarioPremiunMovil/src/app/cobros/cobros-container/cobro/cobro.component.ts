@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
@@ -18,9 +18,11 @@ export class CobroComponent implements OnInit, OnDestroy {
   public collectService = inject(CollectionService);
   public messageService = inject(MessageService);
   public globalConfig = inject(GlobalConfigService);
+  private cdr = inject(ChangeDetectorRef);
 
   public subs: any;
   private focusTabSub?: Subscription;
+  private prepaidBannerRevSub?: Subscription;
 
   // propiedad local usada por la vista en lugar de usar directamente el servicio
   public collectValidTabsLocal: boolean = false;
@@ -53,6 +55,22 @@ export class CobroComponent implements OnInit, OnDestroy {
     this.focusTabSub = this.collectService.focusSendValidationTab.subscribe((tab) => {
       this.applySendValidationTabFocus(tab);
     });
+
+    this.prepaidBannerRevSub = this.collectService.automatedPrepaidBannerRevision.subscribe(() => {
+      this.cdr.markForCheck();
+    });
+  }
+
+  get showAutomatedPrepaidBanner(): boolean {
+    return this.collectService.shouldShowAutomatedPrepaidPersistentBanner();
+  }
+
+  get automatedPrepaidBannerMessage(): string {
+    return this.collectService.buildAutomatedPrepaidPersistentBannerMessage();
+  }
+
+  get automatedPrepaidBannerTitle(): string {
+    return this.collectService.getAutomatedPrepaidPersistentBannerTitle();
   }
 
   collectValidFunc() {
@@ -144,5 +162,6 @@ export class CobroComponent implements OnInit, OnDestroy {
       this.subs.unsubscribe();
     }
     this.focusTabSub?.unsubscribe();
+    this.prepaidBannerRevSub?.unsubscribe();
   }
 }

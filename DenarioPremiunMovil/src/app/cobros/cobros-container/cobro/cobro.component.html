@@ -35,6 +35,13 @@
     </div>
 </ion-item-divider>
 
+@if (showAutomatedPrepaidBanner) {
+    <div class="cobro-automated-prepaid-banner" role="status">
+        <div class="cobro-automated-prepaid-banner__title">{{ automatedPrepaidBannerTitle }}</div>
+        <div class="cobro-automated-prepaid-banner__message">{{ automatedPrepaidBannerMessage }}</div>
+    </div>
+}
+
 <div class="cobro-tabs-viewport">
     <div [ngSwitch]="segment" class="cobro-tabs-switch">
         <!-- Pestana General-->

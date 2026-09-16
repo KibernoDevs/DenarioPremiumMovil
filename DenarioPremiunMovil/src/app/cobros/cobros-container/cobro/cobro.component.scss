@@ -16,6 +16,27 @@ ion-content {
     flex-shrink: 0;
 }
 
+.cobro-automated-prepaid-banner {
+    flex-shrink: 0;
+    margin: 8px 12px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(89, 176, 45, 0.45);
+    background: rgba(89, 176, 45, 0.1);
+    color: #2d5016;
+}
+
+.cobro-automated-prepaid-banner__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.cobro-automated-prepaid-banner__message {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+}
+
 body {
     background: transparent;
 }

@@ -2452,6 +2452,54 @@ describe('CollectionService', () => {
         expect(service.createAutomatedPrepaid).toBeTrue();
         expect(service.anticipoAutomatico.length).toBeGreaterThan(0);
         expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+        expect(service.shouldShowAutomatedPrepaidPersistentBanner()).toBeTrue();
+        expect(service.buildAutomatedPrepaidPersistentBannerMessage()).toContain('550');
+      });
+
+      it('COB-PREPAID-012: banner anticipo oculto en solo lectura y sin monto', () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.createAutomatedPrepaid = true;
+        service.collection = {
+          coType: '0',
+          stDelivery: service.COLLECT_STATUS_TO_SEND,
+        } as any;
+        expect(service.shouldShowAutomatedPrepaidPersistentBanner()).toBeFalse();
+
+        service.collection = {
+          coType: '0',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+        } as any;
+        service.creditBalancePrepaidAmount = 0;
+        service.discountRemnantPrepaidAmount = 0;
+        service.discountRemnantPrepaidByDocument.clear();
+        service.createAutomatedPrepaid = false;
+        spyOn(service, 'resolveAutomatedPrepaidDocumentAmounts').and.returnValue({
+          nuAmount: 0,
+          coCurrency: 'USD',
+        } as any);
+        expect(service.shouldShowAutomatedPrepaidPersistentBanner()).toBeFalse();
+      });
+
+      it('COB-PREPAID-012: banner se oculta cuando el monto de anticipo pasa a 0', () => {
+        service.coTypeModule = '0';
+        service.automatedPrepaid = true;
+        service.createAutomatedPrepaid = true;
+        service.discountRemnantPrepaidByDocument.clear();
+        service.discountRemnantPrepaidAmount = 0;
+        service.creditBalancePrepaidAmount = 0;
+        service.collection = {
+          coType: '0',
+          stDelivery: service.COLLECT_STATUS_SAVED,
+        } as any;
+        const amountsSpy = spyOn(service, 'resolveAutomatedPrepaidDocumentAmounts').and.returnValues(
+          { nuAmount: 100, coCurrency: 'USD' } as any,
+          { nuAmount: 0, coCurrency: 'USD' } as any,
+        );
+
+        expect(service.shouldShowAutomatedPrepaidPersistentBanner()).toBeTrue();
+        expect(service.shouldShowAutomatedPrepaidPersistentBanner()).toBeFalse();
+        expect(amountsSpy).toHaveBeenCalledTimes(2);
       });
 
       it('COB-PREPAID-011: coType numérico desde SQLite se normaliza a string', () => {
