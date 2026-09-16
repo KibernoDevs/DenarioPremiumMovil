@@ -129,6 +129,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
         role: 'exit',
         handler: () => {
           this.returnLogic.setChange(false, false);
+          this.returnLogic.finishReturnDetailNavigation();
           this.returnLogic.showBackRoute('devoluciones');
         },
       },
@@ -152,8 +153,16 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   }
 
   onBackClicked() {
+    if (!this.returnLogic.returnDetailActive) {
+      this.saveOrExitOpen = false;
+      this.returnLogic.showBackRoute('devoluciones');
+      this.messageService.hideLoading();
+      return;
+    }
+
     if (this.returnLogic.isReturnReadOnlyForEdit() || this.returnLogic.returnSent) {
       this.saveOrExitOpen = false;
+      this.returnLogic.finishReturnDetailNavigation();
       this.returnLogic.showBackRoute('devoluciones');
       this.messageService.hideLoading();
       return;
@@ -171,6 +180,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     }
 
     this.saveOrExitOpen = false;
+    this.returnLogic.finishReturnDetailNavigation();
     this.returnLogic.showBackRoute('devoluciones');
     this.messageService.hideLoading();
   }
@@ -362,6 +372,8 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
         this.returnDatabaseService.deleteReturnDetails(dbServ, this.returnLogic.newReturn.coReturn).then();
         this.returnDatabaseService.saveReturnDetails(dbServ, this.returnLogic.newReturn.details).then();
         this.returnLogic.setChange(false, false);
+        this.returnLogic.applyReturnPersistSucceededBaseline();
+        this.returnLogic.finishReturnDetailNavigation();
         this.returnLogic.showBackRoute('devoluciones');
         this.messageService.hideLoading();
       }).catch(err => console.log('saveReturn: ' + err));

@@ -127,12 +127,37 @@ describe('ReturnLogicService', () => {
     });
 
     it('DEV-BACK-001: nueva con General OK pide modal al salir', () => {
+      service.returnDetailActive = true;
       service.generalTabValidForSave = true;
       service.newReturn.idClient = 10;
       service.newReturn.stDelivery = DELIVERY_STATUS_NEW;
       service.resetReturnExitBaseline();
 
       expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeTrue();
+    });
+
+    it('DEV-BACK-002: en menú/lista no pide modal aunque General quede en memoria', () => {
+      service.returnDetailActive = false;
+      service.generalTabValidForSave = true;
+      service.newReturn.idClient = 10;
+      service.resetReturnExitBaseline();
+
+      expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeFalse();
+    });
+
+    it('DEV-BACK-002: finishReturnDetailNavigation limpia flags de salida', () => {
+      service.returnDetailActive = true;
+      service.generalTabValidForSave = true;
+      service.returnChanged = true;
+      service.markReturnDirty();
+
+      service.finishReturnDetailNavigation();
+
+      expect(service.returnDetailActive).toBeFalse();
+      expect(service.generalTabValidForSave).toBeFalse();
+      expect(service.returnChanged).toBeFalse();
+      expect(service.returnDirtySincePersist).toBeFalse();
+      expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeFalse();
     });
 
     it('DEV-BACK-001: sin General ni dirty no pide modal', () => {
@@ -144,6 +169,7 @@ describe('ReturnLogicService', () => {
     });
 
     it('DEV-BACK-001: persistida limpia no pide modal; dirty sí', () => {
+      service.returnDetailActive = true;
       service.generalTabValidForSave = true;
       service.newReturn.idClient = 10;
       service.markReturnOpenedFromPersistedCopy();

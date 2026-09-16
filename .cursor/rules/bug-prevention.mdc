@@ -77,6 +77,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 
 - Guardar/Enviar: Guardar solo General al pulsar; Enviar mensaje + salto pestaña + apaga hasta editar — `DEV-SAVE-001` / `DEV-SEND-001`.
 - Atrás: modal Guardar/Salir si hay progreso (no exigir `stDelivery === SAVED`) — `DEV-BACK-001`.
+- Atrás en menú devoluciones: sin modal; `returnDetailActive` + `finishReturnDetailNavigation` al cerrar detalle — `DEV-BACK-002`.
 - Guardar tras persistir: OFF hasta `markReturnDirty` / edición de usuario — `DEV-SAVE-002`.
 - Enviar: General OK habilita; productos → GPS al click; adjuntos no obligatorios (`signatureReturn` solo UI) — `DEV-SEND-001`.
 

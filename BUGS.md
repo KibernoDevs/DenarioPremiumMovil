@@ -526,6 +526,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [DEV-BACK-002] Tras salir del detalle, Atrás en menú volvía a mostrar modal
+
+- **Síntoma:** Salir sin guardar o Guardar y salir cerraba la devolución; en el menú del módulo, Atrás mostraba otra vez Guardar y salir / Salir sin guardar.
+- **Causa:** El header siempre evaluaba `shouldPromptReturnExitSaveOrDiscard()` con `generalTabValidForSave` y baseline en memoria; no había flag de detalle como Inventarios (`isEdit`).
+- **Fix:** `returnDetailActive` + `finishReturnDetailNavigation()` al cerrar detalle; Atrás en menú navega a home sin modal.
+- **Evitar:** No usar solo flags de General/dirty para Atrás fuera del detalle; limpiar sesión al `showBackRoute`.
+- **Archivos:** `return-logic.service.ts`, `devoluciones-header`, `devoluciones-container`, specs DEV-BACK-002.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [DEV-SAVE-001] Guardar/Enviar deshabilitados hasta productos completos
 
 - **Síntoma:** Guardar exigía productos/firma en el botón o al pulsar; Enviar sin mensaje claro ni salto de pestaña.

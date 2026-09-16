@@ -43,8 +43,10 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
         this.devolucionList = false;
         this.containerComp = true;
         this.returnLogic.showHeaderButtons(false);
+        this.returnLogic.finishReturnDetailNavigation();
         this.router.navigate(['devoluciones']);
       } else {
+        this.returnLogic.finishReturnDetailNavigation();
         this.router.navigate(['home']);
       }
       this.returnLogic.newReturn = {} as Return;
@@ -56,6 +58,7 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
       this.selectedReturn = true;
       this.containerComp = false;
       this.devolucionList = false;
+      this.returnLogic.returnDetailActive = true;
       this.returnLogic.showHeaderButtons(!this.returnLogic.returnSent);
     });
     this.returnLogic.newReturn.coordenada = "";
@@ -98,6 +101,7 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
     this.devolucionComp = true;
     this.containerComp = false;
     this.returnLogic.returnSent = false;
+    this.returnLogic.returnDetailActive = true;
     this.returnLogic.initNewReturnAttachments();
     this.returnLogic.showHeaderButtons(true);
     
@@ -107,6 +111,7 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
     this.devolucionList = true;
     this.devolucionComp = false;
     this.containerComp = false;
+    this.returnLogic.returnDetailActive = false;
     this.returnLogic.showHeaderButtons(false);
     //this.adjuntoServ.setup(this.config.get('signatureReturn') == 'true', this.returnLogic.returnSent.valueOf());
   }

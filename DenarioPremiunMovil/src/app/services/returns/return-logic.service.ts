@@ -78,6 +78,8 @@ export class ReturnLogicService {
   generalTabValidForSave = false;
   returnPersistedBaseline = false;
   returnDirtySincePersist = false;
+  /** Detalle de devolución abierto (lista/menú no deben mostrar modal Atrás). */
+  returnDetailActive = false;
   sendValidationAttempted = false;
   sendBlockedByFields = false;
   returnSendFocusProductIndex = -1;
@@ -186,6 +188,9 @@ export class ReturnLogicService {
    * Misma idea que Cobros/Depósitos (no acoplar a stDelivery === SAVED).
    */
   shouldPromptReturnExitSaveOrDiscard(): boolean {
+    if (!this.returnDetailActive) {
+      return false;
+    }
     if (this.isReturnReadOnlyForEdit() || this.returnSent) {
       return false;
     }
@@ -289,6 +294,18 @@ export class ReturnLogicService {
     this.returnSendFocusProductIndex = -1;
     this.returnPersistedBaseline = false;
     this.returnDirtySincePersist = false;
+  }
+
+  /** Al cerrar detalle (Atrás lista/home): no arrastrar flags de General/dirty al menú. */
+  finishReturnDetailNavigation(): void {
+    this.returnDetailActive = false;
+    this.returnChanged = false;
+    this.resetReturnExitBaseline();
+    this.resetReturnValidationUxFlags();
+    this.resetSendValidationUx();
+    this.onReturnValid(false);
+    this.onReturnValidToSave(false);
+    this.onReturnValidToSend(false);
   }
 
   private hasClientSelected(): boolean {
