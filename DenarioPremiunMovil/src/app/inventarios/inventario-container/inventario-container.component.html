@@ -18,6 +18,15 @@
                 </span>
             </ion-button>
         </ion-col>
+        <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12" *ngIf="inventariosLogicService.suggestedOrder">
+            <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block"
+                (click)="openSuggestedOrdersList()">
+                <ion-icon slot="start" name="list"></ion-icon>
+                <span style="margin-right: auto">
+                    {{this.inventariosLogicService.inventarioTags.get('INV_PED_SUG_LIST') || 'SUGERENCIAS DE PEDIDO'}}
+                </span>
+            </ion-button>
+        </ion-col>
     </ion-row>
 </ion-grid>
 
@@ -29,3 +38,4 @@
     [inventarioTags]="inventariosLogicService.inventarioTags"></app-inventario>
 <app-inventario-list *ngIf="inventariosLogicService.inventarioList"
     [inventarioTags]="inventariosLogicService.inventarioTags"></app-inventario-list>
+<app-inventario-sugerido-list *ngIf="inventariosLogicService.inventarioSuggestedList"></app-inventario-sugerido-list>

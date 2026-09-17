@@ -11,6 +11,7 @@ export interface Response {
     userAddressClientId: number,
     returnId: number,
     clientStockId: number,
+    clientStockSuggestedOrderId?: number,
     collectionId: number,
     depositId: number,
     type: string

@@ -9,6 +9,7 @@ import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 
 @Component({
   selector: 'app-inventario-sugerido-preview',
@@ -24,6 +25,9 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   @Input() diasHastaSiguienteInventario: number = 0;
   @Input() empresaSeleccionada: Enterprise = {} as Enterprise;
   @Input() monedaLabel = 'Moneda';
+  @Input() blockCreateSuggestedOrder = false;
+  @Input() monedaInicial: CurrencyEnterprise | null = null;
+  @Input() suggestedOrderByDispatchAndReturnOverride: boolean | null = null;
 
   disableOrderButton = true;
   previewReady = false;
@@ -39,6 +43,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private currencyService = inject(CurrencyService);
   private config = inject(GlobalConfigService);
   private dbServ = inject(SynchronizationDBService);
+  private pedidosService = inject(PedidosService);
   public inventariosLogicService = inject(InventariosLogicService);
 
   quUnitDecimals = false;
@@ -69,9 +74,13 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.quUnitDecimals = this.config.get("quUnitDecimals").toLocaleLowerCase() === 'true';
-    this.suggestedOrderByDispatchAndReturn = this.config
-      .get("suggestedOrderByDispatchAndReturn")
-      .toLocaleLowerCase() === 'true';
+    if (this.suggestedOrderByDispatchAndReturnOverride != null) {
+      this.suggestedOrderByDispatchAndReturn = this.suggestedOrderByDispatchAndReturnOverride;
+    } else {
+      this.suggestedOrderByDispatchAndReturn = this.config
+        .get("suggestedOrderByDispatchAndReturn")
+        .toLocaleLowerCase() === 'true';
+    }
 
     this.disableOrderButton = this.computeDisableOrderButton();
     void this.initCurrencyUi();
@@ -120,16 +129,24 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private async initCurrencyUi(): Promise<void> {
     try {
       await this.currencyService.setup(this.dbServ.getDatabase());
+      await this.pedidosService.ensureModuleReady(this.dbServ.getDatabase());
+      if (!this.monedaLabel?.trim()) {
+        this.monedaLabel = this.pedidosService.getTag('PED_MONEDA') || 'Moneda';
+      }
       this.currencyModulePed = this.currencyService.getCurrencyModule('ped');
       this.localCurrency = this.currencyService.getLocalCurrency();
       this.hardCurrency = this.currencyService.getHardCurrency();
-      this.monedaSeleccionadaPreview = this.resolveDefaultPedidosCurrency(this.empresaSeleccionada);
+      this.monedaSeleccionadaPreview = this.monedaInicial
+        ?? this.resolveDefaultPedidosCurrency(this.empresaSeleccionada);
     } finally {
       this.previewReady = true;
     }
   }
 
   private computeDisableOrderButton(): boolean {
+    if (this.blockCreateSuggestedOrder) {
+      return true;
+    }
     if (this.inventariosLogicService.inventarioSent) {
       return true;
     }

@@ -123,8 +123,3 @@
 <ion-alert [isOpen]="this.inventariosLogicService.alertMessageOpen"
   header="{{this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')}}"
   message={{this.inventariosLogicService.message}} [buttons]="alertButtons" (didDismiss)="setResult()"></ion-alert>
-<!-- alerta de envio-->
-<ion-alert [isOpen]="this.inventariosLogicService.alertMessage"
-  header="{{this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')}}"
-  message={{this.inventariosLogicService.message}} [buttons]="alertButtons2"
-  (didDismiss)="setResult2($event)"></ion-alert>

@@ -23,6 +23,7 @@ export class InventariosComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+    this.inventariosLogicService.loadSuggestedOrderConfig();
     this.message.showLoading().then(() => {
       this.inventariosLogicService.getTags(this.db.getDatabase()).then(resp => {
         if (resp)

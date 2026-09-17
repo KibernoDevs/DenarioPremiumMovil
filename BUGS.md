@@ -359,6 +359,78 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-SUG-001] Pedido Sugerido usaba documentos Guardados (`id = 0`)
+
+- **Síntoma:** El Pedido Sugerido (despacho + devolución) restaba devoluciones Guardadas y podía tomar un inventario previo Guardado; totales de venta/sugerido no coincidían con documentos enviados.
+- **Causa:** `getReturnsByDistribution` y `getPreviousClientStock` no filtraban por id de servidor. Guardar/Por Enviar persiste `id_return` / `id_client_stock = 0` hasta ACK de AutoSend.
+- **Fix:** SQL exige `id_return <> 0` e `id_client_stock <> 0` (enviado = id distinto de 0, no `st_delivery`). Facturas, `straight_swap` y `client_avg_products` son sync, sin borrador local.
+- **Evitar:** No incluir documentos locales (`id = 0`) en cálculos de Pedido Sugerido. No sustituir el filtro de id por `st_delivery` (Por Enviar sigue con id 0).
+- **Tests:** `inventarios-logic.service.spec.ts` describe `INV-SUG-001`.
+- **Archivos:** `inventarios-logic.service.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-SUG-002] Sugerencia de pedido se enviaba con `id_currency`/`co_currency` null
+
+- **Síntoma:** Al enviar inventario adjuntando sugerencia de pedido (o al POST del snapshot), moneda iba null aunque el selector de Pedidos mostraba una moneda.
+- **Causa:** `saveSuggestedOrderSnapshot` al abrir el preview persistía el header sin moneda. El POST copia SQLite (`prepareSuggestedOrderSnapshotForUpload`). Lista al confirmar no actualizaba `id_currency`/`co_currency`.
+- **Fix:** Resolver moneda (selector → snapshot existente → default módulo `ped`) al guardar; UPDATE al confirmar desde lista; fallback en upload si SQLite sigue null.
+- **Evitar:** No adjuntar `clientStockSuggestedOrder` con moneda vacía si hay default PED resoluble. No guardar snapshot de preview sin completar moneda.
+- **Tests:** `inventarios-logic.service.spec.ts` describe `INV-SUG-002`.
+- **Archivos:** `inventarios-logic.service.ts`, `inventario-sugerido-list.component.ts`, `auto-send.service.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-SUG-003] Ver Pedido Sugerido y salir sin Guardar creaba sugerencia huérfana
+
+- **Síntoma:** Abrir Pedido Sugerido en un inventario nuevo y salir sin Guardar/Enviar dejaba una sugerencia en la lista, sin inventario relacionado persistido.
+- **Causa:** `preguntarSugerirPedido` llamaba `saveSuggestedOrderSnapshot` al abrir el preview (solo lectura). El header iba a SQLite aunque `client_stocks` no existiera o estuviera NEW.
+- **Fix:** Preview solo calcula en memoria. Pulso Pedido Sugerido marca flag RAM. Snapshot solo si hay `client_stocks` con `st_delivery` Guardado/Por enviar/Enviado **y** flag. Persistencia al `saveClientStock` con flag. Enviar inventario abre adjuntar si hay snapshot **o** flag (no exige SQLite previo). Lista INNER JOIN + filtro; se borran huérfanos al listar.
+- **Evitar:** No persistir sugerencia al abrir preview. No listar `client_stock_suggested_orders` sin inventario 1/2/3. No adjuntar POST si nunca pulsó Pedido Sugerido. No exigir snapshot SQLite para el modal de Enviar si el flag está ON.
+- **Tests:** `inventarios-logic.service.spec.ts`, `inventario-actividades.component.spec.ts` y `inventario-header.component.spec.ts` describe `INV-SUG-003`.
+- **Archivos:** `inventario-actividades.component.ts`, `inventario-header.component.ts`, `inventarios-logic.service.ts` (+ specs); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-DAYS-001] Pedido Sugerido NaN tras cambio de cliente
+
+- **Síntoma:** Tras cambiar de cliente en Inventarios, General muestra “Días para siguiente Inventario” = 1. Al inventariar productos y pulsar Pedido Sugerido el cálculo da NaN. Al volver a General el campo queda vacío.
+- **Causa:** `applyClientChangeReset` hace `newClientStock = {} as ClientStocks` (no llama al constructor) y solo reasigna ids/status/fecha. `daysUntilNext`/`daysSinceLast` quedan `undefined`. La UI local sigue en 1; `calcularTotalesSugerenciaPedido` multiplica por `undefined` → NaN. `ngOnInit` al reentrar copia el `undefined` al input.
+- **Fix:** Reset de cliente restaura días a 1 y sincroniza UI. Hidratación/setters y Pedido Sugerido usan `resolvePositiveInventoryDays` (`undefined`/`NaN`/`< 1` → 1).
+- **Evitar:** No recrear `{} as ClientStocks` sin reponer `daysUntilNext`/`daysSinceLast`. No escribir `undefined` al servicio desde `ionChange` (`undefined < 1` es `false`).
+- **Tests:** `inventario-general.component.spec.ts` y `inventarios-logic.service.spec.ts` describe `INV-DAYS-001`.
+- **Archivos:** `inventario-general.component.ts`, `inventarios-logic.service.ts` (+ specs); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-GPS-001] Cambio de cliente borra GPS y bloquea Enviar
+
+- **Síntoma:** En Inventarios con `userMustActivateGPS=true`, al cambiar de cliente se pierde la coordenada y Enviar pide GPS aunque ya se había obtenido.
+- **Causa:** `resetStockDraftOnClientChange` conserva `coordenada`, pero `setClientfromSelector` la pisa con el campo local `this.coordenada` (vacío; General se recrea con `*ngSwitchCase`).
+- **Fix:** `syncGpsOnClientSelect` escribe GPS local solo si hay valor; si no, reusa la del draft; si ambos vacíos y la config exige GPS, reobtiene. Hidratar el campo local desde el servicio en `ngOnInit`/`initInventario`/`applyClientChangeReset`.
+- **Evitar:** No asignar `newClientStock.coordenada = this.coordenada` si el local está vacío. GPS de Enviar vive en el servicio (`hasMissingGpsCoordinate`).
+- **Tests:** `inventario-general.component.spec.ts` describe `INV-GPS-001`; `inventarios-logic.service.spec.ts` aserta GPS en reset de cliente.
+- **Archivos:** `inventario-general.component.ts` (+ spec), `inventarios-logic.service.spec.ts`; checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-CLIENT-001] Toma del cliente anterior queda al cambiar cliente
+
+- **Síntoma:** En Inventarios, pestaña General: se toma inventario del cliente A, se cambia a cliente B y la toma (ítems/cantidades) de A sigue en B. Guardar/Enviar contamina datos.
+- **Causa:** General se destruye con `*ngSwitchCase`. El flag local `changeClient` se pierde. `cliente-selector.handleUpdateClientList` pone `checkClient = false`. `setClientfromSelector` aplicaba el cliente nuevo sin vaciar `clientStockDetails`/`typeStocks`.
+- **Fix:** Mismo contrato que Pedidos: modal `CLI_RESET_CONFIRMA` del selector si hay toma o adjuntos. Aceptar → `ClientChanged` reset de details/typeStocks/sugerido + borrar SQLite details del draft; aplicar B. Cancelar → cierra modal, queda A. Rearmar `checkClient`/`clienteAnterior` en `ngAfterViewInit` y tras persistir cantidades.
+- **Evitar:** No guardar el guard de cambio de cliente en el componente de General (muere al cambiar de pestaña). No aplicar cliente nuevo por `clienteSeleccionado` sin reset si ya hay toma. Tras `updateClientList`, reponer `checkClient` si hay contenido.
+- **Tests:** `inventarios-logic.service.spec.ts`, `inventario-general.component.spec.ts`, `inventario-product-list.component.spec.ts` describe `INV-CLIENT-001`.
+- **Archivos:** `inventario-general.component.ts` (+ html/spec), `inventarios-logic.service.ts` (+ spec), `inventario-product-list.component.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-SEARCH-001] Buscador Inventarios sensible a tildes
 
 - **Síntoma:** Buscar “Azucar” vs “Azúcar” (o “Calorias” vs “Calorías”) en Inventarios devuelve conteos distintos; a veces “No hay productos” con tilde o menos resultados sin tilde.

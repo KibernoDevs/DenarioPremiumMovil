@@ -53,6 +53,7 @@ export class InventarioHeaderComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
+  public alertMessageOpenSendSuggested = false;
   /** Alerta local de validación (mensaje exacto; no depende de app-message). */
   public alertMessageOpenValidation = false;
   public validationFailureMessage = '';
@@ -180,7 +181,8 @@ export class InventarioHeaderComponent implements OnInit {
           //SE GUARDARA CLIENTSTOCK
           this.inventariosLogicService.saveClientStock(this.synchronizationServices.getDatabase(), send).then(async (res) => {
             this.inventariosLogicService.isEdit = false;
-            await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
+            const db = this.synchronizationServices.getDatabase();
+            await this.adjuntoService.savePhotos(db, this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
             console.log(res);
             this.inventariosLogicService.applyPersistSucceededBaseline();
@@ -253,11 +255,12 @@ export class InventarioHeaderComponent implements OnInit {
     if (ev.detail.role === 'confirm') {
       if (this.alertMessageOpenSend) {
         this.alertMessageOpenSend = false;
-        this.saveSendNewReturn(true, false)
+        void this.proceedAfterSendConfirm();
+        return;
       }
       if (this.alertMessageOpenSave) {
         this.alertMessageOpenSave = false;
-        this.saveSendNewReturn(false, false)
+        this.saveSendNewReturn(false, false);
       }
 
     } else {
@@ -265,6 +268,42 @@ export class InventarioHeaderComponent implements OnInit {
       this.alertMessageOpenSend = false;
       this.alertMessageOpenSave = false;
     }
+  }
+
+  private async proceedAfterSendConfirm(): Promise<void> {
+    const db = this.synchronizationServices.getDatabase();
+    const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
+
+    if (!this.inventariosLogicService.suggestedOrder) {
+      this.inventariosLogicService.setAttachSuggestedOrderOnStockSend(coClientStock, false);
+      this.saveSendNewReturn(true, false);
+      return;
+    }
+
+    const snapshot = await this.inventariosLogicService.getSuggestedOrderSnapshotByClientStock(
+      db,
+      coClientStock,
+    );
+    const pendingSuggested = this.inventariosLogicService.hasPendingSuggestedOrderPersist(coClientStock);
+
+    if (snapshot || pendingSuggested) {
+      this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
+      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_SUGGESTED_ORDER')
+        ?? '¿Desea enviar también la sugerencia de pedido?';
+      this.alertMessageOpenSendSuggested = true;
+      return;
+    }
+
+    this.inventariosLogicService.setAttachSuggestedOrderOnStockSend(coClientStock, false);
+    this.saveSendNewReturn(true, false);
+  }
+
+  setResultSendSuggested(ev: { detail: { role?: string } }): void {
+    const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
+    const attach = ev.detail.role === 'confirm';
+    this.inventariosLogicService.setAttachSuggestedOrderOnStockSend(coClientStock, attach);
+    this.alertMessageOpenSendSuggested = false;
+    this.saveSendNewReturn(true, false);
   }
 
   private notifyStockValidationFailure(options: {

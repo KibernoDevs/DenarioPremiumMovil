@@ -20,7 +20,7 @@
   <ion-grid class="ion-padding-bottom">
     <ion-row>
       <ion-col size="12">
-        <ion-label>{{ monedaLabel }}:</ion-label>
+        <ion-label>{{ monedaLabel || 'Moneda' }}:</ion-label>
         <div class="inventario-sugerido-selector-moneda">
           <ion-select interface="popover" labelPlacement="stacked"
             [disabled]="isCurrencySelectorDisabled()"
@@ -67,46 +67,67 @@
               {{ inventarioTags.get('INV_SUGERIDO') || 'Sugerido' }} {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
               @if(suggestedOrderByDispatchAndReturn) {
 
-                <ion-grid>
-                  <ion-row>
-                    <ion-col>
-                      
+                <ion-grid class="tablaInfoClientes tablaSugeridoDosColumnas">
+                  <ion-row class="tablaDocVentas row tablaSugeridoFila">
+                    <ion-col size="6" class="col tablaSugeridoColResultado borderSuperiorIzquierdo">
+                      <div class="cabecera ion-text-center titulosBold col">
+                        {{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}
+                      </div>
+                      <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.initialStock) }}</div>
+                    </ion-col>
+                    <ion-col size="6" class="col tablaSugeridoColDesglose borderSuperiorDerecho">
+                      <div class="tablaSugeridoBloque">
+                        <div class="cabecera ion-text-center titulosBold col">
+                          {{ inventarioTags.get('INV_INVENTARIO_ANTERIOR') || 'Inv. Anterior' }}
+                        </div>
+                        <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.previousStock) }}</div>
+                      </div>
+                      <div class="tablaSugeridoBloque">
+                        <div class="cabecera ion-text-center titulosBold col">
+                          {{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}
+                        </div>
+                        <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.dispatchedStock) }}</div>
+                      </div>
+                      <div class="tablaSugeridoBloque">
+                        <div class="cabecera ion-text-center titulosBold col">
+                          {{ inventarioTags.get('INV_CAMBIO_POR_CAMBIO') || 'Cambio por Cambio' }}
+                        </div>
+                        <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.straightSwapStock) }}</div>
+                      </div>
                     </ion-col>
                   </ion-row>
                 </ion-grid>
 
-                <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
-    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
-       <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
-                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_ANTERIOR') || 'Inv. Anterior' }}</ion-col>
-                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}</ion-col>
-                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="8">{{ inventarioTags.get('INV_CAMBIO_POR_CAMBIO') || 'Cambio por Cambio' }}</ion-col> 
-    </ion-row>
-
-    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
-      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
-      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.previousStock)}}</ion-col>
-      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.dispatchedStock)}}</ion-col>
-      <ion-col size="8" class="ion-text-center col">{{formatNumber(unit.straightSwapStock)}}</ion-col>
-    </ion-row>
-  </ion-grid>
-
-
-                <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
-    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
-       <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">{{ inventarioTags.get('INV_VENTA') || 'Venta' }}</ion-col>
-                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
-                  <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_ACTUAL') || 'Inv. Actual' }}</ion-col>
-                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="7">{{ inventarioTags.get('INV_DEVOLUCION_DISTRIBUCION') || 'Dev. Distribución' }}</ion-col> 
-    </ion-row>
-
-    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
-      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.soldUnits)}}</ion-col>
-      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
-      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.currentStock)}}</ion-col>
-      <ion-col size="7" class="ion-text-center col">{{formatNumber(unit.returnedStock)}}</ion-col>
-    </ion-row>
-  </ion-grid>
+                <ion-grid class="tablaInfoClientes tablaSugeridoDosColumnas">
+                  <ion-row class="tablaDocVentas row tablaSugeridoFila">
+                    <ion-col size="6" class="col tablaSugeridoColResultado borderSuperiorIzquierdo">
+                      <div class="cabecera ion-text-center titulosBold col">
+                        Venta Sugerida
+                      </div>
+                      <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.soldUnits) }}</div>
+                    </ion-col>
+                    <ion-col size="6" class="col tablaSugeridoColDesglose borderSuperiorDerecho">
+                      <div class="tablaSugeridoBloque">
+                        <div class="cabecera ion-text-center titulosBold col">
+                          {{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}
+                        </div>
+                        <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.initialStock) }}</div>
+                      </div>
+                      <div class="tablaSugeridoBloque">
+                        <div class="cabecera ion-text-center titulosBold col">
+                          {{ inventarioTags.get('INV_INVENTARIO_ACTUAL') || 'Inv. Actual' }}
+                        </div>
+                        <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.currentStock) }}</div>
+                      </div>
+                      <div class="tablaSugeridoBloque">
+                        <div class="cabecera ion-text-center titulosBold col">
+                          {{ inventarioTags.get('INV_DEVOLUCION_DISTRIBUCION') || 'Dev. Distribución' }}
+                        </div>
+                        <div class="ion-text-center col tablaSugeridoValor">{{ formatNumber(unit.returnedStock) }}</div>
+                      </div>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
               
               <ion-item>{{ inventarioTags.get('INV_VENTAS_DIARIAS') || 'Ventas Diarias Estimadas' }}: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
             }@else{

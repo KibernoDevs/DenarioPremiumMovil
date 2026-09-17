@@ -15,4 +15,256 @@ describe('InventarioGeneralComponent', () => {
       expect(cleanString(`hola;"'mundo"`)).toBe('holamundo');
     });
   });
+
+  describe('INV-DAYS-001 applyClientChangeReset', () => {
+    it('restores daysUntilNext and daysSinceLast to 1 after client wipe', async () => {
+      const inventariosLogicService = {
+        newClientStock: {
+          coClientStock: 'INV1',
+          daysUntilNext: 7,
+          daysSinceLast: 3,
+        },
+        resetStockDraftOnClientChange: jasmine.createSpy('reset').and.callFake(function (this: any) {
+          this.newClientStock = {
+            coClientStock: 'INV1',
+            daClientStock: '2026-01-01',
+            daysUntilNext: 1,
+            daysSinceLast: 1,
+          };
+        }),
+        deletePersistedStockDetails: jasmine.createSpy('deleteDetails').and.resolveTo(),
+        inventarioTagsDenario: new Map([['DENARIO_BOTON_ACEPTAR', 'Aceptar']]),
+      };
+      const ctx: any = {
+        inventariosLogicService,
+        adjuntoService: { setup: jasmine.createSpy('setup') },
+        config: { get: () => 'false' },
+        dbServ: { getDatabase: () => ({}) },
+        dateServ: { hoyISOFullTime: () => 'now' },
+        viewOnly: false,
+        alertButtons: [{ text: '' }],
+        daysSinceLastInventory: 99,
+        daysUntilNextInventory: 99,
+        daClientStock: '',
+        gpsCoordinateValue: InventarioGeneralComponent.prototype['gpsCoordinateValue'],
+        hydrateLocalGpsFromStock: InventarioGeneralComponent.prototype['hydrateLocalGpsFromStock'],
+      };
+
+      await InventarioGeneralComponent.prototype['applyClientChangeReset'].call(
+        ctx,
+        { idClient: 2 } as any,
+      );
+
+      expect(inventariosLogicService.resetStockDraftOnClientChange).toHaveBeenCalled();
+      expect(inventariosLogicService.deletePersistedStockDetails).toHaveBeenCalled();
+      expect(inventariosLogicService.newClientStock.daysUntilNext).toBe(1);
+      expect(inventariosLogicService.newClientStock.daysSinceLast).toBe(1);
+      expect(ctx.daysUntilNextInventory).toBe(1);
+      expect(ctx.daysSinceLastInventory).toBe(1);
+      expect(inventariosLogicService.newClientStock.coClientStock).toBe('INV1');
+    });
+
+    it('setDaysUntilNextInventory does not persist undefined as daysUntilNext', () => {
+      const inventariosLogicService = {
+        resolvePositiveInventoryDays: (v: number | null | undefined) => {
+          const n = Number(v);
+          return !Number.isFinite(n) || n < 1 ? 1 : n;
+        },
+        newClientStock: { daysUntilNext: undefined as number | undefined },
+        refreshSuggestedOrdersIfEnabled: jasmine.createSpy('refresh').and.resolveTo(),
+        notifyStockEdited: jasmine.createSpy('notify'),
+      };
+      const ctx: any = {
+        inventariosLogicService,
+        dbServ: { getDatabase: () => ({}) },
+        daysUntilNextInventory: undefined,
+      };
+
+      InventarioGeneralComponent.prototype.setDaysUntilNextInventory.call(ctx);
+
+      expect(inventariosLogicService.newClientStock.daysUntilNext).toBe(1);
+      expect(ctx.daysUntilNextInventory).toBe(1);
+    });
+  });
+
+  describe('INV-CLIENT-001 guard y reset al cambiar cliente', () => {
+    it('setClientfromSelector no vacía la toma (reset solo por ClientChanged)', () => {
+      const inventariosLogicService = {
+        newClientStock: {
+          idClient: 1,
+          coClientStock: 'INV1',
+          stDelivery: 0,
+          clientStockDetails: [{ idProduct: 9 }],
+        },
+        empresaSeleccionada: { idEnterprise: 1, coEnterprise: 'E1' },
+        cliente: { idClient: 1 },
+        inventarioSent: false,
+        isEdit: false,
+        hasStockContentForClientChangeGuard: () => true,
+        getAllAddressByClient: jasmine.createSpy('addr').and.resolveTo(true),
+        onClientStockValid: jasmine.createSpy('valid'),
+        notifyStockEdited: jasmine.createSpy('notify'),
+        resetStockDraftOnClientChange: jasmine.createSpy('reset'),
+        inventarioTags: new Map(),
+      };
+      const clientSelectorService = {
+        checkClient: false,
+        clienteAnterior: null as any,
+      };
+      const ctx: any = {
+        inventariosLogicService,
+        clientSelectorService,
+        canModifyClient: () => true,
+        message: { showLoading: () => Promise.resolve(), hideLoading: () => undefined },
+        dateServ: { generateCO: () => 'CO', hoyISOFullTime: () => 'now' },
+        dbServ: { getDatabase: () => ({}) },
+        txComment: '',
+        coordenada: '',
+        gpsCoordinateValue: InventarioGeneralComponent.prototype['gpsCoordinateValue'],
+        syncGpsOnClientSelect: InventarioGeneralComponent.prototype['syncGpsOnClientSelect'],
+        syncClientChangeGuard: InventarioGeneralComponent.prototype['syncClientChangeGuard'],
+      };
+
+      InventarioGeneralComponent.prototype.setClientfromSelector.call(ctx, {
+        idClient: 2,
+        coClient: 'C2',
+        lbClient: 'B',
+        naClient: 'B',
+      } as any);
+
+      expect(inventariosLogicService.resetStockDraftOnClientChange).not.toHaveBeenCalled();
+      expect(inventariosLogicService.newClientStock.clientStockDetails.length).toBe(1);
+    });
+
+    it('syncClientChangeGuard activa checkClient solo con toma o adjuntos', () => {
+      const clientSelectorService = { checkClient: false, clienteAnterior: null as any };
+      const inventariosLogicService = {
+        inventarioSent: false,
+        hasStockContentForClientChangeGuard: () => true,
+      };
+      const ctx: any = {
+        clientSelectorService,
+        inventariosLogicService,
+        canModifyClient: () => true,
+      };
+      const client = { idClient: 7 } as any;
+
+      InventarioGeneralComponent.prototype['syncClientChangeGuard'].call(ctx, client);
+
+      expect(clientSelectorService.checkClient).toBeTrue();
+      expect(clientSelectorService.clienteAnterior).toBe(client);
+
+      inventariosLogicService.hasStockContentForClientChangeGuard = () => false;
+      InventarioGeneralComponent.prototype['syncClientChangeGuard'].call(ctx, client);
+      expect(clientSelectorService.checkClient).toBeFalse();
+      expect(clientSelectorService.clienteAnterior).toBe(client);
+    });
+
+    it('ngAfterViewInit rearma el selector si hay idClient y toma', () => {
+      const finalize = jasmine.createSpy('finalize');
+      const ctx: any = {
+        rearmSelectorAfterTabRestore: InventarioGeneralComponent.prototype['rearmSelectorAfterTabRestore'],
+        shouldEnableClientChangeGuard: () => true,
+        finalizeSavedInventoryClientGuard: finalize,
+      };
+
+      InventarioGeneralComponent.prototype.ngAfterViewInit.call(ctx);
+
+      expect(finalize).toHaveBeenCalled();
+    });
+  });
+
+  describe('INV-GPS-001 GPS al cambiar cliente', () => {
+    const bindGps = (ctx: any) => {
+      ctx.gpsCoordinateValue = InventarioGeneralComponent.prototype['gpsCoordinateValue'];
+      ctx.hydrateLocalGpsFromStock = InventarioGeneralComponent.prototype['hydrateLocalGpsFromStock'];
+      ctx.syncGpsOnClientSelect = InventarioGeneralComponent.prototype['syncGpsOnClientSelect'];
+      return ctx;
+    };
+
+    it('setClientfromSelector no pisa GPS del servicio si el campo local está vacío', async () => {
+      const inventariosLogicService = {
+        newClientStock: {
+          idClient: 1,
+          coClientStock: 'INV1',
+          stDelivery: 0,
+          coordenada: '10,20',
+          clientStockDetails: [],
+        },
+        empresaSeleccionada: { idEnterprise: 1, coEnterprise: 'E1' },
+        cliente: { idClient: 1 },
+        inventarioSent: false,
+        isEdit: false,
+        userMustActivateGPS: true,
+        hasStockContentForClientChangeGuard: () => false,
+        getAllAddressByClient: jasmine.createSpy('addr').and.resolveTo(true),
+        onClientStockValid: jasmine.createSpy('valid'),
+        notifyStockEdited: jasmine.createSpy('notify'),
+        inventarioTags: new Map(),
+      };
+      const loading = Promise.resolve();
+      const ctx: any = bindGps({
+        inventariosLogicService,
+        clientSelectorService: { checkClient: false, clienteAnterior: null },
+        canModifyClient: () => true,
+        message: { showLoading: () => loading, hideLoading: () => undefined },
+        dateServ: { generateCO: () => 'CO', hoyISOFullTime: () => 'now' },
+        dbServ: { getDatabase: () => ({}) },
+        txComment: '',
+        coordenada: '',
+        syncClientChangeGuard: InventarioGeneralComponent.prototype['syncClientChangeGuard'],
+        geoServ: { getCurrentPosition: jasmine.createSpy('geo') },
+      });
+
+      InventarioGeneralComponent.prototype.setClientfromSelector.call(ctx, {
+        idClient: 2,
+        coClient: 'C2',
+        lbClient: 'B',
+        naClient: 'B',
+      } as any);
+      await loading;
+      await Promise.resolve();
+
+      expect(inventariosLogicService.newClientStock.coordenada).toBe('10,20');
+      expect(ctx.coordenada).toBe('10,20');
+      expect(ctx.geoServ.getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('syncGpsOnClientSelect conserva GPS del draft si el local está vacío', () => {
+      const inventariosLogicService = {
+        newClientStock: { coordenada: '10,20' },
+        userMustActivateGPS: true,
+      };
+      const ctx: any = bindGps({
+        inventariosLogicService,
+        coordenada: '',
+        geoServ: { getCurrentPosition: jasmine.createSpy('geo') },
+      });
+
+      InventarioGeneralComponent.prototype['syncGpsOnClientSelect'].call(ctx);
+
+      expect(inventariosLogicService.newClientStock.coordenada).toBe('10,20');
+      expect(ctx.coordenada).toBe('10,20');
+      expect(ctx.geoServ.getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('syncGpsOnClientSelect reobtiene GPS si ambos están vacíos y userMustActivateGPS', async () => {
+      const inventariosLogicService = {
+        newClientStock: { coordenada: '' },
+        userMustActivateGPS: true,
+      };
+      const ctx: any = bindGps({
+        inventariosLogicService,
+        coordenada: '',
+        geoServ: { getCurrentPosition: jasmine.createSpy('geo').and.resolveTo('9,9') },
+      });
+
+      InventarioGeneralComponent.prototype['syncGpsOnClientSelect'].call(ctx);
+      await ctx.geoServ.getCurrentPosition.calls.mostRecent().returnValue;
+
+      expect(ctx.geoServ.getCurrentPosition).toHaveBeenCalled();
+      expect(ctx.coordenada).toBe('9,9');
+      expect(inventariosLogicService.newClientStock.coordenada).toBe('9,9');
+    });
+  });
 });

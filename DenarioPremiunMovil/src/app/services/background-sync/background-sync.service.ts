@@ -166,7 +166,7 @@ export class BackgroundSyncService {
         const sqlInfo = this.sqlTableMap[key as string];
 
         if (!resTable) {
-          //console.error(`[BackgroundSync] No data for key=${key} (tableId=${tableId})`);
+          console.error(`[BackgroundSync] Tabla no sincronizada: id=${tableId} key=${key} reason=missing_response`);
           break;
         }
 
