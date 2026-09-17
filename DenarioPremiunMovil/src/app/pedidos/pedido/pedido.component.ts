@@ -36,6 +36,7 @@ import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
 import { Router } from '@angular/router';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { OrderUtil } from 'src/app/modelos/orderUtil';
 import { UnitInfo } from 'src/app/modelos/unitInfo';
 import { SelectedUnitPricingRow } from '../pedidos.service';
@@ -78,6 +79,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   public message = inject(MessageService);
   public router = inject(Router);
   public dbServ = inject(SynchronizationDBService);
+  public inventariosLogicService = inject(InventariosLogicService);
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
   private pdfCreator = inject(PdfCreatorService);
@@ -732,6 +734,9 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             await this.orderServ.marcarInventarioSugeridoStPorEnviar();
+            this.inventariosLogicService.setForceAttachSuggestedOrderOnStockSend(
+              this.orderServ.coClientStockAEnviar,
+            );
             transactions.push({
               coTransaction: this.orderServ.coClientStockAEnviar,
               idTransaction: this.orderServ.idClientStockAEnviar,
@@ -775,6 +780,15 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     await this.orderServ.deleteOrder(this.orderServ.coOrder); //borramos el pedido si este existe para evitar conflictos en BD
     await this.orderServ.saveOrder(order);
     await this.adjuntoService.savePhotos(this.dbServ.getDatabase(), order.coOrder, 'pedidos'); //guardamos adjuntos
+    if (order.coClientStock) {
+      await this.inventariosLogicService.markSuggestedOrderLinked(
+        this.dbServ.getDatabase(),
+        order.coClientStock,
+        order.coOrder,
+        order.idOrder,
+        stDelivery === DELIVERY_STATUS_TO_SEND,
+      );
+    }
     this.orderServ.getListaPedidos(); //actualizamos lista de pedidos
     return order;
   }

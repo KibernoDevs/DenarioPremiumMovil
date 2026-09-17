@@ -47,6 +47,10 @@
 <ion-alert [isOpen]="alertMessageOpenSave" header={{header}} message={{mensaje}} [buttons]="alertButtons"
     (didDismiss)="setResult($event)"></ion-alert>
 
+<!-- alerta envío sugerencia de pedido (tras confirmar envío inventario) -->
+<ion-alert [isOpen]="alertMessageOpenSendSuggested" header={{header}} message={{mensaje}} [buttons]="alertButtons"
+    (didDismiss)="setResultSendSuggested($event)"></ion-alert>
+
 <!-- alerta validación (mensaje exacto de lo que falta) -->
 <ion-alert [isOpen]="alertMessageOpenValidation"
     [header]="inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE') || inventariosLogicService.inventarioTags.get('INV_MSJ_MODULO') || 'Inventarios'"

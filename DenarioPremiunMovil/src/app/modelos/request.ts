@@ -6,6 +6,7 @@ import { Orders } from "./tables/orders";
 import { Return } from "./tables/return";
 import { UserAddresClients } from "./tables/userAddresClients";
 import { Visit } from "./tables/visit";
+import { ClientStockSuggestedOrder } from "./tables/client-stock-suggested-order";
 
 export interface Request {
     collection?: Collection;
@@ -18,5 +19,6 @@ export interface Request {
     userAddressClient?: UserAddresClients,
     returns?: Return,
     clientStock?: ClientStocks,
+    clientStockSuggestedOrder?: ClientStockSuggestedOrder,
 
 }

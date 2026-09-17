@@ -21,6 +21,9 @@
           <th>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_PRODUCTO') || 'Producto'}}</th>
           <th>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_EXHIBICION') || 'Exhibición'}}</th>
           <th>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_DEPOSITO') || 'Depósito'}}</th>
+          @if(this.inventariosLogicService.suggestedOrder) {
+          <th>{{this.inventariosLogicService.inventarioTags.get('INV_SUGERIDO') || 'Sugerido'}}</th>
+          }
           @if(canManageRows()) {
           <th class="col-action">{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_ACCION') || 'Acción'}}</th>
           }
@@ -54,6 +57,17 @@
             -
             }
           </td>
+          @if(this.inventariosLogicService.suggestedOrder) {
+          <td class="inventory-type-cell">
+            @if (row.suggestedEntries.length > 0) {
+            @for (entry of row.suggestedEntries; track $index) {
+            <div class="inventory-entry-line">{{entry}}</div>
+            }
+            } @else {
+            -
+            }
+          </td>
+          }
           @if(canManageRows()) {
           <td class="col-action">
             <ion-button fill="clear" color="danger" (click)="deleteClientStockRow(row.rowId)">
@@ -75,7 +89,7 @@
 
   <ion-col size="6" size-sm="6" size-xs="12" offset-sm="3">
     <ion-button class="botonAddAmarillo" expand="block" (click)="preguntarSugerirPedido()"
-      *ngIf="clientStocksTotal.length > 0">{{this.inventariosLogicService.inventarioTags.get('INV_PED_SUG')}}</ion-button>
+      *ngIf="inventariosLogicService.suggestedOrder && clientStocksTotal.length > 0">{{this.inventariosLogicService.inventarioTags.get('INV_PED_SUG')}}</ion-button>
   </ion-col>
 
 

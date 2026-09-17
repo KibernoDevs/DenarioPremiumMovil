@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, firstValueFrom, from } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { CapacitorHttp } from '@capacitor/core';
 
 import { Client } from 'src/app/modelos/tables/client';
 import { ClientStocks, ClientStocksDetail, ClientStocksDetailUnits } from 'src/app/modelos/tables/client-stocks';
@@ -27,6 +29,14 @@ import { PedidosDbService } from 'src/app/pedidos/pedidos-db.service';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
 import { InvoiceDetailUnit } from 'src/app/modelos/tables/invoiceDetailUnit';
+import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
+import { CurrencyService } from '../currency/currency.service';
+import {
+  ClientStockSuggestedOrder,
+  ClientStockSuggestedOrderDetail,
+} from 'src/app/modelos/tables/client-stock-suggested-order';
+import { ItemListaPedidoSugerido } from 'src/app/inventarios/item-lista-pedido-sugerido';
+import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 
 
 
@@ -43,12 +53,14 @@ export class InventariosLogicService {
   public adjuntoService = inject(AdjuntoService);
   public historyTransaction = inject(HistoryTransaction);
   public orderDbServ = inject(PedidosDbService);
+  public currencyService = inject(CurrencyService);
 
 
   public initInventario: Boolean = true;
   public backRoute = new Subject<string>;
   public inventarioComp: Boolean = false;
   public inventarioList: Boolean = false;
+  public inventarioSuggestedList: Boolean = false;
   public containerComp: Boolean = true;
   public showButtons = new Subject<Boolean>;
   public newClientStock: ClientStocks = {} as ClientStocks;
@@ -70,12 +82,19 @@ export class InventariosLogicService {
   public disabledEnterprise: boolean = false;
   public userMustActivateGPS: boolean = false;
   public expirationBatch: boolean = false;
+  public suggestedOrder: boolean = false;
   public suggestedOrderByDispatchAndReturn: boolean = false;
   public productsSuggested: ProductSuggestedUtil[] = [];
   public idProductsSuggested: number[] = [];
   public idProductsUnitsSuggested: number[] = [];
   public idUnitsSuggested: number[] = [];
 
+  /** Decisión de adjuntar sugerencia al POST inventario (por co_client_stock). */
+  private suggestedOrderAttachOnStockSend = new Map<string, boolean>();
+  /** Envío pedido desde sugerencia: adjuntar snapshot si existe (obligatorio). */
+  private forceSuggestedOrderAttachOnStockSend = new Set<string>();
+  /** Pulso Pedido Sugerido: persistir/adjuntar al Guardar o Enviar inventario. */
+  private pendingSuggestedOrderPersist = new Set<string>();
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
   public clientClientStock: Client = {} as Client;
@@ -426,6 +445,103 @@ export class InventariosLogicService {
     })
   }
 
+  loadSuggestedOrderConfig(): void {
+    this.suggestedOrder = this.globalConfig.get('suggestedOrder')?.toLowerCase() === 'true';
+    this.suggestedOrderByDispatchAndReturn = this.globalConfig.get('suggestedOrderByDispatchAndReturn')?.toLowerCase() === 'true';
+  }
+
+  /** INV-DAYS-001: {} as ClientStocks no aplica defaults del constructor. */
+  resolvePositiveInventoryDays(value: number | null | undefined): number {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 1) {
+      return 1;
+    }
+    return n;
+  }
+
+  /** INV-CLIENT-001: confirmar cambio de cliente solo con toma o adjuntos (como Pedidos). */
+  hasStockContentForClientChangeGuard(): boolean {
+    const details = this.newClientStock.clientStockDetails ?? [];
+    return details.length > 0 || this.adjuntoService.hasItems();
+  }
+
+  /** INV-CLIENT-001: rearmar guard del selector tras agregar cantidades. */
+  armClientChangeGuardAfterStockEdit(selector: {
+    checkClient: boolean;
+    clienteAnterior: Client | null;
+  }): void {
+    if (!this.hasStockContentForClientChangeGuard()) {
+      selector.checkClient = false;
+      return;
+    }
+    selector.checkClient = true;
+    const client = this.cliente?.idClient ? this.cliente : this.clientClientStock;
+    if (client?.idClient) {
+      selector.clienteAnterior = client;
+    }
+  }
+
+  /**
+   * INV-CLIENT-001: vacía productos/cantidades/sugerido del draft.
+   * Conserva código de transacción, status, fecha, empresa, comentario y GPS.
+   */
+  resetStockDraftOnClientChange(): void {
+    const preservedTransaction = {
+      coClientStock: this.newClientStock.coClientStock,
+      idClientStock: this.newClientStock.idClientStock,
+      stDelivery: this.newClientStock.stDelivery,
+      stClientStock: this.newClientStock.stClientStock,
+      daClientStock: this.newClientStock.daClientStock,
+      idEnterprise: this.newClientStock.idEnterprise,
+      coEnterprise: this.newClientStock.coEnterprise,
+      txComment: this.newClientStock.txComment,
+      coordenada: this.newClientStock.coordenada,
+    };
+
+    this.selectedClient = false;
+    this.disableSaveButton = true;
+    this.cannotSendClientStock = true;
+    this.alertMessage = false;
+    this.alertMessageOpen = false;
+    this.initInventario = false;
+
+    this.newClientStock = {} as ClientStocks;
+    this.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
+    this.newClientStock.productList = [] as ProductUtil[];
+    Object.assign(this.newClientStock, preservedTransaction);
+    this.newClientStock.daysSinceLast = 1;
+    this.newClientStock.daysUntilNext = 1;
+    this.productTypeStocksMap = new Map<number, number>();
+    this.typeStocks = [] as Inventarios[];
+    this.typeExh = false;
+    this.typeDep = false;
+    this.productsSuggested = [];
+    this.idProductsSuggested = [];
+    this.idProductsUnitsSuggested = [];
+    this.idUnitsSuggested = [];
+    if (preservedTransaction.coClientStock) {
+      this.clearSuggestedOrderSendFlags(preservedTransaction.coClientStock);
+    }
+  }
+
+  /** INV-CLIENT-001: borra details/units persistidos del draft; no toca el header. */
+  async deletePersistedStockDetails(dbServ: SQLiteObject, coClientStock: string): Promise<void> {
+    if (!coClientStock) {
+      return;
+    }
+    try {
+      await dbServ.sqlBatch([
+        [
+          'DELETE FROM client_stocks_details_units WHERE co_client_stock_detail IN (SELECT co_client_stock_detail FROM client_stocks_details WHERE co_client_stock = ?)',
+          [coClientStock],
+        ],
+        ['DELETE FROM client_stocks_details WHERE co_client_stock = ?', [coClientStock]],
+      ]);
+    } catch (e) {
+      console.log('[INV-CLIENT-001] deletePersistedStockDetails', e);
+    }
+  }
+
   initClientStockDetails() {
     this.initInventario = true;
     this.selectedClient = false;
@@ -450,7 +566,11 @@ export class InventariosLogicService {
     this.selectedInventoryType = 'exh';
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
-    this.suggestedOrderByDispatchAndReturn = this.globalConfig.get("suggestedOrderByDispatchAndReturn")?.toLowerCase() === "true";
+    this.loadSuggestedOrderConfig();
+    this.productsSuggested = [];
+    this.idProductsSuggested = [];
+    this.idProductsUnitsSuggested = [];
+    this.idUnitsSuggested = [];
   }
 
   showBackRoute(route: string) {
@@ -660,6 +780,27 @@ export class InventariosLogicService {
     this.notifyStockEdited();
   }
 
+  async refreshSuggestedOrdersIfEnabled(dbServ: SQLiteObject): Promise<void> {
+    if (!this.suggestedOrder) {
+      this.productsSuggested = [];
+      this.idProductsSuggested = [];
+      this.idProductsUnitsSuggested = [];
+      this.idUnitsSuggested = [];
+      return;
+    }
+
+    const hasDetails = (this.newClientStock.clientStockDetails?.length ?? 0) > 0;
+    if (!hasDetails) {
+      this.productsSuggested = [];
+      this.idProductsSuggested = [];
+      this.idProductsUnitsSuggested = [];
+      this.idUnitsSuggested = [];
+      return;
+    }
+
+    await this.calcularTotalesSugerenciaPedido(dbServ);
+  }
+
   async calcularTotalesSugerenciaPedido(dbServ: SQLiteObject) {
     let idEnterprise = this.newClientStock.idEnterprise;
     let idClient = this.newClientStock.idClient;
@@ -687,8 +828,9 @@ export class InventariosLogicService {
 
   
     if(this.suggestedOrderByDispatchAndReturn){
-    let daysSinceLastInventory = this.newClientStock.daysSinceLast;
-    let daysUntilNextInventory = this.newClientStock.daysUntilNext;
+    let daysSinceLastInventory = this.resolvePositiveInventoryDays(this.newClientStock.daysSinceLast);
+    let daysUntilNextInventory = this.resolvePositiveInventoryDays(this.newClientStock.daysUntilNext);
+    this.newClientStock.daysUntilNext = daysUntilNextInventory;
 
     //inventario anterior
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient, this.newClientStock.coClientStock);
@@ -720,7 +862,7 @@ export class InventariosLogicService {
       }
     }
     let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
-    //despacho por ultima facturacion (una sola factura cliente+sucursal)
+    //despacho por facturas del mismo dia que la ultima facturacion (cliente+sucursal)
     let dispatchsByLastInvoice = await this.getInvoiceDetailUnitsFromLastClientInvoice(
       dbServ, idProductUnits, idClient, idAddressClient
     );
@@ -888,6 +1030,1062 @@ export class InventariosLogicService {
     });
   }
 
+  async deleteSuggestedOrderSnapshot(dbServ: SQLiteObject, coClientStock: string): Promise<void> {
+    if (!coClientStock) {
+      return;
+    }
+    try {
+      const headerRows = await dbServ.executeSql(
+        'SELECT co_client_stock_suggested_order FROM client_stock_suggested_orders WHERE co_client_stock = ?',
+        [coClientStock],
+      );
+      const batch: (string | (string | number | null)[])[][] = [];
+      for (let i = 0; i < headerRows.rows.length; i++) {
+        const coSuggested = headerRows.rows.item(i).co_client_stock_suggested_order as string;
+        batch.push([
+          'DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order = ?',
+          [coSuggested],
+        ]);
+      }
+      batch.push([
+        'DELETE FROM client_stock_suggested_orders WHERE co_client_stock = ?',
+        [coClientStock],
+      ]);
+      if (batch.length > 0) {
+        await dbServ.sqlBatch(batch);
+      }
+    } catch (e) {
+      console.log('[deleteSuggestedOrderSnapshot]', e);
+    }
+  }
+
+  private resolveSuggestedProductLabels(
+    idProduct: number,
+    idUnit: number,
+    idProductUnit: number,
+  ): { coProduct: string; naProduct: string; coUnit: string; naUnit: string; coProductUnit: string } {
+    const detail = this.newClientStock.clientStockDetails?.find(d => d.idProduct === idProduct);
+    const unitRow = detail?.clientStockDetailUnits?.find(
+      u => u.idProductUnit === idProductUnit || u.idUnit === idUnit,
+    );
+    return {
+      coProduct: detail?.coProduct ?? '',
+      naProduct: detail?.naProduct ?? '',
+      coUnit: unitRow?.coUnit ?? '',
+      naUnit: unitRow?.naUnit ?? '',
+      coProductUnit: unitRow?.coProductUnit ?? '',
+    };
+  }
+
+  markPendingSuggestedOrderPersist(coClientStock: string | null | undefined): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.pendingSuggestedOrderPersist.add(coClientStock);
+  }
+
+  hasPendingSuggestedOrderPersist(coClientStock: string | null | undefined): boolean {
+    if (!coClientStock) {
+      return false;
+    }
+    return this.pendingSuggestedOrderPersist.has(coClientStock);
+  }
+
+  setAttachSuggestedOrderOnStockSend(coClientStock: string, attach: boolean): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.suggestedOrderAttachOnStockSend.set(coClientStock, attach);
+  }
+
+  setForceAttachSuggestedOrderOnStockSend(coClientStock: string): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.forceSuggestedOrderAttachOnStockSend.add(coClientStock);
+  }
+
+  shouldAttachSuggestedOrderOnStockSend(coClientStock: string): boolean {
+    if (!coClientStock) {
+      return false;
+    }
+    if (this.forceSuggestedOrderAttachOnStockSend.has(coClientStock)) {
+      return true;
+    }
+    if (this.suggestedOrderAttachOnStockSend.has(coClientStock)) {
+      return this.suggestedOrderAttachOnStockSend.get(coClientStock) ?? false;
+    }
+    return false;
+  }
+
+  clearSuggestedOrderSendFlags(coClientStock: string): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.suggestedOrderAttachOnStockSend.delete(coClientStock);
+    this.forceSuggestedOrderAttachOnStockSend.delete(coClientStock);
+    this.pendingSuggestedOrderPersist.delete(coClientStock);
+  }
+
+  hasSuggestedOrderCurrency(
+    moneda: { idCurrency?: number | null; coCurrency?: string | null } | null | undefined,
+  ): boolean {
+    const id = Number(moneda?.idCurrency);
+    const co = String(moneda?.coCurrency ?? '').trim();
+    return Number.isFinite(id) && id > 0 && co.length > 0;
+  }
+
+  resolveDefaultSuggestedOrderCurrency(enterprise?: Enterprise | null): CurrencyEnterprise | null {
+    if (!this.currencyService.multimoneda) {
+      return this.currencyService.getLocalCurrency() ?? null;
+    }
+    if (!enterprise?.idEnterprise) {
+      return this.currencyService.getLocalCurrency() ?? null;
+    }
+    const currencyModuleEnabled = this.globalConfig.get('currencyModule')?.toLocaleLowerCase() === 'true';
+    const pedModule = this.currencyService.getCurrencyModule('ped');
+    if (currencyModuleEnabled && pedModule?.idModule > 0) {
+      return pedModule.localCurrencyDefault
+        ? this.currencyService.getLocalCurrency()
+        : this.currencyService.getHardCurrency();
+    }
+    if (enterprise.coCurrencyDefault) {
+      return this.currencyService.getCurrency(enterprise.coCurrencyDefault) ?? null;
+    }
+    return this.currencyService.getLocalCurrency() ?? null;
+  }
+
+  resolveSuggestedOrderCurrencyToPersist(
+    moneda?: CurrencyEnterprise | null,
+    existing?: Pick<ClientStockSuggestedOrder, 'idCurrency' | 'coCurrency'> | null,
+    enterprise?: Enterprise | null,
+  ): CurrencyEnterprise | null {
+    if (this.hasSuggestedOrderCurrency(moneda)) {
+      return moneda as CurrencyEnterprise;
+    }
+    if (this.hasSuggestedOrderCurrency(existing)) {
+      return {
+        idCurrency: existing!.idCurrency,
+        coCurrency: existing!.coCurrency,
+      } as CurrencyEnterprise;
+    }
+    return this.resolveDefaultSuggestedOrderCurrency(enterprise);
+  }
+
+  async persistSuggestedOrderHeaderCurrency(
+    dbServ: SQLiteObject,
+    snapshot: ClientStockSuggestedOrder,
+    moneda?: CurrencyEnterprise | null,
+    enterprise?: Enterprise | null,
+  ): Promise<CurrencyEnterprise | null> {
+    if (!snapshot.coClientStockSuggestedOrder) {
+      return null;
+    }
+    await this.currencyService.setup(dbServ);
+    const resolvedEnterprise = enterprise?.idEnterprise
+      ? enterprise
+      : ({
+        idEnterprise: snapshot.idEnterprise,
+        coEnterprise: snapshot.coEnterprise,
+      } as Enterprise);
+    const resolved = this.resolveSuggestedOrderCurrencyToPersist(moneda, snapshot, resolvedEnterprise);
+    if (!this.hasSuggestedOrderCurrency(resolved)) {
+      return null;
+    }
+    try {
+      await dbServ.executeSql(
+        'UPDATE client_stock_suggested_orders SET id_currency = ?, co_currency = ? WHERE co_client_stock_suggested_order = ?',
+        [resolved!.idCurrency, resolved!.coCurrency, snapshot.coClientStockSuggestedOrder],
+      );
+    } catch (e) {
+      console.log('[persistSuggestedOrderHeaderCurrency]', e);
+      return null;
+    }
+    snapshot.idCurrency = resolved!.idCurrency;
+    snapshot.coCurrency = resolved!.coCurrency;
+    return resolved;
+  }
+
+  applySuggestedOrderCurrencyFallback(snapshot: ClientStockSuggestedOrder): ClientStockSuggestedOrder {
+    if (this.hasSuggestedOrderCurrency(snapshot)) {
+      return snapshot;
+    }
+    const enterprise = {
+      idEnterprise: snapshot.idEnterprise,
+      coEnterprise: snapshot.coEnterprise,
+    } as Enterprise;
+    const fallback = this.resolveDefaultSuggestedOrderCurrency(enterprise);
+    if (!this.hasSuggestedOrderCurrency(fallback)) {
+      return snapshot;
+    }
+    snapshot.idCurrency = fallback!.idCurrency;
+    snapshot.coCurrency = fallback!.coCurrency;
+    return snapshot;
+  }
+
+  isPersistedInventoryDeliveryStatus(stDelivery: number | null | undefined): boolean {
+    const st = Number(stDelivery);
+    return st === DELIVERY_STATUS_SENT
+      || st === DELIVERY_STATUS_TO_SEND
+      || st === DELIVERY_STATUS_SAVED;
+  }
+
+  async hasRelatedPersistedInventory(
+    dbServ: SQLiteObject,
+    coClientStock: string | null | undefined,
+  ): Promise<boolean> {
+    if (!coClientStock) {
+      return false;
+    }
+    try {
+      const data = await dbServ.executeSql(
+        'SELECT st_delivery FROM client_stocks WHERE co_client_stock = ? LIMIT 1',
+        [coClientStock],
+      );
+      if (data.rows.length < 1) {
+        return false;
+      }
+      return this.isPersistedInventoryDeliveryStatus(data.rows.item(0).st_delivery);
+    } catch (e) {
+      console.log('[hasRelatedPersistedInventory]', e);
+      return false;
+    }
+  }
+
+  async deleteOrphanSuggestedOrderSnapshots(dbServ: SQLiteObject): Promise<void> {
+    const persistedStatuses = [DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SAVED];
+    try {
+      await dbServ.executeSql(
+        'DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order IN ('
+        + 'SELECT co_client_stock_suggested_order FROM client_stock_suggested_orders '
+        + 'WHERE NOT EXISTS ('
+        + 'SELECT 1 FROM client_stocks cs '
+        + 'WHERE cs.co_client_stock = client_stock_suggested_orders.co_client_stock '
+        + 'AND cs.st_delivery IN (?, ?, ?)'
+        + '))',
+        persistedStatuses,
+      );
+      await dbServ.executeSql(
+        'DELETE FROM client_stock_suggested_orders WHERE NOT EXISTS ('
+        + 'SELECT 1 FROM client_stocks cs '
+        + 'WHERE cs.co_client_stock = client_stock_suggested_orders.co_client_stock '
+        + 'AND cs.st_delivery IN (?, ?, ?)'
+        + ')',
+        persistedStatuses,
+      );
+    } catch (e) {
+      console.log('[deleteOrphanSuggestedOrderSnapshots]', e);
+    }
+  }
+
+  async saveSuggestedOrderSnapshot(
+    dbServ: SQLiteObject,
+    moneda?: CurrencyEnterprise,
+  ): Promise<void> {
+    const stock = this.newClientStock;
+    const coClientStock = stock.coClientStock;
+    if (!coClientStock) {
+      return;
+    }
+    const relatedPersisted = await this.hasRelatedPersistedInventory(dbServ, coClientStock);
+    if (!relatedPersisted) {
+      return;
+    }
+
+    await this.currencyService.setup(dbServ);
+    const existing = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    const enterprise = this.empresaSeleccionada?.idEnterprise
+      ? this.empresaSeleccionada
+      : ({
+        idEnterprise: stock.idEnterprise,
+        coEnterprise: stock.coEnterprise,
+        coCurrencyDefault: this.empresaSeleccionada?.coCurrencyDefault,
+      } as Enterprise);
+    const resolvedCurrency = this.resolveSuggestedOrderCurrencyToPersist(moneda, existing, enterprise);
+    const coSuggestedOrder = existing?.coClientStockSuggestedOrder ?? this.dateServ.generateCO(0);
+
+    if (existing?.coClientStockSuggestedOrder) {
+      await dbServ.executeSql(
+        'DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order = ?',
+        [existing.coClientStockSuggestedOrder],
+      );
+    }
+
+    const details: ClientStockSuggestedOrderDetail[] = [];
+    let posicion = 0;
+    const productsSuggested = this.productsSuggested ?? [];
+
+    for (const product of productsSuggested) {
+      for (const unit of product.unitsSuggested) {
+        const labels = this.resolveSuggestedProductLabels(
+          product.idProduct,
+          unit.idUnit,
+          unit.idProductUnit,
+        );
+        details.push(new ClientStockSuggestedOrderDetail(
+          null,
+          this.dateServ.generateCO(posicion + 1),
+          coSuggestedOrder,
+          product.idProduct,
+          labels.coProduct,
+          labels.naProduct,
+          unit.idProductUnit,
+          labels.coProductUnit,
+          unit.idUnit,
+          unit.coUnit || labels.coUnit,
+          labels.naUnit,
+          stock.idEnterprise,
+          stock.coEnterprise,
+          posicion,
+          unit.quUnitSuggested ?? 0,
+          unit.previousStock ?? 0,
+          unit.currentStock ?? 0,
+          unit.dispatchedStock ?? 0,
+          unit.straightSwapStock ?? 0,
+          unit.returnedStock ?? 0,
+          unit.initialStock ?? 0,
+          unit.soldUnits ?? 0,
+          unit.estimatedDailyUnits ?? 0,
+        ));
+        posicion++;
+      }
+    }
+
+    const header = new ClientStockSuggestedOrder(
+      existing?.idClientStockSuggestedOrder ?? null,
+      coSuggestedOrder,
+      coClientStock,
+      stock.idClientStock ?? null,
+      stock.idClient,
+      stock.coClient,
+      stock.idAddressClient,
+      stock.coAddressClient,
+      stock.idEnterprise,
+      stock.coEnterprise,
+      stock.idUser,
+      stock.coUser,
+      stock.daysSinceLast ?? 1,
+      stock.daysUntilNext ?? 1,
+      this.suggestedOrderByDispatchAndReturn ? 1 : 0,
+      resolvedCurrency?.idCurrency ?? null,
+      resolvedCurrency?.coCurrency ?? null,
+      this.dateServ.hoyISOFullTime(),
+      details.length,
+      existing?.coOrder ?? null,
+      existing?.idOrder ?? null,
+      existing?.inOrderSent ?? 0,
+      details,
+    );
+
+    const batch: (string | (string | number | null)[])[][] = [
+      [this.suggestedOrderHeaderInsertSql, this.buildSuggestedOrderHeaderBatchRow(header)],
+    ];
+
+    for (const detail of details) {
+      batch.push([this.suggestedOrderDetailInsertSql, this.buildSuggestedOrderDetailBatchRow(detail)]);
+    }
+
+    await dbServ.sqlBatch(batch);
+  }
+
+  async markSuggestedOrderLinked(
+    dbServ: SQLiteObject,
+    coClientStock: string | null | undefined,
+    coOrder: string,
+    idOrder: number | null | undefined,
+    sent: boolean,
+  ): Promise<void> {
+    if (!coClientStock) {
+      return;
+    }
+    try {
+      if (sent) {
+        await dbServ.executeSql(
+          'UPDATE client_stock_suggested_orders SET in_order_sent = 1, co_order = ?, id_order = ? WHERE co_client_stock = ?',
+          [coOrder, idOrder ?? null, coClientStock],
+        );
+      } else {
+        await dbServ.executeSql(
+          'UPDATE client_stock_suggested_orders SET co_order = ?, id_order = ? WHERE co_client_stock = ?',
+          [coOrder, idOrder ?? null, coClientStock],
+        );
+      }
+      await this.trySyncSuggestedOrderLink(dbServ, coClientStock);
+    } catch (e) {
+      console.log('[markSuggestedOrderLinked]', e);
+    }
+  }
+
+  private readonly suggestedOrderHeaderInsertSql = 'INSERT OR REPLACE INTO client_stock_suggested_orders ('
+    + 'id_client_stock_suggested_order, co_client_stock_suggested_order, co_client_stock, id_client_stock, '
+    + 'id_client, co_client, id_address_client, co_address_client, id_enterprise, co_enterprise, id_user, co_user, '
+    + 'days_since_last, days_until_next, by_dispatch_and_return, id_currency, co_currency, da_suggested, '
+    + 'nu_details, co_order, id_order, in_order_sent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+
+  private readonly suggestedOrderDetailInsertSql = 'INSERT OR REPLACE INTO client_stock_suggested_order_details ('
+    + 'id_client_stock_suggested_order_detail, co_client_stock_suggested_order_detail, co_client_stock_suggested_order, '
+    + 'id_product, co_product, na_product, id_product_unit, co_product_unit, id_unit, co_unit, na_unit, '
+    + 'id_enterprise, co_enterprise, posicion, qu_unit_suggested, previous_stock, current_stock, dispatched_stock, '
+    + 'straight_swap_stock, returned_stock, initial_stock, sold_units, estimated_daily_units) '
+    + 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+
+  private buildSuggestedOrderHeaderBatchRow(header: ClientStockSuggestedOrder): (string | number | null)[] {
+    return [
+      header.idClientStockSuggestedOrder,
+      header.coClientStockSuggestedOrder,
+      header.coClientStock,
+      header.idClientStock,
+      header.idClient,
+      header.coClient,
+      header.idAddressClient,
+      header.coAddressClient,
+      header.idEnterprise,
+      header.coEnterprise,
+      header.idUser,
+      header.coUser,
+      header.daysSinceLast,
+      header.daysUntilNext,
+      header.byDispatchAndReturn,
+      header.idCurrency,
+      header.coCurrency,
+      header.daSuggested,
+      header.nuDetails,
+      header.coOrder,
+      header.idOrder,
+      header.inOrderSent,
+    ];
+  }
+
+  private buildSuggestedOrderDetailBatchRow(detail: ClientStockSuggestedOrderDetail): (string | number | null)[] {
+    return [
+      detail.idClientStockSuggestedOrderDetail,
+      detail.coClientStockSuggestedOrderDetail,
+      detail.coClientStockSuggestedOrder,
+      detail.idProduct,
+      detail.coProduct,
+      detail.naProduct,
+      detail.idProductUnit,
+      detail.coProductUnit,
+      detail.idUnit,
+      detail.coUnit,
+      detail.naUnit,
+      detail.idEnterprise,
+      detail.coEnterprise,
+      detail.posicion,
+      detail.quUnitSuggested,
+      detail.previousStock,
+      detail.currentStock,
+      detail.dispatchedStock,
+      detail.straightSwapStock,
+      detail.returnedStock,
+      detail.initialStock,
+      detail.soldUnits,
+      detail.estimatedDailyUnits,
+    ];
+  }
+
+  private async persistSuggestedOrderHeader(
+    dbServ: SQLiteObject,
+    header: ClientStockSuggestedOrder,
+  ): Promise<void> {
+    await dbServ.executeSql(
+      this.suggestedOrderHeaderInsertSql,
+      this.buildSuggestedOrderHeaderBatchRow(header),
+    );
+  }
+
+  async mergeSyncedSuggestedOrdersWithLocal(
+    dbServ: SQLiteObject,
+    serverRows: ClientStockSuggestedOrder[],
+  ): Promise<void> {
+    for (const rawRow of serverRows ?? []) {
+      const normalized = ClientStockSuggestedOrder.fromJson(rawRow as ClientStockSuggestedOrder);
+      if (!normalized.coClientStockSuggestedOrder) {
+        continue;
+      }
+
+      const localRes = await dbServ.executeSql(
+        'SELECT s.*, cs.st_delivery AS cs_st_delivery FROM client_stock_suggested_orders s '
+        + 'LEFT JOIN client_stocks cs ON cs.co_client_stock = s.co_client_stock '
+        + 'WHERE s.co_client_stock_suggested_order = ? LIMIT 1',
+        [normalized.coClientStockSuggestedOrder],
+      );
+
+      if (localRes.rows.length > 0) {
+        const local = this.mapSuggestedOrderHeaderRow(localRes.rows.item(0));
+        const stDelivery = localRes.rows.item(0).cs_st_delivery as number | null | undefined;
+        const inventarioNotSent = stDelivery != null
+          && Number(stDelivery) !== DELIVERY_STATUS_SENT
+          && Number(stDelivery) !== 1;
+        const localNoServerId = !local.idClientStockSuggestedOrder || Number(local.idClientStockSuggestedOrder) <= 0;
+        const serverHasId = normalized.idClientStockSuggestedOrder != null
+          && Number(normalized.idClientStockSuggestedOrder) > 0;
+
+        if (localNoServerId && inventarioNotSent && !serverHasId) {
+          continue;
+        }
+
+        if (localNoServerId && inventarioNotSent && serverHasId) {
+          await dbServ.executeSql(
+            'UPDATE client_stock_suggested_orders SET id_client_stock_suggested_order = ?, '
+            + 'id_client_stock = COALESCE(?, id_client_stock), co_order = COALESCE(?, co_order), '
+            + 'id_order = COALESCE(?, id_order), in_order_sent = CASE WHEN ? = 1 THEN 1 ELSE in_order_sent END '
+            + 'WHERE co_client_stock_suggested_order = ?',
+            [
+              normalized.idClientStockSuggestedOrder,
+              normalized.idClientStock,
+              normalized.coOrder,
+              normalized.idOrder,
+              normalized.inOrderSent,
+              normalized.coClientStockSuggestedOrder,
+            ],
+          );
+          continue;
+        }
+      }
+
+      await this.persistSuggestedOrderHeader(dbServ, normalized);
+    }
+  }
+
+  async mergeSyncedSuggestedOrderDetailsWithLocal(
+    dbServ: SQLiteObject,
+    serverRows: ClientStockSuggestedOrderDetail[],
+  ): Promise<void> {
+    const batch: (string | (string | number | null)[])[][] = [];
+    for (const rawRow of serverRows ?? []) {
+      const detail = ClientStockSuggestedOrderDetail.fromJson(rawRow as ClientStockSuggestedOrderDetail);
+      if (!detail.coClientStockSuggestedOrderDetail) {
+        continue;
+      }
+      batch.push([
+        this.suggestedOrderDetailInsertSql,
+        this.buildSuggestedOrderDetailBatchRow(detail),
+      ]);
+    }
+    if (batch.length > 0) {
+      await dbServ.sqlBatch(batch);
+    }
+  }
+
+  async getSuggestedOrderSnapshotByClientStock(
+    dbServ: SQLiteObject,
+    coClientStock: string,
+  ): Promise<ClientStockSuggestedOrder | null> {
+    if (!coClientStock) {
+      return null;
+    }
+    try {
+      const headerData = await dbServ.executeSql(
+        'SELECT * FROM client_stock_suggested_orders WHERE co_client_stock = ? ORDER BY da_suggested DESC LIMIT 1',
+        [coClientStock],
+      );
+      if (headerData.rows.length < 1) {
+        return null;
+      }
+      const snapshot = this.mapSuggestedOrderHeaderRow(headerData.rows.item(0));
+      const detailData = await dbServ.executeSql(
+        'SELECT * FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order = ? ORDER BY posicion ASC',
+        [snapshot.coClientStockSuggestedOrder],
+      );
+      snapshot.details = [];
+      for (let i = 0; i < detailData.rows.length; i++) {
+        snapshot.details.push(this.mapSuggestedOrderDetailRow(detailData.rows.item(i)));
+      }
+      return snapshot;
+    } catch (e) {
+      console.log('[getSuggestedOrderSnapshotByClientStock]', e);
+      return null;
+    }
+  }
+
+  async applyServerSuggestedOrderIdsFromResponse(
+    dbServ: SQLiteObject,
+    coClientStock: string,
+    result: Record<string, unknown>,
+  ): Promise<void> {
+    const nested = result['clientStockSuggestedOrder'] as ClientStockSuggestedOrder | undefined;
+    const headerId = Number(
+      result['clientStockSuggestedOrderId']
+      ?? nested?.idClientStockSuggestedOrder
+      ?? 0,
+    );
+    if (!coClientStock || headerId <= 0) {
+      return;
+    }
+
+    const snapshot = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    if (!snapshot?.coClientStockSuggestedOrder) {
+      return;
+    }
+
+    await dbServ.executeSql(
+      'UPDATE client_stock_suggested_orders SET id_client_stock_suggested_order = ?, id_client_stock = COALESCE(?, id_client_stock) '
+      + 'WHERE co_client_stock_suggested_order = ?',
+      [headerId, result['clientStockId'] ?? null, snapshot.coClientStockSuggestedOrder],
+    );
+
+    const detailIds = (
+      result['clientStockSuggestedOrderDetails']
+      ?? nested?.details
+      ?? []
+    ) as ClientStockSuggestedOrderDetail[];
+
+    for (const detailRow of detailIds) {
+      const coDetail = detailRow.coClientStockSuggestedOrderDetail;
+      const idDetail = detailRow.idClientStockSuggestedOrderDetail;
+      if (!coDetail || idDetail == null || Number(idDetail) <= 0) {
+        continue;
+      }
+      await dbServ.executeSql(
+        'UPDATE client_stock_suggested_order_details SET id_client_stock_suggested_order_detail = ? '
+        + 'WHERE co_client_stock_suggested_order_detail = ?',
+        [idDetail, coDetail],
+      );
+    }
+  }
+
+  private buildSuggestedOrderLinkPayload(snapshot: ClientStockSuggestedOrder): Record<string, unknown> {
+    return {
+      clientStockSuggestedOrder: {
+        idClientStockSuggestedOrder: snapshot.idClientStockSuggestedOrder,
+        coClientStockSuggestedOrder: snapshot.coClientStockSuggestedOrder,
+        coClientStock: snapshot.coClientStock,
+        coOrder: snapshot.coOrder,
+        idOrder: snapshot.idOrder,
+        inOrderSent: snapshot.inOrderSent,
+      },
+    };
+  }
+
+  async trySyncSuggestedOrderLink(
+    dbServ: SQLiteObject,
+    coClientStock: string,
+  ): Promise<void> {
+    const connected = localStorage.getItem('connected') === 'true';
+    const snapshot = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    if (!snapshot?.idClientStockSuggestedOrder || Number(snapshot.idClientStockSuggestedOrder) <= 0) {
+      return;
+    }
+
+    if (!connected) {
+      await this.queueSuggestedOrderLinkPending(dbServ, coClientStock);
+      return;
+    }
+
+    try {
+      const payload = this.buildSuggestedOrderLinkPayload(snapshot);
+      let opt = this.services.getHttpOptionsAuthorization();
+      opt.url += 'clientstockservice/clientstocksuggestedorderlink';
+      opt.data = payload;
+      const resp = await firstValueFrom(from(CapacitorHttp.post(opt)).pipe(map(r => r.data)));
+      if (resp?.errorCode === '000') {
+        await this.clearSuggestedOrderLinkPending(dbServ, coClientStock);
+        return;
+      }
+      await this.queueSuggestedOrderLinkPending(dbServ, coClientStock);
+    } catch (e) {
+      console.log('[trySyncSuggestedOrderLink]', e);
+      await this.queueSuggestedOrderLinkPending(dbServ, coClientStock);
+    }
+  }
+
+  async queueSuggestedOrderLinkPending(
+    dbServ: SQLiteObject,
+    coClientStock: string,
+  ): Promise<void> {
+    const snapshot = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    if (!snapshot?.idClientStockSuggestedOrder || Number(snapshot.idClientStockSuggestedOrder) <= 0) {
+      return;
+    }
+    const pending: PendingTransaction = {
+      coTransaction: coClientStock,
+      idTransaction: snapshot.idOrder ?? 0,
+      type: 'suggestedOrderLink',
+    };
+    await this.services.insertPendingTransaction(dbServ, pending);
+  }
+
+  private async clearSuggestedOrderLinkPending(
+    dbServ: SQLiteObject,
+    coClientStock: string,
+  ): Promise<void> {
+    await dbServ.executeSql(
+      'DELETE FROM pending_transactions WHERE co_transaction = ? AND type = ?',
+      [coClientStock, 'suggestedOrderLink'],
+    );
+  }
+
+  async dispatchSuggestedOrderLinkSync(
+    dbServ: SQLiteObject,
+    coClientStock: string,
+  ): Promise<boolean> {
+    const connected = localStorage.getItem('connected') === 'true';
+    if (!connected) {
+      return true;
+    }
+    const snapshot = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    if (!snapshot?.idClientStockSuggestedOrder || Number(snapshot.idClientStockSuggestedOrder) <= 0) {
+      return true;
+    }
+    try {
+      const payload = this.buildSuggestedOrderLinkPayload(snapshot);
+      let opt = this.services.getHttpOptionsAuthorization();
+      opt.url += 'clientstockservice/clientstocksuggestedorderlink';
+      opt.data = payload;
+      const resp = await firstValueFrom(from(CapacitorHttp.post(opt)).pipe(map(r => r.data)));
+      if (resp?.errorCode === '000') {
+        await this.clearSuggestedOrderLinkPending(dbServ, coClientStock);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.log('[dispatchSuggestedOrderLinkSync]', e);
+      return false;
+    }
+  }
+
+  prepareSuggestedOrderSnapshotForUpload(
+    snapshot: ClientStockSuggestedOrder,
+    nullifyServerIds: boolean,
+  ): ClientStockSuggestedOrder {
+    const copy = ClientStockSuggestedOrder.fromJson({
+      idClientStockSuggestedOrder: snapshot.idClientStockSuggestedOrder,
+      coClientStockSuggestedOrder: snapshot.coClientStockSuggestedOrder,
+      coClientStock: snapshot.coClientStock,
+      idClientStock: snapshot.idClientStock,
+      idClient: snapshot.idClient,
+      coClient: snapshot.coClient,
+      idAddressClient: snapshot.idAddressClient,
+      coAddressClient: snapshot.coAddressClient,
+      idEnterprise: snapshot.idEnterprise,
+      coEnterprise: snapshot.coEnterprise,
+      idUser: snapshot.idUser,
+      coUser: snapshot.coUser,
+      daysSinceLast: snapshot.daysSinceLast,
+      daysUntilNext: snapshot.daysUntilNext,
+      byDispatchAndReturn: snapshot.byDispatchAndReturn,
+      idCurrency: snapshot.idCurrency,
+      coCurrency: snapshot.coCurrency,
+      daSuggested: snapshot.daSuggested,
+      nuDetails: snapshot.nuDetails,
+      coOrder: snapshot.coOrder,
+      idOrder: snapshot.idOrder,
+      inOrderSent: snapshot.inOrderSent,
+      details: snapshot.details?.map(d => ({
+        idClientStockSuggestedOrderDetail: d.idClientStockSuggestedOrderDetail,
+        coClientStockSuggestedOrderDetail: d.coClientStockSuggestedOrderDetail,
+        coClientStockSuggestedOrder: d.coClientStockSuggestedOrder,
+        idProduct: d.idProduct,
+        coProduct: d.coProduct,
+        naProduct: d.naProduct,
+        idProductUnit: d.idProductUnit,
+        coProductUnit: d.coProductUnit,
+        idUnit: d.idUnit,
+        coUnit: d.coUnit,
+        naUnit: d.naUnit,
+        idEnterprise: d.idEnterprise,
+        coEnterprise: d.coEnterprise,
+        posicion: d.posicion,
+        quUnitSuggested: d.quUnitSuggested,
+        previousStock: d.previousStock,
+        currentStock: d.currentStock,
+        dispatchedStock: d.dispatchedStock,
+        straightSwapStock: d.straightSwapStock,
+        returnedStock: d.returnedStock,
+        initialStock: d.initialStock,
+        soldUnits: d.soldUnits,
+        estimatedDailyUnits: d.estimatedDailyUnits,
+      })) ?? [],
+    });
+    this.applySuggestedOrderCurrencyFallback(copy);
+    if (nullifyServerIds) {
+      copy.idClientStockSuggestedOrder = null;
+      for (const detail of copy.details) {
+        detail.idClientStockSuggestedOrderDetail = null;
+      }
+    }
+    return copy;
+  }
+
+  async deleteSuggestedOrderRowsByCo(
+    dbServ: SQLiteObject,
+    coList: string[],
+    table: 'header' | 'detail',
+  ): Promise<void> {
+    if (!coList?.length) {
+      return;
+    }
+    const placeholders = coList.map(() => '?').join(',');
+    if (table === 'detail') {
+      await dbServ.executeSql(
+        `DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order_detail IN (${placeholders})`,
+        coList,
+      );
+      return;
+    }
+    const batch: (string | (string | number | null)[])[][] = [];
+    for (const co of coList) {
+      batch.push([
+        'DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order = ?',
+        [co],
+      ]);
+    }
+    batch.push([
+      `DELETE FROM client_stock_suggested_orders WHERE co_client_stock_suggested_order IN (${placeholders})`,
+      coList,
+    ]);
+    await dbServ.sqlBatch(batch);
+  }
+
+  isSuggestedOrderSent(snapshot: ClientStockSuggestedOrder | ItemListaPedidoSugerido): boolean {
+    return Number(snapshot.inOrderSent) === 1;
+  }
+
+  private mapSuggestedOrderHeaderRow(row: any): ClientStockSuggestedOrder {
+    return ClientStockSuggestedOrder.fromJson({
+      idClientStockSuggestedOrder: row.id_client_stock_suggested_order,
+      coClientStockSuggestedOrder: row.co_client_stock_suggested_order,
+      coClientStock: row.co_client_stock,
+      idClientStock: row.id_client_stock,
+      idClient: row.id_client,
+      coClient: row.co_client,
+      idAddressClient: row.id_address_client,
+      coAddressClient: row.co_address_client,
+      idEnterprise: row.id_enterprise,
+      coEnterprise: row.co_enterprise,
+      idUser: row.id_user,
+      coUser: row.co_user,
+      daysSinceLast: row.days_since_last,
+      daysUntilNext: row.days_until_next,
+      byDispatchAndReturn: row.by_dispatch_and_return,
+      idCurrency: row.id_currency,
+      coCurrency: row.co_currency,
+      daSuggested: row.da_suggested,
+      nuDetails: row.nu_details,
+      coOrder: row.co_order,
+      idOrder: row.id_order,
+      inOrderSent: row.in_order_sent,
+      details: [],
+    });
+  }
+
+  private mapSuggestedOrderDetailRow(row: any): ClientStockSuggestedOrderDetail {
+    return ClientStockSuggestedOrderDetail.fromJson({
+      idClientStockSuggestedOrderDetail: row.id_client_stock_suggested_order_detail,
+      coClientStockSuggestedOrderDetail: row.co_client_stock_suggested_order_detail,
+      coClientStockSuggestedOrder: row.co_client_stock_suggested_order,
+      idProduct: row.id_product,
+      coProduct: row.co_product,
+      naProduct: row.na_product,
+      idProductUnit: row.id_product_unit,
+      coProductUnit: row.co_product_unit,
+      idUnit: row.id_unit,
+      coUnit: row.co_unit,
+      naUnit: row.na_unit,
+      idEnterprise: row.id_enterprise,
+      coEnterprise: row.co_enterprise,
+      posicion: row.posicion,
+      quUnitSuggested: row.qu_unit_suggested,
+      previousStock: row.previous_stock,
+      currentStock: row.current_stock,
+      dispatchedStock: row.dispatched_stock,
+      straightSwapStock: row.straight_swap_stock,
+      returnedStock: row.returned_stock,
+      initialStock: row.initial_stock,
+      soldUnits: row.sold_units,
+      estimatedDailyUnits: row.estimated_daily_units,
+    });
+  }
+
+  private async persistSuggestedOrderAfterClientStockSave(dbServ: SQLiteObject): Promise<void> {
+    if (!this.suggestedOrder) {
+      return;
+    }
+    if (!this.hasPendingSuggestedOrderPersist(this.newClientStock.coClientStock)) {
+      return;
+    }
+    const hasDetails = (this.newClientStock.clientStockDetails?.length ?? 0) > 0;
+    if (!hasDetails) {
+      return;
+    }
+    await this.refreshSuggestedOrdersIfEnabled(dbServ);
+    await this.saveSuggestedOrderSnapshot(dbServ);
+  }
+
+  async getAllSuggestedOrderSnapshots(dbServ: SQLiteObject): Promise<ItemListaPedidoSugerido[]> {
+    const select = 'SELECT s.id_client_stock_suggested_order, s.co_client_stock_suggested_order, s.co_client_stock, '
+      + 's.id_client_stock, s.id_client, s.co_client, s.id_address_client, s.co_address_client, s.id_enterprise, '
+      + 's.co_enterprise, s.id_user, s.co_user, s.days_since_last, s.days_until_next, s.by_dispatch_and_return, '
+      + 's.id_currency, s.co_currency, s.da_suggested, s.nu_details, s.co_order, s.id_order, s.in_order_sent, '
+      + 'COALESCE(cs.lb_client, c.lb_client, \'\') AS lb_client, COALESCE(cs.da_client_stock, \'\') AS da_client_stock '
+      + 'FROM client_stock_suggested_orders s '
+      + 'INNER JOIN client_stocks cs ON cs.co_client_stock = s.co_client_stock '
+      + 'LEFT JOIN clients c ON c.id_client = s.id_client '
+      + 'WHERE cs.st_delivery IN (?, ?, ?) '
+      + 'ORDER BY s.da_suggested DESC';
+    const persistedStatuses = [DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SAVED];
+
+    try {
+      await this.deleteOrphanSuggestedOrderSnapshots(dbServ);
+      const data = await dbServ.executeSql(select, persistedStatuses);
+      const items: ItemListaPedidoSugerido[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        const row = data.rows.item(i);
+        const header = this.mapSuggestedOrderHeaderRow(row);
+        items.push({
+          ...header,
+          lbClient: row.lb_client ?? '',
+          daClientStock: row.da_client_stock ?? '',
+        });
+      }
+      return items;
+    } catch (e) {
+      console.log('[getAllSuggestedOrderSnapshots]', e);
+      return [];
+    }
+  }
+
+  async getSuggestedOrderSnapshotByCo(
+    dbServ: SQLiteObject,
+    coClientStockSuggestedOrder: string,
+  ): Promise<ClientStockSuggestedOrder | null> {
+    if (!coClientStockSuggestedOrder) {
+      return null;
+    }
+    try {
+      const headerData = await dbServ.executeSql(
+        'SELECT * FROM client_stock_suggested_orders WHERE co_client_stock_suggested_order = ? LIMIT 1',
+        [coClientStockSuggestedOrder],
+      );
+      if (headerData.rows.length < 1) {
+        return null;
+      }
+      const snapshot = this.mapSuggestedOrderHeaderRow(headerData.rows.item(0));
+      const detailData = await dbServ.executeSql(
+        'SELECT * FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order = ? ORDER BY posicion ASC',
+        [coClientStockSuggestedOrder],
+      );
+      snapshot.details = [];
+      for (let i = 0; i < detailData.rows.length; i++) {
+        snapshot.details.push(this.mapSuggestedOrderDetailRow(detailData.rows.item(i)));
+      }
+      return snapshot;
+    } catch (e) {
+      console.log('[getSuggestedOrderSnapshotByCo]', e);
+      return null;
+    }
+  }
+
+  mapSnapshotToPreviewData(snapshot: ClientStockSuggestedOrder): {
+    productsSuggested: ProductSuggestedUtil[];
+    clientStockDetails: ClientStocksDetail[];
+    empresaSeleccionada: Enterprise;
+    diasDesdeUltimoInventario: number;
+    diasHastaSiguienteInventario: number;
+    monedaInicial: CurrencyEnterprise | null;
+    suggestedOrderByDispatchAndReturn: boolean;
+    blockCreateSuggestedOrder: boolean;
+  } {
+    const productsSuggested = this.mapSnapshotDetailsToProductSuggestedUtil(snapshot.details);
+    const clientStockDetails = this.mapSnapshotDetailsToClientStockDetails(snapshot.details);
+    const empresaSeleccionada = {
+      idEnterprise: snapshot.idEnterprise,
+      coEnterprise: snapshot.coEnterprise,
+    } as Enterprise;
+    const monedaInicial = snapshot.idCurrency != null && snapshot.coCurrency
+      ? ({ idCurrency: snapshot.idCurrency, coCurrency: snapshot.coCurrency } as CurrencyEnterprise)
+      : null;
+
+    return {
+      productsSuggested,
+      clientStockDetails,
+      empresaSeleccionada,
+      diasDesdeUltimoInventario: snapshot.daysSinceLast ?? 1,
+      diasHastaSiguienteInventario: snapshot.daysUntilNext ?? 1,
+      monedaInicial,
+      suggestedOrderByDispatchAndReturn: Number(snapshot.byDispatchAndReturn) === 1,
+      blockCreateSuggestedOrder: this.isSuggestedOrderSent(snapshot),
+    };
+  }
+
+  private mapSnapshotDetailsToProductSuggestedUtil(
+    details: ClientStockSuggestedOrderDetail[],
+  ): ProductSuggestedUtil[] {
+    const byProduct = new Map<number, ProductSuggestedUtil>();
+    for (const detail of details) {
+      let product = byProduct.get(detail.idProduct);
+      if (!product) {
+        product = new ProductSuggestedUtil(detail.idProduct, []);
+        byProduct.set(detail.idProduct, product);
+      }
+      product.unitsSuggested.push(new UnitSuggestedUtil(
+        detail.idUnit,
+        detail.coUnit,
+        detail.idProductUnit,
+        detail.quUnitSuggested,
+        detail.previousStock,
+        detail.currentStock,
+        detail.dispatchedStock,
+        detail.straightSwapStock,
+        detail.returnedStock,
+        detail.initialStock,
+        detail.estimatedDailyUnits,
+        detail.soldUnits,
+      ));
+    }
+    return Array.from(byProduct.values());
+  }
+
+  private mapSnapshotDetailsToClientStockDetails(
+    details: ClientStockSuggestedOrderDetail[],
+  ): ClientStocksDetail[] {
+    const byProduct = new Map<number, ClientStocksDetail>();
+    for (const detail of details) {
+      let stockDetail = byProduct.get(detail.idProduct);
+      if (!stockDetail) {
+        stockDetail = new ClientStocksDetail(
+          null,
+          '',
+          '',
+          detail.idProduct,
+          detail.coProduct,
+          detail.naProduct,
+          detail.idEnterprise,
+          detail.coEnterprise,
+          false,
+          detail.posicion,
+          true,
+          [],
+          [],
+        );
+        byProduct.set(detail.idProduct, stockDetail);
+      }
+      stockDetail.clientStockDetailUnits.push({
+        idClientStockDetailUnit: 0,
+        coClientStockDetailUnit: '',
+        coClientStockDetail: '',
+        coProductUnit: detail.coProductUnit,
+        idUnit: detail.idUnit,
+        coUnit: detail.coUnit,
+        idProductUnit: detail.idProductUnit,
+        naUnit: detail.naUnit,
+        quStock: detail.currentStock,
+        quSuggested: detail.quUnitSuggested,
+        coEnterprise: detail.coEnterprise,
+        idEnterprise: detail.idEnterprise,
+        quUnit: 0,
+        ubicacion: '',
+        isEdit: false,
+        nuBatch: '',
+        daExpiration: '',
+        posicion: detail.posicion,
+        isSave: true,
+      });
+    }
+    return Array.from(byProduct.values());
+  }
+
   deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
     let queries: any[] = [];
     const deleteStatement = "DELETE FROM client_stocks WHERE co_client_stock = ?";
@@ -1050,6 +2248,7 @@ export class InventariosLogicService {
       await dbServ.sqlBatch(batch);
       console.log("SE GUARDO CLIENT_STOCKS");
       await this.saveClientStocksDetails(dbServ,this.newClientStock.coClientStock, this.newClientStock.clientStockDetails);
+      await this.persistSuggestedOrderAfterClientStockSave(dbServ);
     } catch (e) {
       console.log("ERROR GUARDAR CLIENT_STOCKS");
       console.log(e);
@@ -1254,7 +2453,7 @@ export class InventariosLogicService {
 
   getPreviousClientStock(dbServ: SQLiteObject, idClient: number, idAddressClient: number, coClientStock: string) {
     let selectStatement = 
-      "SELECT * FROM client_stocks WHERE id_client = ? AND id_address_client = ? AND co_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
+      "SELECT * FROM client_stocks WHERE id_client = ? AND id_address_client = ? AND co_client_stock < ? AND id_client_stock <> 0 ORDER BY da_client_stock DESC LIMIT 1";
 
     return dbServ.executeSql(selectStatement, [idClient, idAddressClient, coClientStock]).then(result => {
       if(result.rows.length > 0){
@@ -1480,9 +2679,11 @@ export class InventariosLogicService {
   }
 
   deleteClientStock(dbServ: SQLiteObject, coClientStock: string) {
-    let deleteStatement = "DELETE FROM client_stocks WHERE co_client_stock = ?";
-    return dbServ.executeSql(deleteStatement, [coClientStock]).then(data => {
-      return Promise.resolve(true);
+    return this.deleteSuggestedOrderSnapshot(dbServ, coClientStock).then(() => {
+      let deleteStatement = "DELETE FROM client_stocks WHERE co_client_stock = ?";
+      return dbServ.executeSql(deleteStatement, [coClientStock]).then(data => {
+        return Promise.resolve(true);
+      });
     }).catch(e => {
       console.log("Error al ejecutar deleteClientStock.");
       console.log(e);
@@ -1571,29 +2772,35 @@ getInvoiceDetailUnitsFromLastClientInvoice(
     "INNER JOIN invoice_details id ON id.id_invoice_detail = idu.id_invoice_detail " +
     "INNER JOIN invoices inv ON inv.id_invoice = id.id_invoice " +
     "WHERE inv.id_client = ? AND inv.id_address_client = ? " +
-    "AND inv.id_invoice = (" +
-      "SELECT id_invoice FROM invoices " +
+    "AND substr(inv.da_invoice, 1, 10) = (" +
+      "SELECT substr(da_invoice, 1, 10) FROM invoices " +
       "WHERE id_client = ? AND id_address_client = ? " +
       "ORDER BY da_invoice DESC, id_invoice DESC LIMIT 1" +
     ") AND idu.id_product_unit IN (" + idProductUnits.join(",") + ")";
 
   return dbServ.executeSql(select, [idClient, idAddressClient, idClient, idAddressClient]).then(data => {
-    const invoiceDetailUnits: InvoiceDetailUnit[] = [];
+    const byProductUnit = new Map<number, InvoiceDetailUnit>();
     for (let i = 0; i < data.rows.length; i++) {
       const item = data.rows.item(i);
-      invoiceDetailUnits.push({
-        idInvoiceDetailUnit: item.id_invoice_detail_unit,
-        coInvoiceDetailUnit: item.co_invoice_detail_unit,
-        idProductUnit: item.id_product_unit,
-        coProductUnit: item.co_product_unit,
-        idInvoiceDetail: item.id_invoice_detail,
-        coInvoiceDetail: item.co_invoice_detail,
-        quInvoice: item.qu_invoice,
-        coEnterprise: item.co_enterprise,
-        idEnterprise: item.id_enterprise
-      });
+      const idProductUnit = item.id_product_unit;
+      const existing = byProductUnit.get(idProductUnit);
+      if (existing !== undefined) {
+        existing.quInvoice += item.qu_invoice;
+      } else {
+        byProductUnit.set(idProductUnit, {
+          idInvoiceDetailUnit: item.id_invoice_detail_unit,
+          coInvoiceDetailUnit: item.co_invoice_detail_unit,
+          idProductUnit,
+          coProductUnit: item.co_product_unit,
+          idInvoiceDetail: item.id_invoice_detail,
+          coInvoiceDetail: item.co_invoice_detail,
+          quInvoice: item.qu_invoice,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise
+        });
+      }
     }
-    return invoiceDetailUnits;
+    return Array.from(byProductUnit.values());
   });
 }
 
@@ -1642,7 +2849,7 @@ let select = "select *  from return_details rd where co_return in "+
 "(SELECT r.co_return from returns r where r.id_type in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
-  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return >= '"+dateLastInventory.substring(0, 10)+"') "+
+  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.id_return <> 0 and r.da_return >= '"+dateLastInventory.substring(0, 10)+"') "+
 "and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN ('"+coUnits.join("','")+"')";
 
   return dbServ.executeSql(select, []).then(data => {

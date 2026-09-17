@@ -1,6 +1,16 @@
 [
   {
+
+    "sql": "CREATE TABLE IF NOT EXISTS client_stock_suggested_orders (id_client_stock_suggested_order INTEGER, co_client_stock_suggested_order VARCHAR(50) PRIMARY KEY, co_client_stock VARCHAR(50) NOT NULL, id_client_stock INTEGER, id_client INTEGER, co_client VARCHAR(50), id_address_client INTEGER, co_address_client VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(50), id_user INTEGER, co_user VARCHAR(50), days_since_last INTEGER NOT NULL DEFAULT 1, days_until_next INTEGER NOT NULL DEFAULT 1, by_dispatch_and_return INTEGER NOT NULL DEFAULT 0, id_currency INTEGER, co_currency VARCHAR(30), da_suggested TIMESTAMP, nu_details INTEGER NOT NULL DEFAULT 0, co_order TEXT, id_order INTEGER, in_order_sent INTEGER NOT NULL DEFAULT 0);",
+    "description": "Snapshot cabecera de pedido sugerido por inventario."
+  },
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS client_stock_suggested_order_details (id_client_stock_suggested_order_detail INTEGER, co_client_stock_suggested_order_detail VARCHAR(50) PRIMARY KEY, co_client_stock_suggested_order VARCHAR(50) NOT NULL, id_product INTEGER NOT NULL, co_product VARCHAR(100), na_product VARCHAR(100), id_product_unit INTEGER NOT NULL, co_product_unit VARCHAR(50), id_unit INTEGER, co_unit VARCHAR(50), na_unit VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(50), posicion INTEGER NOT NULL DEFAULT 0, qu_unit_suggested NUMERIC NOT NULL DEFAULT 0, previous_stock NUMERIC NOT NULL DEFAULT 0, current_stock NUMERIC NOT NULL DEFAULT 0, dispatched_stock NUMERIC NOT NULL DEFAULT 0, straight_swap_stock NUMERIC NOT NULL DEFAULT 0, returned_stock NUMERIC NOT NULL DEFAULT 0, initial_stock NUMERIC NOT NULL DEFAULT 0, sold_units NUMERIC NOT NULL DEFAULT 0, estimated_daily_units NUMERIC NOT NULL DEFAULT 0);",
+    "description": "Líneas del snapshot de pedido sugerido por producto/unidad."
+  },
+  {
     "sql": "UPDATE versionsTables SET last_update = '1970-01-01 00:00:00.000', numreg = 0 WHERE id_table IN (9, 10);",
     "description": "VIS-INC-001: fuerza re-sync de incidence_motives (9) e incidence_types (10) para poblar active/required_comment tras migraciones v20/v21."
+
   }
 ]

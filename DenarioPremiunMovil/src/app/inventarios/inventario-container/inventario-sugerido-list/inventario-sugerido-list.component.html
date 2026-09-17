@@ -1,0 +1,47 @@
+<div class="clientStock-list">
+  <div class="sticky-searchbar">
+    <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
+      [placeholder]="inventariosLogicService.inventarioTags.get('INV_PED_SUG_LIST') || 'SUGERENCIAS DE PEDIDO'"
+      (ionInput)="handleInput($event)"></ion-searchbar>
+  </div>
+  <div class="clientStock-card">
+    <ion-row>
+      <ion-col size="12">
+        @if (hasNoVisibleItems()) {
+        <p class="search-empty-state ion-text-center">
+          {{ getEmptyListLabel() }}
+        </p>
+        }
+
+        @for (item of displayedItems; track item.coClientStockSuggestedOrder) {
+        <ion-list button detail="false">
+          <ion-item button detail="true" (click)="openSuggestedOrderPreview(item)">
+            <ion-label>
+              <p>
+                {{ inventariosLogicService.inventarioTags.get('INV_CLIENTE') || 'Cliente' }}:
+                {{ item.coClient }} - {{ item.lbClient }}
+              </p>
+              <p>
+                {{ inventariosLogicService.inventarioTags.get('INV_NRO_REF') || 'Nro. Ref.' }}:
+                {{ item.idClientStockSuggestedOrder ?? 0 }}
+              </p>
+              <p>
+                {{ inventariosLogicService.inventarioTags.get('INV_STATUS') || 'Estatus' }}:
+                {{ getStatusLabel(item) }}
+              </p>
+              <p>
+                {{ inventariosLogicService.inventarioTags.get('INV_FECHA') || 'Fecha' }}:
+                {{ item.daSuggested.replace('T', ' ') | date: 'dd/MM/yyyy HH:mm' }}
+              </p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+        }
+        <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
+          <ion-infinite-scroll-content loadingText="Por favor espere..."
+            loadingSpinner="bubbles"></ion-infinite-scroll-content>
+        </ion-infinite-scroll>
+      </ion-col>
+    </ion-row>
+  </div>
+</div>

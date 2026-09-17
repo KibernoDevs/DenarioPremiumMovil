@@ -49,6 +49,10 @@ import { Collection } from "./collection";
 import { Return } from "./return";
 import { ClientStocks } from "./client-stocks";
 import { Deposit } from "./deposit";
+import {
+  ClientStockSuggestedOrder,
+  ClientStockSuggestedOrderDetail,
+} from "./client-stock-suggested-order";
 
 export interface syncResponse {
     updateTime: string;
@@ -105,6 +109,8 @@ export interface syncResponse {
     returnTable: ReturnTable,
     clientStockTable: ClientStockTable,
     depositTable: DepositTable,
+    clientStockSuggestedOrdersTable: ClientStockSuggestedOrderTable,
+    clientStockSuggestedOrderDetailsTable: ClientStockSuggestedOrderDetailTable,
 }
 
 interface AddressClientTable {
@@ -642,4 +648,24 @@ interface DepositTable {
     numberOfPages: number;
     deletedRowsIds: number[];
     row: Deposit[];
+}
+interface ClientStockSuggestedOrderTable {
+    syncType: SyncType;
+    id: number;
+    tableName: string;
+    updateTime: string;
+    page: number;
+    numberOfPages: number;
+    deletedRowsIds: string[];
+    row: ClientStockSuggestedOrder[];
+}
+interface ClientStockSuggestedOrderDetailTable {
+    syncType: SyncType;
+    id: number;
+    tableName: string;
+    updateTime: string;
+    page: number;
+    numberOfPages: number;
+    deletedRowsIds: string[];
+    row: ClientStockSuggestedOrderDetail[];
 }

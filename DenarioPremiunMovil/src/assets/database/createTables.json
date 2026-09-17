@@ -587,5 +587,19 @@
     "name": "collection_detail_retentions",
     "idName": "id_collection_detail_retention",
     "sql": "CREATE TABLE IF NOT EXISTS collection_detail_retentions(id_collection_detail_retention INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_retention INTEGER, co_collect_retention VARCHAR(80), nu_amount_retention NUMERIC(29,4), nu_amount_retention_conversion NUMERIC(29,4),co_collection VARCHAR(30), posicion INTEGER, co_document VARCHAR(30), nu_voucher_retention VARCHAR(30), da_voucher_retention TIMESTAMP );"
+  },
+  {
+    "id": 85,
+    "name": "client_stock_suggested_orders",
+    "table": "clientStockSuggestedOrders",
+    "idName": "co_client_stock_suggested_order",
+    "sql": "CREATE TABLE IF NOT EXISTS client_stock_suggested_orders (id_client_stock_suggested_order INTEGER, co_client_stock_suggested_order VARCHAR(50) PRIMARY KEY, co_client_stock VARCHAR(50) NOT NULL, id_client_stock INTEGER, id_client INTEGER, co_client VARCHAR(50), id_address_client INTEGER, co_address_client VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(50), id_user INTEGER, co_user VARCHAR(50), days_since_last INTEGER NOT NULL DEFAULT 1, days_until_next INTEGER NOT NULL DEFAULT 1, by_dispatch_and_return INTEGER NOT NULL DEFAULT 0, id_currency INTEGER, co_currency VARCHAR(30), da_suggested TIMESTAMP, nu_details INTEGER NOT NULL DEFAULT 0, co_order TEXT, id_order INTEGER, in_order_sent INTEGER NOT NULL DEFAULT 0);"
+  },
+  {
+    "id": 86,
+    "name": "client_stock_suggested_order_details",
+    "table": "clientStockSuggestedOrderDetails",
+    "idName": "co_client_stock_suggested_order_detail",
+    "sql": "CREATE TABLE IF NOT EXISTS client_stock_suggested_order_details (id_client_stock_suggested_order_detail INTEGER, co_client_stock_suggested_order_detail VARCHAR(50) PRIMARY KEY, co_client_stock_suggested_order VARCHAR(50) NOT NULL, id_product INTEGER NOT NULL, co_product VARCHAR(100), na_product VARCHAR(100), id_product_unit INTEGER NOT NULL, co_product_unit VARCHAR(50), id_unit INTEGER, co_unit VARCHAR(50), na_unit VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(50), posicion INTEGER NOT NULL DEFAULT 0, qu_unit_suggested NUMERIC NOT NULL DEFAULT 0, previous_stock NUMERIC NOT NULL DEFAULT 0, current_stock NUMERIC NOT NULL DEFAULT 0, dispatched_stock NUMERIC NOT NULL DEFAULT 0, straight_swap_stock NUMERIC NOT NULL DEFAULT 0, returned_stock NUMERIC NOT NULL DEFAULT 0, initial_stock NUMERIC NOT NULL DEFAULT 0, sold_units NUMERIC NOT NULL DEFAULT 0, estimated_daily_units NUMERIC NOT NULL DEFAULT 0);"
   }
 ]
