@@ -1715,7 +1715,7 @@ export class CobrosGeneralComponent implements OnInit {
    * Valida la tasa manual al perder el foco (evento de ionBlur).
    */
   public onManualRateBlur(event?: any): void {
-    if (this.isSentDelivery) {
+    if (this.isManualRateReadOnly) {
       return;
     }
     const rawValue = event?.detail?.value ?? event?.target?.value;
@@ -1745,7 +1745,7 @@ export class CobrosGeneralComponent implements OnInit {
    * Solo valida y actualiza el valor en pantalla; el recálculo ocurre en blur.
    */
   public onManualRateInput(event: any): void {
-    if (this.isSentDelivery) {
+    if (this.isManualRateReadOnly) {
       return;
     }
     const rawValue = event?.detail?.value ?? event?.target?.value;
@@ -1785,6 +1785,9 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   private async applySelectedRate(rate: number): Promise<void> {
+    if (this.isManualRateReadOnly) {
+      return;
+    }
     if (!this.isValidManualRate(rate)) {
       this.manualRateError = 'Ingrese un valor numérico mayor o igual a 1';
       return;
@@ -2069,8 +2072,17 @@ export class CobrosGeneralComponent implements OnInit {
     return this.collectService.rateSelected;
   }
   set rateSelected(val: number) {
+    if (this.isManualRateReadOnly) {
+      return;
+    }
     this.collectService.rateSelected = val;
   }
+
+  /** Tasa manual bloqueada (cobro enviado / por enviar / cabecera sincronizada). */
+  get isManualRateReadOnly(): boolean {
+    return this.collectService.isManualExchangeRateLocked();
+  }
+
   // True cuando el cobro ya fue enviado/por enviar o status 6
   get isSentDelivery(): boolean {
     const st = Number(this.collectService?.collection?.stDelivery);
@@ -2128,7 +2140,8 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   shouldShowManualRateSendError(): boolean {
-    return this.collectService.sendValidationAttempted
+    return !this.isManualRateReadOnly
+      && this.collectService.sendValidationAttempted
       && this.collectService.hasManualRateFieldError();
   }
 
