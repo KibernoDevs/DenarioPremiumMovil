@@ -77,9 +77,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
       this.currencyService.setup(this.db.getDatabase());
 
       this.getTags().then(() => {
-        if (this.imageServices.isProductImagesFromDatabase()) {
-          void this.imageServices.hydrateDbProductImagesCache();
-        } else {
+        if (!this.imageServices.isProductImagesFromDatabase()) {
           this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
         }
       });
