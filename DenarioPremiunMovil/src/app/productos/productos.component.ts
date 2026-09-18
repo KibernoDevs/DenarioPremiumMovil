@@ -76,8 +76,12 @@ export class ProductosComponent implements OnInit, OnDestroy {
       });
       this.currencyService.setup(this.db.getDatabase());
 
-      this.getTags().then(() => {  //buscamos los tags
-        this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+      this.getTags().then(() => {
+        if (this.imageServices.isProductImagesFromDatabase()) {
+          void this.imageServices.hydrateDbProductImagesCache();
+        } else {
+          this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+        }
       });
     });
     this.productService.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";

@@ -1,14 +1,16 @@
-import { ChangeDetectorRef, Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { ServicesService } from '../services.service';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, tap } from 'rxjs/operators';
-import { Imagenes, ResponseFiles, ResponseImages } from 'src/app/modelos/imagenes';
-import { Directory, DownloadFileResult, Filesystem } from '@capacitor/filesystem';
+import { map } from 'rxjs/operators';
+import { Imagenes } from 'src/app/modelos/imagenes';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { DateServiceService } from '../dates/date-service.service';
-import { from, Subject, Subscription } from 'rxjs';
+import { from, Subject } from 'rxjs';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
+import { CapacitorHttp } from '@capacitor/core';
+import { GlobalConfigService } from '../globalConfig/global-config.service';
+import { Product } from 'src/app/modelos/tables/product';
 
 
 @Injectable({
@@ -16,8 +18,21 @@ import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacito
 })
 export class ImageServicesService {
 
+  readonly productImagePlaceholder = '../../../assets/images/nodisponible.png';
+
   private services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
+  private injector = inject(Injector);
+  private globalConfig = inject(GlobalConfigService);
+  private _syncDb?: SynchronizationDBService;
+
+  /** Lazy: evita NG0200 (SyncDB → ReturnDB → ProductService → ImageServices → SyncDB). */
+  private get syncDb(): SynchronizationDBService {
+    if (!this._syncDb) {
+      this._syncDb = this.injector.get(SynchronizationDBService);
+    }
+    return this._syncDb;
+  }
   public downloadFileList: string[] = [];
   public removeFileList: string[] = [];
   public downloadFileListPdf: string[] = [];
@@ -32,6 +47,8 @@ export class ImageServicesService {
 
   public mapImages: Map<string, string[]> = new Map<string, string[]>();
   public mapImagesFiles: Map<string, string[]> = new Map<string, string[]>();
+  /** Cache co_product -> data URI cuando productImagesFromDatabase=true */
+  public mapDbProductImages: Map<string, string> = new Map<string, string>();
   public mapPdfFiles: Map<string, string[]> = new Map<string, string[]>();
   public mapLogos: Map<string, string> = new Map<string, string>();
   public mapLogosByFilename: Map<string, string> = new Map<string, string>();
@@ -44,6 +61,134 @@ export class ImageServicesService {
   constructor(
     private http: HttpClient,
   ) { }
+
+  isProductImagesFromDatabase(): boolean {
+    const flag = this.globalConfig.get('productImagesFromDatabase');
+    return flag != null && flag.toLowerCase() === 'true';
+  }
+
+  /** Base64 puro para persistir en SQLite (sin prefijo data:image). */
+  stripProductImageForStorage(raw: unknown): string | null {
+    if (raw == null || typeof raw !== 'string') {
+      return null;
+    }
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (trimmed.startsWith('data:image/')) {
+      const idx = trimmed.indexOf('base64,');
+      if (idx >= 0) {
+        const payload = trimmed.substring(idx + 7).trim();
+        return payload || null;
+      }
+    }
+    return trimmed;
+  }
+
+  normalizeProductImageBase64(raw: string | null | undefined): string | null {
+    if (!raw || typeof raw !== 'string') {
+      return null;
+    }
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (trimmed.startsWith('data:image/')) {
+      return trimmed;
+    }
+    return `data:image/png;base64,${trimmed}`;
+  }
+
+  cacheDbProductImagesFromSync(products: Product[]): void {
+    if (!this.isProductImagesFromDatabase()) {
+      return;
+    }
+    for (const product of products) {
+      if (!product?.coProduct) {
+        continue;
+      }
+      const normalized = this.normalizeProductImageBase64(product.image);
+      if (normalized) {
+        this.mapDbProductImages.set(product.coProduct, normalized);
+      } else {
+        this.mapDbProductImages.delete(product.coProduct);
+      }
+    }
+  }
+
+  async hydrateDbProductImagesCache(): Promise<void> {
+    if (!this.isProductImagesFromDatabase()) {
+      return;
+    }
+    try {
+      const db = this.syncDb.getDatabase();
+      const result = await db.executeSql(
+        "SELECT co_product, image FROM products WHERE image IS NOT NULL AND TRIM(image) <> ''",
+        []
+      );
+      for (let i = 0; i < result.rows.length; i++) {
+        const row = result.rows.item(i);
+        const normalized = this.normalizeProductImageBase64(row.image);
+        if (normalized) {
+          this.mapDbProductImages.set(row.co_product, normalized);
+        }
+      }
+    } catch (err) {
+      console.warn('[hydrateDbProductImagesCache]', err);
+    }
+  }
+
+  async getProductImageFromDatabase(coProduct: string): Promise<string | null> {
+    if (!coProduct) {
+      return null;
+    }
+    const cached = this.mapDbProductImages.get(coProduct);
+    if (cached) {
+      return cached;
+    }
+    try {
+      const db = this.syncDb.getDatabase();
+      const result = await db.executeSql(
+        'SELECT image FROM products WHERE co_product = ? LIMIT 1',
+        [coProduct]
+      );
+      if (result.rows.length > 0) {
+        const normalized = this.normalizeProductImageBase64(result.rows.item(0).image);
+        if (normalized) {
+          this.mapDbProductImages.set(coProduct, normalized);
+          this.imageLoaded$.next({ imgName: coProduct, imgSrc: normalized });
+          return normalized;
+        }
+      }
+    } catch (err) {
+      console.warn('[getProductImageFromDatabase]', coProduct, err);
+    }
+    return null;
+  }
+
+  getProductThumbnail(coProduct: string): string {
+    if (!coProduct) {
+      return this.productImagePlaceholder;
+    }
+    if (this.isProductImagesFromDatabase()) {
+      const cached = this.mapDbProductImages.get(coProduct);
+      if (cached) {
+        return cached;
+      }
+      void this.getProductImageFromDatabase(coProduct);
+      return this.productImagePlaceholder;
+    }
+    return this.mapImagesFiles.get(coProduct)?.[0] ?? this.productImagePlaceholder;
+  }
+
+  getProductImagesArray(coProduct: string): string[] | undefined {
+    if (this.isProductImagesFromDatabase()) {
+      const thumb = this.getProductThumbnail(coProduct);
+      return thumb !== this.productImagePlaceholder ? [thumb] : undefined;
+    }
+    return this.mapImagesFiles.get(coProduct);
+  }
 
   async getServerPdfList() {
     if (localStorage.getItem("lastLoginPdf") == null)
@@ -453,6 +598,19 @@ export class ImageServicesService {
   }
 
   public emitCachedImages(): void {
+    // 0) Imágenes embebidas en products.image (modo productImagesFromDatabase)
+    try {
+      if (this.isProductImagesFromDatabase() && this.mapDbProductImages.size > 0) {
+        for (const [coProduct, base64] of this.mapDbProductImages.entries()) {
+          if (base64) {
+            this.imageLoaded$.next({ imgName: coProduct, imgSrc: base64 });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[emitCachedImages] db cache failed', err);
+    }
+
     // 1) si tenemos cache por filename (mapImagesFilesByFilename), emite cada entry
     try {
       if (this.mapImagesFilesByFilename && this.mapImagesFilesByFilename.size > 0) {
@@ -560,6 +718,11 @@ export class ImageServicesService {
   }
 
   public async getImagesForProduct(productId: string): Promise<string[]> {
+    if (this.isProductImagesFromDatabase()) {
+      const image = await this.getProductImageFromDatabase(productId);
+      return image ? [image] : [];
+    }
+
     const filenames = this.getRelatedImageFilenames(productId);
     if (filenames.length === 0) {
       return [];
@@ -595,6 +758,15 @@ export class ImageServicesService {
 
   public getImgForProduct(productId: string): string | null {
     if (!productId) return null;
+
+    if (this.isProductImagesFromDatabase()) {
+      const cached = this.mapDbProductImages.get(productId);
+      if (cached) {
+        return cached;
+      }
+      void this.getProductImageFromDatabase(productId);
+      return this.productImagePlaceholder;
+    }
 
     try {
       const relatedFilenames = this.getRelatedImageFilenames(productId);
@@ -640,7 +812,7 @@ export class ImageServicesService {
     }
 
     // Si llegamos aquí, no hay imagen lista; retornar null (puede usarse placeholder en la UI)
-    return '../../../assets/images/nodisponible.png';
+    return this.productImagePlaceholder;
   }
 
   /**

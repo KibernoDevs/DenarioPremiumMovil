@@ -447,20 +447,29 @@ export class SynchronizationComponent implements OnInit {
       return;
     }
 
+    const navigateHomeWithLogos = () => {
+      this.imageServices.getServerLogoList().then(logoObs => {
+        logoObs.subscribe({
+          complete: () => {
+            this.router.navigate(['home']).then(() => {
+              if (!this.imageServices.isProductImagesFromDatabase()) {
+                this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+              }
+              this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
+            });
+          },
+        });
+      });
+    };
+
+    if (this.imageServices.isProductImagesFromDatabase()) {
+      void this.imageServices.hydrateDbProductImagesCache().then(() => navigateHomeWithLogos());
+      return;
+    }
+
     this.imageServices.getServerImageList().then(obs => {
       obs.subscribe({
-        complete: () => {
-          this.imageServices.getServerLogoList().then(logoObs => {
-            logoObs.subscribe({
-              complete: () => {
-                this.router.navigate(['home']).then(() => {
-                  this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
-                  this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
-                });
-              },
-            });
-          });
-        },
+        complete: () => navigateHomeWithLogos(),
       });
     });
   }

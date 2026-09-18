@@ -1499,7 +1499,7 @@ export class PedidosService {
         })
 
         //IMAGENES
-        let imagenesProduct = this.imageServices.mapImagesFiles.get(item.coProduct);
+        let imagenesProduct = this.imageServices.getProductImagesArray(item.coProduct);
         let imagenProduct = '';
         if (imagenesProduct === undefined
           || imagenesProduct === null
@@ -2346,7 +2346,7 @@ export class PedidosService {
             stock: prod.qu_stock,
             idEnterprise: prod.id_enterprise,
             coEnterprise: prod.co_enterprise,
-            images: this.imageServices.mapImagesFiles.get(prod.co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(prod.co_product)?.[0],
+            images: this.imageServices.getProductThumbnail(prod.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
@@ -2380,7 +2380,7 @@ export class PedidosService {
             stock: prod.qu_stock,
             idEnterprise: prod.id_enterprise,
             coEnterprise: prod.co_enterprise,
-            images: this.imageServices.mapImagesFiles.get(prod.co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(prod.co_product)?.[0],
+            images: this.imageServices.getProductThumbnail(prod.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,

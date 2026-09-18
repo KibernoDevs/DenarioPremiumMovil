@@ -1,0 +1,6 @@
+[
+  {
+    "sql": "ALTER TABLE products ADD COLUMN image TEXT;",
+    "description": "Se agrega la columna 'image' a 'products' para almacenar la imagen del producto sincronizada desde PremiumWS (Base64)."
+  }
+]
