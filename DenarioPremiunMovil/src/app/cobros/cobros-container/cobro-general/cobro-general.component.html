@@ -64,6 +64,15 @@
 
       @if(enabledManualRate){
       <ion-col size="6" size-sm="12" size-xs="12">
+        @if (isSentDelivery) {
+        <ion-item>
+          <ion-label>
+            {{this.collectService.collectionTags.get('COB_TASA')}}
+            {{this.collectService.localCurrency.coCurrency}}:
+          </ion-label>
+          <ion-label>{{this.currencyServices.formatNumber(this.collectService.collection.nuValueLocal)}}</ion-label>
+        </ion-item>
+        } @else {
         <ion-input type="number"
           label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
           label-placement="floating" fill="outline" min="1" step="0.01" [value]="rateSelected"
@@ -74,6 +83,7 @@
         <ion-label color="danger" class="campoObligatorio">
           {{ manualRateError || 'Ingrese un valor numérico mayor o igual a 1' }}
         </ion-label>
+        }
         }
       </ion-col>
       }

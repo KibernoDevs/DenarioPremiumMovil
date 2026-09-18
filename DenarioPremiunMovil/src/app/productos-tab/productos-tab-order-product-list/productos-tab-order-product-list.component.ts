@@ -160,6 +160,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
       this.noProductsAlertShown = (this.orderUtilList.length == 0);
+      this.refreshVisibleProductImages();
 
     });
 
@@ -185,6 +186,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
               this.onIonInfinite(null);
             }
             this.noProductsAlertShown = (this.orderUtilList.length == 0);
+            this.refreshVisibleProductImages();
 
           });
       }
@@ -210,6 +212,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
             this.noProductsAlertShown = (this.orderUtilList.length == 0);
+            this.refreshVisibleProductImages();
           });
       }
     });
@@ -233,6 +236,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
             this.noProductsAlertShown = (this.orderUtilList.length == 0);
+            this.refreshVisibleProductImages();
           });
       }
 
@@ -248,6 +252,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.warehouseList = this.orderServ.listaWarehouse;
       this.nameProductStructure = this.orderServ.getTag("PED_CARRITO")
       this.noProductsAlertShown = (this.orderUtilList.length == 0);
+      this.refreshVisibleProductImages();
     });
 
     this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
@@ -319,10 +324,24 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.orderUtilList.push(item);
       }
       this.noProductsAlertShown = (this.orderUtilList.length == 0);
+      this.refreshVisibleProductImages();
     }
     if (ev) {
       ev.target.complete(); //termina la animacion del infiniteScroll
     }
+  }
+
+  refreshVisibleProductImages(): void {
+    if (!this.orderServ.showProductImages) {
+      return;
+    }
+    const coProducts = this.orderUtilList.map(p => p.coProduct).filter(Boolean);
+    this.imageServices.warmProductListImagesMap(coProducts, this.imagesMap);
+    this.cd.markForCheck();
+  }
+
+  getProductListImageSrc(coProduct: string): string {
+    return this.imageServices.getProductListRowImageSrc(coProduct, this.imagesMap);
   }
 
   loadProductToModal(prod: OrderUtil) {
@@ -340,6 +359,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.productImages = [];
       //al ocultar el modal agregamos el producto al carrito
       this.orderServ.alCarrito(this.productoModal);
+      this.refreshVisibleProductImages();
     }
   }
 
@@ -368,10 +388,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (this.productImages.length > 0) {
       return this.productImages;
     }
-    const fallback = this.productoModal?.coProduct
-      ? this.imageServices.getImgForProduct(this.productoModal.coProduct)
-      : '../../../assets/images/nodisponible.png';
-    return [fallback || '../../../assets/images/nodisponible.png'];
+    const coProduct = this.productoModal?.coProduct;
+    if (!coProduct) {
+      return [this.imageServices.productImagePlaceholder];
+    }
+    return [this.getProductListImageSrc(coProduct)];
   }
 
   private async loadProductImages(): Promise<void> {

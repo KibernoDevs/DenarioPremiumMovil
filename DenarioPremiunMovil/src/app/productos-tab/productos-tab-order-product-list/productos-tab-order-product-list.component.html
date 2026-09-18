@@ -38,7 +38,7 @@
           <ion-label fixed class="fixedLabel" *ngIf="orderServ.showProductImages">
             <ion-img (click)="loadProductToModal(product)" loading="lazy"
               (ionError)="product.imagenProduct = orderServ.imgNoDisponible" class="productImage" alt=""
-              [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'">
+              [src]="getProductListImageSrc(product.coProduct)">
             </ion-img>
           </ion-label>
           <!-- Nombre, codigo, precio, stock, puntos, minimo, multiplo -->
@@ -327,7 +327,7 @@
                       } @else {
                       <swiper-slide class="swiperSlide">
                         <img class="sizeImgProduct"
-                          [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'"
+                          [src]="getProductListImageSrc(productoModal.coProduct)"
                           (click)="openImageZoom(0, $event)" />
                       </swiper-slide>
                       }

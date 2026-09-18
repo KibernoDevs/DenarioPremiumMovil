@@ -463,7 +463,8 @@ export class SynchronizationComponent implements OnInit {
     };
 
     if (this.imageServices.isProductImagesFromDatabase()) {
-      void this.imageServices.hydrateDbProductImagesCache().then(() => navigateHomeWithLogos());
+      navigateHomeWithLogos();
+      this.imageServices.scheduleDbProductImagesHydrateAfterSync();
       return;
     }
 

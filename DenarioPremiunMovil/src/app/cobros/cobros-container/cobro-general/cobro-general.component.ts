@@ -1715,6 +1715,9 @@ export class CobrosGeneralComponent implements OnInit {
    * Valida la tasa manual al perder el foco (evento de ionBlur).
    */
   public onManualRateBlur(event?: any): void {
+    if (this.isSentDelivery) {
+      return;
+    }
     const rawValue = event?.detail?.value ?? event?.target?.value;
     const trimmed = String(rawValue ?? this.rateSelected ?? '').trim();
 
@@ -1742,6 +1745,9 @@ export class CobrosGeneralComponent implements OnInit {
    * Solo valida y actualiza el valor en pantalla; el recálculo ocurre en blur.
    */
   public onManualRateInput(event: any): void {
+    if (this.isSentDelivery) {
+      return;
+    }
     const rawValue = event?.detail?.value ?? event?.target?.value;
     const trimmed = String(rawValue ?? '').trim();
 

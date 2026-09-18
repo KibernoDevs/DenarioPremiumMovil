@@ -13,7 +13,7 @@
           @if(productService.catalogShowProductImages){
           <ion-label fixed class="fixedLabel contenedorImgMargin">
             <img class="productImage" alt="" loading="lazy"
-              [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
+              [src]="getProductListImageSrc(product.coProduct)" />
           </ion-label>
           }
           <ion-label class="textList espaciotextoListaProduc">

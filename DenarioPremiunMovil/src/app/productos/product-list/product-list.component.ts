@@ -87,15 +87,8 @@ export class ProductListComponent implements OnInit {
       })
     );
 
-    // Reemite imágenes cacheadas (si existen)
-    if (this.productService.catalogShowProductImages) {
-      if (this.imageServices.isProductImagesFromDatabase()) {
-        void this.imageServices.hydrateDbProductImagesCache().then(() => {
-          this.imageServices.emitCachedImages();
-        });
-      } else {
-        this.imageServices.emitCachedImages();
-      }
+    if (this.productService.catalogShowProductImages && !this.imageServices.isProductImagesFromDatabase()) {
+      this.imageServices.emitCachedImages();
     }
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
@@ -118,17 +111,9 @@ export class ProductListComponent implements OnInit {
         if (this.productService.catalogUnitByPriceList) {
           this.fillListPrices(this.productList);
         }
+        this.prefetchVisibleProductImages();
       } else {
-        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
-            this.noProductsAlertShown = false;
-            this.productList = this.filterProductList(this.productService.productList);
-            if (this.productService.catalogUnitByPriceList) {
-              this.fillListPrices(this.productList);
-            }
-            this.noProductsAlertShown = this.productList.length === 0;
-            this.message.hideLoading();
-          });
+        void this.runProductSearch(0, true);
       }
     } else {
       this.idProductStructureList = this.productStructureService.idProductStructureList;
@@ -141,6 +126,7 @@ export class ProductListComponent implements OnInit {
             this.fillListPrices(this.productList);
           }
           this.noProductsAlertShown = this.productList.length === 0;
+          this.prefetchVisibleProductImages();
         });
     }
   }
@@ -163,21 +149,10 @@ export class ProductListComponent implements OnInit {
   searchSubscription: Subscription = this.productService.productoSearch.subscribe((data) => {
     this.searchText = data;
     if (!this.searchText) {
-      this.message.hideLoading();
+      void this.message.hideLoading();
       return;
     }
-    if (this.searchText) {
-      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
-          this.noProductsAlertShown = false;
-          this.productList = this.filterProductList(this.productService.productList);
-          if (this.productService.catalogUnitByPriceList) {
-            this.fillListPrices(this.productList);
-          }
-          this.noProductsAlertShown = this.productList.length === 0;
-          this.message.hideLoading();
-        });
-    }
+    void this.runProductSearch(0, true);
   });
 
   ngOnDestroy(): void {
@@ -185,21 +160,63 @@ export class ProductListComponent implements OnInit {
     this.subs.unsubscribe();
   }
 
+  private async runProductSearch(page: number, hideLoadingWhenDone: boolean): Promise<void> {
+    try {
+      if (page === 0) {
+        this.page = 0;
+        if (this.infiniteScroll) {
+          this.infiniteScroll.disabled = false;
+        }
+      }
+      await this.productService.getProductsSearchedByCoProductAndNaProduct(
+        this.db.getDatabase(),
+        this.searchText,
+        this.productService.empresaSeleccionada.idEnterprise,
+        this.defaultCurrency,
+        page,
+      );
+      this.noProductsAlertShown = false;
+      const batch = this.filterProductList(this.productService.productList);
+      if (this.productService.catalogUnitByPriceList) {
+        this.fillListPrices(batch);
+      }
+      if (page === 0) {
+        this.productList = batch;
+      } else {
+        this.productList = [...this.productList, ...batch];
+      }
+      this.noProductsAlertShown = this.productList.length === 0;
+      this.prefetchVisibleProductImages();
+    } finally {
+      if (hideLoadingWhenDone) {
+        await this.message.hideLoading();
+      }
+    }
+  }
+
+  private prefetchVisibleProductImages(): void {
+    if (!this.productService.catalogShowProductImages) {
+      return;
+    }
+    const coProducts = this.productList.map(p => p.coProduct).filter(Boolean);
+    this.imageServices.warmProductListImagesMap(coProducts, this.imagesMap);
+    this.cd.markForCheck();
+  }
+
+  getProductListImageSrc(coProduct: string): string {
+    return this.imageServices.getProductListRowImageSrc(coProduct, this.imagesMap);
+  }
+
   onIonInfinite(ev: any) {
     this.page++;
     if (this.searchText) {
-      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
-          const newProducts = this.productService.productList;
-          if (this.productService.catalogUnitByPriceList) {
-            this.fillListPrices(newProducts);
-          }
-          this.productList = [...this.productList, ...newProducts];
-          if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
-            this.infiniteScroll.disabled = true;
-          }
-          (ev as InfiniteScrollCustomEvent).target.complete();
-        });
+      void this.runProductSearch(this.page, false).finally(() => {
+        const newProducts = this.productService.productList;
+        if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
+          this.infiniteScroll.disabled = true;
+        }
+        (ev as InfiniteScrollCustomEvent).target.complete();
+      });
     } else {
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
@@ -211,22 +228,30 @@ export class ProductListComponent implements OnInit {
           if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
             this.infiniteScroll.disabled = true;
           }
+          this.prefetchVisibleProductImages();
           (ev as InfiniteScrollCustomEvent).target.complete();
         });
-      }
-
+    }
   }
 
-  onShowProductDetail(product: ProductUtil) {
-    console.log('Product selected: ' + product.naProduct);
+  async onShowProductDetail(product: ProductUtil) {
     this.selectedProduct = product;
-    this.productService.getProductDetailByIdProduct(this.db.getDatabase(), this.selectedProduct.idList, this.selectedProduct.idProduct, this.defaultCurrency).then(() => {
+    await this.message.showLoading();
+    try {
+      await this.productService.getProductDetailByIdProduct(
+        this.db.getDatabase(),
+        this.selectedProduct.idList,
+        this.selectedProduct.idProduct,
+        this.defaultCurrency,
+      );
       this.productDetail = this.productService.productDetail;
       this.selectedProductChanged.emit(this.productDetail);
       if (this.productService.catalogUnitByPriceList) {
         this.productService.listPrices = product.listPrices;
       }
-    });
+    } finally {
+      await this.message.hideLoading();
+    }
   }
 
   getPrecioConIVA(precio: number, iva: number): string {
