@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Injector } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
 import { NavController } from '@ionic/angular';
@@ -89,6 +89,7 @@ import {
   ClientStockSuggestedOrder,
   ClientStockSuggestedOrderDetail,
 } from 'src/app/modelos/tables/client-stock-suggested-order';
+import { ImageServicesService } from '../imageServices/image-services.service';
 
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
@@ -116,11 +117,12 @@ export class SynchronizationDBService {
   private returnService = inject(ReturnDatabaseService);
   private clientStockService = inject(InventariosLogicService);
   private depositService = inject(DepositService);
+  private injector = inject(Injector);
   private databaseReady!: BehaviorSubject<boolean>;
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 23;
+  private CURRENT_DB_VERSION: number = 24;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
 
@@ -985,20 +987,25 @@ export class SynchronizationDBService {
     let insertStatement = "INSERT OR REPLACE INTO products(" +
       'id_product,co_product,na_product,co_primary_unit,co_product_structure,' +
       'id_product_structure,tx_dimension,tx_packing,points,nu_priority,' +
-      'featured_product,tx_description, co_enterprise, id_enterprise, nu_tax' +
+      'featured_product,tx_description, co_enterprise, id_enterprise, nu_tax, image' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
+    const imageServices = this.injector.get(ImageServicesService);
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      const storedImage = imageServices.stripProductImageForStorage(obj.image);
+      obj.image = storedImage;
       statements.push([insertStatement, [obj.idProduct, obj.coProduct, obj.naProduct,
       obj.coPrimaryUnit, obj.coProductStructure, obj.idProductStructure, obj.txDimension,
       obj.txPacking, obj.points, obj.nuPriority, obj.featuredProduct,
-      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax]]);
+      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax, storedImage]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
-
+      if (arr.length > 0) {
+        this.injector.get(ImageServicesService).cacheDbProductImagesFromSync(arr);
+      }
     }).catch(e => {
       console.log(e);
     })

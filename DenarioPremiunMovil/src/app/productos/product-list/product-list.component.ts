@@ -89,7 +89,13 @@ export class ProductListComponent implements OnInit {
 
     // Reemite imágenes cacheadas (si existen)
     if (this.productService.catalogShowProductImages) {
-      this.imageServices.emitCachedImages();
+      if (this.imageServices.isProductImagesFromDatabase()) {
+        void this.imageServices.hydrateDbProductImagesCache().then(() => {
+          this.imageServices.emitCachedImages();
+        });
+      } else {
+        this.imageServices.emitCachedImages();
+      }
     }
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";

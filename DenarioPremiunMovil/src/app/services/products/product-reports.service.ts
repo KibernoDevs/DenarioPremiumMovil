@@ -307,9 +307,7 @@ export class ProductReportsService {
 
   private mapReportRow(row: Record<string, unknown>): ProductReportRow {
     const coProduct = this.sanitizeDisplayValue(row['co_product']);
-    const imageFromService = this.imageServices.getImgForProduct(coProduct);
-    const fallbackImage = this.imageServices.mapImagesFiles.get(coProduct)?.[0]
-      ?? '../../../assets/images/nodisponible.png';
+    const imageFromService = this.imageServices.getProductThumbnail(coProduct);
     const bulkUnits = this.sanitizeDisplayValue(row['bulk_units']);
     const txPacking = this.sanitizeDisplayValue(row['tx_packing']);
 
@@ -327,7 +325,7 @@ export class ProductReportsService {
       quMultiple: Number(row['qu_multiple'] ?? 1),
       bulkUnits: bulkUnits || txPacking,
       naProductStructure: this.sanitizeDisplayValue(row['na_product_structure']),
-      imageSrc: imageFromService ?? fallbackImage,
+      imageSrc: imageFromService,
     };
   }
 

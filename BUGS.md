@@ -246,6 +246,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-RATE-002] Fecha de tasa oculta con enabledManualRate ON
+
+- **Síntoma:** Con `enabledManualRate=true` y multimoneda, en General solo aparece el input de tasa manual; no se puede cambiar la fecha de tasa (`daRate`).
+- **Causa:** La fila `COB_FECHA_TASA` estaba dentro de `@if(!enabledManualRate && multiCurrency)` junto al selector histórico.
+- **Fix:** Fecha de tasa visible con `multiCurrency` aunque haya tasa manual; selector/lectura de tasa del catálogo siguen solo con `enabledManualRate=false`. `getDateRate` ya conserva la tasa manual (`keepManualRate`).
+- **Evitar:** No ocultar fecha de tasa al activar tasa manual; no mezclar selector histórico con input manual.
+- **Archivos:** `cobro-general.component.html`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DISC-005] Descuento de factura distorsiona descuento de cobro (%)
 
 - **Síntoma:** Factura con `document_sales.nu_amount_discount` > 0; al aplicar descuento de cobro (ej. 80 %) el Total Descuento y Monto a pagar son erróneos (magnitudes ~tasa o signos invertidos); en ambientes con descuento de factura en 0 no ocurre.
@@ -421,12 +432,12 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ## [INV-CLIENT-001] Toma del cliente anterior queda al cambiar cliente
 
-- **Síntoma:** En Inventarios, pestaña General: se toma inventario del cliente A, se cambia a cliente B y la toma (ítems/cantidades) de A sigue en B. Guardar/Enviar contamina datos.
-- **Causa:** General se destruye con `*ngSwitchCase`. El flag local `changeClient` se pierde. `cliente-selector.handleUpdateClientList` pone `checkClient = false`. `setClientfromSelector` aplicaba el cliente nuevo sin vaciar `clientStockDetails`/`typeStocks`.
-- **Fix:** Mismo contrato que Pedidos: modal `CLI_RESET_CONFIRMA` del selector si hay toma o adjuntos. Aceptar → `ClientChanged` reset de details/typeStocks/sugerido + borrar SQLite details del draft; aplicar B. Cancelar → cierra modal, queda A. Rearmar `checkClient`/`clienteAnterior` en `ngAfterViewInit` y tras persistir cantidades.
-- **Evitar:** No guardar el guard de cambio de cliente en el componente de General (muere al cambiar de pestaña). No aplicar cliente nuevo por `clienteSeleccionado` sin reset si ya hay toma. Tras `updateClientList`, reponer `checkClient` si hay contenido.
-- **Tests:** `inventarios-logic.service.spec.ts`, `inventario-general.component.spec.ts`, `inventario-product-list.component.spec.ts` describe `INV-CLIENT-001`.
-- **Archivos:** `inventario-general.component.ts` (+ html/spec), `inventarios-logic.service.ts` (+ spec), `inventario-product-list.component.ts` (+ spec); checklist bug-prevention.
+- **Síntoma:** En Inventarios, pestaña General: se toma inventario del cliente A, se cambia a cliente B y la toma (ítems/cantidades) de A sigue en B. Guardar/Enviar contamina datos. Tras ir a productos y volver a General, a veces no sale el modal de confirmación.
+- **Causa:** General se destruye con `*ngSwitchCase`. `cliente-selector.handleUpdateClientList` ponía `checkClient = false`. Al remount, `setup` + segundo `updateClientList` corrían en carrera y el flag quedaba apagado. `setClientfromSelector` aplicaba B sin vaciar `clientStockDetails`/`typeStocks` (reset solo por `ClientChanged`).
+- **Fix:** Mismo contrato que Pedidos: modal `CLI_RESET_CONFIRMA` si hay toma o adjuntos. Aceptar → `ClientChanged` reset details/typeStocks/sugerido + borrar SQLite details; aplicar B. Cancelar → cierra modal, queda A. Recargar lista no apaga `checkClient`. Rearmar en `ngAfterViewInit` con un solo `setup` (sin segundo fetch).
+- **Evitar:** No guardar el guard de cambio de cliente en General (muere al cambiar de pestaña). No aplicar cliente nuevo por `clienteSeleccionado` sin reset si ya hay toma. No poner `checkClient = false` al refrescar la lista del selector.
+- **Tests:** `inventarios-logic.service.spec.ts`, `inventario-general.component.spec.ts`, `inventario-product-list.component.spec.ts`, `cliente-selector.component.spec.ts` describe `INV-CLIENT-001`.
+- **Archivos:** `inventario-general.component.ts` (+ spec), `inventarios-logic.service.ts` (+ spec), `inventario-product-list.component.ts` (+ spec), `cliente-selector.component.ts` (+ spec); checklist bug-prevention.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
