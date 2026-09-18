@@ -64,7 +64,7 @@
 
       @if(enabledManualRate){
       <ion-col size="6" size-sm="12" size-xs="12">
-        @if (isSentDelivery) {
+        @if (isManualRateReadOnly) {
         <ion-item>
           <ion-label>
             {{this.collectService.collectionTags.get('COB_TASA')}}
@@ -76,7 +76,8 @@
         <ion-input type="number"
           label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
           label-placement="floating" fill="outline" min="1" step="0.01" [value]="rateSelected"
-          [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur($event)"
+          [readonly]="isManualRateReadOnly" [disabled]="isManualRateReadOnly || !enabledManualRate"
+          (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur($event)"
           id="manualRateInput" color="primary" required inputmode="decimal"
           [ngClass]="{'inp-write': shouldShowManualRateSendError()}"></ion-input>
         @if (shouldShowManualRateSendError()) {

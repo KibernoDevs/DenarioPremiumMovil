@@ -4060,6 +4060,29 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-RATE-003 isManualExchangeRateLocked', () => {
+    it('bloquea tasa manual con st_delivery enviado', () => {
+      service.collection = { stDelivery: service.COLLECT_STATUS_SENT, stCollection: 0 } as any;
+      expect(service.isManualExchangeRateLocked()).toBeTrue();
+    });
+
+    it('bloquea tasa manual con st_collection enviado aunque st_delivery siga guardado', () => {
+      service.collection = {
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        stCollection: service.COLLECT_STATUS_SENT,
+      } as any;
+      expect(service.isManualExchangeRateLocked()).toBeTrue();
+    });
+
+    it('permite tasa manual en cobro nuevo guardado editable', () => {
+      service.collection = {
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        stCollection: service.COLLECT_STATUS_SAVED,
+      } as any;
+      expect(service.isManualExchangeRateLocked()).toBeFalse();
+    });
+  });
+
   describe('COB-DISC-001 attachCollectionDetailDiscountsToDetails', () => {
     it('attaches manual discount only to matching coDocument', () => {
       const details = [

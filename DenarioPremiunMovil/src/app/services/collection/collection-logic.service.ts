@@ -584,6 +584,17 @@ export class CollectionService {
       || stDelivery === 6;
   }
 
+  /** Tasa manual: solo lectura tras envío (st_delivery y/o st_collection sincronizado). */
+  isManualExchangeRateLocked(): boolean {
+    if (this.isCollectionReadOnlyForEdit()) {
+      return true;
+    }
+    const stCollection = Number(this.collection?.stCollection ?? 0);
+    return stCollection === 6
+      || stCollection === COLLECT_STATUS_SENT
+      || stCollection === COLLECT_STATUS_TO_SEND;
+  }
+
   shouldPromptCollectionExitSaveOrDiscard(): boolean {
     if (!this.cobroComponent || this.isCollectionReadOnlyForEdit()) {
       return false;
