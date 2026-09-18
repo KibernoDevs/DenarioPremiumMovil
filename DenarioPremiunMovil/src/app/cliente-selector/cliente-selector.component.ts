@@ -280,7 +280,6 @@ export class ClienteSelectorComponent implements OnInit {
     if (!this.searchMode) {
       this.service.clientes = this.clientes;
     }
-    this.service.checkClient = false;
     this.messageService.hideLoading();
   }
 
