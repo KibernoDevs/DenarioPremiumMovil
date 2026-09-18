@@ -62,7 +62,7 @@ describe('ClienteSelectorComponent', () => {
         { provide: ClienteSelectorService, useValue: selectorServiceMock },
         { provide: CurrencyService, useValue: currencyServiceMock },
         { provide: SynchronizationDBService, useValue: { getDatabase: () => ({}) } },
-        { provide: ClientesDatabaseServicesService, useValue: {} },
+        { provide: ClientesDatabaseServicesService, useValue: { MAX_ITEMS_PER_PAGE: 50 } },
         { provide: CollectionService, useValue: { userCanCollectIva: false, cobro25: false } },
         { provide: MessageService, useValue: { showLoading: () => Promise.resolve(), hideLoading: () => undefined } },
         { provide: ClientLogicService, useValue: { checkUserStatus: () => undefined, esTransportista: false, showClientDetail: () => undefined } },
@@ -92,6 +92,18 @@ describe('ClienteSelectorComponent', () => {
     expect(component.getPrimaryCurrencyLabel()).toBe('USD');
     expect(component.getPrimarySaldo(client)).toBe(25);
     expect(component.canShowConversion).toBeFalse();
+  });
+
+  it('INV-CLIENT-001 handleUpdateClientList no apaga checkClient', async () => {
+    selectorServiceMock.checkClient = true;
+    component.multimoneda = false;
+    component.page = 0;
+    component.clientes = [];
+    component.searchMode = false;
+
+    await component.handleUpdateClientList([{ idClient: 1, lbClient: 'A' } as Client]);
+
+    expect(selectorServiceMock.checkClient).toBeTrue();
   });
 
   it('con moneda local y conversiones ON muestra local primario y hard secundario', () => {

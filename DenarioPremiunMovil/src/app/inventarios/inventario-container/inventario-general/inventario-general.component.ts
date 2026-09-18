@@ -516,8 +516,7 @@ export class InventarioGeneralComponent implements OnInit, AfterViewInit {
         true,
         'inv'
       );
-      void this.selectorCliente.updateClientList(enterprise.idEnterprise)
-        .then(() => this.syncClientChangeGuard(client));
+      this.syncClientChangeGuard(client);
     }
   }
 

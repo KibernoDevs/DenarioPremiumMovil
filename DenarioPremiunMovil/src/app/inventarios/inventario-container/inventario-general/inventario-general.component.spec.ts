@@ -172,6 +172,46 @@ describe('InventarioGeneralComponent', () => {
 
       expect(finalize).toHaveBeenCalled();
     });
+
+    it('onConfirmedClientChange resetea toma y aplica cliente B', async () => {
+      const clientB = { idClient: 2, lbClient: 'B' } as any;
+      const applyClientChangeReset = jasmine.createSpy('apply').and.resolveTo();
+      const setClientfromSelector = jasmine.createSpy('setClient');
+      const ctx: any = {
+        applyClientChangeReset,
+        setClientfromSelector,
+        clientSelectorService: { checkClient: true, clienteAnterior: { idClient: 1 } },
+        message: { hideLoading: jasmine.createSpy('hide') },
+      };
+
+      await InventarioGeneralComponent.prototype['onConfirmedClientChange'].call(ctx, clientB);
+
+      expect(applyClientChangeReset).toHaveBeenCalledWith(clientB);
+      expect(setClientfromSelector).toHaveBeenCalledWith(clientB);
+      expect(ctx.clientSelectorService.checkClient).toBeFalse();
+      expect(ctx.clientSelectorService.clienteAnterior).toBe(clientB);
+    });
+
+    it('finalizeSavedInventoryClientGuard hace un solo setup sin segundo updateClientList', () => {
+      const setup = jasmine.createSpy('setup');
+      const updateClientList = jasmine.createSpy('updateClientList');
+      const client = { idClient: 7 } as any;
+      const ctx: any = {
+        shouldEnableClientChangeGuard: () => true,
+        syncClientChangeGuard: jasmine.createSpy('sync'),
+        inventariosLogicService: {
+          cliente: client,
+          empresaSeleccionada: { idEnterprise: 1 },
+        },
+        selectorCliente: { setup, updateClientList },
+      };
+
+      InventarioGeneralComponent.prototype['finalizeSavedInventoryClientGuard'].call(ctx);
+
+      expect(setup).toHaveBeenCalledWith(1, 'Inventarios', 'fondoAmarillo', client, true, 'inv');
+      expect(updateClientList).not.toHaveBeenCalled();
+      expect(ctx.syncClientChangeGuard).toHaveBeenCalledWith(client);
+    });
   });
 
   describe('INV-GPS-001 GPS al cambiar cliente', () => {
