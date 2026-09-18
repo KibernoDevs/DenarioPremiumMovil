@@ -199,32 +199,12 @@ export class ProductListComponent implements OnInit {
       return;
     }
     const coProducts = this.productList.map(p => p.coProduct).filter(Boolean);
-    if (this.imageServices.isProductImagesFromDatabase()) {
-      for (const coProduct of coProducts) {
-        const cached = this.imageServices.mapDbProductImages.get(coProduct);
-        if (cached) {
-          this.imagesMap[coProduct] = cached;
-        }
-      }
-      this.cd.markForCheck();
-      this.imageServices.prefetchProductListImages(coProducts);
-    } else {
-      this.imageServices.emitCachedImagesForCoProducts(coProducts);
-    }
+    this.imageServices.warmProductListImagesMap(coProducts, this.imagesMap);
+    this.cd.markForCheck();
   }
 
   getProductListImageSrc(coProduct: string): string {
-    if (!coProduct) {
-      return this.imageServices.productImagePlaceholder;
-    }
-    const fromMap = this.imagesMap[coProduct];
-    if (fromMap) {
-      return fromMap;
-    }
-    if (this.imageServices.isProductImagesFromDatabase()) {
-      return this.imageServices.productImagePlaceholder;
-    }
-    return this.imageServices.getImgForProduct(coProduct) ?? this.imageServices.productImagePlaceholder;
+    return this.imageServices.getProductListRowImageSrc(coProduct, this.imagesMap);
   }
 
   onIonInfinite(ev: any) {

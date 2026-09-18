@@ -181,6 +181,39 @@ export class ImageServicesService {
     }
   }
 
+  /** Rellena el mapa de lista y dispara carga lazy (catálogo / pedidos / devoluciones). */
+  warmProductListImagesMap(coProducts: string[], imagesMap: Record<string, string>): void {
+    const unique = [...new Set(coProducts.filter(co => !!co))];
+    if (!unique.length) {
+      return;
+    }
+    if (this.isProductImagesFromDatabase()) {
+      for (const coProduct of unique) {
+        const cached = this.mapDbProductImages.get(coProduct);
+        if (cached) {
+          imagesMap[coProduct] = cached;
+        }
+      }
+      this.prefetchProductListImages(unique);
+      return;
+    }
+    this.emitCachedImagesForCoProducts(unique);
+  }
+
+  getProductListRowImageSrc(coProduct: string, imagesMap: Record<string, string>): string {
+    if (!coProduct) {
+      return this.productImagePlaceholder;
+    }
+    const fromMap = imagesMap[coProduct];
+    if (fromMap) {
+      return fromMap;
+    }
+    if (this.isProductImagesFromDatabase()) {
+      return this.productImagePlaceholder;
+    }
+    return this.getImgForProduct(coProduct) ?? this.productImagePlaceholder;
+  }
+
   emitCachedImagesForCoProducts(coProducts: string[]): void {
     if (!coProducts.length) {
       return;

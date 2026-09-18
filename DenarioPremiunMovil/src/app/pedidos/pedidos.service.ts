@@ -2346,7 +2346,9 @@ export class PedidosService {
             stock: prod.qu_stock,
             idEnterprise: prod.id_enterprise,
             coEnterprise: prod.co_enterprise,
-            images: this.imageServices.getProductThumbnail(prod.co_product),
+            images: this.imageServices.isProductImagesFromDatabase()
+              ? this.imageServices.productImagePlaceholder
+              : this.imageServices.getProductThumbnail(prod.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
@@ -2380,7 +2382,9 @@ export class PedidosService {
             stock: prod.qu_stock,
             idEnterprise: prod.id_enterprise,
             coEnterprise: prod.co_enterprise,
-            images: this.imageServices.getProductThumbnail(prod.co_product),
+            images: this.imageServices.isProductImagesFromDatabase()
+              ? this.imageServices.productImagePlaceholder
+              : this.imageServices.getProductThumbnail(prod.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
