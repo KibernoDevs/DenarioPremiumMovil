@@ -78,7 +78,7 @@
       </ion-col>
       }
 
-      @if(!this.collectService.enabledManualRate && this.collectService.multiCurrency){
+      @if(this.collectService.multiCurrency){
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-item>
           <ion-label (click)="onDateRateClick()" [disabled]="isDateRateLabelDisabled">
@@ -91,8 +91,7 @@
         </ion-item>
       </ion-col>
 
-
-      @if (this.collectService.multiCurrency && this.collectService.haveRate &&
+      @if (!this.collectService.enabledManualRate && this.collectService.haveRate &&
       this.collectService.historicoTasa && (this.collectService.collection.stDelivery ==
       this.collectService.COLLECT_STATUS_NEW ||
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED)) {
@@ -114,7 +113,7 @@
         </div>
       </ion-col>
       }
-      @if (this.collectService.multiCurrency &&
+      @if (!this.collectService.enabledManualRate &&
       (
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND ||
       this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT  ||

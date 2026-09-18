@@ -246,6 +246,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-RATE-002] Fecha de tasa oculta con enabledManualRate ON
+
+- **Síntoma:** Con `enabledManualRate=true` y multimoneda, en General solo aparece el input de tasa manual; no se puede cambiar la fecha de tasa (`daRate`).
+- **Causa:** La fila `COB_FECHA_TASA` estaba dentro de `@if(!enabledManualRate && multiCurrency)` junto al selector histórico.
+- **Fix:** Fecha de tasa visible con `multiCurrency` aunque haya tasa manual; selector/lectura de tasa del catálogo siguen solo con `enabledManualRate=false`. `getDateRate` ya conserva la tasa manual (`keepManualRate`).
+- **Evitar:** No ocultar fecha de tasa al activar tasa manual; no mezclar selector histórico con input manual.
+- **Archivos:** `cobro-general.component.html`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DISC-005] Descuento de factura distorsiona descuento de cobro (%)
 
 - **Síntoma:** Factura con `document_sales.nu_amount_discount` > 0; al aplicar descuento de cobro (ej. 80 %) el Total Descuento y Monto a pagar son erróneos (magnitudes ~tasa o signos invertidos); en ambientes con descuento de factura en 0 no ocurre.
