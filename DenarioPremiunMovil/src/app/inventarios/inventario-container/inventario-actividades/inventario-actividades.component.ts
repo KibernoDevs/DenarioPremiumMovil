@@ -18,6 +18,10 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
 import { ModalController } from '@ionic/angular';
 import { InventarioSugeridoPreviewComponent } from '../inventario-sugerido-preview/inventario-sugerido-preview.component';
+import {
+  isClientSuspended,
+  MSG_CLIENT_SUSPENDED_ORDER,
+} from 'src/app/utils/client-suspension.policy';
 
 interface InventoryRow {
   rowId: string;
@@ -160,6 +164,7 @@ public modalCtrl = inject(ModalController);
         diasHastaSiguienteInventario: this.inventariosLogicService.newClientStock.daysUntilNext,
         empresaSeleccionada: this.inventariosLogicService.empresaSeleccionada,
         monedaLabel: this.orderServ.getTag('PED_MONEDA'),
+        client: this.inventariosLogicService.cliente,
       }
     });
 
@@ -234,6 +239,10 @@ public modalCtrl = inject(ModalController);
   }
 */
   async sugerirPedido(monedaSeleccionadaSugerencia?: CurrencyEnterprise){
+    if (isClientSuspended(this.inventariosLogicService.cliente)) {
+      this.message.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
+      return;
+    }
 
     // this.orderServ.empresaSeleccionada = this.inventariosLogicService.empresaSeleccionada;
     // this.orderServ.setup();

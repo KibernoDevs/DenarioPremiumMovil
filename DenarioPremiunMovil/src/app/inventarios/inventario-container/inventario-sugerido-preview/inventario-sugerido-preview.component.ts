@@ -10,6 +10,12 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { Client } from 'src/app/modelos/tables/client';
+import { MessageService } from 'src/app/services/messageService/message.service';
+import {
+  isClientSuspended,
+  MSG_CLIENT_SUSPENDED_ORDER,
+} from 'src/app/utils/client-suspension.policy';
 
 @Component({
   selector: 'app-inventario-sugerido-preview',
@@ -28,6 +34,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   @Input() blockCreateSuggestedOrder = false;
   @Input() monedaInicial: CurrencyEnterprise | null = null;
   @Input() suggestedOrderByDispatchAndReturnOverride: boolean | null = null;
+  @Input() client: Client | null = null;
 
   disableOrderButton = true;
   previewReady = false;
@@ -44,6 +51,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private config = inject(GlobalConfigService);
   private dbServ = inject(SynchronizationDBService);
   private pedidosService = inject(PedidosService);
+  private message = inject(MessageService);
   public inventariosLogicService = inject(InventariosLogicService);
 
   quUnitDecimals = false;
@@ -122,6 +130,11 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   }
 
   confirm(): void {
+    const client = this.client ?? this.inventariosLogicService.cliente;
+    if (isClientSuspended(client)) {
+      this.message.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
+      return;
+    }
     const currency = this.monedaSeleccionadaPreview ?? undefined;
     this.modalCtrl.dismiss({ monedaSeleccionada: currency }, 'confirm');
   }

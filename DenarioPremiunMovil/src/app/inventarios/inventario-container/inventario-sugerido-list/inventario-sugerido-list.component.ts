@@ -14,6 +14,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { PedidosDbService } from 'src/app/pedidos/pedidos-db.service';
 import { LOCAL_LIST_PAGE_SIZE, paginateFilteredList } from 'src/app/utils/local-paginated-list.util';
+import {
+  isClientSuspended,
+  MSG_CLIENT_SUSPENDED_ORDER,
+} from 'src/app/utils/client-suspension.policy';
 
 @Component({
   selector: 'app-inventario-sugerido-list',
@@ -127,6 +131,7 @@ export class InventarioSugeridoListComponent implements OnInit {
     }
 
     const previewData = this.inventariosLogicService.mapSnapshotToPreviewData(snapshot);
+    const cliente = await this.orderServ.getClient(snapshot.idClient);
     const modal = await this.modalCtrl.create({
       component: InventarioSugeridoPreviewComponent,
       cssClass: 'inventario-sugerido-modal',
@@ -141,6 +146,7 @@ export class InventarioSugeridoListComponent implements OnInit {
         blockCreateSuggestedOrder: previewData.blockCreateSuggestedOrder,
         monedaInicial: previewData.monedaInicial,
         suggestedOrderByDispatchAndReturnOverride: previewData.suggestedOrderByDispatchAndReturn,
+        client: cliente,
       },
     });
 
@@ -178,6 +184,11 @@ export class InventarioSugeridoListComponent implements OnInit {
     const db = this.dbServ.getDatabase();
     await this.orderServ.ensureModuleReady(db);
     await this.enterpriseServ.setup(db);
+    const cliente = await this.orderServ.getClient(snapshot.idClient);
+    if (isClientSuspended(cliente)) {
+      this.message.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
+      return;
+    }
     const empresa = this.resolveEnterpriseFromSnapshot(snapshot);
     this.orderServ.empresaSeleccionada = empresa;
     await this.orderServ.setup();
@@ -192,7 +203,6 @@ export class InventarioSugeridoListComponent implements OnInit {
     }
 
     const preview = this.inventariosLogicService.mapSnapshotToPreviewData(snapshot);
-    const cliente = await this.orderServ.getClient(snapshot.idClient);
     const addresses = await this.orderDbServ.getAddressClient(db, snapshot.idClient);
     const direccion = addresses.find(a => a.idAddress === snapshot.idAddressClient) ?? addresses[0];
     if (!direccion) {

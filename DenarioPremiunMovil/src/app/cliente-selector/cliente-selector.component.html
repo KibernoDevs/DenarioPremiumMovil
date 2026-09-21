@@ -72,6 +72,11 @@
             <ion-label>
               <p>{{ client.lbClient }}</p>
               <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
+              @if(isPedidosSelector){
+              <p [ngStyle]="{color: getClientStatusColor(client)}">
+                Estatus: {{ getClientStatusLabel(client) }}
+              </p>
+              }
               @if(!this.transportista && !clientLogic.isFinanceHiddenForUser){
               <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
                 {{this.getTag('CLI_SALDO')}} {{getPrimaryCurrencyLabel()}}: {{formatNum(getPrimarySaldo(client))}}

@@ -5,8 +5,15 @@ export const MSG_CLIENT_SUSPENDED_COLLECTION = 'Cliente suspendido sin deuda: no
 
 export type ClientSelectionMode = 'order' | 'collection' | 'default';
 
+function parseSqliteBoolean(value: unknown): boolean {
+  return value === true
+    || value === 1
+    || String(value ?? '').toLowerCase() === 'true'
+    || String(value ?? '') === '1';
+}
+
 export function isClientSuspended(client: Client | null | undefined): boolean {
-  return client?.inSuspension === true;
+  return parseSqliteBoolean(client?.inSuspension);
 }
 
 /** Debe: cualquier saldo abierto > 0 (saldo1/saldo2 del listado). */
