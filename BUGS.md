@@ -370,6 +370,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-DATE-002] Efectivo tomaba fecha del cobro (hoy) con validateCollectionDate ON
+
+- **Síntoma:** Con `validateCollectionDate` activa, fecha tasa ayer y cobro hoy, la fecha valor de EF quedaba en hoy (como fecha del cobro), no como cheque/TR/PM.
+- **Causa:** `applyMontoToCollection('ef')` y `onOpenCalendar('ef')` forzaban `hoyISO()`; `getFechaValor` no sincronizaba `daValue`/`daCollectionPayment`; alta EF sin `syncPaymentDateFields`.
+- **Fix:** `resolvePaymentDateDb` + `normalizedCollectionDateRate` prioriza `collection.daRate`; EF usa la misma regla que otros métodos al volcar monto, calendario y fecha valor.
+- **Evitar:** No asignar `hoyISO()` en EF cuando `validateCollectionDate` está ON. Persistir siempre `daValue` y `daCollectionPayment` juntos.
+- **Tests:** `cobro-pagos.component.spec.ts` (`COB-DATE-002`).
+- **Archivos:** `cobro-pagos.component.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-SUG-001] Pedido Sugerido usaba documentos Guardados (`id = 0`)
 
 - **Síntoma:** El Pedido Sugerido (despacho + devolución) restaba devoluciones Guardadas y podía tomar un inventario previo Guardado; totales de venta/sugerido no coincidían con documentos enviados.
