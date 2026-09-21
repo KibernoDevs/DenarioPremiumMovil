@@ -236,6 +236,10 @@ export class InventarioSugeridoListComponent implements OnInit {
       }
     }
 
+    const coordenadaInventario = await this.inventariosLogicService.getClientStockCoordenada(
+      db,
+      snapshot.coClientStock,
+    );
     this.orderServ.datosPedidoSugerido = {
       empresa,
       cliente,
@@ -248,6 +252,7 @@ export class InventarioSugeridoListComponent implements OnInit {
       idProducts,
       idUnits,
       idProductUnits,
+      ...(coordenadaInventario ? { coordenada: coordenadaInventario } : {}),
       ...(monedaSeleccionadaSugerencia
         ? { monedaSeleccionadaSugerencia }
         : {}),

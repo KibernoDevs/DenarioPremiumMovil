@@ -107,6 +107,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Guardar/Enviar: no acoplar Guardar a productos en el botón; validación completa al pulsar (`PED-SAVE-001`).
 - Guardar tras persistir: OFF hasta `markOrderDirty` / edición de usuario — `PED-SAVE-002`.
 - Enviar: General OK (cliente + sucursal + nuOrder/comentario si config) habilita; productos, almacén y GPS al click; adjuntos no obligatorios (`signatureOrder` solo UI) — `PED-SEND-001`.
+- Pedido Sugerido: copiar GPS de inventario (o fetch si falta) al entrar a `/pedido`; no depender del prefetch de `/pedidos` — `PED-SUG-GPS-001`.
 - `requiredCommentOrder`: no bloquear pestañas al abrir pedido no editable (enviado) con comentario vacío (`PED-COMMENT-001`).
 
 ## Vendedor

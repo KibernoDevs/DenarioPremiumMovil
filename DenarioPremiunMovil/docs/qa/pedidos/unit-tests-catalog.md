@@ -23,3 +23,4 @@ Archivo: `src/app/pedidos/pedidos.service.spec.ts`
 | **PED-SEND-001** | `validateWarehouses` + línea sin almacén → error almacén. |
 | **PED-SEND-001** | `signatureOrder` sin adjuntos → **no** error (solo UI). |
 | **PED-SEND-001** | `userMustActivateGPS` + sin coordenadas → error GPS. |
+| **PED-SUG-GPS-001** | Pedido Sugerido copia GPS inventario; sin GPS + flag ON → `getCurrentPosition`. |

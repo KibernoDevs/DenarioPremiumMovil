@@ -10,4 +10,5 @@
 8. **requiredCommentOrder=true** → comentario obligatorio solo en editable; pedido enviado vacío sigue abriendo (**PED-COMMENT-001**).
 9. **userMustActivateGPS** → modal al Enviar sin GPS si está activo. `signatureOrder` solo muestra firma (no exige adjuntos).
 10. Enviar completo → confirmación `PED_PREGUNTA_GUARDADO` → éxito tras persistir + AutoSend.
-11. **userCanChangeUnits:** ausente/`true` → selector de unidad editable (salvo `unitByPriceList=true`). `false` → selector disabled; unidad actual se muestra.
+11. **PED-SUG-GPS-001:** Inventarios → Pedido Sugerido con `userMustActivateGPS` y GPS ya en inventario → Enviar no pide GPS de nuevo. Si inventario no tiene GPS, se obtiene una nueva (si falla, Enviar sigue bloqueando por GPS).
+12. **userCanChangeUnits:** ausente/`true` → selector de unidad editable (salvo `unitByPriceList=true`). `false` → selector disabled; unidad actual se muestra.

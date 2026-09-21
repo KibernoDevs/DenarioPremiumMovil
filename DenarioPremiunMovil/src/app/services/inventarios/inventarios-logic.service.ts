@@ -2424,6 +2424,27 @@ export class InventariosLogicService {
     return Promise.resolve(true);
 
   } */
+  /** GPS del inventario sin cargar details (PED-SUG-GPS-001). */
+  async getClientStockCoordenada(dbServ: SQLiteObject, coClientStock: string): Promise<string> {
+    const co = (coClientStock ?? '').toString().trim();
+    if (!co) {
+      return '';
+    }
+    try {
+      const result = await dbServ.executeSql(
+        'SELECT coordenada FROM client_stocks WHERE co_client_stock = ? LIMIT 1',
+        [co],
+      );
+      if (!result?.rows?.length) {
+        return '';
+      }
+      return (result.rows.item(0)?.coordenada ?? '').toString().trim();
+    } catch (e) {
+      console.log('[getClientStockCoordenada]', e);
+      return '';
+    }
+  }
+
   getClientStock(dbServ: SQLiteObject, coClientStock: string) {
     var clientStock: ClientStocks;
 

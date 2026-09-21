@@ -888,4 +888,31 @@ describe('InventariosLogicService', () => {
       expect(params).toEqual([DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SAVED]);
     });
   });
+
+  describe('PED-SUG-GPS-001 coordenada liviana de inventario', () => {
+    it('getClientStockCoordenada lee GPS sin details', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: { length: 1, item: () => ({ coordenada: '  10.1,20.2  ' }) },
+        }),
+      } as any;
+
+      const coord = await service.getClientStockCoordenada(dbMock, 'CS-1');
+
+      expect(coord).toBe('10.1,20.2');
+      expect(dbMock.executeSql).toHaveBeenCalledWith(
+        'SELECT coordenada FROM client_stocks WHERE co_client_stock = ? LIMIT 1',
+        ['CS-1'],
+      );
+    });
+
+    it('getClientStockCoordenada vacío si no hay fila o co vacío', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0 } }),
+      } as any;
+      expect(await service.getClientStockCoordenada(dbMock, '')).toBe('');
+      expect(dbMock.executeSql).not.toHaveBeenCalled();
+      expect(await service.getClientStockCoordenada(dbMock, 'CS-MISSING')).toBe('');
+    });
+  });
 });

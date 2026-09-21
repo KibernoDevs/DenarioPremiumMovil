@@ -231,6 +231,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     this.adjuntoService.setup(this.dbServ.getDatabase(), this.orderServ.signatureOrder, false, COLOR_VERDE);
 
     if (this.orderServ.desdeSugerencia) {
+      await this.ensureGpsForSuggestedOrder();
       await this.orderServ.sugerirPedido();
     }
 
@@ -333,6 +334,32 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     if (!this.orderServ.userMustActivateGPS && this.orderServ.pedidoModificable) {
       //chequeo suave de coordenadas si variable es false
       this.geoServ.getCurrentPosition().then(coords => { this.orderServ.coordenadas = coords });
+    }
+  }
+
+  /** PED-SUG-GPS-001: copiar GPS del inventario; si falta y la config exige, obtener una nueva. */
+  private gpsCoordinateValue(value: string | null | undefined): string {
+    return (value ?? '').toString().trim();
+  }
+
+  private async ensureGpsForSuggestedOrder(): Promise<void> {
+    const payload = this.orderServ.datosPedidoSugerido;
+    const payloadCoord = this.gpsCoordinateValue(payload?.coordenada);
+    const stock = this.inventariosLogicService.newClientStock;
+    const sameStock = !!stock?.coClientStock
+      && !!payload?.coClientStock
+      && stock.coClientStock === payload.coClientStock;
+    const draftCoord = sameStock ? this.gpsCoordinateValue(stock?.coordenada) : '';
+    const current = this.gpsCoordinateValue(this.orderServ.coordenadas);
+    let resolved = payloadCoord || draftCoord || current;
+    if (!resolved && this.orderServ.userMustActivateGPS) {
+      const fetched = this.gpsCoordinateValue(await this.geoServ.getCurrentPosition());
+      if (fetched) {
+        resolved = fetched;
+      }
+    }
+    if (resolved) {
+      this.orderServ.coordenadas = resolved;
     }
   }
 
