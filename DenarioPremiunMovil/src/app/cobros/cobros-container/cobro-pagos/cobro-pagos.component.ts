@@ -81,7 +81,22 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
   private bankPickerAction: 'selectBankAccount' | 'selectListBankAccount' = 'selectBankAccount';
 
   private normalizedCollectionDateRate(): string {
+    const daRate = this.collectService.collection?.daRate;
+    if (this.collectService.validateCollectionDate && daRate) {
+      return this.dateServ.normalizeDateRateToDbDateTime(daRate);
+    }
     return this.dateServ.normalizeDateRateToDbDateTime(this.collectService.dateRate);
+  }
+
+  /** Fecha valor en BD: fecha tasa si validateCollectionDate; si no, hoy o la fecha elegida. */
+  private resolvePaymentDateDb(preferredUserDate?: string): string {
+    if (this.collectService.validateCollectionDate) {
+      return this.normalizedCollectionDateRate();
+    }
+    if (preferredUserDate) {
+      return this.toDbDateTime(preferredUserDate);
+    }
+    return this.toDbDateTime(this.dateServ.hoyISO());
   }
 
   private toDbDateTime(value: string): string {
@@ -366,14 +381,15 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
       case "ef": {
         let newPagoEfectivo: PagoEfectivo = new PagoEfectivo;
         newPagoEfectivo.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-        if (this.collectService.validateCollectionDate) {
-          // use normalized daRate (may already include time)
-          newPagoEfectivo.fecha = daRate;
-        } else {
-          newPagoEfectivo.fecha = this.dateServ.hoyISO();
-        }
+        newPagoEfectivo.fecha = this.collectService.validateCollectionDate
+          ? daRate
+          : this.dateServ.hoyISO();
 
         this.collectService.pagoEfectivo.push(newPagoEfectivo);
+        this.syncPaymentDateFields(
+          newPagoEfectivo.posCollectionPayment,
+          this.toDbDateTime(newPagoEfectivo.fecha),
+        );
         newPago = newPagoEfectivo;
         break
       }
@@ -623,12 +639,13 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
     switch (type) {
       case "ef": {
-        if (this.collectService.validateCollectionDate) {
-          this.collectService.pagoEfectivo[index].fecha = this.normalizedCollectionDateRate();
-        } else {
-          this.collectService.pagoEfectivo[index].fecha = this.toDbDateTime(fecha);
-          fecha = this.toDbDateTime(fecha);
-        }
+        const dbDate = this.resolvePaymentDateDb(fecha);
+        this.collectService.pagoEfectivo[index].fecha = dbDate;
+        this.syncPaymentDateFields(
+          this.collectService.pagoEfectivo[index].posCollectionPayment,
+          dbDate,
+        );
+        this.collectService.notifyCollectionEdited();
         break
       }
 
@@ -889,10 +906,14 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
     switch (type) {
       case "ef": {
-        this.collectService.pagoEfectivo[i].fecha = this.dateServ.hoyISO();
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[i].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoEfectivo[i].fecha);
-        this.collectService.notifyCollectionEdited();
+        if (!this.collectService.validateCollectionDate) {
+          this.collectService.pagoEfectivo[i].fecha = this.dateServ.hoyISO();
+          this.syncPaymentDateFields(
+            this.collectService.pagoEfectivo[i].posCollectionPayment,
+            this.toDbDateTime(this.collectService.pagoEfectivo[i].fecha),
+          );
+          this.collectService.notifyCollectionEdited();
+        }
         break
       }
 
@@ -951,16 +972,15 @@ export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.collectService.pagoEfectivo[index].montoConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
 
-        this.collectService.pagoEfectivo[index].fecha = this.dateServ.hoyISO();
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.coType = type
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.coPaymentMethod = type;
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.nuAmountPartial = monto;
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.nuAmountPartialConversion
-          = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.daCollectionPayment
-          = this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.daValue
-          = this.toDbDateTime(this.collectService.pagoEfectivo[index].fecha);
+        const pos = this.collectService.pagoEfectivo[index].posCollectionPayment;
+        const payment = this.collectService.collection.collectionPayments![pos]!;
+        const dbDate = this.resolvePaymentDateDb(this.collectService.pagoEfectivo[index].fecha);
+        this.collectService.pagoEfectivo[index].fecha = dbDate;
+        payment.coType = type;
+        payment.coPaymentMethod = type;
+        payment.nuAmountPartial = monto;
+        payment.nuAmountPartialConversion = this.collectService.convertirMonto(monto, rate, this.collectService.collection.coCurrency);
+        this.syncPaymentDateFields(pos, dbDate);
         break
       }
 

@@ -277,7 +277,7 @@ export class ProductService {
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+            images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
@@ -317,7 +317,7 @@ export class ProductService {
             stock: item.qu_stock,
             idEnterprise: item.id_enterprise,
             coEnterprise: item.co_enterprise,
-            images: this.imageServices.getProductThumbnail(item.co_product),
+            images: this.thumbnailForSearchResult(item.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
@@ -377,7 +377,7 @@ export class ProductService {
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+            images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
@@ -427,7 +427,7 @@ export class ProductService {
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+            images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
@@ -483,7 +483,7 @@ export class ProductService {
             stock: item.qu_stock,
             idEnterprise: item.id_enterprise,
             coEnterprise: item.co_enterprise,
-            images: this.imageServices.getProductThumbnail(item.co_product),
+            images: this.thumbnailForSearchResult(item.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
@@ -534,7 +534,7 @@ export class ProductService {
             stock: item.qu_stock,
             idEnterprise: item.id_enterprise,
             coEnterprise: item.co_enterprise,
-            images: this.imageServices.getProductThumbnail(item.co_product),
+            images: this.thumbnailForSearchResult(item.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
@@ -608,7 +608,7 @@ export class ProductService {
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+            images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
@@ -660,7 +660,7 @@ export class ProductService {
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+            images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
@@ -684,9 +684,21 @@ export class ProductService {
     return productListFilter;
   }
 
-  getProductsSearchedByCoProductAndNaProduct(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, page: number) {
-    var database = dbServ;
-    this.productList = [];
+  getProductsSearchedByCoProductAndNaProduct(
+    dbServ: SQLiteObject,
+    searchText: string,
+    idEnterprise: number,
+    coCurrency: string,
+    page: number,
+  ): Promise<void> {
+    if (page === 0) {
+      this.productSearchRequestId++;
+    }
+    const requestId = this.productSearchRequestId;
+    const database = dbServ;
+    if (page === 0) {
+      this.productList = [];
+    }
 
     // Normalize and split search text into tokens
     const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
@@ -713,96 +725,143 @@ export class ProductService {
     const offset = page * this.MAX_ITEMS_PER_PAGE;
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
 
-    let orderByClause = this.getProductsOrderByClause();
+    const orderByClause = this.getProductsOrderByClause();
 
-    if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " ORDER BY " + orderByClause + " limit ? offset ?";
-      return database.executeSql(select, params).then(result => {
-        for (let i = 0; i < result.rows.length; i++) {
-          this.productList.push({
-            idProduct: result.rows.item(i).id_product,
-            coProduct: result.rows.item(i).co_product,
-            naProduct: result.rows.item(i).na_product,
-            points: result.rows.item(i).points,
-            txDescription: result.rows.item(i).tx_description,
-            idList: result.rows.item(i).id_list,
-            price: result.rows.item(i).nu_price,
-            coCurrency: result.rows.item(i).co_currency,
-            priceOpposite: result.rows.item(i).nu_price_opposite,
-            coCurrencyOpposite: result.rows.item(i).co_currency_opposite,
-            stock: result.rows.item(i).qu_stock,
-            idEnterprise: result.rows.item(i).id_enterprise,
-            coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
-            typeStocks: undefined,
-            productUnitList: undefined,
-            idProductStructure: result.rows.item(i).id_product_structure,
-            nuTax: result.rows.item(i).nu_tax
-          });
-        }
+    const mapRowWithOppositeColumns = (result: { rows: { length: number; item: (i: number) => unknown } }): void => {
+      if (requestId !== this.productSearchRequestId) {
+        return;
       }
-      ).catch(e => {
-        this.productList = [];
-        console.log("[ProductService] Error al cargar productos.");
-        console.log(e);
-      })
-    } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, " +
-        "p.tx_description, p.id_product_structure, p.nu_tax, " +
-        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list " +
-        "where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list " +
-        "where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list " +
-        "where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
-        "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, " +
-        "p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens +
-        " ORDER BY " + orderByClause + " limit ? offset ?";
-      return database.executeSql(select, params).then(result => {
-        for (let i = 0; i < result.rows.length; i++) {
-          let item = result.rows.item(i);
-          let product = {
-            idProduct: item.id_product,
-            coProduct: item.co_product,
-            naProduct: item.na_product,
-            points: item.points,
-            txDescription: item.tx_description,
-            idList: item.id_list,
-            price: item.nu_price,
-            coCurrency: item.co_currency,
-            priceOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.toHardCurrency(item.nu_price) :
-              this.currencyService.toLocalCurrency(item.nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
-            stock: item.qu_stock,
-            idEnterprise: item.id_enterprise,
-            coEnterprise: item.co_enterprise,
-            images: this.imageServices.getProductThumbnail(item.co_product),
-            typeStocks: undefined,
-            productUnitList: undefined,
-            idProductStructure: item.id_product_structure,
-            nuTax: item.nu_tax
-          } as ProductUtil;
-          if (coCurrency != product.coCurrency) {
-            //intercambiamos precios y monedas
-            this.switchPrices(product);
-          }
-          this.productList.push(product);
-        }
+      for (let i = 0; i < result.rows.length; i++) {
+        const row = result.rows.item(i) as {
+          id_product: number;
+          co_product: string;
+          na_product: string;
+          points: number;
+          tx_description: string;
+          id_list: number;
+          nu_price: number;
+          co_currency: string;
+          nu_price_opposite: number;
+          co_currency_opposite: string;
+          qu_stock: number;
+          id_enterprise: number;
+          co_enterprise: string;
+          id_product_structure: number;
+          nu_tax: number;
+        };
+        this.productList.push({
+          idProduct: row.id_product,
+          coProduct: row.co_product,
+          naProduct: row.na_product,
+          points: row.points,
+          txDescription: row.tx_description,
+          idList: row.id_list,
+          price: row.nu_price,
+          coCurrency: row.co_currency,
+          priceOpposite: row.nu_price_opposite,
+          coCurrencyOpposite: row.co_currency_opposite,
+          stock: row.qu_stock,
+          idEnterprise: row.id_enterprise,
+          coEnterprise: row.co_enterprise,
+          images: this.thumbnailForSearchResult(row.co_product),
+          typeStocks: undefined,
+          productUnitList: undefined,
+          idProductStructure: row.id_product_structure,
+          nuTax: row.nu_tax,
+        });
       }
-      ).catch(e => {
-        this.productList = [];
-        console.log("[ProductService] Error al cargar productos.");
-        console.log(e);
-      })
+    };
+
+    const mapRowStandard = (result: { rows: { length: number; item: (i: number) => unknown } }): void => {
+      if (requestId !== this.productSearchRequestId) {
+        return;
+      }
+      for (let i = 0; i < result.rows.length; i++) {
+        const item = result.rows.item(i) as {
+          id_product: number;
+          co_product: string;
+          na_product: string;
+          points: number;
+          tx_description: string;
+          id_list: number;
+          nu_price: number;
+          co_currency: string;
+          qu_stock: number;
+          id_enterprise: number;
+          co_enterprise: string;
+          id_product_structure: number;
+          nu_tax: number;
+        };
+        const product = {
+          idProduct: item.id_product,
+          coProduct: item.co_product,
+          naProduct: item.na_product,
+          points: item.points,
+          txDescription: item.tx_description,
+          idList: item.id_list,
+          price: item.nu_price,
+          coCurrency: item.co_currency,
+          priceOpposite: item.co_currency === this.currencyService.getLocalCurrency().coCurrency ?
+            this.currencyService.toHardCurrency(item.nu_price) :
+            this.currencyService.toLocalCurrency(item.nu_price),
+          coCurrencyOpposite: item.co_currency === this.currencyService.getLocalCurrency().coCurrency ?
+            this.currencyService.hardCurrency.coCurrency :
+            this.currencyService.localCurrency.coCurrency,
+          stock: item.qu_stock,
+          idEnterprise: item.id_enterprise,
+          coEnterprise: item.co_enterprise,
+          images: this.thumbnailForSearchResult(item.co_product),
+          typeStocks: undefined,
+          productUnitList: undefined,
+          idProductStructure: item.id_product_structure,
+          nuTax: item.nu_tax,
+        } as ProductUtil;
+        if (coCurrency != product.coCurrency) {
+          this.switchPrices(product);
+        }
+        this.productList.push(product);
+      }
+    };
+
+    const onSqlError = (e: unknown): void => {
+      if (requestId !== this.productSearchRequestId) {
+        return;
+      }
+      this.productList = [];
+      console.log('[ProductService] Error al cargar productos.');
+      console.log(e);
+    };
+
+    if (this.globalConfig.get('conversionByPriceList') == 'true') {
+      const select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, '
+        + " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, "
+        + " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, "
+        + " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, "
+        + " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, "
+        + ' (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE ' + whereTokens + ' ORDER BY ' + orderByClause + ' limit ? offset ?';
+      return database.executeSql(select, params).then(mapRowWithOppositeColumns).catch(onSqlError);
     }
+
+    const select = 'select p.id_product, p.co_product, p.na_product, p.points, '
+      + 'p.tx_description, p.id_product_structure, p.nu_tax, '
+      + '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list '
+      + 'where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, '
+      + '(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list '
+      + 'where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, '
+      + '(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list '
+      + 'where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, '
+      + '(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, '
+      + 'p.id_enterprise, p.co_enterprise FROM products p WHERE ' + whereTokens
+      + ' ORDER BY ' + orderByClause + ' limit ? offset ?';
+    return database.executeSql(select, params).then(mapRowStandard).catch(onSqlError);
+  }
+
+  /** En modo imágenes en BD no resuelve Base64 en la búsqueda (lazy en lista). */
+  private thumbnailForSearchResult(coProduct: string): string {
+    if (this.imageServices.isProductImagesFromDatabase()) {
+      return this.imageServices.productImagePlaceholder;
+    }
+    return this.imageServices.getProductThumbnail(coProduct);
   }
 
   getProductsSearchedByCoProductAndNaProductAndIdList(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, id_list: number, page: number): Promise<void> {
@@ -856,7 +915,7 @@ export class ProductService {
             stock: row.qu_stock,
             idEnterprise: row.id_enterprise,
             coEnterprise: row.co_enterprise,
-            images: this.imageServices.getProductThumbnail(row.co_product),
+            images: this.thumbnailForSearchResult(row.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: row.id_product_structure,
@@ -895,7 +954,7 @@ export class ProductService {
             stock: row.qu_stock,
             idEnterprise: row.id_enterprise,
             coEnterprise: row.co_enterprise,
-            images: this.imageServices.getProductThumbnail(row.co_product),
+            images: this.thumbnailForSearchResult(row.co_product),
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: row.id_product_structure,
@@ -1224,7 +1283,7 @@ export class ProductService {
           naProduct: result.rows.item(i).na_product,
           idEnterprise: result.rows.item(i).id_enterprise,
           coEnterprise: result.rows.item(i).co_enterprise,
-          images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+          images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
           txDescription: '',
           points: 0,
           idList: 0,
@@ -1271,7 +1330,7 @@ export class ProductService {
           naProduct: result.rows.item(i).na_product,
           idEnterprise: result.rows.item(i).id_enterprise,
           coEnterprise: result.rows.item(i).co_enterprise,
-          images: this.imageServices.getProductThumbnail(result.rows.item(i).co_product),
+          images: this.thumbnailForSearchResult(result.rows.item(i).co_product),
           txDescription: '',
           points: 0,
           idList: 0,

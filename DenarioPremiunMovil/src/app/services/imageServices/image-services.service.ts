@@ -49,6 +49,8 @@ export class ImageServicesService {
   public mapImagesFiles: Map<string, string[]> = new Map<string, string[]>();
   /** Cache co_product -> data URI cuando productImagesFromDatabase=true */
   public mapDbProductImages: Map<string, string> = new Map<string, string>();
+  /** Evita lecturas SQLite duplicadas del catálogo completo de imágenes. */
+  private dbImagesHydratePromise: Promise<void> | null = null;
   public mapPdfFiles: Map<string, string[]> = new Map<string, string[]>();
   public mapLogos: Map<string, string> = new Map<string, string>();
   public mapLogosByFilename: Map<string, string> = new Map<string, string>();
@@ -117,10 +119,32 @@ export class ImageServicesService {
     }
   }
 
+  /** Una sola hidratación masiva por sesión (reutiliza la promesa en curso). */
+  ensureDbProductImagesHydrated(): Promise<void> {
+    if (!this.isProductImagesFromDatabase()) {
+      return Promise.resolve();
+    }
+    if (this.dbImagesHydratePromise) {
+      return this.dbImagesHydratePromise;
+    }
+    this.dbImagesHydratePromise = this.loadAllDbProductImagesIntoCache();
+    return this.dbImagesHydratePromise;
+  }
+
   async hydrateDbProductImagesCache(): Promise<void> {
+    return this.ensureDbProductImagesHydrated();
+  }
+
+  /** Tras sync de productos: permite volver a hidratar en background si hace falta. */
+  scheduleDbProductImagesHydrateAfterSync(): void {
     if (!this.isProductImagesFromDatabase()) {
       return;
     }
+    this.dbImagesHydratePromise = null;
+    void this.ensureDbProductImagesHydrated();
+  }
+
+  private async loadAllDbProductImagesIntoCache(): Promise<void> {
     try {
       const db = this.syncDb.getDatabase();
       const result = await db.executeSql(
@@ -136,6 +160,76 @@ export class ImageServicesService {
       }
     } catch (err) {
       console.warn('[hydrateDbProductImagesCache]', err);
+    }
+  }
+
+  /** Carga lazy por fila visible (no bloquea búsqueda ni lista). */
+  prefetchProductListImages(coProducts: string[]): void {
+    if (!this.isProductImagesFromDatabase()) {
+      return;
+    }
+    const unique = [...new Set(coProducts.filter(co => !!co))];
+    for (const coProduct of unique) {
+      if (this.mapDbProductImages.has(coProduct)) {
+        const cached = this.mapDbProductImages.get(coProduct);
+        if (cached) {
+          this.imageLoaded$.next({ imgName: coProduct, imgSrc: cached });
+        }
+        continue;
+      }
+      void this.getProductImageFromDatabase(coProduct);
+    }
+  }
+
+  /** Rellena el mapa de lista y dispara carga lazy (catálogo / pedidos / devoluciones). */
+  warmProductListImagesMap(coProducts: string[], imagesMap: Record<string, string>): void {
+    const unique = [...new Set(coProducts.filter(co => !!co))];
+    if (!unique.length) {
+      return;
+    }
+    if (this.isProductImagesFromDatabase()) {
+      for (const coProduct of unique) {
+        const cached = this.mapDbProductImages.get(coProduct);
+        if (cached) {
+          imagesMap[coProduct] = cached;
+        }
+      }
+      this.prefetchProductListImages(unique);
+      return;
+    }
+    this.emitCachedImagesForCoProducts(unique);
+  }
+
+  getProductListRowImageSrc(coProduct: string, imagesMap: Record<string, string>): string {
+    if (!coProduct) {
+      return this.productImagePlaceholder;
+    }
+    const fromMap = imagesMap[coProduct];
+    if (fromMap) {
+      return fromMap;
+    }
+    if (this.isProductImagesFromDatabase()) {
+      return this.productImagePlaceholder;
+    }
+    return this.getImgForProduct(coProduct) ?? this.productImagePlaceholder;
+  }
+
+  emitCachedImagesForCoProducts(coProducts: string[]): void {
+    if (!coProducts.length) {
+      return;
+    }
+    for (const coProduct of coProducts) {
+      if (this.isProductImagesFromDatabase()) {
+        const base64 = this.mapDbProductImages.get(coProduct);
+        if (base64) {
+          this.imageLoaded$.next({ imgName: coProduct, imgSrc: base64 });
+        }
+        continue;
+      }
+      const src = this.getImgForProduct(coProduct);
+      if (src && src !== this.productImagePlaceholder) {
+        this.imageLoaded$.next({ imgName: coProduct, imgSrc: src });
+      }
     }
   }
 
@@ -598,14 +692,10 @@ export class ImageServicesService {
   }
 
   public emitCachedImages(): void {
-    // 0) Imágenes embebidas en products.image (modo productImagesFromDatabase)
+    // Modo BD: no emitir todo el catálogo (bloquea UI); usar prefetchProductListImages / emitCachedImagesForCoProducts.
     try {
-      if (this.isProductImagesFromDatabase() && this.mapDbProductImages.size > 0) {
-        for (const [coProduct, base64] of this.mapDbProductImages.entries()) {
-          if (base64) {
-            this.imageLoaded$.next({ imgName: coProduct, imgSrc: base64 });
-          }
-        }
+      if (this.isProductImagesFromDatabase()) {
+        return;
       }
     } catch (err) {
       console.warn('[emitCachedImages] db cache failed', err);
