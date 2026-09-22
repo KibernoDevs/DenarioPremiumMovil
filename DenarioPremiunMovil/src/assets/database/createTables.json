@@ -40,7 +40,7 @@
     "name": "document_sale_types",
     "table": "documentSaleTypes",
     "idName": "id_document_sale_type",
-    "sql": "CREATE TABLE IF NOT EXISTS document_sale_types ( id_document_sale_type INTEGER PRIMARY KEY, co_type VARCHAR(30), na_type VARCHAR(80), co_equiv VARCHAR(30), co_enterprise VARCHAR(80), id_enterprise INTEGER);"
+    "sql": "CREATE TABLE IF NOT EXISTS document_sale_types ( id_document_sale_type INTEGER PRIMARY KEY, co_type VARCHAR(30), na_type VARCHAR(80), co_equiv VARCHAR(30), co_enterprise VARCHAR(80), id_enterprise INTEGER, is_invoice INTEGER NOT NULL DEFAULT 0);"
   },
   {
     "id": 8,

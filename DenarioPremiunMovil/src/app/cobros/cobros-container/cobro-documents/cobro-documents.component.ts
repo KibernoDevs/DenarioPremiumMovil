@@ -4480,7 +4480,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const parteDecimal = Number.parseInt(String(this.globalConfig.get('parteDecimal') ?? '0'), 10) || 0;
     const factor = Math.pow(10, parteDecimal);
 
-    const detailBase = Math.max(0, Number(this.collectService.documentSaleOpen.nuAmountBase ?? 0));
+    const detailBase = this.collectService.resolveDiscountDetailBase(this.collectService.documentSaleOpen);
     let detailBaseNew = detailBase;
     const monedaDoc = this.collectService.documentSaleOpen.coCurrency;
     let viewBalance = 0;

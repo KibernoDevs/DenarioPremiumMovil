@@ -12,6 +12,7 @@ import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Currencies } from 'src/app/modelos/tables/currencies';
 import { ConversionType } from 'src/app/modelos/tables/conversionType';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
+import { DocumentSaleType } from 'src/app/modelos/tables/documentSaleType';
 import { IgtfList } from 'src/app/modelos/tables/igtfList';
 import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { PagoCheque } from 'src/app/modelos/pago-cheque';
@@ -6936,6 +6937,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   ): Promise<DocumentSale[] | void> {
 
     if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) return Promise.resolve();
+    await this.loadDocumentSaleTypeInvoiceMap(dbServ, idEnterprise);
     this.clearDocumentSalesState();
 
     if (pagination) {
@@ -10554,6 +10556,50 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       return Promise.resolve(true);
     })
+  }
+
+  public documentSaleTypeInvoiceById = new Map<number, boolean>();
+  private documentSaleTypeInvoiceEnterpriseId: number | null = null;
+
+  loadDocumentSaleTypeInvoiceMap(
+    dbServ: SQLiteObject,
+    idEnterprise: number,
+    forceReload: boolean = false,
+  ): Promise<Map<number, boolean>> {
+    if (
+      !forceReload
+      && this.documentSaleTypeInvoiceEnterpriseId === idEnterprise
+      && this.documentSaleTypeInvoiceById.size > 0
+    ) {
+      return Promise.resolve(this.documentSaleTypeInvoiceById);
+    }
+    const query =
+      'SELECT id_document_sale_type, is_invoice FROM document_sale_types WHERE id_enterprise = ?';
+    return dbServ.executeSql(query, [idEnterprise]).then((data) => {
+      this.documentSaleTypeInvoiceById.clear();
+      for (let i = 0; i < data.rows.length; i++) {
+        const row = data.rows.item(i);
+        const id = Number(row.id_document_sale_type);
+        const isInvoice = DocumentSaleType.normalizeIsInvoice(row.is_invoice);
+        this.documentSaleTypeInvoiceById.set(id, isInvoice);
+      }
+      this.documentSaleTypeInvoiceEnterpriseId = idEnterprise;
+      return this.documentSaleTypeInvoiceById;
+    }).catch(() => {
+      this.documentSaleTypeInvoiceById.clear();
+      this.documentSaleTypeInvoiceEnterpriseId = idEnterprise;
+      return this.documentSaleTypeInvoiceById;
+    });
+  }
+
+  resolveDiscountDetailBase(doc: DocumentSale): number {
+    if (!doc) {
+      return 0;
+    }
+    const idType = Number(doc.idDocumentSaleType ?? 0);
+    const useTotal = this.documentSaleTypeInvoiceById.get(idType) === true;
+    const raw = useTotal ? doc.nuAmountTotal : doc.nuAmountBase;
+    return Math.max(0, Number(raw ?? 0));
   }
 
   loadTypeDocumentList(dbServ: SQLiteObject, forceReload: boolean = false) {

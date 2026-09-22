@@ -2,5 +2,9 @@
   {
     "sql": "ALTER TABLE products ADD COLUMN image TEXT;",
     "description": "Se agrega la columna 'image' a 'products' para almacenar la imagen del producto sincronizada desde PremiumWS (Base64)."
+  },
+  {
+    "sql": "ALTER TABLE document_sale_types ADD COLUMN is_invoice INTEGER NOT NULL DEFAULT 0;",
+    "description": "Clasificación Factura (1) vs Nota de Crédito (0) para base de descuentos en Cobros."
   }
 ]

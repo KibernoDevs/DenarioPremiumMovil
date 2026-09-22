@@ -354,7 +354,10 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   private loadAllDocumentsSales(): Promise<void> {
-    return this.collectService.getDocumentsSales(
+    return this.collectService.loadDocumentSaleTypeInvoiceMap(
+      this.synchronizationServices.getDatabase(),
+      this.collectService.collection.idEnterprise,
+    ).then(() => this.collectService.getDocumentsSales(
       this.synchronizationServices.getDatabase(),
       this.collectService.collection.idClient,
       this.getAllDocumentsCurrency(),
@@ -367,7 +370,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
       }
       this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-    });
+    }));
   }
 
   async reset(client: Client) {
