@@ -114,4 +114,34 @@ describe('InventarioActividadesComponent', () => {
       expect(inventariosLogicService.saveSuggestedOrderSnapshot).not.toHaveBeenCalled();
     });
   });
+
+  describe('PED-SUG-GPS-001 copia GPS al lanzar pedido', () => {
+    it('sugerirPedido incluye coordenada del inventario', async () => {
+      inventariosLogicService.cliente = { idClient: 1, idList: 5 } as any;
+      inventariosLogicService.empresaSeleccionada = { idEnterprise: 1 } as any;
+      inventariosLogicService.addressClient = [{ idAddress: 7 }] as any;
+      inventariosLogicService.productsSuggested = [];
+      inventariosLogicService.idProductsSuggested = [];
+      inventariosLogicService.idUnitsSuggested = [];
+      inventariosLogicService.idProductsUnitsSuggested = [];
+      inventariosLogicService.newClientStock = {
+        coordenada: '  10.1,20.2  ',
+        idAddressClient: 7,
+        stDelivery: 1,
+        coClientStock: 'CS-1',
+        idClientStock: 99,
+      } as any;
+      (inventariosLogicService as any).saveSuggestedOrderSnapshot = jasmine.createSpy(
+        'saveSuggestedOrderSnapshot',
+      ).and.resolveTo();
+      component.orderServ.listaList = [{ idList: 5 }] as any;
+      component.orderServ.listaPricelist = [];
+      (component.message as { closeCustomBtn?: () => void }).closeCustomBtn = () => undefined;
+
+      await component.sugerirPedido();
+
+      expect(component.orderServ.datosPedidoSugerido.coordenada).toBe('10.1,20.2');
+      expect(component.orderServ.datosPedidoSugerido.coClientStock).toBe('CS-1');
+    });
+  });
 });

@@ -286,6 +286,9 @@ public modalCtrl = inject(ModalController);
       monedaSeleccionadaSugerencia,
     );
 
+    const coordenadaInventario = (this.inventariosLogicService.newClientStock?.coordenada ?? '')
+      .toString()
+      .trim();
     this.orderServ.datosPedidoSugerido = {
       empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,
@@ -298,6 +301,7 @@ public modalCtrl = inject(ModalController);
       idProducts: this.inventariosLogicService.idProductsSuggested,
       idUnits: this.inventariosLogicService.idUnitsSuggested,
       idProductUnits: this.inventariosLogicService.idProductsUnitsSuggested,
+      ...(coordenadaInventario ? { coordenada: coordenadaInventario } : {}),
       ...(monedaSeleccionadaSugerencia
         ? { monedaSeleccionadaSugerencia }
         : {}),

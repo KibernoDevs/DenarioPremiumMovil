@@ -39,4 +39,6 @@ export class SugerenciaPedido {
 
     /** Moneda elegida en preview Inventario pedido sugerido (solo ese flujo). */
     monedaSeleccionadaSugerencia?: CurrencyEnterprise;
+    /** GPS del inventario al lanzar Pedido Sugerido (PED-SUG-GPS-001). */
+    coordenada?: string;
 }

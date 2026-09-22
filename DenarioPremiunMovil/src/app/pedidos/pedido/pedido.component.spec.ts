@@ -22,6 +22,8 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Platform } from '@ionic/angular';
+import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
+import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 
 function buildOrderType(id: number, label: string): OrderType {
   return new OrderType(id, `CO${id}`, label, true, 'ENT', 1, false, 0, null, null, null);
@@ -32,8 +34,14 @@ describe('PedidoComponent', () => {
   let fixture: ComponentFixture<PedidoComponent>;
   let orderServMock: jasmine.SpyObj<PedidosService> & { tipoOrden?: OrderType };
   let changeDetectorMock: jasmine.SpyObj<ChangeDetectorRef>;
+  let geoServMock: { getCurrentPosition: jasmine.Spy };
+  let inventariosLogicMock: { newClientStock: { coClientStock: string; coordenada: string } };
 
   beforeEach(waitForAsync(() => {
+    geoServMock = {
+      getCurrentPosition: jasmine.createSpy('getCurrentPosition').and.resolveTo(''),
+    };
+    inventariosLogicMock = { newClientStock: { coClientStock: '', coordenada: '' } };
     orderServMock = jasmine.createSpyObj<PedidosService>('PedidosService', [
       'syncOrderTypeIvaOnProducts',
       'getTag',
@@ -43,6 +51,7 @@ describe('PedidoComponent', () => {
       'resetOrderExitBaseline',
       'updateSaveButtonAvailability',
       'updateSendButtonAvailability',
+      'sugerirPedido',
     ]);
     Object.assign(orderServMock, {
       openOrder: false,
@@ -59,6 +68,9 @@ describe('PedidoComponent', () => {
       disableSendButton: true,
       orderValidToSave: new Subject<boolean>(),
       orderValidToSend: new Subject<boolean>(),
+      desdeSugerencia: false,
+      datosPedidoSugerido: {},
+      coordenadas: '',
     });
     orderServMock.getTag.and.returnValue('');
     orderServMock.setup.and.resolveTo(undefined);
@@ -122,7 +134,9 @@ describe('PedidoComponent', () => {
         { provide: SynchronizationDBService, useValue: { getDatabase: () => ({}) } },
         { provide: ServicesService, useValue: {} },
         { provide: AutoSendService, useValue: {} },
-        { provide: GeolocationService, useValue: { getCurrentPosition: () => Promise.resolve('') } },
+        { provide: GeolocationService, useValue: geoServMock },
+        { provide: InventariosLogicService, useValue: inventariosLogicMock },
+        { provide: ClientLogicService, useValue: {} },
         { provide: PdfCreatorService, useValue: {} },
         { provide: ImageServicesService, useValue: {} },
         { provide: Platform, useValue: { backButton: { subscribeWithPriority: () => ({ unsubscribe: () => undefined }) } } },
@@ -161,5 +175,52 @@ describe('PedidoComponent', () => {
 
     expect(orderServMock.syncOrderTypeIvaOnProducts).not.toHaveBeenCalled();
     expect(changeDetectorMock.detectChanges).not.toHaveBeenCalled();
+  });
+
+  describe('PED-SUG-GPS-001 GPS al entrar Pedido Sugerido', () => {
+    it('copia GPS del payload y no llama geo', async () => {
+      Object.assign(orderServMock, {
+        datosPedidoSugerido: { coordenada: '1,2', coClientStock: 'CS-1' },
+        coordenadas: '',
+        userMustActivateGPS: true,
+      });
+
+      await (component as unknown as { ensureGpsForSuggestedOrder: () => Promise<void> })
+        .ensureGpsForSuggestedOrder();
+
+      expect(orderServMock.coordenadas).toBe('1,2');
+      expect(geoServMock.getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('usa GPS del draft si es el mismo inventario', async () => {
+      inventariosLogicMock.newClientStock = { coClientStock: 'CS-1', coordenada: '3,4' };
+      Object.assign(orderServMock, {
+        datosPedidoSugerido: { coClientStock: 'CS-1', coordenada: '' },
+        coordenadas: '',
+        userMustActivateGPS: true,
+      });
+
+      await (component as unknown as { ensureGpsForSuggestedOrder: () => Promise<void> })
+        .ensureGpsForSuggestedOrder();
+
+      expect(orderServMock.coordenadas).toBe('3,4');
+      expect(geoServMock.getCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('obtiene GPS nueva si inventario no tiene y userMustActivateGPS', async () => {
+      geoServMock.getCurrentPosition.and.resolveTo('9,9');
+      inventariosLogicMock.newClientStock = { coClientStock: 'OTHER', coordenada: '3,4' };
+      Object.assign(orderServMock, {
+        datosPedidoSugerido: { coClientStock: 'CS-1', coordenada: '' },
+        coordenadas: '',
+        userMustActivateGPS: true,
+      });
+
+      await (component as unknown as { ensureGpsForSuggestedOrder: () => Promise<void> })
+        .ensureGpsForSuggestedOrder();
+
+      expect(geoServMock.getCurrentPosition).toHaveBeenCalled();
+      expect(orderServMock.coordenadas).toBe('9,9');
+    });
   });
 });

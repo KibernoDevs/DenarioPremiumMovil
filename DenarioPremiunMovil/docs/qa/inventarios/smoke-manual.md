@@ -12,3 +12,4 @@ Checklist corta. No automatizar todavía.
 8. **Firma (`signatureStock`):** solo muestra el panel; no exige adjuntos al Guardar/Enviar (sin `requiredStockAttachments`).
 9. **GPS (`userMustActivateGPS`):** sin coordenada → modal al Enviar.
 10. **INV-GPS-001:** con GPS ya obtenida, cambiar cliente (con y sin toma) → Enviar no pide GPS de nuevo.
+11. **PED-SUG-GPS-001:** Pedido Sugerido con GPS de inventario y `userMustActivateGPS` → Pedidos Enviar no pide GPS de nuevo.
