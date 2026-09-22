@@ -217,6 +217,54 @@ describe('CobroPagosComponent', () => {
     expect(payment.daCollectionPayment).toBe('2026-08-01');
   });
 
+  it('COB-DATE-002: setMonto EF con validateCollectionDate usa fecha tasa y no hoy', () => {
+    collectionServiceMock.validateCollectionDate = true;
+    collectionServiceMock.collection.daRate = '2026-08-03';
+    collectionServiceMock.dateRate = '2026-08-04';
+    collectionServiceMock.pagoEfectivo = [{
+      monto: 0,
+      posCollectionPayment: 0,
+      fecha: '2026-08-04 00:00:00',
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ef',
+      coPaymentMethod: 'ef',
+      nuAmountPartial: 0,
+      daValue: '2026-08-04 00:00:00',
+      daCollectionPayment: '2026-08-04 00:00:00',
+    }];
+    spyOn(component, 'validatePayment');
+
+    component.setMonto(100, 0, 'ef');
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(collectionServiceMock.pagoEfectivo[0].fecha).toBe('2026-08-03');
+    expect(payment.daValue).toBe('2026-08-03');
+    expect(payment.daCollectionPayment).toBe('2026-08-03');
+  });
+
+  it('COB-DATE-002: getFechaValor EF con validateCollectionDate sincroniza daValue con fecha tasa', () => {
+    collectionServiceMock.validateCollectionDate = true;
+    collectionServiceMock.collection.daRate = '2026-08-03';
+    collectionServiceMock.pagoEfectivo = [{
+      fecha: '2026-08-04 00:00:00',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ef',
+      coPaymentMethod: 'ef',
+      daValue: '2026-08-04 00:00:00',
+      daCollectionPayment: '2026-08-04 00:00:00',
+    }];
+
+    component.getFechaValor('2026-08-04', 0, 'ef');
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(collectionServiceMock.pagoEfectivo[0].fecha).toBe('2026-08-03');
+    expect(payment.daValue).toBe('2026-08-03');
+    expect(payment.daCollectionPayment).toBe('2026-08-03');
+  });
+
   it('COB-DATE-001: getFechaValor OT writes daValue and daCollectionPayment', () => {
     collectionServiceMock.validateCollectionDate = false;
     collectionServiceMock.pagoOtros = [{

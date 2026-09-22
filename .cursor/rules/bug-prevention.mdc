@@ -50,6 +50,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
 - Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
 - Fecha TR/PM al cambiar: escribir `daValue` y `daCollectionPayment` (reabrir usa `daValue`); ver `COB-DATE-001`.
+- EF con `validateCollectionDate`: fecha valor = fecha tasa (`daRate`), no `hoyISO()` al monto/calendario; ver `COB-DATE-002`.
 - Pagos Cobros WS/SQLite: `daValue`/`daCollectionPayment` = `YYYY-MM-DD HH:mm:ss` (`toDbDateTime`); no `hoyISO()` con `T` al persistir/enviar — `COB-DATE-002`.
 - Anticipo remanente/NCR: Otros monto bloqueado (gris/disabled); comentario obligatorio al Enviar aunque `requiredComment` OFF — `COB-PREPAID-006`.
 - Cobro SAVED + NCR: neto desde details (no header obsoleto); preserve recalcula `creditBalancePrepaidAmount` — `COB-PREPAID-008`.
@@ -106,6 +107,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Guardar/Enviar: no acoplar Guardar a productos en el botón; validación completa al pulsar (`PED-SAVE-001`).
 - Guardar tras persistir: OFF hasta `markOrderDirty` / edición de usuario — `PED-SAVE-002`.
 - Enviar: General OK (cliente + sucursal + nuOrder/comentario si config) habilita; productos, almacén y GPS al click; adjuntos no obligatorios (`signatureOrder` solo UI) — `PED-SEND-001`.
+- Pedido Sugerido: copiar GPS de inventario (o fetch si falta) al entrar a `/pedido`; no depender del prefetch de `/pedidos` — `PED-SUG-GPS-001`.
 - `requiredCommentOrder`: no bloquear pestañas al abrir pedido no editable (enviado) con comentario vacío (`PED-COMMENT-001`).
 
 ## Vendedor

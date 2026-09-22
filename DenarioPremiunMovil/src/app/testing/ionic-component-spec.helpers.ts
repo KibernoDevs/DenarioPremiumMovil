@@ -117,6 +117,7 @@ export const mockInventariosLogicService = {
     coordenada: '',
   },
   getAllClientStock: () => Promise.resolve([]),
+  getClientStockCoordenada: () => Promise.resolve(''),
   showBackRoute: () => undefined,
   showHeaderButtons: false,
   disableSaveButton: true,
@@ -125,6 +126,7 @@ export const mockInventariosLogicService = {
   refreshSendBlockedState: () => undefined,
   updateSaveButtonAvailability: () => undefined,
   updateSendButtonAvailability: () => undefined,
+  showHeaderButtonsFunction: () => undefined,
 };
 
 export const mockDepositService = {

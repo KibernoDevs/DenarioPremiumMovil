@@ -12,8 +12,8 @@ import { ClientLogicService } from '../services/clientes/client-logic.service';
 import { ModalController } from '@ionic/angular';
 import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 import {
-  filterClientsBySelectionMode,
-  resolveClientSelectionMode,
+  isClientSuspended,
+  MSG_CLIENT_SUSPENDED_ORDER,
 } from '../utils/client-suspension.policy';
 
 
@@ -73,7 +73,7 @@ export class ClienteSelectorComponent implements OnInit {
   public page = 0; // para paginacion de clientes.
   public scrollDisable = false;
 
-  private shouldExcludeSuspended(): boolean {
+  get isPedidosSelector(): boolean {
     return (this.service.selectionCoModule || '').toLowerCase() === 'ped';
   }
 
@@ -230,7 +230,7 @@ export class ClienteSelectorComponent implements OnInit {
       idEnterprise,
       this.page,
       this.shouldFilterCollectionIva(),
-      this.shouldExcludeSuspended(),
+      false,
     ).then(result => {
       this.handleUpdateClientList(result);
     });
@@ -244,7 +244,7 @@ export class ClienteSelectorComponent implements OnInit {
         searchText,
         this.page,
         this.shouldFilterCollectionIva(),
-        this.shouldExcludeSuspended(),
+        false,
       ).then(result => {
         this.handleUpdateClientList(result);
       });
@@ -258,10 +258,7 @@ export class ClienteSelectorComponent implements OnInit {
       this.service.clientes = [] as Client[];
     }
 
-    const mode = resolveClientSelectionMode(this.service.selectionCoModule);
-    const clientsToShow = mode === 'order'
-      ? filterClientsBySelectionMode(result, 'order')
-      : result;
+    const clientsToShow = result;
 
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);
@@ -308,7 +305,20 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   @Output() clienteSeleccionado: EventEmitter<Client> = new EventEmitter<Client>();
+
+  getClientStatusLabel(client: Client): string {
+    return isClientSuspended(client) ? 'Suspendido' : 'Activo';
+  }
+
+  getClientStatusColor(client: Client): string {
+    return isClientSuspended(client) ? 'Red' : 'Blue';
+  }
+
   selectClient(input: Client) {
+    if (this.isPedidosSelector && isClientSuspended(input)) {
+      this.messageService.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
+      return;
+    }
 
     if (this.service.checkClient && this.service.clienteAnterior != null
       && this.service.clienteAnterior.idClient != input.idClient) {

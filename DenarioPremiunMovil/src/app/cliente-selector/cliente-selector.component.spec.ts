@@ -19,6 +19,11 @@ describe('ClienteSelectorComponent', () => {
   let fixture: ComponentFixture<ClienteSelectorComponent>;
   let currencyServiceMock: jasmine.SpyObj<CurrencyService>;
   let selectorServiceMock: Partial<ClienteSelectorService>;
+  let messageServiceMock: {
+    showLoading: () => Promise<void>;
+    hideLoading: () => undefined;
+    transaccionMsjModalNB: jasmine.Spy;
+  };
 
   beforeEach(waitForAsync(() => {
     currencyServiceMock = jasmine.createSpyObj('CurrencyService', [
@@ -55,6 +60,12 @@ describe('ClienteSelectorComponent', () => {
       onCLientChanged: jasmine.createSpy('onCLientChanged'),
     };
 
+    messageServiceMock = {
+      showLoading: () => Promise.resolve(),
+      hideLoading: () => undefined,
+      transaccionMsjModalNB: jasmine.createSpy('transaccionMsjModalNB'),
+    };
+
     TestBed.configureTestingModule({
       declarations: [ClienteSelectorComponent],
       imports: [IonicModule.forRoot()],
@@ -64,7 +75,7 @@ describe('ClienteSelectorComponent', () => {
         { provide: SynchronizationDBService, useValue: { getDatabase: () => ({}) } },
         { provide: ClientesDatabaseServicesService, useValue: { MAX_ITEMS_PER_PAGE: 50 } },
         { provide: CollectionService, useValue: { userCanCollectIva: false, cobro25: false } },
-        { provide: MessageService, useValue: { showLoading: () => Promise.resolve(), hideLoading: () => undefined } },
+        { provide: MessageService, useValue: messageServiceMock },
         { provide: ClientLogicService, useValue: { checkUserStatus: () => undefined, esTransportista: false, showClientDetail: () => undefined } },
         { provide: ModalController, useValue: {} },
         { provide: GlobalConfigService, useValue: { get: () => 'false' } },
@@ -116,5 +127,55 @@ describe('ClienteSelectorComponent', () => {
     expect(component.getSecondaryCurrencyLabel()).toBe('USD');
     expect(component.getSecondarySaldo(client)).toBe(25);
     expect(component.canShowConversion).toBeTrue();
+  });
+
+  it('handleUpdateClientList en ped conserva cliente suspendido', async () => {
+    component.multimoneda = false;
+    component.page = 0;
+    component.clientes = [];
+    component.searchMode = false;
+
+    const suspended = { idClient: 2, lbClient: 'Suspendido', inSuspension: true } as Client;
+    await component.handleUpdateClientList([suspended]);
+
+    expect(component.clientes.length).toBe(1);
+    expect(component.clientes[0].idClient).toBe(2);
+  });
+
+  it('selectClient suspendido en ped muestra aviso y no emite', () => {
+    spyOn(component.clienteSeleccionado, 'emit');
+    spyOn(component, 'closeModal');
+    const suspended = { idClient: 3, inSuspension: 1 } as unknown as Client;
+
+    component.selectClient(suspended);
+
+    expect(messageServiceMock.transaccionMsjModalNB).toHaveBeenCalledWith(
+      'Cliente suspendido: no se pueden crear pedidos',
+    );
+    expect(component.clienteSeleccionado.emit).not.toHaveBeenCalled();
+    expect(component.closeModal).not.toHaveBeenCalled();
+  });
+
+  it('selectClient activo en ped emite y cierra modal', () => {
+    spyOn(component.clienteSeleccionado, 'emit');
+    spyOn(component, 'closeModal');
+    const active = { idClient: 4, inSuspension: false } as Client;
+
+    component.selectClient(active);
+
+    expect(messageServiceMock.transaccionMsjModalNB).not.toHaveBeenCalled();
+    expect(component.clienteSeleccionado.emit).toHaveBeenCalledWith(active);
+    expect(component.closeModal).toHaveBeenCalled();
+  });
+
+  it('Estatus Pedidos: Activo azul y Suspendido rojo', () => {
+    const active = { inSuspension: false } as Client;
+    const suspended = { inSuspension: true } as Client;
+
+    expect(component.isPedidosSelector).toBeTrue();
+    expect(component.getClientStatusLabel(active)).toBe('Activo');
+    expect(component.getClientStatusColor(active)).toBe('Blue');
+    expect(component.getClientStatusLabel(suspended)).toBe('Suspendido');
+    expect(component.getClientStatusColor(suspended)).toBe('Red');
   });
 });

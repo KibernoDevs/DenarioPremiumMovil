@@ -3,6 +3,10 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { InventarioSugeridoPreviewComponent } from './inventario-sugerido-preview.component';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
+import { ModalController } from '@ionic/angular';
+import { Client } from 'src/app/modelos/tables/client';
+import { MSG_CLIENT_SUSPENDED_ORDER } from 'src/app/utils/client-suspension.policy';
 import {
   configureIonicComponentTestingModule,
   createShallowComponentFixture,
@@ -63,5 +67,35 @@ describe('InventarioSugeridoPreviewComponent', () => {
     expect(mockPedidosService.ensureModuleReady).toHaveBeenCalled();
     expect(mockPedidosService.getTag).toHaveBeenCalledWith('PED_MONEDA');
     expect(component.monedaLabel).toBe('Moneda');
+  });
+
+  it('confirm suspendido muestra aviso y no cierra modal', () => {
+    const message = TestBed.inject(MessageService);
+    spyOn(message, 'transaccionMsjModalNB');
+    const modalCtrl = TestBed.inject(ModalController) as unknown as { dismiss: jasmine.Spy };
+    modalCtrl.dismiss = jasmine.createSpy('dismiss');
+    component.client = { inSuspension: true } as Client;
+
+    component.confirm();
+
+    expect(message.transaccionMsjModalNB).toHaveBeenCalledWith(MSG_CLIENT_SUSPENDED_ORDER);
+    expect(modalCtrl.dismiss).not.toHaveBeenCalled();
+  });
+
+  it('confirm activo dismiss confirm', () => {
+    const message = TestBed.inject(MessageService);
+    spyOn(message, 'transaccionMsjModalNB');
+    const modalCtrl = TestBed.inject(ModalController) as unknown as { dismiss: jasmine.Spy };
+    modalCtrl.dismiss = jasmine.createSpy('dismiss');
+    component.client = { inSuspension: false } as Client;
+    component.monedaSeleccionadaPreview = { idCurrency: 1, coCurrency: 'BS' } as any;
+
+    component.confirm();
+
+    expect(message.transaccionMsjModalNB).not.toHaveBeenCalled();
+    expect(modalCtrl.dismiss).toHaveBeenCalledWith(
+      { monedaSeleccionada: component.monedaSeleccionadaPreview },
+      'confirm',
+    );
   });
 });
