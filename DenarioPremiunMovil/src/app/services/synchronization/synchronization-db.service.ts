@@ -122,7 +122,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 24;
+  private CURRENT_DB_VERSION: number = 25;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
 
@@ -783,15 +783,17 @@ export class SynchronizationDBService {
   insertDocumentSaleTypeBatch(arr: DocumentSaleType[]) {
     var statements = [];
     let insertStatement = 'INSERT OR REPLACE INTO document_sale_types(' +
-      'id_document_sale_type,co_type,na_type,co_equiv,co_enterprise,id_enterprise' +
+      'id_document_sale_type,co_type,na_type,co_equiv,co_enterprise,id_enterprise,is_invoice' +
       ') ' +
-      'VALUES(?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?)'
 
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      const rawInvoice = (obj as { isInvoice?: boolean | number | string }).isInvoice;
+      const isInvoiceVal = (rawInvoice === true || rawInvoice === 1 || rawInvoice === '1') ? 1 : 0;
       statements.push([insertStatement, [obj.idDocumentSaleType, obj.coType,
-      obj.naType, obj.coEquiv, obj.coEnterprise, obj.idEnterprise]]);
+      obj.naType, obj.coEquiv, obj.coEnterprise, obj.idEnterprise, isInvoiceVal]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

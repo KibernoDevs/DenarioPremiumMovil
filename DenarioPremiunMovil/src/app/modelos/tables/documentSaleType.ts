@@ -8,8 +8,13 @@ export class DocumentSaleType {
             obj['coEquiv'],
             obj['coEnterprise'],
             obj['idEnterprise'],
+            DocumentSaleType.normalizeIsInvoice(obj['isInvoice']),
 
         );
+    }
+
+    static normalizeIsInvoice(value: unknown): boolean {
+        return value === true || value === 1 || value === '1' || value === 'true';
     }
 
     constructor(
@@ -19,6 +24,7 @@ export class DocumentSaleType {
         public coEquiv: string,
         public coEnterprise: string,
         public idEnterprise: number,
+        public isInvoice: boolean = false,
         
     ) { }
 }

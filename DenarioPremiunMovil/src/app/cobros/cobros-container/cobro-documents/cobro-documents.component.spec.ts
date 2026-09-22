@@ -56,6 +56,16 @@ describe('CobrosDocumentComponent', () => {
       documentSaleOpen: null,
       collectionTags: new Map(),
       collectionTagsDenario: new Map([['DENARIO_BOTON_ACEPTAR', 'Aceptar'], ['DENARIO_BOTON_CANCELAR', 'Cancelar']]),
+      documentSaleTypeInvoiceById: new Map<number, boolean>(),
+      resolveDiscountDetailBase: (doc: DocumentSale | null) => {
+        if (!doc) {
+          return 0;
+        }
+        const id = Number(doc.idDocumentSaleType ?? 0);
+        const useTotal = collectServiceMock.documentSaleTypeInvoiceById.get(id) === true;
+        const raw = useTotal ? doc.nuAmountTotal : doc.nuAmountBase;
+        return Math.max(0, Number(raw ?? 0));
+      },
     };
 
     TestBed.configureTestingModule({
@@ -519,6 +529,33 @@ describe('CobrosDocumentComponent', () => {
       const preview = component.computeCollectDiscountPreview(false);
       expect(preview?.discountTotal).toBe(158);
       expect(preview?.baseBalance).toBe(195.88);
+    });
+
+    it('is_invoice=true: el % de descuento usa nuAmountTotal', () => {
+      collectServiceMock.documentSaleTypeInvoiceById.set(10, true);
+      collectServiceMock.documentSaleOpen = {
+        idDocumentSaleType: 10,
+        coDocument: 'FAC-1',
+        nuAmountBase: 100,
+        nuAmountTotal: 500,
+        nuAmountDiscount: 0,
+        coCurrency: 'USD',
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        positionCollecDetails: 0,
+      };
+      collectServiceMock.documentSalesView = [{ nuBalance: 500, coDocument: 'FAC-1' }];
+      collectServiceMock.selectedCollectDiscounts = [1];
+      collectServiceMock.tempSelectedCollectDiscounts = [
+        { idCollectDiscount: 1, nuCollectDiscount: 10, nuAmountCollectDiscount: 0 },
+      ];
+      collectServiceMock.collectDiscounts = [
+        { idCollectDiscount: 1, nuCollectDiscount: 10 },
+      ];
+      (component as any).manualCollectDiscountAmount = 0;
+
+      const preview = component.computeCollectDiscountPreview(false);
+      expect(preview?.discountTotal).toBe(50);
     });
   });
 

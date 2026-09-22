@@ -66,7 +66,7 @@ export class LoginComponent implements OnInit {
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
   public currentYear: number = new Date().getFullYear();
 
-  private static readonly FALLBACK_VERSION = '6.6.22';
+  private static readonly FALLBACK_VERSION = '6.6.23';
 
   async ngOnInit() {
     this.versionApp = await this.resolveAppVersion();
