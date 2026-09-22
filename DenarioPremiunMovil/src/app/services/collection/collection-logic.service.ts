@@ -2177,6 +2177,19 @@ export class CollectionService {
     return String(raw).trim();
   }
 
+  /** Fecha tasa (YYYY-MM-DD) desde SQLite para POST WS (COB-DATE-002). */
+  public normalizeCollectionDaRateFromDb(raw: unknown): string {
+    if (raw === null || raw === undefined || raw === '') {
+      return '';
+    }
+    const s = String(raw).trim();
+    if (!s) {
+      return '';
+    }
+    const datePart = s.includes('T') ? s.split('T')[0] : (s.length >= 10 ? s.substring(0, 10) : s);
+    return datePart.substring(0, Math.min(10, datePart.length));
+  }
+
   public normalizeCollectionHeaderCoType(collection?: Collection | null): void {
     const target = collection ?? this.collection;
     if (!target) {
@@ -9888,7 +9901,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     });
   }
 
-  /** Pago EF mínimo para enviar anticipo (co_type=1) si SQLite no tiene fila de pago. */
+  /**
+   * Pago EF mínimo para enviar anticipo (co_type=1) si SQLite no tiene fila de pago.
+   * Fecha valor / fecha pago: prioriza collection.daRate (Fecha tasa) si existe;
+   * si no, usa hoy (paymentDateForWs). La cabecera del POST ya lleva daRate aparte.
+   */
   buildSyntheticAnticipoCollectionPayment(
     collection: Collection,
     amount: number,
@@ -9896,7 +9913,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   ): CollectionPayment {
     const normalizedAmount = Math.max(0, Number(amount) || 0);
     const normalizedConversion = Math.max(0, Number(amountConversion) || 0);
-    const today = this.paymentDateForWs();
+    const rateDate = String(collection?.daRate ?? '').trim();
+    const paymentDate = this.paymentDateForWs(rateDate || null);
     return new CollectionPayment(
       null,
       0,
@@ -9907,8 +9925,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       '',
       '',
       '',
-      today,
-      today,
+      paymentDate,
+      paymentDate,
       '1',
       '',
       normalizedAmount,
@@ -10163,6 +10181,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.isEditTotal = 0;
         collection.isSave = 1;
         collection.nuValueLocal = res.rows.item(0).nu_value_local;
+        collection.daRate = this.normalizeCollectionDaRateFromDb(res.rows.item(0).da_rate);
         //collection.idConversionType = res.rows.item(0).id_conversion_type;
         collection.idCurrency = res.rows.item(0).id_currency;
         collection.txConversion = res.rows.item(0).tx_conversion;

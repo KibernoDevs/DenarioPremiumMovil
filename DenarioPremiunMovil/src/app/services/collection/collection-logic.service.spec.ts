@@ -2970,6 +2970,16 @@ describe('CollectionService', () => {
         expect(payment.daCollectionPayment).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
       });
 
+      it('COB-DATE-002: buildSyntheticAnticipoCollectionPayment prioriza daRate de cabecera', () => {
+        const payment = service.buildSyntheticAnticipoCollectionPayment(
+          { coCollection: 'ANT-RATE', daRate: '2026-02-10' } as any,
+          1,
+          1,
+        );
+        expect(String(payment.daValue ?? '').startsWith('2026-02-10')).toBeTrue();
+        expect(String(payment.daCollectionPayment ?? '').startsWith('2026-02-10')).toBeTrue();
+      });
+
       it('COB-PREPAID-006: comentario obligatorio en anticipo remanente/NCR aunque requiredComment OFF', () => {
         service.coTypeModule = '0';
         service.automatedPrepaid = true;
@@ -4957,6 +4967,66 @@ describe('CollectionService', () => {
 
     it('still strips ; \' " characters', () => {
       expect(service.cleanString(`hola;"'mundo"`)).toBe('holamundo');
+    });
+  });
+
+  describe('getCollection daRate (COB-DATE-002)', () => {
+    it('normalizeCollectionDaRateFromDb returns YYYY-MM-DD from timestamp', () => {
+      expect(service.normalizeCollectionDaRateFromDb('2026-03-15T00:00:00')).toBe('2026-03-15');
+      expect(service.normalizeCollectionDaRateFromDb('2026-03-15')).toBe('2026-03-15');
+      expect(service.normalizeCollectionDaRateFromDb(null)).toBe('');
+    });
+
+    it('getCollection maps da_rate from SQLite to daRate on payload object', async () => {
+      const dbRow: Record<string, unknown> = {
+        co_collection: 'COB-SEND-1',
+        co_original_collection: '',
+        da_collection: '2026-03-15',
+        da_rate: '2026-02-10',
+        na_responsible: '',
+        co_currency: 'USD',
+        co_type: '0',
+        tx_comment: '',
+        lb_client: 'Cliente',
+        id_client: 1,
+        co_client: 'C1',
+        id_enterprise: 1,
+        co_enterprise: 'E1',
+        st_collection: 0,
+        st_delivery: 1,
+        nu_value_local: 36.5,
+        id_currency: 1,
+        tx_conversion: '',
+        nu_amount_total: 0,
+        nu_amount_total_conversion: 0,
+        nu_difference: 0,
+        nu_difference_conversion: 0,
+        nu_igtf: 0,
+        nu_amount_final: 0,
+        nu_amount_final_conversion: 0,
+        nu_amount_igtf: 0,
+        nu_amount_igtf_conversion: 0,
+        nu_amount_paid: 0,
+        nu_amount_paid_conversion: 0,
+        nu_amount_discount_total: 0,
+        nu_amount_discount_total_conversion: 0,
+        coordenada: '',
+        has_attachments: 'false',
+        nu_attachments: 0,
+      };
+      const dbServ = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: {
+            length: 1,
+            item: (index: number) => (index === 0 ? dbRow : undefined),
+          },
+        }),
+      };
+
+      const result = await service.getCollection(dbServ as any, 'COB-SEND-1');
+
+      expect(dbServ.executeSql).toHaveBeenCalled();
+      expect(result.daRate).toBe('2026-02-10');
     });
   });
 });
