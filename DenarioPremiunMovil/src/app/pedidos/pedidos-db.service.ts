@@ -323,14 +323,17 @@ export class PedidosDbService {
 
   getPaymentConditions(db: SQLiteObject, idEnterprise: number) {
     let query = "SELECT id_payment_condition as idPaymentCondition, co_payment_condition as coPaymentCondition, " +
-      "na_payment_condition as naPaymentCondition, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
+      "na_payment_condition as naPaymentCondition, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
+      "nu_min_amount as nuMinAmount " +
       "from payment_conditions where id_enterprise = ? " +
       "order by na_payment_condition ASC";
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: PaymentCondition[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i);
+        row.nuMinAmount = Number(row.nuMinAmount ?? 0);
+        list.push(row);
       }
       return list;
     })

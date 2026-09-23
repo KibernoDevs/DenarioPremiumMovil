@@ -348,6 +348,11 @@
                       <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition" [value]="pc">{{
                         pc.naPaymentCondition }}</ion-select-option>
                     </ion-select>
+                    @if (orderServ.isBelowPaymentConditionMinimum()) {
+                    <div class="order-send-error-hint">
+                      {{ orderServ.getTag("PED_MSJ_ERROR_MIN_PAYMENT") }}
+                    </div>
+                    }
                   </div>
                 </ion-col>
 

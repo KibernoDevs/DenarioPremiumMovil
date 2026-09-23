@@ -613,6 +613,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   syncOrderEditContext(): void {
+    this.orderServ.selectedPaymentCondition = this.paymentCondition ?? null;
     this.orderServ.setOrderEditContext({
       idClient: this.orderServ.cliente?.idClient ?? null,
       idAddressClient: this.direccionCliente?.idAddress ?? null,
@@ -1704,6 +1705,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       if (payCond != undefined) {
         this.paymentCondition = payCond;
         this.paymentConditionAnterior = payCond;
+        this.orderServ.selectedPaymentCondition = payCond;
+        this.orderServ.updateSendButtonAvailability();
       }
 
       // Address Client
@@ -2280,6 +2283,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   changePaymentCondition() {
     if (!this.paymentConditionAnterior || !this.paymentCondition) {
       this.paymentConditionAnterior = this.paymentCondition;
+      this.orderServ.selectedPaymentCondition = this.paymentCondition ?? null;
+      this.orderServ.updateSendButtonAvailability();
       return;
     }
 
@@ -2288,6 +2293,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     }
 
     const paymentConditionSeleccionada = this.paymentCondition;
+    this.orderServ.selectedPaymentCondition = paymentConditionSeleccionada;
+    this.orderServ.updateSendButtonAvailability();
 
     this.message.alertCustomBtn({
       header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
@@ -2299,6 +2306,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           role: 'cancel',
           handler: () => {
             this.paymentCondition = this.paymentConditionAnterior;
+            this.orderServ.selectedPaymentCondition = this.paymentConditionAnterior;
             this.orderServ.updateSaveButtonAvailability();
             this.orderServ.updateSendButtonAvailability();
           },
@@ -2308,6 +2316,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           role: 'confirm',
           handler: () => {
             this.paymentConditionAnterior = paymentConditionSeleccionada;
+            this.orderServ.selectedPaymentCondition = paymentConditionSeleccionada;
             this.onChange();
           },
         }

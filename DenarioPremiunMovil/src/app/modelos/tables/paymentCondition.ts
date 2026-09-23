@@ -7,7 +7,7 @@ export class PaymentCondition {
             obj['naPaymentCondition'],
             obj['coEnterprise'],
             obj['idEnterprise'],
-          
+            obj['nuMinAmount'],
         );
     }
 
@@ -17,6 +17,6 @@ export class PaymentCondition {
         public naPaymentCondition: string,
         public coEnterprise: string,
         public idEnterprise: number,
-        
+        public nuMinAmount: number = 0,
     ) { }
 }

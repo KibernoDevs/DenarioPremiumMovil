@@ -247,6 +247,8 @@ export class PedidosService {
   public userCanChangeUnits = true;
   public showProductImages!: boolean;
   public userCanChangePaymentConditions!: boolean;
+  public validateMinPaymentCondition = false;
+  public selectedPaymentCondition: PaymentCondition | null = null;
   public paymentCurrencyEnabled!: boolean;
   public paymentCurrencyDefault = '';
   public showCreditLimit!: boolean;
@@ -774,6 +776,7 @@ export class PedidosService {
     this.userCanChangeWarehouse = this.config.get("userCanChangeWarehouse").toLowerCase() === 'true';
     this.showProductImages = this.config.get("showProductImages").toLowerCase() === 'true';
     this.userCanChangePaymentConditions = this.config.get("userCanChangePaymentConditions").toLowerCase() === 'true';
+    this.validateMinPaymentCondition = this.config.get("validateMinPaymentCondition").toLowerCase() === 'true';
     this.paymentCurrencyEnabled = this.config.get("paymentCurrency").toLowerCase() === 'true';
     this.paymentCurrencyDefault = (this.config.get("paymentCurrencyDefault") || '').trim();
     this.showCreditLimit = this.config.get("showCreditLimit").toLowerCase() === 'true';
@@ -917,6 +920,10 @@ export class PedidosService {
       this.onOrderValidToSend(false);
       return;
     }
+    if (this.isBelowPaymentConditionMinimum()) {
+      this.onOrderValidToSend(false);
+      return;
+    }
     this.onOrderValidToSend(this.generalTabValidForSave);
   }
 
@@ -1034,6 +1041,17 @@ export class PedidosService {
     return coord.length === 0;
   }
 
+  public isBelowPaymentConditionMinimum(): boolean {
+    if (!this.validateMinPaymentCondition) {
+      return false;
+    }
+    const minAmount = Number(this.selectedPaymentCondition?.nuMinAmount ?? 0);
+    if (!(minAmount > 0)) {
+      return false;
+    }
+    return Number(this.totalPedido ?? 0) < minAmount;
+  }
+
   /**
    * Errores que bloquean Enviar: General + productos (+ GPS/almacén si config).
    * Firma/adjuntos no son obligatorios: `signatureOrder` solo muestra el panel de firma.
@@ -1058,6 +1076,9 @@ export class PedidosService {
       return true;
     }
     if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    if (this.isBelowPaymentConditionMinimum()) {
       return true;
     }
     return false;
@@ -1093,6 +1114,10 @@ export class PedidosService {
     if (this.hasMissingGpsCoordinate()) {
       return this.tags.get('PED_MSJ_ERROR_NO_GPS')
         ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    if (this.isBelowPaymentConditionMinimum()) {
+      return this.tags.get('PED_MSJ_ERROR_MIN_PAYMENT')
+        ?? 'El pedido no alcanza el mínimo de la condición de pago.';
     }
     return this.tags.get('DENARIO_CAMPO_OBLIGATORIO')
       ?? 'Complete los campos obligatorios del pedido.';

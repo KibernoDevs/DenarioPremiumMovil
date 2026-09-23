@@ -122,7 +122,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 25;
+  private CURRENT_DB_VERSION: number = 26;
   private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
 
@@ -945,14 +945,14 @@ export class SynchronizationDBService {
   insertPaymentConditionBatch(arr: PaymentCondition[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO payment_conditions(" +
-      'id_payment_condition,co_payment_condition,na_payment_condition,co_enterprise,id_enterprise' +
+      'id_payment_condition,co_payment_condition,na_payment_condition,co_enterprise,id_enterprise,nu_min_amount' +
       ') ' +
-      'VALUES(?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idPaymentCondition, obj.coPaymentCondition,
-      obj.naPaymentCondition, obj.coEnterprise, obj.idEnterprise]]);
+      obj.naPaymentCondition, obj.coEnterprise, obj.idEnterprise, obj.nuMinAmount ?? 0]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

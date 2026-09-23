@@ -1,0 +1,6 @@
+[
+  {
+    "sql": "ALTER TABLE payment_conditions ADD COLUMN nu_min_amount NUMERIC DEFAULT 0;",
+    "description": "Monto minimo de pedido por condicion de pago (sync desde payment_condition.nu_min_amount)."
+  }
+]

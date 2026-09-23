@@ -244,6 +244,73 @@ describe('PedidosService', () => {
     });
   });
 
+  describe('validateMinPaymentCondition mínimo por condición de pago', () => {
+    const minPc = {
+      idPaymentCondition: 1,
+      coPaymentCondition: 'CONT',
+      naPaymentCondition: 'Contado',
+      coEnterprise: 'E1',
+      idEnterprise: 1,
+      nuMinAmount: 100,
+    };
+
+    beforeEach(() => {
+      service.generalTabValidForSave = true;
+      service.setOrderEditContext(baseContext());
+      service.carrito = [buildCartItem()];
+      service.selectedPaymentCondition = minPc;
+      service.totalPedido = 50;
+      service.tags.set('PED_MSJ_ERROR_MIN_PAYMENT', 'El pedido no alcanza el mínimo');
+    });
+
+    it('flag off no bloquea Enviar ni hasOrderFieldErrors', () => {
+      service.validateMinPaymentCondition = false;
+      let sendEnabled: boolean | undefined;
+      service.orderValidToSend.subscribe((v: boolean) => sendEnabled = v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeTrue();
+      expect(service.hasOrderFieldErrors()).toBeFalse();
+    });
+
+    it('flag on y total menor apaga Enviar', () => {
+      service.validateMinPaymentCondition = true;
+      let sendEnabled: boolean | undefined;
+      service.orderValidToSend.subscribe((v: boolean) => sendEnabled = v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeFalse();
+      expect(service.hasOrderFieldErrors()).toBeTrue();
+      expect(service.getOrderValidationMessage()).toContain('mínimo');
+    });
+
+    it('flag on y total igual o mayor deja Enviar ON si General válida', () => {
+      service.validateMinPaymentCondition = true;
+      service.totalPedido = 100;
+      let sendEnabled: boolean | undefined;
+      service.orderValidToSend.subscribe((v: boolean) => sendEnabled = v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeTrue();
+      expect(service.hasOrderFieldErrors()).toBeFalse();
+    });
+
+    it('mínimo 0 o null no bloquea', () => {
+      service.validateMinPaymentCondition = true;
+      service.selectedPaymentCondition = { ...minPc, nuMinAmount: 0 };
+      let sendEnabled: boolean | undefined;
+      service.orderValidToSend.subscribe((v: boolean) => sendEnabled = v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeTrue();
+      expect(service.hasOrderFieldErrors()).toBeFalse();
+
+      service.selectedPaymentCondition = { ...minPc, nuMinAmount: undefined as unknown as number };
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeTrue();
+    });
+  });
+
   describe('PED-SEND-001 adjuntos signatureOrder', () => {
     beforeEach(() => {
       service.signatureOrder = true;

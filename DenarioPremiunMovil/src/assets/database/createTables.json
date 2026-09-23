@@ -124,7 +124,7 @@
     "name": "payment_conditions",
     "table": "paymentConditions",
     "idName": "id_payment_condition",
-    "sql": "CREATE TABLE IF NOT EXISTS payment_conditions ( id_payment_condition INTEGER PRIMARY KEY, co_payment_condition VARCHAR(30), na_payment_condition VARCHAR(80) NOT NULL, co_enterprise VARCHAR(50), id_enterprise INTEGER);"
+    "sql": "CREATE TABLE IF NOT EXISTS payment_conditions ( id_payment_condition INTEGER PRIMARY KEY, co_payment_condition VARCHAR(30), na_payment_condition VARCHAR(80) NOT NULL, co_enterprise VARCHAR(50), id_enterprise INTEGER, nu_min_amount NUMERIC);"
   },
   {
     "id": 32,
