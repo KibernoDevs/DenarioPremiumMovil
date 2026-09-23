@@ -43,18 +43,12 @@ export function isClientOperationallyVisible(client: Client | null | undefined):
 
 export function filterClientsBySelectionMode(
   clients: Client[],
-  mode: ClientSelectionMode,
+  _mode: ClientSelectionMode,
 ): Client[] {
   if (!clients?.length) {
     return [];
   }
-  if (mode === 'order') {
-    return clients.filter((c) => canCreateOrderForClient(c));
-  }
-  if (mode === 'collection') {
-    return clients.filter((c) => canCreateCollectionForClient(c));
-  }
-  return clients.filter((c) => isClientOperationallyVisible(c));
+  return clients;
 }
 
 export function resolveClientSelectionMode(coModule: string | null | undefined): ClientSelectionMode {

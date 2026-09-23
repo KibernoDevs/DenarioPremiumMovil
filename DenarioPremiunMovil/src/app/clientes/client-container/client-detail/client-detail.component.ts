@@ -12,6 +12,7 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
+import { isClientSuspended } from 'src/app/utils/client-suspension.policy';
 
 type ClientWithBalanceAlias = Client & { saldo?: number };
 
@@ -797,5 +798,13 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get clienteTabLabel(): string {
     return formatClientForTab(this.client?.naClient, this.client?.coClient, this.client?.lbClient);
+  }
+
+  getClientStatusLabel(): string {
+    return isClientSuspended(this.client) ? 'Suspendido' : 'Activo';
+  }
+
+  getClientStatusColor(): string {
+    return isClientSuspended(this.client) ? 'Red' : 'Blue';
   }
 }
