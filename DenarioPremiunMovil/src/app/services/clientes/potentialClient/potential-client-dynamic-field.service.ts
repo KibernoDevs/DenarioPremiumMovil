@@ -53,7 +53,7 @@ export class PotentialClientDynamicFieldService {
     for (let i = 0; i < defsRes.rows.length; i++) {
       const row = defsRes.rows.item(i);
       const coFieldType = String(row.co_field_type ?? 'SELECT').toUpperCase();
-      if (coFieldType !== 'SELECT') {
+      if (coFieldType !== 'SELECT' && coFieldType !== 'RANGE') {
         continue;
       }
       const idFieldDef = Number(row.id_field_def);
