@@ -248,6 +248,7 @@ export class PedidosService {
   public showProductImages!: boolean;
   public userCanChangePaymentConditions!: boolean;
   public validateMinPaymentCondition = false;
+  public minPaymentConditionCurrency = '';
   public selectedPaymentCondition: PaymentCondition | null = null;
   public paymentCurrencyEnabled!: boolean;
   public paymentCurrencyDefault = '';
@@ -777,6 +778,7 @@ export class PedidosService {
     this.showProductImages = this.config.get("showProductImages").toLowerCase() === 'true';
     this.userCanChangePaymentConditions = this.config.get("userCanChangePaymentConditions").toLowerCase() === 'true';
     this.validateMinPaymentCondition = this.config.get("validateMinPaymentCondition").toLowerCase() === 'true';
+    this.minPaymentConditionCurrency = (this.config.get("minPaymentConditionCurrency") || '').trim();
     this.paymentCurrencyEnabled = this.config.get("paymentCurrency").toLowerCase() === 'true';
     this.paymentCurrencyDefault = (this.config.get("paymentCurrencyDefault") || '').trim();
     this.showCreditLimit = this.config.get("showCreditLimit").toLowerCase() === 'true';
@@ -1041,15 +1043,61 @@ export class PedidosService {
     return coord.length === 0;
   }
 
+  public resolveMinPaymentConditionCurrencyCode(): string {
+    if (!this.currencyService.multimoneda) {
+      return String(this.currencyService.getLocalCurrency()?.coCurrency ?? '').trim();
+    }
+    const configured = String(this.minPaymentConditionCurrency ?? '').trim();
+    if (configured === 'LocalCurrency') {
+      return String(this.currencyService.getLocalCurrency()?.coCurrency ?? '').trim();
+    }
+    if (configured === 'HardCurrency') {
+      return String(this.currencyService.getHardCurrency()?.coCurrency ?? '').trim();
+    }
+    if (configured) {
+      return String(this.currencyService.getCurrency(configured)?.coCurrency ?? configured).trim();
+    }
+    return String(this.currencyService.getLocalCurrency()?.coCurrency ?? '').trim();
+  }
+
+  public getPaymentConditionMinimumInOrderCurrency(): number {
+    const raw = Number(this.selectedPaymentCondition?.nuMinAmount ?? 0);
+    if (!(raw > 0)) {
+      return 0;
+    }
+    if (!this.currencyService.multimoneda) {
+      return raw;
+    }
+    const minCurrency = this.resolveMinPaymentConditionCurrencyCode();
+    const orderCurrency = String(this.monedaSeleccionada?.coCurrency ?? '').trim();
+    if (!minCurrency || !orderCurrency || minCurrency === orderCurrency) {
+      return raw;
+    }
+    const hard = String(this.currencyService.hardCurrency?.coCurrency ?? '').trim();
+    const local = String(this.currencyService.localCurrency?.coCurrency ?? '').trim();
+    if (minCurrency === hard && orderCurrency === local) {
+      return this.currencyService.toLocalCurrency(raw);
+    }
+    if (minCurrency === local && orderCurrency === hard) {
+      return this.currencyService.toHardCurrency(raw);
+    }
+    return raw;
+  }
+
   public isBelowPaymentConditionMinimum(): boolean {
     if (!this.validateMinPaymentCondition) {
       return false;
     }
-    const minAmount = Number(this.selectedPaymentCondition?.nuMinAmount ?? 0);
+    const minAmount = this.getPaymentConditionMinimumInOrderCurrency();
     if (!(minAmount > 0)) {
       return false;
     }
     return Number(this.totalPedido ?? 0) < minAmount;
+  }
+
+  public shouldShowPaymentConditionMinimum(): boolean {
+    return this.validateMinPaymentCondition
+      && this.getPaymentConditionMinimumInOrderCurrency() > 0;
   }
 
   /**

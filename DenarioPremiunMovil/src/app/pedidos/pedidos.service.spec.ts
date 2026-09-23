@@ -309,6 +309,71 @@ describe('PedidosService', () => {
       service.updateSendButtonAvailability();
       expect(sendEnabled).toBeTrue();
     });
+
+    it('misma moneda: límite = crudo', () => {
+      service.validateMinPaymentCondition = true;
+      service.currencyService.multimoneda = true;
+      service.currencyService.localCurrency = { coCurrency: 'Bs' } as any;
+      service.currencyService.hardCurrency = { coCurrency: 'USD' } as any;
+      service.monedaSeleccionada = { coCurrency: 'USD' } as any;
+      service.minPaymentConditionCurrency = 'HardCurrency';
+      service.totalPedido = 100;
+
+      expect(service.getPaymentConditionMinimumInOrderCurrency()).toBe(100);
+      expect(service.isBelowPaymentConditionMinimum()).toBeFalse();
+      expect(service.shouldShowPaymentConditionMinimum()).toBeTrue();
+    });
+
+    it('pedido local y mínimo en fuerte convierte con toLocalCurrency', () => {
+      service.validateMinPaymentCondition = true;
+      service.currencyService.multimoneda = true;
+      service.currencyService.localCurrency = { coCurrency: 'Bs' } as any;
+      service.currencyService.hardCurrency = { coCurrency: 'USD' } as any;
+      service.monedaSeleccionada = { coCurrency: 'Bs' } as any;
+      service.minPaymentConditionCurrency = 'HardCurrency';
+      spyOn(service.currencyService, 'toLocalCurrency').and.returnValue(4000);
+      service.totalPedido = 2000;
+
+      expect(service.getPaymentConditionMinimumInOrderCurrency()).toBe(4000);
+      expect(service.isBelowPaymentConditionMinimum()).toBeTrue();
+      expect(service.currencyService.toLocalCurrency).toHaveBeenCalledWith(100);
+    });
+
+    it('pedido fuerte y mínimo en local convierte con toHardCurrency', () => {
+      service.validateMinPaymentCondition = true;
+      service.currencyService.multimoneda = true;
+      service.currencyService.localCurrency = { coCurrency: 'Bs' } as any;
+      service.currencyService.hardCurrency = { coCurrency: 'USD' } as any;
+      service.monedaSeleccionada = { coCurrency: 'USD' } as any;
+      service.minPaymentConditionCurrency = 'LocalCurrency';
+      spyOn(service.currencyService, 'toHardCurrency').and.returnValue(5);
+      service.totalPedido = 10;
+
+      expect(service.getPaymentConditionMinimumInOrderCurrency()).toBe(5);
+      expect(service.isBelowPaymentConditionMinimum()).toBeFalse();
+      expect(service.currencyService.toHardCurrency).toHaveBeenCalledWith(100);
+    });
+
+    it('sin multiCurrency usa crudo en LocalCurrency y no convierte', () => {
+      service.validateMinPaymentCondition = true;
+      service.currencyService.multimoneda = false;
+      service.currencyService.localCurrency = { coCurrency: 'Bs' } as any;
+      service.currencyService.hardCurrency = { coCurrency: 'USD' } as any;
+      service.monedaSeleccionada = { coCurrency: 'Bs' } as any;
+      service.minPaymentConditionCurrency = 'HardCurrency';
+      const toLocal = spyOn(service.currencyService, 'toLocalCurrency').and.returnValue(4000);
+      service.totalPedido = 50;
+
+      expect(service.resolveMinPaymentConditionCurrencyCode()).toBe('Bs');
+      expect(service.getPaymentConditionMinimumInOrderCurrency()).toBe(100);
+      expect(toLocal).not.toHaveBeenCalled();
+      expect(service.shouldShowPaymentConditionMinimum()).toBeTrue();
+    });
+
+    it('flag off no muestra mínimo en Totales', () => {
+      service.validateMinPaymentCondition = false;
+      expect(service.shouldShowPaymentConditionMinimum()).toBeFalse();
+    });
   });
 
   describe('PED-SEND-001 adjuntos signatureOrder', () => {

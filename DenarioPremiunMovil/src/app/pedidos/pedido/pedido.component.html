@@ -546,6 +546,15 @@
                         orderServ.monedaSeleccionada.coCurrency }}:</span>
                       {{ formatNum(orderServ.totalPedido) }}
                     </ion-col>
+                    @if (orderServ.shouldShowPaymentConditionMinimum()) {
+                    <ion-col size="12" size-sm="12" size-xs="12"
+                      [class.text-red]="orderServ.isBelowPaymentConditionMinimum()"
+                      [class.text-blue]="!orderServ.isBelowPaymentConditionMinimum()">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_MINIMO_CONDICION_PAGO") || 'Mínimo condición de pago' }}:</span>
+                      {{ formatNum(orderServ.getPaymentConditionMinimumInOrderCurrency()) }}
+                      {{ orderServ.monedaSeleccionada.coCurrency }}
+                    </ion-col>
+                    }
                     @if(showConversion){
                     <ion-col size="12" size-sm="12" size-xs="12">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
