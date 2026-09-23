@@ -78,6 +78,8 @@ import { Conversion } from 'src/app/modelos/tables/conversion';
 import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
+import { PotentialClientFieldDef } from 'src/app/modelos/tables/potentialClientFieldDef';
+import { PotentialClientFieldOption } from 'src/app/modelos/tables/potentialClientFieldOption';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 import { ReturnCategory } from 'src/app/modelos/tables/returnCategory';
@@ -207,7 +209,9 @@ export class SynchronizationDBService {
       { "id": 83, "nameTable": "collectRetention" },
       { "id": 84, "nameTable": "productBonusFavTable" },
       { "id": 85, "nameTable": "clientStockSuggestedOrders" },
-      { "id": 86, "nameTable": "clientStockSuggestedOrderDetails" }
+      { "id": 86, "nameTable": "clientStockSuggestedOrderDetails" },
+      { "id": 87, "nameTable": "potentialClientFieldDef" },
+      { "id": 88, "nameTable": "potentialClientFieldOption" }
     ]
   }
 
@@ -2121,6 +2125,68 @@ export class SynchronizationDBService {
 
   insertClientStockSuggestedOrderDetailBatch(arr: ClientStockSuggestedOrderDetail[]) {
     return this.clientStockService.mergeSyncedSuggestedOrderDetailsWithLocal(this.database, arr);
+  }
+
+  insertPotentialClientFieldDefBatch(arr: PotentialClientFieldDef[]) {
+    const statements: [string, unknown[]][] = [];
+    const insertStatement =
+      'INSERT OR REPLACE INTO potential_client_field_def(' +
+      'id_field_def, id_enterprise, co_field, na_label, co_field_type, bl_required, nu_order, bl_active' +
+      ') VALUES(?,?,?,?,?,?,?,?)';
+
+    for (let i = 0; i < arr.length; i++) {
+      const row = PotentialClientFieldDef.fromJson(arr[i]);
+      statements.push([
+        insertStatement,
+        [
+          row.idFieldDef,
+          row.idEnterprise,
+          row.coField,
+          row.naLabel,
+          row.coFieldType,
+          row.blRequired ? 1 : 0,
+          row.nuOrder,
+          row.blActive ? 1 : 0,
+        ],
+      ]);
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log('insert potential_client_field_def ready');
+      return res;
+    }).catch(e => {
+      console.log(e);
+    });
+  }
+
+  insertPotentialClientFieldOptionBatch(arr: PotentialClientFieldOption[]) {
+    const statements: [string, unknown[]][] = [];
+    const insertStatement =
+      'INSERT OR REPLACE INTO potential_client_field_option(' +
+      'id_option, id_field_def, co_option, tx_label, nu_order, bl_active' +
+      ') VALUES(?,?,?,?,?,?)';
+
+    for (let i = 0; i < arr.length; i++) {
+      const row = PotentialClientFieldOption.fromJson(arr[i]);
+      statements.push([
+        insertStatement,
+        [
+          row.idOption,
+          row.idFieldDef,
+          row.coOption,
+          row.txLabel,
+          row.nuOrder,
+          row.blActive ? 1 : 0,
+        ],
+      ]);
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log('insert potential_client_field_option ready');
+      return res;
+    }).catch(e => {
+      console.log(e);
+    });
   }
 
   deleteSuggestedOrderRowsByCo(

@@ -22,6 +22,7 @@ import { ReturnDatabaseService } from '../returns/return-database.service';
 import { InventariosLogicService } from '../inventarios/inventarios-logic.service';
 import { ClientStocks, ClientStocksDetailUnits } from 'src/app/modelos/tables/client-stocks';
 import { PotentialClientDatabaseServicesService } from '../clientes/potentialClient/potential-client-database-services.service';
+import { PotentialClientDynamicFieldService } from '../clientes/potentialClient/potential-client-dynamic-field.service';
 //import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { Orders } from 'src/app/modelos/tables/orders';
 import { OrderDetail } from 'src/app/modelos/tables/orderDetail';
@@ -50,6 +51,7 @@ export class AutoSendService implements OnInit {
   public pendingTransactionsAttachments!: PendingTransactionsAttachments[];
   public messageAlert!: MessageAlert;
   private potentialClientServices = inject(PotentialClientDatabaseServicesService)
+  private potentialClientDynamicFieldService = inject(PotentialClientDynamicFieldService)
   private locationServices = inject(ClientLocationService)
   private inventariosLogicService = inject(InventariosLogicService)
   private collectionService = inject(CollectionService);
@@ -605,6 +607,7 @@ export class AutoSendService implements OnInit {
       console.warn("[AutoSendService] Potential client vacÃ­o " + coTransaction);
       return true;
     }
+    const fieldValues = await this.potentialClientDynamicFieldService.loadValues(pc[0].coClient);
     request.potentialClient = {
       coClient: pc[0].coClient,
       naClient: pc[0].naClient,
@@ -625,6 +628,7 @@ export class AutoSendService implements OnInit {
       coordenadaClient: pc[0].coordenadaClient,
       nuAttachments: pc[0].nuAttachments,
       hasAttachments: String(pc[0].hasAttachments).toLowerCase() === "true",
+      fieldValues,
     };
     return await this.sendTransaction(request, "potentialClient", pc[0].coClient);
   }

@@ -15,6 +15,7 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { CLIENT_POTENTIAL_STATUS_NEW, CLIENT_POTENTIAL_STATUS_TO_SEND, CLIENT_POTENTIAL_STATUS_SENT, COLOR_VERDE } from 'src/app/utils/appConstants';
 import { PotentialClientDatabaseServicesService } from 'src/app/services/clientes/potentialClient/potential-client-database-services.service';
+import { PotentialClientDynamicFieldService } from 'src/app/services/clientes/potentialClient/potential-client-dynamic-field.service';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
@@ -48,6 +49,7 @@ export class NewPotentialClientComponent implements OnInit {
   public autoSend = inject(AutoSendService);
   public clientLogic = inject(ClientLogicService)
   public dbService = inject(PotentialClientDatabaseServicesService);
+  public dynamicFieldService = inject(PotentialClientDynamicFieldService);
   public dateServ = inject(DateServiceService);
   public enterpriseServ = inject(EnterpriseService);
   public geoServ = inject(GeolocationService);
@@ -152,7 +154,7 @@ export class NewPotentialClientComponent implements OnInit {
         this.clientLogic.onPotentialClientGeneralValid(!!this.clientLogic.empresaSeleccionada);
         this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureClient') == 'true', false, COLOR_VERDE);
         this.onChanges();
-        this.checkForm();
+        void this.reloadDynamicFields(false).then(() => this.checkForm());
       } else if (this.clientLogic.potentialClient.stPotentialClient == 0) {
         //ES GUARDADO
         this.isDisabled = false;
@@ -164,7 +166,7 @@ export class NewPotentialClientComponent implements OnInit {
         this.clientLogic.markPotentialClientOpenedFromPersistedCopy();
         this.clientLogic.onPotentialClientGeneralValid(true);
         this.onChanges();
-        this.checkForm();
+        void this.reloadDynamicFields(false).then(() => this.checkForm());
 
 
       } else {
@@ -179,6 +181,10 @@ export class NewPotentialClientComponent implements OnInit {
         this.clientLogic.empresaSeleccionada = this.clientLogic.listaEmpresa.find(ent => ent.idEnterprise == this.clientLogic.potentialClient.idEnterprise)!;
         this.clientLogic.potentialClient.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
         this.disabledSelectEnterprise = true;
+        void this.reloadDynamicFields(false).then(() => {
+          this.disableDynamicControls();
+          this.checkForm();
+        });
       }
       this.clientLogic.newPotentialClientChanged = false;
     })
@@ -247,6 +253,8 @@ export class NewPotentialClientComponent implements OnInit {
         this.clientLogic.potentialClient.coordenada,
         saveSend,
       ).then(async result => {
+        const fieldValues = this.dynamicFieldService.getFieldValuesFromForm(this.newPotentialClient);
+        await this.dynamicFieldService.saveValues(payload.coClient, fieldValues);
         await this.adjuntoService.savePhotos(
           this.synchronizationServices.getDatabase(),
           payload.coClient,
@@ -339,7 +347,43 @@ export class NewPotentialClientComponent implements OnInit {
 
     this.clientLogic.onPotentialClientGeneralValid(true);
     this.clientLogic.notifyPotentialClientEdited();
-    this.checkForm();
+    void this.reloadDynamicFields(true).then(() => this.checkForm());
+  }
+
+  /**
+   * Recarga defs/opciones de la empresa y (opcionalmente) valores guardados.
+   * clearValues=true en cambio de empresa: limpia controles dyn_*.
+   */
+  private async reloadDynamicFields(clearValues: boolean): Promise<void> {
+    const idEnterprise = Number(
+      this.clientLogic.empresaSeleccionada?.idEnterprise
+      ?? this.newPotentialClient.get('idEnterprise')?.value
+      ?? this.clientLogic.potentialClient?.idEnterprise
+      ?? 0,
+    );
+
+    let existingValues = undefined;
+    if (!clearValues && this.clientLogic.potentialClient?.coClient) {
+      existingValues = await this.dynamicFieldService.loadValues(
+        this.clientLogic.potentialClient.coClient,
+      );
+    }
+
+    await this.dynamicFieldService.replaceDynamicControls(
+      this.newPotentialClient,
+      idEnterprise,
+      existingValues,
+    );
+
+    if (this.isDisabled) {
+      this.disableDynamicControls();
+    }
+  }
+
+  private disableDynamicControls(): void {
+    for (const field of this.dynamicFieldService.dynamicFields) {
+      this.newPotentialClient.get(`dyn_${field.coField}`)?.disable({ emitEvent: false });
+    }
   }
 
   checkForm() {

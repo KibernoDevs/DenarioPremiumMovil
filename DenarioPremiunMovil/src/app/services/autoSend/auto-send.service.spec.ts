@@ -14,6 +14,7 @@ import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';
 import { InventariosLogicService } from '../inventarios/inventarios-logic.service';
 import { PotentialClientDatabaseServicesService } from '../clientes/potentialClient/potential-client-database-services.service';
+import { PotentialClientDynamicFieldService } from '../clientes/potentialClient/potential-client-dynamic-field.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import {
@@ -75,6 +76,10 @@ describe('AutoSendService', () => {
         { provide: ClientLocationService, useValue: {} },
         { provide: InventariosLogicService, useValue: {} },
         { provide: PotentialClientDatabaseServicesService, useValue: {} },
+        {
+          provide: PotentialClientDynamicFieldService,
+          useValue: { loadValues: jasmine.createSpy('loadValues').and.resolveTo([]) },
+        },
         { provide: HttpClient, useValue: {} },
         { provide: Router, useValue: {} }
       ]

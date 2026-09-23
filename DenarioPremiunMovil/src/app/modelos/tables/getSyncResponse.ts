@@ -53,6 +53,8 @@ import {
   ClientStockSuggestedOrder,
   ClientStockSuggestedOrderDetail,
 } from "./client-stock-suggested-order";
+import { PotentialClientFieldDef } from "./potentialClientFieldDef";
+import { PotentialClientFieldOption } from "./potentialClientFieldOption";
 
 export interface syncResponse {
     updateTime: string;
@@ -111,6 +113,8 @@ export interface syncResponse {
     depositTable: DepositTable,
     clientStockSuggestedOrdersTable: ClientStockSuggestedOrderTable,
     clientStockSuggestedOrderDetailsTable: ClientStockSuggestedOrderDetailTable,
+    potentialClientFieldDefTable: PotentialClientFieldDefTable,
+    potentialClientFieldOptionTable: PotentialClientFieldOptionTable,
 }
 
 interface AddressClientTable {
@@ -668,4 +672,24 @@ interface ClientStockSuggestedOrderDetailTable {
     numberOfPages: number;
     deletedRowsIds: string[];
     row: ClientStockSuggestedOrderDetail[];
+}
+interface PotentialClientFieldDefTable {
+    syncType: SyncType;
+    id: number;
+    tableName: string;
+    updateTime: string;
+    page: number;
+    numberOfPages: number;
+    deletedRowsIds: number[];
+    row: PotentialClientFieldDef[];
+}
+interface PotentialClientFieldOptionTable {
+    syncType: SyncType;
+    id: number;
+    tableName: string;
+    updateTime: string;
+    page: number;
+    numberOfPages: number;
+    deletedRowsIds: number[];
+    row: PotentialClientFieldOption[];
 }
