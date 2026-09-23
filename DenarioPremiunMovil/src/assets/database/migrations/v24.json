@@ -6,5 +6,18 @@
   {
     "sql": "ALTER TABLE document_sale_types ADD COLUMN is_invoice INTEGER NOT NULL DEFAULT 0;",
     "description": "Clasificación Factura (1) vs Nota de Crédito (0) para base de descuentos en Cobros."
+  },
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS potential_client_field_def (id_field_def INTEGER PRIMARY KEY, id_enterprise INTEGER, co_field TEXT, na_label TEXT, co_field_type TEXT, bl_required INTEGER, nu_order INTEGER, bl_active INTEGER);",
+    "description": "Definiciones de campos dinámicos de cliente potencial sincronizadas desde PremiumWS (TABLE_ID 87)."
+  },
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS potential_client_field_option (id_option INTEGER PRIMARY KEY, id_field_def INTEGER, co_option TEXT, tx_label TEXT, nu_order INTEGER, bl_active INTEGER);",
+    "description": "Opciones de campos dinámicos de cliente potencial sincronizadas desde PremiumWS (TABLE_ID 88)."
+  },
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS potential_client_field_value (co_client TEXT, co_field TEXT, tx_value TEXT, PRIMARY KEY (co_client, co_field));",
+    "description": "Valores locales de campos dinámicos por cliente potencial (co_client, co_field)."
   }
+
 ]

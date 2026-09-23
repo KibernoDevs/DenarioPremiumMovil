@@ -9,6 +9,7 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { ServicesService } from 'src/app/services/services.service';
 import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
 import { PotentialClientDatabaseServicesService } from 'src/app/services/clientes/potentialClient/potential-client-database-services.service';
+import { PotentialClientDynamicFieldService } from 'src/app/services/clientes/potentialClient/potential-client-dynamic-field.service';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
@@ -107,6 +108,16 @@ describe('NewPotentialClientComponent', () => {
         { provide: ServicesService, useValue: {} },
         { provide: AutoSendService, useValue: { runPendingQueue: () => undefined } },
         { provide: PotentialClientDatabaseServicesService, useValue: dbServiceMock },
+        {
+          provide: PotentialClientDynamicFieldService,
+          useValue: {
+            dynamicFields: [],
+            replaceDynamicControls: jasmine.createSpy('replaceDynamicControls').and.resolveTo(undefined),
+            loadValues: jasmine.createSpy('loadValues').and.resolveTo([]),
+            getFieldValuesFromForm: jasmine.createSpy('getFieldValuesFromForm').and.returnValue([]),
+            saveValues: jasmine.createSpy('saveValues').and.resolveTo(undefined),
+          },
+        },
         { provide: DateServiceService, useValue: { generateCO: () => 'CO-1' } },
         { provide: EnterpriseService, useValue: { esMultiempresa: () => false } },
         { provide: GeolocationService, useValue: { getCurrentPosition: () => Promise.resolve('0,0') } },
