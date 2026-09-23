@@ -182,6 +182,20 @@
                                     [maxLength]="fieldMax.naWebSite"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
+                        <ion-row *ngFor="let field of dynamicFieldService.dynamicFields">
+                            <ion-col>
+                                <ion-select [label]="field.naLabel" labelPlacement="floating" fill="outline"
+                                    [formControlName]="'dyn_' + field.coField"
+                                    [disabled]="isDisabled"
+                                    interface="popover"
+                                    toggleIcon="caret-down-sharp"
+                                    [class.potential-send-error-hint]="shouldShowFieldSendError('dyn_' + field.coField)"
+                                    (ionChange)="checkForm()">
+                                    <ion-select-option *ngFor="let opt of field.options"
+                                        [value]="opt.coOption">{{opt.txLabel}}</ion-select-option>
+                                </ion-select>
+                            </ion-col>
+                        </ion-row>
                         <ion-row
                             *ngIf="this.clientLogic.potentialClient.stPotentialClient == 0 || this.clientLogic.potentialClient.stPotentialClient == undefined">
                             <ion-col>

@@ -164,6 +164,8 @@ export class SynchronizationComponent implements OnInit {
     84: 'product_bonus_fav',
     85: 'client_stock_suggested_orders',
     86: 'client_stock_suggested_order_details',
+    87: 'potential_client_field_def',
+    88: 'potential_client_field_option',
   };
 
   /**
@@ -237,6 +239,8 @@ export class SynchronizationComponent implements OnInit {
     product_bonus_fav: 'Bonificaciones de Producto',
     client_stock_suggested_orders: 'Pedido sugerido',
     client_stock_suggested_order_details: 'Detalle pedido sugerido',
+    potential_client_field_def: 'Campos dinámicos cliente potencial',
+    potential_client_field_option: 'Opciones campos cliente potencial',
   };
 
   constructor(
@@ -846,6 +850,16 @@ export class SynchronizationComponent implements OnInit {
           }
           case 86: {
             this.tables.clientStockSuggestedOrderDetailsTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 87: {
+            this.tables.potentialClientFieldDefTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 88: {
+            this.tables.potentialClientFieldOptionTableLastUpdate = result[i].last_update;
             this.tables.page = 0;
             break;
           }
@@ -1584,6 +1598,20 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertClientStockSuggestedOrderDetailBatch.bind(this.synchronizationServices),
       rowKey: 'clientStockSuggestedOrderDetailsTable',
       tableKey: 'clientStockSuggestedOrderDetailsTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    potential_client_field_def: {
+      batchFn: this.synchronizationServices.insertPotentialClientFieldDefBatch.bind(this.synchronizationServices),
+      rowKey: 'potentialClientFieldDefTable',
+      tableKey: 'potentialClientFieldDefTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    potential_client_field_option: {
+      batchFn: this.synchronizationServices.insertPotentialClientFieldOptionBatch.bind(this.synchronizationServices),
+      rowKey: 'potentialClientFieldOptionTable',
+      tableKey: 'potentialClientFieldOptionTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },

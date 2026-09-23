@@ -393,6 +393,27 @@
     "sql": "CREATE TABLE IF NOT EXISTS potential_clients(id INTEGER, id_client INTEGER, co_client VARCHAR(40) PRIMARY KEY, id_user INTEGER, co_user VARCHAR(30), na_client VARCHAR(80), nu_rif VARCHAR(15), tx_address VARCHAR(150),tx_address_dispatch VARCHAR(150),tx_client VARCHAR(160),na_responsible VARCHAR(80),em_client VARCHAR(80),nu_phone VARCHAR(80),na_web_site VARCHAR(150),da_potential_client TIMESTAMP,st_potential_client INTEGER,id_enterprise INTEGER,co_enterprise VARCHAR(30),coordenada VARCHAR(50), coordenada_client VARCHAR(50), nu_attachments INTEGER, has_attachments BOOLEAN);"
   },
   {
+    "id": 87,
+    "name": "potential_client_field_def",
+    "table": "potentialClientFieldDef",
+    "idName": "id_field_def",
+    "sql": "CREATE TABLE IF NOT EXISTS potential_client_field_def (id_field_def INTEGER PRIMARY KEY, id_enterprise INTEGER, co_field TEXT, na_label TEXT, co_field_type TEXT, bl_required INTEGER, nu_order INTEGER, bl_active INTEGER);"
+  },
+  {
+    "id": 88,
+    "name": "potential_client_field_option",
+    "table": "potentialClientFieldOption",
+    "idName": "id_option",
+    "sql": "CREATE TABLE IF NOT EXISTS potential_client_field_option (id_option INTEGER PRIMARY KEY, id_field_def INTEGER, co_option TEXT, tx_label TEXT, nu_order INTEGER, bl_active INTEGER);"
+  },
+  {
+    "id": 99130,
+    "name": "potential_client_field_value",
+    "table": "potentialClientFieldValue",
+    "idName": "co_client",
+    "sql": "CREATE TABLE IF NOT EXISTS potential_client_field_value (co_client TEXT, co_field TEXT, tx_value TEXT, PRIMARY KEY (co_client, co_field));"
+  },
+  {
     "id": 99103,
     "name": "pending_transactions",
     "table": "pendingTransactions",

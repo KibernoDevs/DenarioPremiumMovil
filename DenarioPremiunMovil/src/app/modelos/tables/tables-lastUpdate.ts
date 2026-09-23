@@ -67,6 +67,8 @@ export interface TablesLastUpdate {
   collectRetentionTableLastUpdate: string,
   clientStockSuggestedOrdersTableLastUpdate: string,
   clientStockSuggestedOrderDetailsTableLastUpdate: string,
+  potentialClientFieldDefTableLastUpdate: string,
+  potentialClientFieldOptionTableLastUpdate: string,
   page: number
 
 }
