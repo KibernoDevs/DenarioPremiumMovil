@@ -26,7 +26,6 @@ import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
 import { IonModal, ModalController } from '@ionic/angular';
 import { ClienteComponent } from 'src/app/clientes/client-container/client-detail/client-detail.component';
-import { filterClientsBySelectionMode } from 'src/app/utils/client-suspension.policy';
 import { isPromoterHideFinanceActive } from 'src/app/guards/promoter-hide-finance.guard';
 
 
@@ -401,13 +400,12 @@ export class ClientLogicService {
       this.clients = [] as Client[];
     }
     this.fixClientListSaldos(clients);
-    const visibleClients = filterClientsBySelectionMode(clients, 'default');
     if (this.clientListPage === 0) {
-      this.clients = visibleClients;
+      this.clients = clients;
     } else {
-      this.clients = this.clients.concat(visibleClients);
+      this.clients = this.clients.concat(clients);
     }
-    this.results = [...visibleClients];
+    this.results = [...clients];
 
     // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
 

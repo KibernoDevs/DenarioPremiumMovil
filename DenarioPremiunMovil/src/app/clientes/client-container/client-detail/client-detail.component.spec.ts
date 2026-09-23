@@ -208,6 +208,16 @@ describe('ClienteComponent (client-detail)', () => {
     expect(component.descriptionModalOpen).toBeFalse();
   });
 
+  it('Estatus: Suspendido si inSuspension true, Activo si false', () => {
+    component.client = { ...component.client, inSuspension: true } as any;
+    expect(component.getClientStatusLabel()).toBe('Suspendido');
+    expect(component.getClientStatusColor()).toBe('Red');
+
+    component.client = { ...component.client, inSuspension: false } as any;
+    expect(component.getClientStatusLabel()).toBe('Activo');
+    expect(component.getClientStatusColor()).toBe('Blue');
+  });
+
   it('DM-CLT-014: openDoc navega a pantalla de documento', () => {
     component.document = [
       { idDocument: 99, coDocument: 'FAC-1' } as any,
