@@ -287,11 +287,29 @@ export class ClientLogicService {
    * Pedidos/Cobros ya hacen setup al abrir; Clientes reutiliza el mapa en memoria
    * y tras sync quedaba con showConversion/localCurrencyDefault viejos.
    */
+  resolveSelectedEnterpriseId(): number {
+    return Number(this.empresaSeleccionada?.idEnterprise ?? 0);
+  }
+
+  /** Última tasa de conversion_types para la empresa seleccionada en Clientes. */
+  async refreshExchangeRateForSelectedEnterprise(): Promise<void> {
+    const idEnterprise = this.resolveSelectedEnterpriseId();
+    if (idEnterprise > 0) {
+      await this.currencyService.queryLocalValueForEnterprise(
+        this.dbServ.getDatabase(),
+        idEnterprise,
+      );
+      return;
+    }
+    await this.currencyService.queryLocalValue(this.dbServ.getDatabase());
+  }
+
   async refreshCliCurrencyModule(): Promise<void> {
     await this.currencyService.setup(this.dbServ.getDatabase());
     this.initService();
     this.localCurrency = this.currencyService.getLocalCurrency();
     this.hardCurrency = this.currencyService.getHardCurrency();
+    await this.refreshExchangeRateForSelectedEnterprise();
   }
 
   getCurrency() {

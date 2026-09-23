@@ -405,6 +405,9 @@ export class CurrencyService {
     this.currencyRelation = null;
   }
 
+  /** id_enterprise de la última tasa cargada vía queryLocalValueForEnterprise. */
+  private localValueEnterpriseId: number | null = null;
+
   async queryLocalValue(db: SQLiteObject): Promise<void> {
     const selectStatement = "SELECT nu_value_local FROM conversion_types ORDER BY date_conversion DESC LIMIT 1";
     const result: any = await db.executeSql(selectStatement, []);
@@ -415,11 +418,52 @@ export class CurrencyService {
 
     if (localValue != null && this.isValidExchangeFactor(localValue)) {
       this.localValue = localValue;
+      this.localValueEnterpriseId = null;
       return;
     }
 
     console.warn("[CurrencyService] No se encontró nu_value_local válido. Conversión = 0.");
     this.localValue = null;
+    this.localValueEnterpriseId = null;
+  }
+
+  /**
+   * Última tasa (nu_value_local) para una empresa — misma regla que Cobros getRate.
+   * Actualiza localValue en memoria para conversiones en UI/PDF de Clientes.
+   */
+  async queryLocalValueForEnterprise(db: SQLiteObject, idEnterprise: number): Promise<void> {
+    const id = Number(idEnterprise);
+    if (!Number.isFinite(id) || id <= 0) {
+      await this.queryLocalValue(db);
+      return;
+    }
+
+    if (
+      this.localValueEnterpriseId === id
+      && this.isValidExchangeFactor(Number(this.localValue))
+    ) {
+      return;
+    }
+
+    const selectStatement =
+      'SELECT nu_value_local FROM conversion_types WHERE id_enterprise = ? ORDER BY date_conversion DESC LIMIT 1';
+    const result: any = await db.executeSql(selectStatement, [id]);
+    let localValue: number | null = null;
+    if (result.rows.length > 0) {
+      localValue = Number(result.rows.item(0).nu_value_local);
+    }
+
+    if (localValue != null && this.isValidExchangeFactor(localValue)) {
+      this.localValue = localValue;
+      this.localValueEnterpriseId = id;
+      return;
+    }
+
+    console.warn(
+      `[CurrencyService] No se encontró nu_value_local válido para id_enterprise=${id}.`,
+    );
+    this.localValue = null;
+    this.localValueEnterpriseId = id;
   }
 
   /** True solo si hay tasa y relación válidas (> 0) para convertir. */

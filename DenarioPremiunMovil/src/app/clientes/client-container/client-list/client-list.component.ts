@@ -157,6 +157,7 @@ export class ClientListComponent implements OnInit {
   onChangeEnterprise() {
     this.service.clientes = [] as Client[];
     this.clientLogic.clientListPage = 0;
+    void this.clientLogic.refreshExchangeRateForSelectedEnterprise().then(() => {
     this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
       /*
             if (this.currencyService.multimoneda) {
@@ -176,6 +177,7 @@ export class ClientListComponent implements OnInit {
             }
               */
       this.service.clientes = this.clientLogic.clients;
-    })
+    });
+    });
   }
 }

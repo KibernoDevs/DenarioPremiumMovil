@@ -37,6 +37,25 @@ describe('CurrencyService', () => {
     expect(service).toBeTruthy();
   });
 
+  it('queryLocalValueForEnterprise carga nu_value_local por id_enterprise', async () => {
+    const db = {
+      executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve({
+        rows: {
+          length: 1,
+          item: () => ({ nu_value_local: 788.5 }),
+        },
+      })),
+    };
+
+    await service.queryLocalValueForEnterprise(db as any, 42);
+
+    expect(db.executeSql).toHaveBeenCalledWith(
+      jasmine.stringMatching(/id_enterprise = \?/),
+      [42],
+    );
+    expect(service.localValue).toBe(788.5);
+  });
+
   describe('parseCurrencyModuleFlag', () => {
     it('null/undefined/empty default to true', () => {
       expect(service.parseCurrencyModuleFlag(null)).toBeTrue();

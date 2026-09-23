@@ -51,7 +51,8 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     return resolveClientNameForExport(this.client?.naClient, this.client?.lbClient);
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    await this.clientLogic.refreshExchangeRateForSelectedEnterprise();
     this.initializeModalContext();
     this.syncDocumentsFromInput();
   }
@@ -113,7 +114,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
     return this.currencyService.formatNumber(num);
   }
 
-  /** Tasa vigente en el dispositivo (misma que detalle de cliente / CLI_DETAIL_TASA). */
+  /** Tasa vigente: última conversion_types de la empresa seleccionada en Clientes. */
   getDeviceExchangeRateForDisplay(): string {
     const rate = Number(this.currencyService.localValue);
     if (!Number.isFinite(rate) || rate <= 0) {
@@ -249,6 +250,7 @@ export class ClientShareModalComponent implements OnInit, OnChanges {
 
     this.exporting = true;
     await this.message.showLoading();
+    await this.clientLogic.refreshExchangeRateForSelectedEnterprise();
 
     const shareDirectory = Directory.Cache;
 

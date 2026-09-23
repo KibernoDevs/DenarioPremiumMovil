@@ -16,7 +16,7 @@ describe('ClientShareModalComponent', () => {
   let clientLogic: jasmine.SpyObj<Pick<ClientLogicService,
     'canShowConversion' | 'getPrimaryCurrencyLabel' | 'getSecondaryCurrencyLabel' | 'localCurrencyDefault'
     | 'clientTags' | 'clientTagsDenario' | 'closeClientShareModalFunction' | 'message' | 'documentsSaleSelectShared'
-    | 'empresaSeleccionada' | 'enterpriseServ'>>;
+    | 'empresaSeleccionada' | 'enterpriseServ' | 'refreshExchangeRateForSelectedEnterprise'>>;
   let pdfCreator: jasmine.SpyObj<PdfCreatorService>;
   let imageServices: jasmine.SpyObj<Pick<ImageServicesService, 'getLogoBase64ForEnterprise'>>;
 
@@ -40,6 +40,7 @@ describe('ClientShareModalComponent', () => {
       'getPrimaryCurrencyLabel',
       'getSecondaryCurrencyLabel',
       'closeClientShareModalFunction',
+      'refreshExchangeRateForSelectedEnterprise',
     ], {
       localCurrencyDefault: false,
       clientTags: new Map<string, string>(),
@@ -63,6 +64,7 @@ describe('ClientShareModalComponent', () => {
     clientLogic.canShowConversion.and.returnValue(false);
     clientLogic.getPrimaryCurrencyLabel.and.returnValue('USD');
     clientLogic.getSecondaryCurrencyLabel.and.returnValue('BS');
+    clientLogic.refreshExchangeRateForSelectedEnterprise.and.returnValue(Promise.resolve());
 
     TestBed.configureTestingModule({
       declarations: [ClientShareModalComponent],
@@ -105,7 +107,7 @@ describe('ClientShareModalComponent', () => {
     expect(component.secondaryCurrencyLabel).toBe('BS');
   });
 
-  it('CLI-PDF-002: tasa export/PDF usa localValue del dispositivo, no nuValueLocal del doc', () => {
+    it('CLI-PDF-002: tasa export/PDF usa localValue (empresa seleccionada), no nuValueLocal del doc', () => {
     const currency = TestBed.inject(CurrencyService) as { localValue: number };
     currency.localValue = 788;
     clientLogic.canShowConversion.and.returnValue(true);
