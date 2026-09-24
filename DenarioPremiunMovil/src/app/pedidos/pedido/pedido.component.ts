@@ -56,6 +56,9 @@ import {
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
+import * as XLSX from 'xlsx';
+import { parseOrderExcelRows } from '../order-excel-import.parser';
 
 @Component({
   selector: 'app-pedido',
@@ -125,6 +128,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   nuPurchase = '';
 
   public viewOnly = false; //true = solo lectura
+  importingExcel = false;
 
 
   public direccionCliente!: AddresClient;
@@ -639,6 +643,69 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   notifyOrderEdited(): void {
     this.syncOrderEditContext();
     this.orderServ.notifyOrderEdited();
+  }
+
+  async importOrderExcel(): Promise<void> {
+    if (!this.orderServ.enableOrderExcelImport || !this.orderServ.pedidoModificable
+      || !this.orderServ.hasClientForOrder() || this.importingExcel) {
+      return;
+    }
+    this.importingExcel = true;
+    try {
+      const picked = await FilePicker.pickFiles({
+        limit: 1,
+        readData: true,
+      });
+      const file = picked.files?.[0];
+      const fileName = (file?.name || '').toLowerCase();
+      if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+        this.message.transaccionMsjModalNB('Seleccione un archivo Excel (.xlsx).');
+        return;
+      }
+      if (!file?.data) {
+        this.message.transaccionMsjModalNB('No se pudo leer el archivo.');
+        return;
+      }
+      const workbook = XLSX.read(file.data, { type: 'base64' });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        this.message.transaccionMsjModalNB('El archivo no tiene hojas.');
+        return;
+      }
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+        header: 1,
+        raw: false,
+        defval: '',
+      }) as unknown[][];
+      const parsed = parseOrderExcelRows(rows, this.orderServ.getOrderExcelColumnConfig());
+      if (parsed.error) {
+        this.message.transaccionMsjModalNB(parsed.error);
+        return;
+      }
+      if (!parsed.lines.length) {
+        this.message.transaccionMsjModalNB('No hay líneas con cantidad mayor a 0.');
+        return;
+      }
+      const result = this.orderServ.importOrderExcelLines(parsed.lines);
+      const skippedPreview = result.skipped
+        .slice(0, 15)
+        .map(item => `${item.coProduct}: ${item.reason}`)
+        .join(' ');
+      this.message.transaccionMsjModalNB(
+        `Importados: ${result.imported}. Omitidos: ${result.skipped.length}. ${skippedPreview}`.trim(),
+      );
+      this.notifyOrderEdited();
+      this.changeDetector.detectChanges();
+    } catch (e) {
+      const text = String(e ?? '');
+      if (text.toLowerCase().includes('cancel')) {
+        return;
+      }
+      console.error('[importOrderExcel]', e);
+      this.message.transaccionMsjModalNB('No se pudo leer el archivo.');
+    } finally {
+      this.importingExcel = false;
+    }
   }
 
   private validateOrderBeforeAction(blockSendOnError: boolean): boolean {

@@ -48,6 +48,12 @@ import { ClientStocks } from '../modelos/tables/client-stocks';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
 import { CurrencyModules } from '../modelos/tables/currencyModules';
 import { ProductSuggestedUtil } from '../modelos/ProductSuggestedUtil';
+import {
+  normalizeExcelHeader,
+  resolveImportedUnitIndex,
+  type OrderExcelColumnConfig,
+  type OrderExcelImportLine,
+} from './order-excel-import.parser';
 import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
 export interface SelectedUnitPricingRow {
@@ -290,6 +296,7 @@ export class PedidosService {
   public displayProductPoints = false;
   public priceListInfoModal = false;
   public unitByPriceList = false; //[unitByPriceList] muestra el precio de la otra unidad en el producto.
+  public enableOrderExcelImport = false;
 
   codeTotalProductUnitMessageFlag = false;
 
@@ -808,6 +815,7 @@ export class PedidosService {
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
+    this.enableOrderExcelImport = this.config.get("enableOrderExcelImport").toLowerCase() === "true";
     {
       const rawUnits = String(this.config.get('userCanChangeUnits') ?? '').trim();
       this.userCanChangeUnits = rawUnits === '' ? true : rawUnits.toLowerCase() === 'true';
@@ -999,6 +1007,10 @@ export class PedidosService {
 
   private hasClientSelected(): boolean {
     return Number(this.editContext.idClient ?? 0) > 0;
+  }
+
+  hasClientForOrder(): boolean {
+    return Number(this.cliente?.idClient ?? this.editContext.idClient ?? 0) > 0;
   }
 
   private hasAddressSelected(): boolean {
@@ -1325,6 +1337,109 @@ export class PedidosService {
     this.productSummary();
     this.clientSelectorService.checkClient = true;
     console.log(this.carrito);
+  }
+
+  getOrderExcelColumnConfig(): OrderExcelColumnConfig {
+    const productColumn = (this.config.get('orderExcelColumnProduct') || 'CODIGO').trim() || 'CODIGO';
+    const quantityColumn = (this.config.get('orderExcelColumnQuantity') || 'PEDIDO').trim() || 'PEDIDO';
+    const unitColumn = (this.config.get('orderExcelColumnUnit') || '').trim();
+    return { productColumn, quantityColumn, unitColumn };
+  }
+
+  importOrderExcelLines(lines: OrderExcelImportLine[]): { imported: number; skipped: { coProduct: string; reason: string }[] } {
+    const skipped: { coProduct: string; reason: string }[] = [];
+    let imported = 0;
+    const productByCode = new Map<string, Product>();
+    for (const product of this.listaProductos) {
+      productByCode.set(normalizeExcelHeader(product.coProduct), product);
+    }
+    for (const line of lines) {
+      const reason = this.importOneExcelLine(line, productByCode);
+      if (reason) {
+        skipped.push({ coProduct: line.coProduct, reason });
+      } else {
+        imported++;
+      }
+    }
+    this.productSummary();
+    this.notifyOrderEdited();
+    return { imported, skipped };
+  }
+
+  private importOneExcelLine(
+    line: OrderExcelImportLine,
+    productByCode: Map<string, Product>,
+  ): string | null {
+    const product = productByCode.get(normalizeExcelHeader(line.coProduct));
+    if (!product) {
+      return 'producto no encontrado';
+    }
+    const asUtil = {
+      idProduct: product.idProduct,
+      coProduct: product.coProduct,
+      naProduct: product.naProduct,
+      txDescription: product.txDescription,
+      points: product.points,
+      idList: 0,
+      price: 0,
+      coCurrency: '',
+      priceOpposite: 0,
+      coCurrencyOpposite: '',
+      stock: 0,
+      coEnterprise: product.coEnterprise,
+      idEnterprise: product.idEnterprise,
+      images: '',
+      typeStocks: undefined,
+      productUnitList: undefined,
+      idProductStructure: product.idProductStructure,
+      nuTax: product.nuTax,
+    } as ProductUtil;
+    const utils = this.productListToOrderUtil([asUtil]);
+    if (utils.length < 1) {
+      return 'sin precio o inventario';
+    }
+    const orderUtil = utils[0];
+    if (!this.stock0 && Number(orderUtil.quStockAux ?? 0) <= 0) {
+      return 'sin inventario';
+    }
+    const unitIdx = resolveImportedUnitIndex(
+      orderUtil.unitList,
+      line.unit,
+      this.unitByPriceList,
+    );
+    if (unitIdx === null) {
+      return 'unidad no válida';
+    }
+    const unit = unitIdx < 0
+      ? (orderUtil.unitList.find(u => u.idUnit === orderUtil.idUnit) ?? orderUtil.unitList[0])
+      : orderUtil.unitList[unitIdx];
+    if (!unit) {
+      return 'sin unidad';
+    }
+    const alreadyInCart = this.carrito.some(item => item.idProduct === orderUtil.idProduct);
+    const t = this.tipoOrden;
+    if (!alreadyInCart && this.isDistinctItemsLimitConfigured() && t && this.carrito.length >= t.quItems) {
+      return 'límite de productos';
+    }
+    let qty = line.quantity;
+    if (!this.quUnitDecimals) {
+      qty = Math.floor(qty);
+    }
+    if (qty <= 0) {
+      return 'cantidad inválida';
+    }
+    if (this.validStock && !this.stock0) {
+      const physical = (Number(unit.quAmount) || 0) + qty + (Number(unit.quBonified) || 0);
+      if (physical > Number(orderUtil.quStockAux ?? 0)) {
+        return 'sin inventario';
+      }
+    }
+    unit.quAmount = (Number(unit.quAmount) || 0) + qty;
+    orderUtil.idUnit = unit.idUnit;
+    orderUtil.quAmount = unit.quAmount;
+    this.applyBonusForSelectedUnit(orderUtil, false);
+    this.alCarrito(orderUtil);
+    return null;
   }
 
 

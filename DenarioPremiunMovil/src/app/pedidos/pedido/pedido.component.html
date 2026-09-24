@@ -378,6 +378,13 @@
           <!-- Pestana Pedido -->
           <div *ngSwitchCase="'pedido'">
 
+            @if (orderServ.enableOrderExcelImport && orderServ.pedidoModificable && orderServ.hasClientForOrder()) {
+            <ion-button expand="block" class="botonAddAmarillo" (click)="importOrderExcel()"
+              [disabled]="importingExcel">
+              Importar Excel
+            </ion-button>
+            }
+
             <!-- Tab de seleccionar productos marca Muten™  -->
             <productos-tab [pedido]="true" [empresaSeleccionada]="empresaSeleccionada"
               [productsTabTags]="productsTabTags"></productos-tab>
