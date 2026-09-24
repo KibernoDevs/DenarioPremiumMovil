@@ -63,7 +63,7 @@ export class CobrosListComponent implements OnInit {
     }
   ];
 
-  ngOnInit() {
+  async ngOnInit() {
     if (this.collectService.userMustActivateGPS) {
       this.coordenada = '';
       this.geoLoc.getCurrentPosition().then(xy => {
@@ -75,6 +75,7 @@ export class CobrosListComponent implements OnInit {
     this.collectService.newCollect = false;
     this.headerDelete = this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!;
     this.mensajeDelete = this.collectService.collectionTags.get('COB_CONFIRM_DELETE')!;
+    await this.collectService.ensureCobCurrencyModuleLoaded(this.synchronizationServices.getDatabase());
     this.collectService.initLogicService();
     this.resetListPagination();
   }

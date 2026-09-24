@@ -131,7 +131,7 @@
     <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_DIAS_VENCIMIENTO')}}
     </ion-col>
 
-    @if(this.collectService.multiCurrency && this.collectService.showConversion){
+    @if(hasExchangeRate()){
     <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_TASA')}}</ion-col>
     }
 
@@ -233,7 +233,7 @@
       {{getDaDueDate(documentSale.daDueDate)}}
     </ion-col>
 
-    @if(this.collectService.multiCurrency && this.collectService.showConversion){
+    @if(hasExchangeRate()){
     <ion-col size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.colorRow }">
       {{ getTasaByAmount(documentSale.nuAmountTotal, documentSale.nuValueLocal) }}
       {{this.collectService.localCurrency.coCurrency}}

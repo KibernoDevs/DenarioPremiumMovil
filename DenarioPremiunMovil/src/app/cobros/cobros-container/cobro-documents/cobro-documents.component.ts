@@ -3473,6 +3473,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     return this.collectService.shouldDisplayIgtfInTotals();
   }
 
+  /** Columna Tasa de documentos: visible salvo que no haya tasa de cambio. */
+  hasExchangeRate(): boolean {
+    const rate = Number(this.collectService.getEffectiveExchangeRate?.() ?? 0);
+    return Number.isFinite(rate) && rate > 0;
+  }
+
   getCurrencyConversionCode(): string {
     return this.collectService.currencyConversion?.coCurrency
       ?? this.collectService.collection?.coCurrency

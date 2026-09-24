@@ -986,6 +986,55 @@ describe('CollectionService', () => {
       expect(service.RangoToleranciaPositiva).toBe(1.25);
       expect(service.RangoToleranciaNegativa).toBe(0.75);
     });
+
+    it('initLogicService lee showConversion del módulo cob y no como clave de globalConfig', () => {
+      const cfg = (service as any).globalConfig;
+      spyOn(cfg, 'get').and.callFake((key: string) => {
+        if (key === 'currencyModule' || key === 'multiCurrency') {
+          return 'true';
+        }
+        if (key === 'parteDecimal' || key === 'TipoTolerancia' || key === 'RangoTolerancia' || key === 'sizeRetention') {
+          return '0';
+        }
+        return 'false';
+      });
+      const currency = (service as any).currencyService;
+      spyOn(currency, 'getCurrencyModule').and.returnValue({
+        showConversion: true,
+        currencySelector: true,
+      });
+
+      service.initLogicService();
+
+      expect(service.showConversion).toBeTrue();
+      expect(service.currencySelector).toBeTrue();
+      expect(service.disabledCurrency).toBeFalse();
+      expect(cfg.get).not.toHaveBeenCalledWith('true');
+    });
+
+    it('initLogicService oculta conversión cuando el módulo cob tiene showConversion en false', () => {
+      const cfg = (service as any).globalConfig;
+      spyOn(cfg, 'get').and.callFake((key: string) => {
+        if (key === 'currencyModule') {
+          return 'true';
+        }
+        if (key === 'parteDecimal' || key === 'TipoTolerancia' || key === 'RangoTolerancia' || key === 'sizeRetention') {
+          return '0';
+        }
+        return 'false';
+      });
+      const currency = (service as any).currencyService;
+      spyOn(currency, 'getCurrencyModule').and.returnValue({
+        showConversion: false,
+        currencySelector: 0,
+      });
+
+      service.initLogicService();
+
+      expect(service.showConversion).toBeFalse();
+      expect(service.currencySelector).toBeFalse();
+      expect(service.disabledCurrency).toBeTrue();
+    });
   });
 
   describe('COB-TOL-DEC-002 redondeo e inclusividad en tolerancia absoluta', () => {

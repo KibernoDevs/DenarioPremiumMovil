@@ -462,12 +462,7 @@ export class CollectionService {
     this.automatedPrepaid = this.parseConfigBoolean('automatedPrepaid');
     this.RangoToleranciaNegativa = this.parseConfigDecimal(this.globalConfig.get('RangoToleranciaNegativa'));
     this.RangoToleranciaPositiva = this.parseConfigDecimal(this.globalConfig.get('RangoToleranciaPositiva'));
-    if (this.parseConfigBoolean('currencyModule')) {
-      const cobCurrencyModule = this.currencyService.getCurrencyModule('cob');
-      this.showConversion = this.parseConfigBoolean(String(cobCurrencyModule?.showConversion ?? ''));
-      this.currencySelector = this.parseConfigBoolean(String(cobCurrencyModule?.currencySelector ?? ''));
-      this.disabledCurrency = !this.currencySelector;
-    }
+    this.applyCobCurrencyModuleFlags();
     this.userCanAddRetention = this.parseConfigBoolean('userCanAddRetention');
     this.enableDifferenceCodes = this.parseConfigBoolean('enableDifferenceCodes');
     this.userCanSelectCollectDiscount = this.parseConfigBoolean('userCanSelectCollectDiscount');
@@ -4745,6 +4740,33 @@ export class CollectionService {
       return false;
     }
     return false;
+  }
+
+  /**
+   * Flags de currency_modules del módulo cob (showConversion / currencySelector).
+   * El valor ya viene del mapa; no se busca como clave de global_configuration.
+   */
+  private applyCobCurrencyModuleFlags(): void {
+    if (!this.parseConfigBoolean('currencyModule')) {
+      return;
+    }
+    const cobCurrencyModule = this.currencyService.getCurrencyModule('cob');
+    this.showConversion = this.currencyService.parseCurrencyModuleFlag(cobCurrencyModule?.showConversion);
+    this.currencySelector = this.currencyService.parseCurrencyModuleFlag(cobCurrencyModule?.currencySelector);
+    this.disabledCurrency = !this.currencySelector;
+  }
+
+  /** Recarga currency_modules desde SQLite y reaplica los flags del módulo cob. */
+  async ensureCobCurrencyModuleLoaded(db: SQLiteObject): Promise<void> {
+    if (!this.parseConfigBoolean('currencyModule')) {
+      return;
+    }
+    try {
+      await this.currencyService.setup(db);
+    } catch (err) {
+      console.warn('[CollectionService] no se pudo recargar currency_modules', err);
+    }
+    this.applyCobCurrencyModuleFlags();
   }
 
   /** Lee flag booleano de globalConfig (`'true'` → true; resto → false). */

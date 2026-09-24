@@ -8,6 +8,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-CUR-MOD-001] Documentos de cobro ocultan la columna Tasa con show_conversion en true
+
+- **Síntoma:** En Documentos, la columna Tasa no se ve aunque `multiCurrency` y `currency_modules.show_conversion` del módulo cob están en true.
+- **Causa:** `initLogicService` pasaba `String(showConversion)` a `parseConfigBoolean`, que busca esa cadena como clave de `global_configuration`. `true` se volvía la clave `"true"`, que no existe, y el flag quedaba en false. El selector de moneda seguía el mismo camino.
+- **Fix:** Leer los flags con `parseCurrencyModuleFlag` y recargar `currency_modules` desde SQLite al entrar a Cobros. La columna Tasa de documentos se muestra si hay tasa (`getEffectiveExchangeRate` > 0); `showConversion` ya no la oculta.
+- **Evitar:** No tratar un booleano de `currency_modules` como clave de config global.
+- **Archivos:** `collection-logic.service.ts` (+ spec), `cobro-general.component.ts`, `cobros-list.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-PM-PHONE-001] Pago Móvil: teléfono obligatorio en Enviar
 
 - **Síntoma:** En Pagos / Pago Móvil, Nº de Teléfono vacío no marcaba error (rojo + "Campo Obligatorio") aunque el resto de campos sí.

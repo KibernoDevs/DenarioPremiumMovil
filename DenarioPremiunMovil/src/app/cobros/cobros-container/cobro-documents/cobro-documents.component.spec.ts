@@ -102,6 +102,17 @@ describe('CobrosDocumentComponent', () => {
     };
   }));
 
+  it('hasExchangeRate muestra la columna Tasa cuando hay tasa y la oculta si no existe', () => {
+    collectServiceMock.getEffectiveExchangeRate = () => 45.5;
+    expect(component.hasExchangeRate()).toBeTrue();
+
+    collectServiceMock.getEffectiveExchangeRate = () => 0;
+    expect(component.hasExchangeRate()).toBeFalse();
+
+    collectServiceMock.getEffectiveExchangeRate = () => Number.NaN;
+    expect(component.hasExchangeRate()).toBeFalse();
+  });
+
   it('displayDocumentSaleComment oculta null y literales null', () => {
     expect(component.displayDocumentSaleComment(null)).toBe('');
     expect(component.displayDocumentSaleComment(undefined)).toBe('');

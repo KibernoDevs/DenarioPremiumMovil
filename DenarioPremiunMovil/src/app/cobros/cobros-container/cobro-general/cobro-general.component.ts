@@ -165,6 +165,7 @@ export class CobrosGeneralComponent implements OnInit {
   public async setSendedCollection() {
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
 
+    await this.collectService.ensureCobCurrencyModuleLoaded(this.synchronizationServices.getDatabase());
     this.collectService.initLogicService();
     this.collectService.onCollectionValid(true);
     this.collectService.cobroValid = true;
@@ -241,11 +242,12 @@ export class CobrosGeneralComponent implements OnInit {
     }
 
     this.dateCollect = this.collectService.collection.daCollection;
-    this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
+    this.clientService.getClientById(this.collectService.collection.idClient).then(async client => {
       this.collectService.client = client;
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
 
       this.collectService.loadPaymentMethods();
+      await this.collectService.ensureCobCurrencyModuleLoaded(this.synchronizationServices.getDatabase());
       this.collectService.initLogicService();
       this.loadDataMaster();
       this.collectService.enterpriseEnabled = true;
@@ -279,12 +281,13 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.validateReferencePayment();
   }
 
-  private handleInitCollect() {
+  private async handleInitCollect() {
     this.clientSelectorService.checkClient = true;
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;
     this.initCollection();
     this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", this.viewOnly, COLOR_VERDE);
     this.collectService.loadPaymentMethods();
+    await this.collectService.ensureCobCurrencyModuleLoaded(this.synchronizationServices.getDatabase());
     this.collectService.initLogicService();
 
     if (this.collectService.enableDifferenceCodes) {
@@ -380,6 +383,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.initCollect = false;
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;
     await this.collectService.loadPaymentMethods();
+    await this.collectService.ensureCobCurrencyModuleLoaded(this.synchronizationServices.getDatabase());
     await this.collectService.initLogicService();
     this.collectService.enterpriseList = this.enterpriseServ.empresas;
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(),
