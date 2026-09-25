@@ -7,7 +7,7 @@ import { SQLite, SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { PotentialClientDatabaseServicesService } from '../../../services/clientes/potentialClient/potential-client-database-services.service';
 import { PotentialClient } from '../../../modelos/tables/potentialClient';
 import { SynchronizationDBService } from '../../../services/synchronization/synchronization-db.service';
-import { CLIENT_POTENTIAL_STATUS_NEW, CLIENT_POTENTIAL_STATUS_SENT, CLIENT_POTENTIAL_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { CLIENT_POTENTIAL_STATUS_NEW, CLIENT_POTENTIAL_STATUS_SENT, CLIENT_POTENTIAL_STATUS_TO_SEND, CLIENT_POTENTIAL_STATUS_SEND_ERROR } from 'src/app/utils/appConstants';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -34,6 +34,7 @@ export class PotentialClientComponent implements OnInit {
   public nuevo!: number;
   public porEnviar!: number;
   public enviado!: number;
+  public errorEnvio!: number;
   public delete: Boolean = false;
 
   constructor(
@@ -45,6 +46,7 @@ export class PotentialClientComponent implements OnInit {
     this.nuevo = CLIENT_POTENTIAL_STATUS_NEW;
     this.enviado = CLIENT_POTENTIAL_STATUS_SENT;
     this.porEnviar = CLIENT_POTENTIAL_STATUS_TO_SEND
+    this.errorEnvio = CLIENT_POTENTIAL_STATUS_SEND_ERROR
 
 
   }

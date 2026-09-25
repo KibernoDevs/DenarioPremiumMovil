@@ -53,6 +53,7 @@ export class PotentialClientDynamicFieldService {
     for (let i = 0; i < defsRes.rows.length; i++) {
       const row = defsRes.rows.item(i);
       const coFieldType = String(row.co_field_type ?? 'SELECT').toUpperCase();
+      // RANGE quedó unificado a SELECT; se acepta hasta que el sync reescriba la fila local.
       if (coFieldType !== 'SELECT' && coFieldType !== 'RANGE') {
         continue;
       }

@@ -59,13 +59,52 @@ $fondoLila: #430197;
   border-color: #eb445a !important;
 }
 
-ion-select::part(icon) {
-  content: url('/assets/images/flecha-down.svg');
-  color: $colorLila;
-  filter: invert(12%) sepia(82%) saturate(6980%) hue-rotate(269deg) brightness(59%) contrast(113%);
-  width: 20px;
-  height: 19px;
-  position: absolute;
-  right: 10px;
-  top: 9px;
+/* Outline + floating: etiqueta despejada del borde; mismo color en todos los campos. */
+.client-new-potential-client {
+  ion-input[fill='outline'],
+  ion-select[fill='outline'] {
+    --highlight-color: #000000;
+    --highlight-color-focused: #000000;
+    --highlight-color-valid: #000000;
+    margin-top: 8px;
+  }
+
+  ion-input[fill='outline']::part(label),
+  ion-select[fill='outline']::part(label) {
+    background: #ffffff;
+    padding-inline: 6px;
+    color: #000000 !important;
+  }
+
+  /* Anula el absolute centrado de global.scss (pensado para pastillas empresa). */
+  ion-select[fill='outline']::part(label),
+  ion-select[fill='outline']::part(text) {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    margin: 0 !important;
+    display: inline-block !important;
+    text-align: start !important;
+    font-size: inherit !important;
+  }
+
+  ion-select[fill='outline']::part(icon) {
+    content: url('/assets/images/flecha-down.svg');
+    color: $colorLila;
+    filter: invert(12%) sepia(82%) saturate(6980%) hue-rotate(269deg) brightness(59%) contrast(113%);
+    width: 20px;
+    height: 19px;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .potential-send-error-hint {
+    --highlight-color: #eb445a;
+    --highlight-color-focused: #eb445a;
+    --highlight-color-valid: #eb445a;
+    --border-color: #eb445a;
+    border-color: #eb445a !important;
+  }
 }

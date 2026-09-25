@@ -41,7 +41,10 @@ import {
 export class NewPotentialClientComponent implements OnInit {
 
   readonly fieldMax = POTENTIAL_CLIENT_FIELD_MAX;
+  /** Opcionales (Web): el hint puede decir Mín. 0. */
   readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
+  /** Obligatorios: Validators.required ⇒ el contador muestra Mín. 1 (no cambia la validación). */
+  readonly textCommentRequiredMinLength = 1;
 
   public messageService = inject(MessageService);
   public synchronizationServices = inject(SynchronizationDBService);

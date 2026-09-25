@@ -831,6 +831,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [POT-UI-001] Etiquetas flotantes cortadas y «Mín. 0» en campos obligatorios (Clientes potenciales)
+
+- **Síntoma:** Al llenar cualquier campo del formulario (incl. Rubro/Volumen y Responsable), la etiqueta queda montada sobre el borde; Rubro negro vs Volumen verde. Los contadores de campos obligatorios decían «Mín. 0».
+- **Causa:** `global.scss` posiciona `ion-select::part(label|text)` en absolute centrado (pastillas empresa); etiqueta outline sin fondo; highlight Ionic pinta valid/focused en verde. Todos los `app-text-comment-counter` usaban `TEXT_COMMENT_MIN_LENGTH = 0`.
+- **Fix:** Estilos scoped en el formulario: fondo blanco + color negro fijo en labels outline; anular absolute solo en `ion-select[fill=outline]`; contadores obligatorios con `minLength=1` (Web sigue en 0). Validación de Enviar sin cambios.
+- **Evitar:** No reusar el absolute centrado de `ion-select` global en selects outline/floating; no mostrar «Mín. 0» en campos con `Validators.required`.
+- **Archivos:** `client-new-potential-client.component.scss|html|ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.
