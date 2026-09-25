@@ -842,6 +842,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-DST-001] Base Descuento (is_invoice) stale tras sync sin reiniciar
+
+- **Síntoma:** Tras cambiar en web Base Descuento (Monto Base/Total) y sincronizar la móvil sin cerrarla, el % de descuento en Cobros seguía usando la regla anterior; al reiniciar la app el cálculo era correcto. SQLite ya tenía `is_invoice` actualizado.
+- **Causa:** `loadDocumentSaleTypeInvoiceMap` cacheaba el mapa en memoria y las llamadas no pasaban `forceReload`; `resolveDiscountDetailBase` leía el cache viejo.
+- **Fix:** `ensureDocumentSaleTypeInvoiceMapLoaded` (invalida/recarga) en entradas a Cobros junto a currency; `forceReload=true` en `getDocumentsSales` y `loadAllDocumentsSales`. No se tocó la fórmula de descuento.
+- **Evitar:** No asumir que el mapa `documentSaleTypeInvoiceById` sobrevive a un sync de maestros; forzar lectura SQLite al entrar al módulo o al cargar documentos.
+- **Archivos:** `collection-logic.service.ts`, `cobro-general.component.ts`, `cobros-list.component.ts`, spec COB-DST-001.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.
