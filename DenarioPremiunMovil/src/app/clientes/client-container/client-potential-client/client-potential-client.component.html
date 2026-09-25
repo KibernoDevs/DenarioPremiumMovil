@@ -49,6 +49,10 @@
                     {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
                     {{this.clientLogic.clientTags.get('CLI_POT_ENVIADO')}}
                   </p>
+                  <p class="titulosBold" *ngIf="potentialClient.stPotentialClient == errorEnvio">
+                    {{this.clientLogic.clientTags.get('CLI_POT_ESTATUS')}}:
+                    Error al enviar
+                  </p>
                 </ion-label>
 
                 <div slot="end" *ngIf="potentialClient.stPotentialClient != enviado">

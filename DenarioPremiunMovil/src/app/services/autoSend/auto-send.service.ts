@@ -12,7 +12,7 @@ import { ServicesService } from '../services.service';
 import { MessageService } from '../messageService/message.service';
 import { Response } from 'src/app/modelos/response';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, VISIT_STATUS_NOT_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, DEPOSITO_STATUS_SENT } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SEND_ERROR, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, VISIT_STATUS_NOT_VISITED, VISIT_STATUS_SEND_ERROR, CLIENT_POTENTIAL_STATUS_SENT, CLIENT_POTENTIAL_STATUS_SEND_ERROR, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_SEND_ERROR, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_SEND_ERROR } from 'src/app/utils/appConstants'
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { UserAddresClients } from 'src/app/modelos/tables/userAddresClients';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';
@@ -681,15 +681,15 @@ export class AutoSendService implements OnInit {
   }
 
   private async dispatchOrderTransaction(coTransaction: string): Promise<boolean> {
-    let request: Request = {
-      order: {} as Orders,
-    };
     const o = await this.orderService.getPedido(coTransaction);
-    if (o != null) {
-      request = {
-        order: o,
-      };
+    if (o == null) {
+      console.warn('[AutoSendService] Pedido vacío en SQLite', coTransaction);
+      await this.handleEmptyJsonFailedTransaction(coTransaction, 'order', { order: {} });
+      return true;
     }
+    const request: Request = {
+      order: o,
+    };
     if (request.order!.stOrder == DELIVERY_STATUS_TO_SEND) {
       request.order!.idOrder = null as any;
       for (let i = 0; i < request.order!.orderDetails.length; i++) {
@@ -843,6 +843,11 @@ export class AutoSendService implements OnInit {
         console.log('No se pudo obtener info del dispositivo para autoenvio', error);
       }
 
+      if (this.isEmptySendPayload(request, type)) {
+        await this.handleEmptyJsonFailedTransaction(coTransaction, type, request);
+        return true;
+      }
+
       const result = await firstValueFrom(this.callService(request, type, coTransaction));
       console.log(result);
 
@@ -872,6 +877,11 @@ export class AutoSendService implements OnInit {
         return true;
       }
 
+      if (this.isEmptyJsonResponse(result)) {
+        await this.handleEmptyJsonFailedTransaction(coTransaction, type, request, result);
+        return true;
+      }
+
       if (this.isBadRequestResponse(result)) {
         await this.handleBadRequestFailedTransaction(coTransaction, type, request, result);
         return true;
@@ -892,6 +902,15 @@ export class AutoSendService implements OnInit {
       );
       return false;
     } catch (e: any) {
+      if (this.isEmptyJsonError(e)) {
+        await this.handleEmptyJsonFailedTransaction(
+          coTransaction,
+          type,
+          request,
+          this.normalizeHttpErrorPayload(e),
+        );
+        return true;
+      }
       if (this.isBadRequestError(e)) {
         await this.handleBadRequestFailedTransaction(
           coTransaction,
@@ -977,6 +996,24 @@ export class AutoSendService implements OnInit {
     return false;
   }
 
+  private isEmptyJsonResponse(result: any): boolean {
+    if (!result) {
+      return false;
+    }
+    return String(result.errorCode ?? result.code ?? '').trim() === '109';
+  }
+
+  private isEmptyJsonError(error: any): boolean {
+    if (!error) {
+      return false;
+    }
+    const nested = error?.error ?? {};
+    const errorCode = String(
+      error?.code ?? error?.errorCode ?? nested?.code ?? nested?.errorCode ?? ''
+    ).trim();
+    return errorCode === '109';
+  }
+
   private isBadRequestError(error: any): boolean {
     if (!error) {
       return false;
@@ -1050,6 +1087,150 @@ export class AutoSendService implements OnInit {
       await this.deletePendingTransaction(coTransaction, type);
     } catch (e) {
       console.log('Error al mover bad request a transacciones fallidas', e);
+    }
+  }
+
+  private async handleEmptyJsonFailedTransaction(
+    coTransaction: string,
+    type: string,
+    request: any,
+    payload?: any
+  ): Promise<void> {
+    try {
+      if (type === 'collect') {
+        await this.restoreCollectDocumentStatus(coTransaction);
+      }
+
+      await this.insertFailedTransaction(
+        coTransaction,
+        type,
+        payload?.errorCode ?? '109',
+        payload?.errorMessage ?? 'JSON vacío: el cuerpo de la transacción no contiene datos.',
+        request
+      );
+
+      await this.markTransactionSendError(coTransaction, type);
+      await this.deletePendingTransaction(coTransaction, type);
+    } catch (e) {
+      console.log('Error al registrar JSON vacío como transacción fallida', e);
+    }
+  }
+
+  private isEmptySendPayload(request: any, type: string): boolean {
+    if (!request || typeof request !== 'object') {
+      return true;
+    }
+    const node = this.getBusinessNode(request, type);
+    if (node == null) {
+      return true;
+    }
+    if (Array.isArray(node)) {
+      return node.length === 0;
+    }
+    if (typeof node !== 'object') {
+      return true;
+    }
+    return !this.hasBusinessIdentifier(node as Record<string, unknown>);
+  }
+
+  private getBusinessNode(request: any, type: string): unknown {
+    switch (type) {
+      case 'order':
+        return request.order;
+      case 'collect':
+        return request.collection;
+      case 'return':
+        return request.returns;
+      case 'deposit':
+        return request.deposit;
+      case 'visit':
+        return request.visit;
+      case 'clientStock':
+        return request.clientStock;
+      case 'potentialClient':
+        return request.potentialClient;
+      case 'updateaddress':
+        return request.userAddressClient;
+      default:
+        return request;
+    }
+  }
+
+  private hasBusinessIdentifier(node: Record<string, unknown>): boolean {
+    for (const key of Object.keys(node)) {
+      if (!this.isIdentifierKey(key)) {
+        continue;
+      }
+      const value = node[key];
+      if (value == null || value === '') {
+        continue;
+      }
+      if (typeof value === 'number' && value === 0) {
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private isIdentifierKey(key: string): boolean {
+    const lower = key.toLowerCase();
+    return lower.startsWith('co') || lower.startsWith('id');
+  }
+
+  private async markTransactionSendError(coTransaction: string, type: string): Promise<void> {
+    const db = this.dbService.getDatabase();
+    switch (type) {
+      case 'order':
+        await db.executeSql(
+          'UPDATE orders SET st_delivery = ? WHERE co_order = ?',
+          [DELIVERY_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'collect':
+        await db.executeSql(
+          'UPDATE collections SET st_delivery = ?, st_collection = ? WHERE co_collection = ?',
+          [COLLECT_STATUS_SEND_ERROR, COLLECT_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'deposit':
+        await db.executeSql(
+          'UPDATE deposits SET st_delivery = ? WHERE co_deposit = ?',
+          [DEPOSITO_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'return':
+        await db.executeSql(
+          'UPDATE returns SET st_delivery = ? WHERE co_return = ?',
+          [DELIVERY_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'clientStock':
+        await db.executeSql(
+          'UPDATE client_stocks SET st_delivery = ? WHERE co_client_stock = ?',
+          [DELIVERY_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'visit':
+        await db.executeSql(
+          'UPDATE visits SET st_visit = ? WHERE co_visit = ?',
+          [VISIT_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'potentialClient':
+        await db.executeSql(
+          'UPDATE potential_clients SET st_potential_client = ? WHERE co_client = ?',
+          [CLIENT_POTENTIAL_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      case 'updateaddress':
+        await db.executeSql(
+          'UPDATE user_address_clients SET status = ? WHERE co_user_address_client = ?',
+          [DELIVERY_STATUS_SEND_ERROR, coTransaction],
+        );
+        break;
+      default:
+        break;
     }
   }
 

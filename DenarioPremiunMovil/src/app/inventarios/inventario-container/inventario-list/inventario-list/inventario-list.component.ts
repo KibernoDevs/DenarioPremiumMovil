@@ -6,7 +6,7 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SEND_ERROR, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
 import { ItemListaInventarios } from 'src/app/inventarios/item-lista-inventarios';
 import { LOCAL_LIST_PAGE_SIZE, paginateFilteredList } from 'src/app/utils/local-paginated-list.util';
 
@@ -201,6 +201,7 @@ export class InventarioListComponent implements OnInit {
         switch (status) {
           case 3: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_SAVED")! == undefined ? "Guardado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_SAVED')!;
           case DELIVERY_STATUS_TO_SEND: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_TO_BE_SENDED")! == undefined ? "Por enviar" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_TO_BE_SENDED')!;
+          case DELIVERY_STATUS_SEND_ERROR: return 'Error al enviar';
           case 1: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_SENDED")! == undefined ? "Enviado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_SENDED')!;
           case 6:
             // naStatus puede ser string o un objeto => normalizar a string
