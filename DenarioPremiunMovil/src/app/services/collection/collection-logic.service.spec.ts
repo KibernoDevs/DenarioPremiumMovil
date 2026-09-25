@@ -1037,6 +1037,67 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-DST-001 mapa is_invoice de document_sale_types', () => {
+    it('forceReload lee is_invoice fresco de SQLite aunque el mapa en memoria esté stale', async () => {
+      service.documentSaleTypeInvoiceById.clear();
+      service.documentSaleTypeInvoiceById.set(10, false);
+      (service as any).documentSaleTypeInvoiceEnterpriseId = 1;
+
+      const db = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: {
+            length: 1,
+            item: () => ({ id_document_sale_type: 10, is_invoice: 1 }),
+          },
+        }),
+      } as any;
+
+      const map = await service.loadDocumentSaleTypeInvoiceMap(db, 1, true);
+
+      expect(db.executeSql).toHaveBeenCalled();
+      expect(map.get(10)).toBeTrue();
+      expect(service.resolveDiscountDetailBase({
+        idDocumentSaleType: 10,
+        nuAmountBase: 100,
+        nuAmountTotal: 200,
+      } as any)).toBe(200);
+    });
+
+    it('ensureDocumentSaleTypeInvoiceMapLoaded invalida y recarga con empresa', async () => {
+      service.documentSaleTypeInvoiceById.set(10, false);
+      (service as any).documentSaleTypeInvoiceEnterpriseId = 1;
+
+      const db = {
+        executeSql: jasmine.createSpy('executeSql').and.resolveTo({
+          rows: {
+            length: 1,
+            item: () => ({ id_document_sale_type: 10, is_invoice: 1 }),
+          },
+        }),
+      } as any;
+
+      await service.ensureDocumentSaleTypeInvoiceMapLoaded(db, 1);
+
+      expect(db.executeSql).toHaveBeenCalled();
+      expect(service.documentSaleTypeInvoiceById.get(10)).toBeTrue();
+    });
+
+    it('ensureDocumentSaleTypeInvoiceMapLoaded sin empresa solo limpia el cache', async () => {
+      service.documentSaleTypeInvoiceById.set(10, false);
+      (service as any).documentSaleTypeInvoiceEnterpriseId = 1;
+
+      const db = {
+        executeSql: jasmine.createSpy('executeSql'),
+      } as any;
+
+      await service.ensureDocumentSaleTypeInvoiceMapLoaded(db);
+
+      expect(db.executeSql).not.toHaveBeenCalled();
+      expect(service.documentSaleTypeInvoiceById.size).toBe(0);
+      expect((service as any).documentSaleTypeInvoiceEnterpriseId).toBeNull();
+    });
+  });
+
   describe('COB-TOL-DEC-002 redondeo e inclusividad en tolerancia absoluta', () => {
     function setupQaToleranceCase(): jasmine.Spy {
       service.collection = { coCurrency: 'USD' } as any;

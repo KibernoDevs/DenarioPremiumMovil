@@ -4769,6 +4769,23 @@ export class CollectionService {
     this.applyCobCurrencyModuleFlags();
   }
 
+  /**
+   * Invalida (y recarga si hay empresa) el mapa is_invoice de document_sale_types.
+   * Evita seguir usando Base Descuento viejo tras sync sin reiniciar la app.
+   */
+  async ensureDocumentSaleTypeInvoiceMapLoaded(
+    db: SQLiteObject,
+    idEnterprise?: number | null,
+  ): Promise<void> {
+    this.documentSaleTypeInvoiceById.clear();
+    this.documentSaleTypeInvoiceEnterpriseId = null;
+    const enterpriseId = Number(idEnterprise ?? 0);
+    if (!Number.isFinite(enterpriseId) || enterpriseId <= 0) {
+      return;
+    }
+    await this.loadDocumentSaleTypeInvoiceMap(db, enterpriseId, true);
+  }
+
   /** Lee flag booleano de globalConfig (`'true'` → true; resto → false). */
   private parseConfigBoolean(key: string): boolean {
     return String(this.globalConfig.get(key) ?? '').trim().toLowerCase() === 'true';
@@ -6973,7 +6990,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   ): Promise<DocumentSale[] | void> {
 
     if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) return Promise.resolve();
-    await this.loadDocumentSaleTypeInvoiceMap(dbServ, idEnterprise);
+    await this.loadDocumentSaleTypeInvoiceMap(dbServ, idEnterprise, true);
     this.clearDocumentSalesState();
 
     if (pagination) {

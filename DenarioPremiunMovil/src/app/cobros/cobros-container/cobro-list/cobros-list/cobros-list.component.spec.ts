@@ -28,6 +28,7 @@ describe('CobrosListComponent', () => {
       listCollect: [],
       initLogicService: jasmine.createSpy('initLogicService'),
       ensureCobCurrencyModuleLoaded: jasmine.createSpy('ensureCobCurrencyModuleLoaded').and.resolveTo(),
+      ensureDocumentSaleTypeInvoiceMapLoaded: jasmine.createSpy('ensureDocumentSaleTypeInvoiceMapLoaded').and.resolveTo(),
     };
 
     TestBed.configureTestingModule({

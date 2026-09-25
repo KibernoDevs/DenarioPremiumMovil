@@ -76,6 +76,7 @@ export class CobrosListComponent implements OnInit {
     this.headerDelete = this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!;
     this.mensajeDelete = this.collectService.collectionTags.get('COB_CONFIRM_DELETE')!;
     await this.collectService.ensureCobCurrencyModuleLoaded(this.synchronizationServices.getDatabase());
+    await this.collectService.ensureDocumentSaleTypeInvoiceMapLoaded(this.synchronizationServices.getDatabase());
     this.collectService.initLogicService();
     this.resetListPagination();
   }
