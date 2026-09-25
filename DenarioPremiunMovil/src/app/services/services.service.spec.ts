@@ -20,11 +20,35 @@ describe('ServicesService CapacitorHttp gzip headers', () => {
   });
 
   it('getHttpOptionsAuthorization should not set Accept-Encoding', () => {
+    localStorage.setItem('token', 'test-jwt');
     const headers = service.getHttpOptionsAuthorization().headers ?? {};
     expect(headers['Accept-Encoding']).toBeUndefined();
     expect(headers['accept-encoding']).toBeUndefined();
     expect(headers['Content-Type']).toBe('application/json');
     expect(headers['Authorization']).toContain('Bearer');
+  });
+
+  it('getDownloadAuthorizationHeaders should expose Bearer token', () => {
+    localStorage.setItem('token', 'abc123');
+    expect(service.getDownloadAuthorizationHeaders()).toEqual({ Authorization: 'Bearer abc123' });
+  });
+
+  it('appendPublicDownloadAccessToken should add access_token only on public download URLs', () => {
+    localStorage.setItem('token', 'abc123');
+    const publicUrl = 'https://host/services/download?type=logos&id=x.jpg';
+    expect(service.appendPublicDownloadAccessToken(publicUrl)).toContain('access_token=abc123');
+    const filesUrl = 'https://host/services/download/files?type=files&coUser=u&nameFile=f.pdf';
+    expect(service.appendPublicDownloadAccessToken(filesUrl)).toBe(filesUrl);
+  });
+
+  it('buildDispatchFileDownloadUrl should use session coUser', () => {
+    (window as Window & { __env?: Record<string, string> }).__env = {
+      WsUrl: 'https://api.example.com/services/',
+    };
+    localStorage.setItem('coUser', 'VEND01');
+    const url = service.buildDispatchFileDownloadUrl('doc.pdf');
+    expect(url).toContain('coUser=VEND01');
+    expect(url).toContain('nameFile=doc.pdf');
   });
 });
 

@@ -374,18 +374,14 @@ export class ImageServicesService {
     const worker = async (pdfName: string) => {
       let url = "";
       try {
-        url = this.services.getURLService() + "download/files?type=files&coUser=" + localStorage.getItem("coUser")! + "&nameFile=" + pdfName;
+        url = this.services.buildDispatchFileDownloadUrl(pdfName);
       } catch {
         console.log("error", pdfName);
         return;
       }
       let date = new Date();
       try {
-        const res = await Filesystem.downloadFile({
-          url: url,
-          path: pdfName,
-          directory: Directory.Cache
-        });
+        const res = await this.downloadFromServer(url, pdfName);
         this.listFilesPdf.push(pdfName);
         let name = pdfName;
         if (!this.mapPdfFiles.get(name))
@@ -431,11 +427,7 @@ export class ImageServicesService {
       const date = Date.now();
       try {
         console.log('Downloading', url, '->', imgName);
-        const fileResult: any = await Filesystem.downloadFile({
-          url: url,
-          path: imgName,
-          directory: Directory.Cache
-        });
+        const fileResult: any = await this.downloadFromServer(url, imgName, { publicAsset: true });
 
         // Manejar distintas formas de respuesta (data / uri / path)
         let imgSrc = '';
@@ -523,7 +515,7 @@ export class ImageServicesService {
   private buildDownloadUrl(imgName: string): string {
     // imgName expected like '12345.png' or '12345_1.png' -> id is segment before first '.'
     const id = imgName.split('.')[0];
-    return this.services.getURLService() + 'download?type=products&id=' + id;
+    return this.services.getURLService() + 'download?type=products&id=' + encodeURIComponent(id);
   }
 
   private getLocalImagePath(imgName: string): string | null {
@@ -566,7 +558,7 @@ export class ImageServicesService {
           // use centralized URL builder (same as downloadWithConcurrency)
           const url = this.buildDownloadUrl(imgName);
           try {
-            const res = await Filesystem.downloadFile({ url, path: imgName, directory: Directory.Cache });
+            const res = await this.downloadFromServer(url, imgName, { publicAsset: true });
             // registrar en estructuras locales
             this.allFileList.push({
               name: imgName.split('.')[0],
@@ -1124,11 +1116,7 @@ export class ImageServicesService {
   private async downloadSingleLogo(logoName: string): Promise<void> {
     const url = this.buildLogoDownloadUrl(logoName);
     try {
-      const fileResult: any = await Filesystem.downloadFile({
-        url,
-        path: logoName,
-        directory: Directory.Cache
-      });
+      const fileResult: any = await this.downloadFromServer(url, logoName, { publicAsset: true });
       if (!fileResult?.path) {
         return;
       }
@@ -1167,6 +1155,20 @@ export class ImageServicesService {
 
   private buildLogoDownloadUrl(logoName: string): string {
     return this.services.getURLService() + 'download?type=logos&id=' + encodeURIComponent(logoName);
+  }
+
+  private async downloadFromServer(
+    url: string,
+    path: string,
+    options?: { publicAsset?: boolean },
+  ) {
+    const resolvedUrl = this.services.buildAuthenticatedDownloadUrl(url, options);
+    return Filesystem.downloadFile({
+      url: resolvedUrl,
+      path,
+      directory: Directory.Cache,
+      headers: this.services.getDownloadAuthorizationHeaders(),
+    });
   }
 
   private findLogoFilename(coEnterprise: string): string | null {
