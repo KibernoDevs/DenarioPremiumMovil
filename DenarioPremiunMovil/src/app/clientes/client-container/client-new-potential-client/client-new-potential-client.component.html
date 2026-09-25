@@ -60,7 +60,7 @@
                                     [class.potential-send-error-hint]="shouldShowFieldSendError('naClient')"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.naClient"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.naClient"></app-text-comment-counter>
                                 <ion-label *ngIf="newPotentialClient.errors?.['required']">
                                     {{this.clientLogic.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')}}
@@ -78,7 +78,7 @@
                                     [class.potential-send-error-hint]="shouldShowFieldSendError('nuRif')"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.nuRif"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.nuRif"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
@@ -92,7 +92,7 @@
                                     [maxlength]="fieldMax.txAddress"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.txAddress"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.txAddress"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
@@ -107,7 +107,7 @@
                                     (ionChange)="checkForm()" #txAddressDispatchInput
                                     (ionInput)="onTxAddressDispatchChange()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.txAddressDispatch"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.txAddressDispatch"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
@@ -121,7 +121,7 @@
                                     [maxlength]="fieldMax.txClient"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.txClient"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.txClient"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
@@ -137,7 +137,7 @@
                                     [class.potential-send-error-hint]="shouldShowFieldSendError('naResponsible')"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.naResponsible"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.naResponsible"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
@@ -151,7 +151,7 @@
                                     [maxlength]="fieldMax.emClient"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.emClient"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.emClient"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
@@ -165,7 +165,7 @@
                                     [maxlength]="fieldMax.nuPhone"
                                     (ionChange)="checkForm()"></ion-input>
                                 <app-text-comment-counter [value]="clientLogic.potentialClient.nuPhone"
-                                    [minLength]="textCommentMinLength"
+                                    [minLength]="textCommentRequiredMinLength"
                                     [maxLength]="fieldMax.nuPhone"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
