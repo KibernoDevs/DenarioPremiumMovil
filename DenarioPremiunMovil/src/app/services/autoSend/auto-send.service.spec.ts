@@ -20,6 +20,7 @@ import { Router } from '@angular/router';
 import {
   COLLECT_STATUS_TO_SEND,
   DEPOSITO_STATUS_TO_SEND,
+  DELIVERY_STATUS_SEND_ERROR,
   VISIT_STATUS_TO_SEND,
   VISIT_STATUS_VISITED,
   VISIT_STATUS_NOT_VISITED,
@@ -106,7 +107,7 @@ describe('AutoSendService', () => {
     );
     localStorage.setItem('connected', 'true');
 
-    await service.sendTransaction({ payload: 'x' }, 'order', 'CO-1');
+    await service.sendTransaction({ order: { coOrder: 'CO-1' } }, 'order', 'CO-1');
     await Promise.resolve();
 
     expect(executeSqlSpy).toHaveBeenCalledWith(
@@ -123,7 +124,7 @@ describe('AutoSendService', () => {
   it('keeps pending for server errors greater than 99 that are not bad request', async () => {
     localStorage.setItem('connected', 'true');
 
-    await service.sendTransaction({ payload: 'x' }, 'order', 'CO-2');
+    await service.sendTransaction({ order: { coOrder: 'CO-2' } }, 'order', 'CO-2');
     await Promise.resolve();
 
     expect(executeSqlSpy).not.toHaveBeenCalledWith(
@@ -145,8 +146,8 @@ describe('AutoSendService', () => {
       })
     );
 
-    const first = await service.sendTransaction({ payload: 'x' }, 'order', 'CO-118');
-    const second = await service.sendTransaction({ payload: 'x' }, 'order', 'CO-118');
+    const first = await service.sendTransaction({ order: { coOrder: 'CO-118' } }, 'order', 'CO-118');
+    const second = await service.sendTransaction({ order: { coOrder: 'CO-118' } }, 'order', 'CO-118');
 
     expect(first).toBeTrue();
     expect(second).toBeTrue();
@@ -157,7 +158,7 @@ describe('AutoSendService', () => {
     );
 
     service.resetSessionBusinessRejectAlerts();
-    await service.sendTransaction({ payload: 'x' }, 'order', 'CO-118b');
+    await service.sendTransaction({ order: { coOrder: 'CO-118b' } }, 'order', 'CO-118b');
     expect(alertModalSpy).toHaveBeenCalledTimes(2);
   });
 
@@ -170,10 +171,57 @@ describe('AutoSendService', () => {
       })
     );
 
-    await service.sendTransaction({ payload: 'x' }, 'visit', 'V-119');
-    await service.sendTransaction({ payload: 'x' }, 'visit', 'V-119');
+    await service.sendTransaction({ visit: { coVisit: 'V-119' } }, 'visit', 'V-119');
+    await service.sendTransaction({ visit: { coVisit: 'V-119' } }, 'visit', 'V-119');
 
     expect(alertModalSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not POST empty JSON payloads and marks send error', async () => {
+    localStorage.setItem('connected', 'true');
+    const callServiceSpy = (service as any).callService as jasmine.Spy;
+
+    await service.sendTransaction({ order: {} }, 'order', 'PED-EMPTY');
+
+    expect(callServiceSpy).not.toHaveBeenCalled();
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      jasmine.stringMatching(/INSERT INTO failed_transactions/),
+      jasmine.arrayContaining(['PED-EMPTY', 'order', '109', jasmine.any(String), jasmine.any(String), jasmine.any(String)])
+    );
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      'UPDATE orders SET st_delivery = ? WHERE co_order = ?',
+      [DELIVERY_STATUS_SEND_ERROR, 'PED-EMPTY'],
+    );
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      jasmine.stringMatching(/DELETE FROM pending_transactions/),
+      ['PED-EMPTY', 'order']
+    );
+  });
+
+  it('moves 109 responses to failed_transactions and sets send error status', async () => {
+    (service as any).callService.and.returnValue(
+      of({
+        httpStatus: 200,
+        errorCode: '109',
+        errorMessage: 'JSON vacio: el cuerpo de la transaccion no contiene datos',
+      })
+    );
+    localStorage.setItem('connected', 'true');
+
+    await service.sendTransaction({ order: { coOrder: 'PED-109' } }, 'order', 'PED-109');
+
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      jasmine.stringMatching(/INSERT INTO failed_transactions/),
+      jasmine.arrayContaining(['PED-109', 'order', '109', jasmine.any(String), jasmine.any(String), jasmine.any(String)])
+    );
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      'UPDATE orders SET st_delivery = ? WHERE co_order = ?',
+      [DELIVERY_STATUS_SEND_ERROR, 'PED-109'],
+    );
+    expect(executeSqlSpy).toHaveBeenCalledWith(
+      jasmine.stringMatching(/DELETE FROM pending_transactions/),
+      ['PED-109', 'order']
+    );
   });
 
   it('delegates ngOnInit to runPendingQueue', () => {

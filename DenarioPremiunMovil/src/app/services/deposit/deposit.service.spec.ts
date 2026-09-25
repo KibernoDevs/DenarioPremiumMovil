@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DepositService } from './deposit.service';
-import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DEPOSITO_STATUS_SEND_ERROR } from 'src/app/utils/appConstants';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 
 describe('DepositService', () => {
@@ -232,6 +232,15 @@ describe('DepositService', () => {
       service.depositTags.clear();
       expect(service.getStatus(DEPOSITO_STATUS_SENT, '')).toBe('Enviado');
       expect(service.getStatusOrderName(1, DEPOSITO_STATUS_SENT, '')).toBe('Enviado');
+    });
+
+    it('getStatusOrderName muestra Error al enviar en JSON vacío', () => {
+      const label = service.getStatusOrderName(
+        DEPOSITO_STATUS_SEND_ERROR,
+        DEPOSITO_STATUS_SEND_ERROR,
+        null,
+      );
+      expect(label).toBe('Error al enviar');
     });
 
     it('getStatusOrderName con pipeline local muestra Por Enviar aunque haya na_status', () => {

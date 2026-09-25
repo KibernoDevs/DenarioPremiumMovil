@@ -4,7 +4,7 @@ import { Return } from 'src/app/modelos/tables/return';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { ReturnDatabaseService } from 'src/app/services/returns/return-database.service';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SEND_ERROR, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { ItemListaDevoluciones } from '../../item-lista-devoluciones';
 import { SynchronizationComponent } from 'src/app/synchronization/synchronization.component';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -134,6 +134,7 @@ export class DevolucionListComponent implements OnInit {
       switch (status) {
         case 3: return this.tags.get('DENARIO_DEV_SAVED')! == undefined ? "Guardado" : this.tags.get('DENARIO_DEV_SAVED')!;
         case DELIVERY_STATUS_TO_SEND: return this.tags.get('DENARIO_DEV_TO_BE_SENDED')! == undefined ? "Por enviar" : this.tags.get('DENARIO_DEV_TO_BE_SENDED')!;
+        case DELIVERY_STATUS_SEND_ERROR: return 'Error al enviar';
         case 1: return this.tags.get('DENARIO_DEV_SENDED')! == undefined ? "Enviado" : this.tags.get('DENARIO_DEV_SENDED')!;
         case 6:
           // naStatus puede ser string o un objeto => normalizar a string

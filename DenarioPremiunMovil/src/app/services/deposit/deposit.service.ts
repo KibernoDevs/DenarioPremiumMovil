@@ -14,7 +14,7 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
-import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DEPOSITO_STATUS_SEND_ERROR, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SEND_ERROR } from 'src/app/utils/appConstants';
 import { Return } from 'src/app/modelos/tables/return';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { TransactionStatuses } from 'src/app/modelos/tables/transactionStatuses';
@@ -2079,7 +2079,8 @@ export class DepositService {
     const delivery = Number(stDelivery);
     return delivery === DEPOSITO_STATUS_NEW
       || delivery === DEPOSITO_STATUS_SAVED
-      || delivery === DEPOSITO_STATUS_TO_SEND;
+      || delivery === DEPOSITO_STATUS_TO_SEND
+      || delivery === DEPOSITO_STATUS_SEND_ERROR;
   }
 
   getStatusOrderName(
@@ -2214,6 +2215,8 @@ export class DepositService {
         return this.depositTags.get('DEP_DEV_SAVED') ?? 'Guardado';
       case DELIVERY_STATUS_TO_SEND:
         return this.depositTags.get('DEP_DEV_TO_BE_SENDED') ?? 'Por Enviar';
+      case DELIVERY_STATUS_SEND_ERROR:
+        return 'Error al enviar';
       case DELIVERY_STATUS_SENT:
         return naStatus == null || String(naStatus).trim() === ''
           ? (this.depositTags.get('DEP_DEV_SENDED') ?? 'Enviado')

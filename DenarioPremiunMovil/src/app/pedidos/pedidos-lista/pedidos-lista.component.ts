@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { PedidosService } from '../pedidos.service';
 import { Orders } from 'src/app/modelos/tables/orders';
 import { ItemListaPedido } from '../item-lista-pedido';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SEND_ERROR, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
@@ -119,6 +119,7 @@ export class PedidosListaComponent implements OnInit {
           case DELIVERY_STATUS_SAVED: return this.getTag("PED_STATUS_SAVED");
           case DELIVERY_STATUS_TO_SEND: return this.getTag("PED_STATUS_TO_SEND");
           case DELIVERY_STATUS_SENT: return this.getTag("PED_STATUS_SENT");
+          case DELIVERY_STATUS_SEND_ERROR: return 'Error al enviar';
           case 6:
             // naStatus puede ser string o un objeto => normalizar a string
             if (naStatus == null) return 'Enviado';

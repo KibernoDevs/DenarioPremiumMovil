@@ -4,6 +4,7 @@ export const DELIVERY_STATUS_NEW = 0
 export const DELIVERY_STATUS_SENT = 1;
 export const DELIVERY_STATUS_TO_SEND = 2;
 export const DELIVERY_STATUS_SAVED = 3;
+export const DELIVERY_STATUS_SEND_ERROR = 4;
 
 
 //Valores de status de envio (stDelivery)
@@ -12,6 +13,7 @@ export const CLIENTSTOCK_STATUS_NEW = 0
 export const CLIENTSTOCK_STATUS_SENT = 1;
 export const CLIENTSTOCK_STATUS_TO_SEND = 2;
 export const CLIENTSTOCK_STATUS_SAVED = 3;
+export const CLIENTSTOCK_STATUS_SEND_ERROR = 4;
 
 //FIN VALORES ENVIO
 
@@ -21,6 +23,7 @@ export const DEPOSITO_STATUS_NEW = 0
 export const DEPOSITO_STATUS_SAVED = 3;
 export const DEPOSITO_STATUS_TO_SEND = 2;
 export const DEPOSITO_STATUS_SENT = 1;
+export const DEPOSITO_STATUS_SEND_ERROR = 4;
 
 /** status_action del catálogo status (dep002) cuando el depósito fue rechazado en Web */
 export const DEPOSIT_APPROVAL_STATUS_REJECTED = 2;
@@ -33,6 +36,7 @@ export const COLLECT_STATUS_NEW = 0
 export const COLLECT_STATUS_SAVED = 3;
 export const COLLECT_STATUS_TO_SEND = 2;
 export const COLLECT_STATUS_SENT = 1;
+export const COLLECT_STATUS_SEND_ERROR = 4;
 
 //FIN VALORES collection
 
@@ -42,6 +46,7 @@ export const VISIT_STATUS_SAVED = 0;
 export const VISIT_STATUS_TO_SEND = 1;
 export const VISIT_STATUS_VISITED = 2;
 export const VISIT_STATUS_NOT_VISITED = 3;
+export const VISIT_STATUS_SEND_ERROR = 4;
 
 //FIN VALORES VISITA
 
@@ -75,6 +80,7 @@ export const API_KEY_GOOGLE_MAPS = env["API_KEY_GOOGLE_MAPS"] || "";
 export const CLIENT_POTENTIAL_STATUS_NEW = 0;
 export const CLIENT_POTENTIAL_STATUS_TO_SEND = 1;
 export const CLIENT_POTENTIAL_STATUS_SENT = 2;
+export const CLIENT_POTENTIAL_STATUS_SEND_ERROR = 4;
 
 
 //FIN VALORES CLIENTE POTENTIAL

@@ -4,7 +4,7 @@ import { MessageComponent } from 'src/app/message/message.component';
 import { VisitasService } from '../visitas.service';
 import { Router } from '@angular/router';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { VISIT_STATUS_NOT_VISITED, VISIT_STATUS_SAVED, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants';
+import { VISIT_STATUS_NOT_VISITED, VISIT_STATUS_SAVED, VISIT_STATUS_SEND_ERROR, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants';
 import { ReadVarExpr } from '@angular/compiler';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { Platform, ViewWillEnter } from '@ionic/angular';
@@ -186,7 +186,9 @@ export class ListaVisitaComponent implements OnInit, ViewWillEnter {
 
       case VISIT_STATUS_TO_SEND:
         return "Por Enviar";
-        
+
+      case VISIT_STATUS_SEND_ERROR:
+        return "Error al enviar";
 
       case VISIT_STATUS_VISITED:
         return "Visitado";

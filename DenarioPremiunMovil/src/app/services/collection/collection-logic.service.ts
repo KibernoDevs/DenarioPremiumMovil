@@ -33,7 +33,7 @@ import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
-import { COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW, COLLECT_STATUS_SEND_ERROR } from 'src/app/utils/appConstants';
 import { COLLECTION_PAYMENT_FIELD_MAX } from 'src/app/utils/collection-payment-field.constants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
@@ -6887,6 +6887,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     switch (status) {
       case 3: return this.collectionTags.get("COB_STATUS_SAVED")!;
       case COLLECT_STATUS_TO_SEND: return this.collectionTags.get("COB_STATUS_TO_SEND")!;
+      case COLLECT_STATUS_SEND_ERROR: return 'Error al enviar';
       case 1:
         return naStatus == null || String(naStatus).trim() === ''
           ? this.collectionTags.get("COB_STATUS_SENT")!
