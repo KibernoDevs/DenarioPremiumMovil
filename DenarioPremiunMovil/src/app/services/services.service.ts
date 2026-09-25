@@ -81,6 +81,51 @@ export class ServicesService {
 
   }
 
+  /** JWT header for Capacitor Filesystem.downloadFile and other raw GET downloads. */
+  getDownloadAuthorizationHeaders(): Record<string, string> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {};
+    }
+    return { Authorization: 'Bearer ' + token };
+  }
+
+  /**
+   * Optional query-token auth for GET /services/download (public asset endpoint).
+   * Does not apply to /services/download/files, which requires Authorization header only.
+   */
+  appendPublicDownloadAccessToken(url: string): string {
+    if (url.includes('download/files') || url.includes('access_token=')) {
+      return url;
+    }
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return url;
+    }
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}access_token=${encodeURIComponent(token)}`;
+  }
+
+  buildAuthenticatedDownloadUrl(url: string, options?: { publicAsset?: boolean }): string {
+    const publicAsset = options?.publicAsset ?? false;
+    return publicAsset ? this.appendPublicDownloadAccessToken(url) : url;
+  }
+
+  /**
+   * Builds GET /services/download/files URL using the active session coUser.
+   * @throws Error when coUser is missing or does not match the session.
+   */
+  buildDispatchFileDownloadUrl(nameFile: string, requestedCoUser?: string): string {
+    const sessionCoUser = localStorage.getItem('coUser');
+    if (!sessionCoUser) {
+      throw new Error('Missing coUser in session');
+    }
+    if (requestedCoUser != null && requestedCoUser !== sessionCoUser) {
+      throw new Error('coUser does not match active session');
+    }
+    return `${this.getURLService()}download/files?type=files&coUser=${encodeURIComponent(sessionCoUser)}&nameFile=${encodeURIComponent(nameFile)}`;
+  }
+
   async onLogin(_login: Login, deviceInfo: any, deviceId: any,) {
     if (localStorage.getItem("lastUpdate") == null)
       localStorage.setItem("lastUpdate", "2000-01-01 00:00:00.000");

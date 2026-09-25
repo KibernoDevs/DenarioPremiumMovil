@@ -4,7 +4,8 @@ import { RouteReuseStrategy } from '@angular/router';
 import { IonicModule, IonicRouteStrategy, Platform } from '@ionic/angular';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { AuthBearerInterceptor } from './interceptors/auth-bearer.interceptor';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -225,7 +226,9 @@ import { TextCommentCounterComponent } from './components/text-comment-counter/t
     FileOpener,
     DepositService,
     ConversionService,
-  provideHttpClient(withInterceptorsFromDi())]
+  provideHttpClient(withInterceptorsFromDi()),
+    { provide: HTTP_INTERCEPTORS, useClass: AuthBearerInterceptor, multi: true },
+  ]
 })
 export class AppModule {
   constructor(private platform: Platform) {

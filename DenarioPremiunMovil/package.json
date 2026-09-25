@@ -11,6 +11,8 @@
     "ios:sync": "npm run build && npx cap sync ios",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:headless": "ng test --watch=false --browsers=ChromeHeadless",
+    "test:security": "ng test --watch=false --browsers=ChromeHeadless --include=**/download-file-http.service.spec.ts --include=**/services.service.spec.ts",
     "test:cobros": "ng test --include=**/collection-logic.service.spec.ts --include=**/cobro-pagos.component.spec.ts --include=**/cobro-general.component.spec.ts --include=**/cobro-documents.component.spec.ts --include=**/cobro-total.component.spec.ts --include=**/cobros-list.component.spec.ts --watch=false --browsers=ChromeHeadless",
     "test:clientes": "ng test --include=**/client-logic.service.spec.ts --include=**/client-list.component.spec.ts --include=**/client-detail.component.spec.ts --include=**/client-new-potential-client.component.spec.ts --include=**/client-potential-client.component.spec.ts --include=**/client-container.component.spec.ts --watch=false --browsers=ChromeHeadless",
     "lint": "ng lint",
