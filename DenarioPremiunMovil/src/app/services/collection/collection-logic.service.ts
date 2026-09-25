@@ -195,6 +195,12 @@ export class CollectionService {
   /** Cambios locales desde el último guardado / apertura limpia. */
   public collectionDirtySincePersist = false;
   private collectionDirtyTrackingPaused = false;
+  /**
+   * Aviso diferido COB-DST-002: Base Descuento cambió y se recalcularon % al reabrir.
+   * Se muestra al terminar la hidratación (dirty tracking reanudado).
+   */
+  private pendingDiscountInvoiceBaseRecalcNotice = false;
+  private static readonly MANUAL_COLLECT_DISCOUNT_ID = -1;
   public alertMessageOpen: boolean = false;
   public alertMessageChangeCurrency: boolean = false;
   public alertMessageChangeDateRate: boolean = false;
@@ -7040,6 +7046,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         && Array.isArray(this.collection?.collectionDetails)
         && this.collection.collectionDetails.length > 0
       ) {
+        // COB-DST-002: si cambió is_invoice, recalcular % antes de totales.
+        this.reconcilePersistedCollectDiscountsWithCurrentInvoiceBase();
         await this.calculatePayment('', 0, true, true);
       }
 
@@ -10659,6 +10667,207 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     const useTotal = this.documentSaleTypeInvoiceById.get(idType) === true;
     const raw = useTotal ? doc.nuAmountTotal : doc.nuAmountBase;
     return Math.max(0, Number(raw ?? 0));
+  }
+
+  /**
+   * COB-DST-002: al reabrir cobro SAVED con descuentos %, si Base Descuento (is_invoice)
+   * cambió, recalcula montos con la base vigente. Manual (-1) y líneas sin tasa se conservan.
+   * @returns true si hubo cambios en memoria (Guardar debe quedar dirty).
+   */
+  reconcilePersistedCollectDiscountsWithCurrentInvoiceBase(): boolean {
+    if (Number(this.collection?.stDelivery) !== this.COLLECT_STATUS_SAVED) {
+      return false;
+    }
+    if (this.isCollectionReadOnlyForEdit()) {
+      return false;
+    }
+    if (this.coTypeModule === '1') {
+      return false;
+    }
+
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    if (details.length === 0) {
+      return false;
+    }
+
+    let anyChanged = false;
+    for (const detail of details) {
+      if (this.reconcileDetailCollectDiscountsWithCurrentInvoiceBase(detail)) {
+        anyChanged = true;
+      }
+    }
+
+    if (anyChanged) {
+      this.notifyDiscountInvoiceBaseRecalculated();
+    }
+    return anyChanged;
+  }
+
+  /** Muestra el aviso COB-DST-002 si quedó pendiente durante la hidratación. */
+  flushPendingDiscountInvoiceBaseRecalcNotice(): void {
+    if (!this.pendingDiscountInvoiceBaseRecalcNotice) {
+      return;
+    }
+    this.pendingDiscountInvoiceBaseRecalcNotice = false;
+    this.collectionDirtySincePersist = true;
+    this.updateSaveButtonAvailability();
+    this.showDiscountInvoiceBaseRecalcAlert();
+  }
+
+  private notifyDiscountInvoiceBaseRecalculated(): void {
+    this.collectionDirtySincePersist = true;
+    this.updateSaveButtonAvailability();
+    if (this.collectionDirtyTrackingPaused || this.recentOpenCollect) {
+      this.pendingDiscountInvoiceBaseRecalcNotice = true;
+      return;
+    }
+    this.showDiscountInvoiceBaseRecalcAlert();
+  }
+
+  private showDiscountInvoiceBaseRecalcAlert(): void {
+    const title = this.collectionTags.get('COB_NOMBRE_MODULO')
+      ?? this.collectionTagsDenario.get('DENARIO_COBROS')
+      ?? 'Cobros';
+    const message = this.collectionTags.get('COB_MSG_DISCOUNT_BASE_RECALC')
+      ?? 'La base de descuento del tipo de documento cambió. Se recalcularon los descuentos por porcentaje. Guarde el cobro para conservar los montos.';
+    this.messageAlert = new MessageAlert(title, message);
+    void this.messageService.alertModal(this.messageAlert);
+  }
+
+  private reconcileDetailCollectDiscountsWithCurrentInvoiceBase(
+    detail: CollectionDetail,
+  ): boolean {
+    if (!detail) {
+      return false;
+    }
+
+    const lines = Array.isArray(detail.collectionDetailDiscounts)
+      ? [...detail.collectionDetailDiscounts]
+      : [];
+    if (lines.length === 0) {
+      return false;
+    }
+
+    const hasPercentLine = lines.some(line => this.resolvePersistedCollectDiscountRate(line) > 0);
+    if (!hasPercentLine) {
+      return false;
+    }
+
+    const docIndex = this.findDocumentSaleIndexForDetail(detail);
+    const doc = docIndex >= 0 ? this.documentSales[docIndex] : undefined;
+    if (!doc) {
+      return false;
+    }
+
+    const parteDecimal = Number.parseInt(String(this.parteDecimal ?? 0), 10) || 0;
+    const factor = Math.pow(10, parteDecimal);
+    const epsilon = Math.pow(10, -Math.max(parteDecimal, 2)) / 2;
+
+    lines.sort((a, b) => Number(a?.posicion ?? 0) - Number(b?.posicion ?? 0));
+
+    let detailBaseNew = this.resolveDiscountDetailBase(doc);
+    let discountTotal = 0;
+    let totalRates = 0;
+    let lineChanged = false;
+
+    for (const line of lines) {
+      if (!line) {
+        continue;
+      }
+
+      const rate = this.resolvePersistedCollectDiscountRate(line);
+      const persistedAmount = Math.max(0, Number(line.nuAmountCollectDiscountOther ?? 0));
+      let nextAmount = persistedAmount;
+
+      if (rate > 0) {
+        const stepRaw = (detailBaseNew * rate) / 100;
+        nextAmount = Math.round(stepRaw * factor) / factor;
+      }
+
+      if (Math.abs(nextAmount - persistedAmount) > epsilon) {
+        line.nuAmountCollectDiscountOther = nextAmount;
+        line.nuAmountCollectDiscountOtherConversion = this.convertirMonto(
+          nextAmount,
+          this.collection.nuValueLocal,
+          this.collection.coCurrency,
+        );
+        lineChanged = true;
+      }
+
+      discountTotal += nextAmount;
+      detailBaseNew = Math.max(0, detailBaseNew - nextAmount);
+      totalRates += rate;
+    }
+
+    discountTotal = Math.round(discountTotal * factor) / factor;
+    const persistedTotal = Math.max(0, Number(detail.nuAmountCollectDiscount ?? 0));
+    const totalChanged = Math.abs(discountTotal - persistedTotal) > epsilon;
+
+    if (!lineChanged && !totalChanged) {
+      return false;
+    }
+
+    detail.collectionDetailDiscounts = lines;
+    detail.nuAmountCollectDiscount = discountTotal;
+    detail.nuAmountCollectDiscountConversion = this.convertirMonto(
+      discountTotal,
+      this.collection.nuValueLocal,
+      this.collection.coCurrency,
+    );
+    detail.nuCollectDiscount = totalRates;
+    detail.hasDiscount = discountTotal > 0;
+
+    if (detail.inPaymentPartial !== true) {
+      const backup = docIndex >= 0 ? this.documentSalesBackup[docIndex] : undefined;
+      const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
+      const payment = this.resolveDocumentPaymentAmount({
+        grossBalance: gross,
+        nuAmountDiscount: detail.nuAmountDiscount,
+        nuAmountCollectDiscount: discountTotal,
+        nuAmountRetention: detail.nuAmountRetention,
+        nuAmountRetention2: detail.nuAmountRetention2,
+      });
+      detail.nuAmountPaid = payment.amountToPay;
+      detail.nuAmountPaidConversion = this.convertirMonto(
+        payment.amountToPay,
+        this.collection.nuValueLocal,
+        this.collection.coCurrency,
+      );
+
+      if (docIndex >= 0 && this.documentSales[docIndex]) {
+        this.documentSales[docIndex].nuAmountPaid = payment.amountToPay;
+        if (this.documentSalesBackup[docIndex]) {
+          this.documentSalesBackup[docIndex].nuAmountPaid = payment.amountToPay;
+        }
+        if (this.documentSalesView?.[docIndex]) {
+          this.documentSalesView[docIndex].nuAmountPaid = payment.amountToPay;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  private resolvePersistedCollectDiscountRate(
+    line: CollectionDetailDiscounts | null | undefined,
+  ): number {
+    if (!line) {
+      return 0;
+    }
+    if (Number(line.idCollectDiscount) === CollectionService.MANUAL_COLLECT_DISCOUNT_ID) {
+      return 0;
+    }
+    const fromLine = Number(line.nuCollectDiscountOther ?? 0);
+    if (Number.isFinite(fromLine) && fromLine > 0) {
+      return fromLine;
+    }
+    const catalog = (this.collectDiscounts ?? []).find(
+      cd => Number(cd?.idCollectDiscount) === Number(line.idCollectDiscount),
+    );
+    const fromCatalog = Number(catalog?.nuCollectDiscount ?? 0);
+    return Number.isFinite(fromCatalog) && fromCatalog > 0 ? fromCatalog : 0;
   }
 
   loadTypeDocumentList(dbServ: SQLiteObject, forceReload: boolean = false) {

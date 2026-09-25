@@ -207,6 +207,7 @@ export class CobrosGeneralComponent implements OnInit {
   private finishOpenCollectDirtyTracking(): void {
     this.collectService.recentOpenCollect = false;
     this.collectService.resumeCollectionDirtyTracking();
+    this.collectService.flushPendingDiscountInvoiceBaseRecalcNotice();
   }
 
   private initGeneralState() {

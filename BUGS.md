@@ -853,6 +853,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-DST-002] Cobro guardado no recalcula descuentos % si cambió Base Descuento
+
+- **Síntoma:** Cobro SAVED con descuentos por porcentaje; en web se cambia Base Descuento (`is_invoice`) y se sincroniza. Al reabrir el cobro en móvil, los montos de descuento siguen siendo los persistidos con la base anterior (solo cobros nuevos calculaban bien tras COB-DST-001).
+- **Causa:** `collection_detail_discounts` guarda montos, no el `is_invoice` usado al guardar. Al reabrir se hidratan esos montos sin volver a aplicar el % sobre `resolveDiscountDetailBase`.
+- **Fix:** Al cargar documentos de un cobro SAVED (`getDocumentsSales` + details), `reconcilePersistedCollectDiscountsWithCurrentInvoiceBase` compara montos esperados vs persistidos; si difieren, recalcula cascada %, actualiza details/`nuAmountPaid` (no parcial), marca dirty y avisa. Descuento manual (`id=-1`) y líneas sin tasa se conservan. Aviso diferido si dirty tracking aún está pausado (`flushPendingDiscountInvoiceBaseRecalcNotice`).
+- **Evitar:** No asumir que montos persistidos de % siguen válidos tras sync de `document_sale_types`; no mutar cobros TO_SEND/SENT.
+- **Archivos:** `collection-logic.service.ts`, `cobro-general.component.ts`, spec COB-DST-002, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.

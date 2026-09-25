@@ -1098,6 +1098,176 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-DST-002 recalcular descuentos % al reabrir si cambió Base Descuento', () => {
+    let alertModalSpy: jasmine.Spy;
+
+    function setupSavedCollectionWithPercentDiscount(opts: {
+      isInvoice: boolean;
+      persistedAmount: number;
+      rate: number;
+      nuAmountBase: number;
+      nuAmountTotal: number;
+      includeManual?: boolean;
+    }): void {
+      service.parteDecimal = 2;
+      service.coTypeModule = '0';
+      service.documentSaleTypeInvoiceById.clear();
+      service.documentSaleTypeInvoiceById.set(10, opts.isInvoice);
+      service.collectionTags = new Map([['COB_NOMBRE_MODULO', 'Cobros']]);
+      service.collectionTagsDenario = new Map();
+      alertModalSpy = jasmine.createSpy('alertModal');
+      (service as any)._messageService = { alertModal: alertModalSpy };
+
+      const discounts: any[] = [];
+      if (opts.includeManual) {
+        discounts.push({
+          idCollectDiscount: -1,
+          nuCollectDiscountOther: null,
+          nuAmountCollectDiscountOther: 5,
+          posicion: 0,
+          coDocument: 'FAC-1',
+        });
+      }
+      discounts.push({
+        idCollectDiscount: 100,
+        nuCollectDiscountOther: opts.rate,
+        nuAmountCollectDiscountOther: opts.persistedAmount,
+        posicion: 1,
+        coDocument: 'FAC-1',
+      });
+
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        stCollection: service.COLLECT_STATUS_SAVED,
+        isSave: 1,
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuBalanceDocOriginal: 100,
+          nuBalanceDoc: 100,
+          nuAmountDiscount: 0,
+          nuAmountRetention: 0,
+          nuAmountRetention2: 0,
+          nuAmountCollectDiscount: opts.persistedAmount + (opts.includeManual ? 5 : 0),
+          nuCollectDiscount: opts.rate,
+          collectionDetailDiscounts: discounts,
+        }],
+      } as any;
+
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        idDocumentSaleType: 10,
+        nuAmountBase: opts.nuAmountBase,
+        nuAmountTotal: opts.nuAmountTotal,
+        nuBalance: 100,
+        isSave: true,
+        nuAmountPaid: 0,
+      } as any];
+      service.documentSalesBackup = [{ ...service.documentSales[0] }];
+      service.documentSalesView = [{ ...service.documentSales[0] }];
+      service.resumeCollectionDirtyTracking();
+      service.recentOpenCollect = false;
+    }
+
+    it('recalcula monto % cuando is_invoice pasa a total y el persistido era sobre base', () => {
+      // Guardado con base 100 → 10% = 10; ahora is_invoice=true usa total 200 → 20
+      setupSavedCollectionWithPercentDiscount({
+        isInvoice: true,
+        persistedAmount: 10,
+        rate: 10,
+        nuAmountBase: 100,
+        nuAmountTotal: 200,
+      });
+
+      const changed = service.reconcilePersistedCollectDiscountsWithCurrentInvoiceBase();
+
+      expect(changed).toBeTrue();
+      const detail = service.collection.collectionDetails[0];
+      expect(detail.nuAmountCollectDiscount).toBe(20);
+      expect(detail.collectionDetailDiscounts![0].nuAmountCollectDiscountOther).toBe(20);
+      expect(detail.nuAmountPaid).toBe(80);
+      expect(service.collectionDirtySincePersist).toBeTrue();
+      expect(alertModalSpy).toHaveBeenCalled();
+    });
+
+    it('no cambia si el monto ya coincide con la base vigente', () => {
+      setupSavedCollectionWithPercentDiscount({
+        isInvoice: false,
+        persistedAmount: 10,
+        rate: 10,
+        nuAmountBase: 100,
+        nuAmountTotal: 200,
+      });
+
+      const changed = service.reconcilePersistedCollectDiscountsWithCurrentInvoiceBase();
+
+      expect(changed).toBeFalse();
+      expect(service.collection.collectionDetails[0].nuAmountCollectDiscount).toBe(10);
+      expect(alertModalSpy).not.toHaveBeenCalled();
+    });
+
+    it('conserva descuento manual y solo recalcula líneas con tasa', () => {
+      setupSavedCollectionWithPercentDiscount({
+        isInvoice: true,
+        persistedAmount: 10,
+        rate: 10,
+        nuAmountBase: 100,
+        nuAmountTotal: 200,
+        includeManual: true,
+      });
+
+      const changed = service.reconcilePersistedCollectDiscountsWithCurrentInvoiceBase();
+
+      expect(changed).toBeTrue();
+      const lines = service.collection.collectionDetails[0].collectionDetailDiscounts!;
+      expect(Number(lines[0].nuAmountCollectDiscountOther)).toBe(5);
+      // base vigente = 200; manual 5 → base cascada 195; 10% = 19.5
+      expect(Number(lines[1].nuAmountCollectDiscountOther)).toBe(19.5);
+      expect(service.collection.collectionDetails[0].nuAmountCollectDiscount).toBe(24.5);
+    });
+
+    it('no toca cobros enviados / TO_SEND', () => {
+      setupSavedCollectionWithPercentDiscount({
+        isInvoice: true,
+        persistedAmount: 10,
+        rate: 10,
+        nuAmountBase: 100,
+        nuAmountTotal: 200,
+      });
+      service.collection.stDelivery = service.COLLECT_STATUS_TO_SEND;
+
+      expect(service.reconcilePersistedCollectDiscountsWithCurrentInvoiceBase()).toBeFalse();
+      expect(service.collection.collectionDetails[0].nuAmountCollectDiscount).toBe(10);
+    });
+
+    it('flushPending muestra aviso diferido tras hidratar', () => {
+      setupSavedCollectionWithPercentDiscount({
+        isInvoice: true,
+        persistedAmount: 10,
+        rate: 10,
+        nuAmountBase: 100,
+        nuAmountTotal: 200,
+      });
+      service.pauseCollectionDirtyTracking();
+      service.recentOpenCollect = true;
+      alertModalSpy.calls.reset();
+
+      expect(service.reconcilePersistedCollectDiscountsWithCurrentInvoiceBase()).toBeTrue();
+      expect(alertModalSpy).not.toHaveBeenCalled();
+
+      service.resumeCollectionDirtyTracking();
+      service.recentOpenCollect = false;
+      service.flushPendingDiscountInvoiceBaseRecalcNotice();
+
+      expect(alertModalSpy).toHaveBeenCalled();
+      expect(service.collectionDirtySincePersist).toBeTrue();
+    });
+  });
+
   describe('COB-TOL-DEC-002 redondeo e inclusividad en tolerancia absoluta', () => {
     function setupQaToleranceCase(): jasmine.Spy {
       service.collection = { coCurrency: 'USD' } as any;
